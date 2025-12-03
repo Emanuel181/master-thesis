@@ -27,9 +27,10 @@ export default function Page() {
     const [activeComponent, setActiveComponent] = useState("Code input")
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
     const [initialCode, setInitialCode] = useState("");
+    const [codeType, setCodeType] = useState("");
 
     const handleNavigation = (item) => {
-        if (item.title === "Models") {
+        if (item.title === "Workflow configuration") {
             setIsModelsDialogOpen(true)
             return
         }
@@ -50,13 +51,13 @@ export default function Page() {
     const renderComponent = () => {
         switch (activeComponent) {
             case "Code input":
-                return <CodeInput code={initialCode} setCode={setInitialCode} />
+                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} />
             case "Knowledge base":
                 return <KnowledgeBaseVisualization />
             case "Results":
                 return <Results initialCode={initialCode} />
             default:
-                return <CodeInput code={initialCode} setCode={setInitialCode} />
+                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} />
         }
     }
 
@@ -92,7 +93,7 @@ export default function Page() {
                     {renderComponent()}
                 </div>
             </SidebarInset>
-            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} />
+            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} />
         </SidebarProvider>
     )
 }

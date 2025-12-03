@@ -27,9 +27,8 @@ import { Button } from "@/components/ui/button";
 import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases";
 import { Play, Clipboard } from "lucide-react";
 
-export function CodeInput({ code, setCode, onStart }) {
+export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
-    const [codeType, setCodeType] = useState("");
     const [isCopied, setIsCopied] = useState(false);
 
     const supportedLanguages = [

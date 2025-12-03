@@ -170,11 +170,7 @@ export default function KnowledgeBaseVisualization() {
 
                 {/* Scrollable List */}
                 <ScrollArea className="flex-1 h-full">
-                    {/* UPDATED: Added 'pb-20' (Padding Bottom 20).
-                        This adds a significant buffer at the bottom of the list.
-                        Now when you scroll to the end, you will see the full last card plus empty space below it.
-                    */}
-                    <div className="p-4 lg:p-6 pt-2 pb-20 space-y-3 min-h-full">
+                    <div className="p-4 lg:p-6 pt-2 space-y-3 min-h-full">
                         {paginatedCategories.length > 0 ? (
                             paginatedCategories.map((useCase) => (
                                 <CategoryCard
@@ -189,6 +185,9 @@ export default function KnowledgeBaseVisualization() {
                                 No categories found
                             </div>
                         )}
+
+                        {/* Spacer to allow final card to scroll fully into view */}
+                        <div className="h-48" aria-hidden="true" />
                     </div>
                 </ScrollArea>
 
@@ -289,8 +288,7 @@ export default function KnowledgeBaseVisualization() {
 
                         {/* --- SECTION B: DOCUMENTS LIST (Scrollable Bottom) --- */}
                         <ScrollArea className="flex-1 h-full bg-muted/30">
-                            {/* UPDATED: Added 'pb-20' here as well for the document list */}
-                            <div className="p-6 pb-20">
+                            <div className="p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                         Attached Documents ({currentDocs.length})
@@ -333,6 +331,9 @@ export default function KnowledgeBaseVisualization() {
                                         ))}
                                     </div>
                                 )}
+
+                                {/* Spacer to allow final document card to scroll fully into view */}
+                                <div className="h-48" aria-hidden="true" />
                             </div>
                         </ScrollArea>
                     </>

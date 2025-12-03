@@ -28,8 +28,17 @@ import {
     FileText,
     ZoomIn,
     ZoomOut,
+    Database,
+    ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 // -------- Custom Animated Edge --------
 
@@ -150,11 +159,11 @@ function UserCodeNode({ data }) {
     return (
         <>
             <Handle type="target" position={Position.Left} className="!bg-border" />
-            <Card className="min-w-[220px] shadow-lg border-2 border-amber-700 dark:border-amber-600">
+            <Card className="min-w-[220px] shadow-lg border-2 border-yellow-400 dark:border-yellow-400">
                 <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-3 rounded-lg bg-amber-700 dark:bg-amber-600">
-                            <Code className="w-7 h-7 text-white" strokeWidth={2.5} />
+                        <div className="p-3 rounded-lg bg-yellow-400">
+                            <Code className="w-7 h-7 text-gray-900" strokeWidth={2.5} />
                         </div>
                         <div className="font-semibold text-base">{data.label}</div>
                     </div>
@@ -168,9 +177,132 @@ function UserCodeNode({ data }) {
     );
 }
 
+function KnowledgeBaseNode({ data }) {
+    const [open, setOpen] = React.useState(false);
+    const borderColorMap = {
+        "bg-cyan-500": "border-cyan-500 dark:border-cyan-400",
+    };
+    const borderColor = borderColorMap[data.iconBg] || "border-cyan-500 dark:border-cyan-400";
+
+    const selectedCount = data.selectedKnowledgeBases?.length || 0;
+    const selectedNames = data.knowledgeBases
+        .filter(kb => data.selectedKnowledgeBases?.includes(kb.id))
+        .map(kb => kb.name)
+        .join(", ");
+
+    const handleToggle = (kbId) => {
+        if (data.onKnowledgeBaseChange) {
+            data.onKnowledgeBaseChange(kbId);
+        }
+    };
+
+    const isDisabled = !data.codeType;
+
+    return (
+        <>
+            <Card className={`min-w-[280px] shadow-lg border-2 ${borderColor}`}>
+                <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className={`p-3 rounded-lg ${data.iconBg}`}>
+                            <Database className="w-6 h-6 text-white" strokeWidth={2.5} />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-semibold text-base">{data.label}</div>
+                            <div className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                                {selectedCount} selected
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-3">
+                        {data.description}
+                    </div>
+
+                    <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full h-auto justify-between text-left font-normal p-2"
+                                disabled={isDisabled}
+                            >
+                                <div className="flex-1 min-w-0">
+                                    {isDisabled ? (
+                                        <span className="text-xs text-muted-foreground">
+                                            Select code type first
+                                        </span>
+                                    ) : selectedCount > 0 ? (
+                                        <span className="text-xs truncate block">
+                                            {selectedNames}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground">
+                                            Select knowledge bases
+                                        </span>
+                                    )}
+                                </div>
+                                <ChevronDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[280px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                            <div className="p-3 border-b">
+                                <p className="text-sm font-medium">Select Knowledge Bases</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Choose sources for RAG context
+                                </p>
+                            </div>
+                            <div className="p-2 max-h-[300px] overflow-y-auto">
+                                {data.knowledgeBases.map((kb) => {
+                                    const IconComponent = kb.icon;
+                                    const isSelected = data.selectedKnowledgeBases?.includes(kb.id);
+
+                                    return (
+                                        <div
+                                            key={kb.id}
+                                            className={cn(
+                                                "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
+                                                "hover:bg-accent",
+                                                isSelected && "bg-cyan-50 dark:bg-cyan-950/30"
+                                            )}
+                                            onClick={() => handleToggle(kb.id)}
+                                        >
+                                            <Checkbox
+                                                checked={isSelected}
+                                                className="mt-0.5 pointer-events-none"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    {IconComponent && (
+                                                        <IconComponent className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                                                    )}
+                                                    <span className="text-sm font-medium">
+                                                        {kb.name}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {kb.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="p-3 border-t bg-muted/50">
+                                <p className="text-xs text-muted-foreground">
+                                    {selectedCount} of {data.knowledgeBases.length} selected
+                                </p>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </CardContent>
+            </Card>
+            <Handle type="source" position={Position.Right} className="!bg-border" />
+        </>
+    );
+}
+
 const nodeTypes = {
     agentNode: AgentNode,
     userCodeNode: UserCodeNode,
+    knowledgeBaseNode: KnowledgeBaseNode,
 };
 
 const edgeTypes = {
@@ -183,6 +315,10 @@ export function AIWorkflowVisualization({
                                             models,
                                             agentModels,
                                             onModelChange,
+                                            knowledgeBases = [],
+                                            selectedKnowledgeBases = [],
+                                            onKnowledgeBaseChange,
+                                            codeType,
                                             onSave,
                                             onCancel,
                                         }) {
@@ -229,10 +365,12 @@ export function AIWorkflowVisualization({
 
     const getEdgeColors = React.useCallback((isDark) => {
         return {
-            amber: isDark ? "#fbbf24" : "#b45309",
-            blue: isDark ? "#60a5fa" : "#3b82f6",
-            green: isDark ? "#4ade80" : "#22c55e",
-            orange: isDark ? "#fb923c" : "#f97316",
+            amber: "#facc15",  // bright yellow-400 to match UserCodeNode border
+            cyan: isDark ? "#22d3ee" : "#06b6d4",   // cyan-400/500 to match KnowledgeBaseNode border
+            blue: isDark ? "#60a5fa" : "#3b82f6",   // blue-400/500 to match Reviewer border
+            green: isDark ? "#4ade80" : "#22c55e",  // green-400/500 to match Implementation border
+            orange: isDark ? "#fb923c" : "#f97316", // orange-400/500 to match Tester border
+            purple: isDark ? "#c084fc" : "#a855f7", // purple-400/500 to match Report border
         };
     }, []);
 
@@ -241,9 +379,23 @@ export function AIWorkflowVisualization({
     const initialNodes = React.useMemo(
         () => [
             {
+                id: "knowledgeBase",
+                type: "knowledgeBaseNode",
+                position: { x: 40, y: 20 },
+                data: {
+                    label: "Knowledge Base",
+                    description: "RAG context source",
+                    iconBg: "bg-cyan-500",
+                    knowledgeBases,
+                    selectedKnowledgeBases,
+                    onKnowledgeBaseChange,
+                    codeType,
+                },
+            },
+            {
                 id: "userCode",
                 type: "userCodeNode",
-                position: { x: 40, y: 160 },
+                position: { x: 40, y: 310 },
                 data: {
                     label: "Your Code",
                     description: "Input code for review",
@@ -252,7 +404,7 @@ export function AIWorkflowVisualization({
             {
                 id: "reviewer",
                 type: "agentNode",
-                position: { x: 360, y: 120 },
+                position: { x: 400, y: 180 },
                 data: {
                     id: "reviewer",
                     label: "Reviewer Agent",
@@ -267,7 +419,7 @@ export function AIWorkflowVisualization({
             {
                 id: "implementation",
                 type: "agentNode",
-                position: { x: 720, y: 160 },
+                position: { x: 760, y: 200 },
                 data: {
                     id: "implementation",
                     label: "Implementation Agent",
@@ -282,7 +434,7 @@ export function AIWorkflowVisualization({
             {
                 id: "tester",
                 type: "agentNode",
-                position: { x: 1080, y: 200 },
+                position: { x: 1120, y: 240 },
                 data: {
                     id: "tester",
                     label: "Tester Agent",
@@ -297,7 +449,7 @@ export function AIWorkflowVisualization({
             {
                 id: "report",
                 type: "agentNode",
-                position: { x: 1440, y: 160 },
+                position: { x: 1480, y: 200 },
                 data: {
                     id: "report",
                     label: "Report Agent",
@@ -310,11 +462,26 @@ export function AIWorkflowVisualization({
                 },
             },
         ],
-        [agentModels, models, onModelChange]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType]
     );
 
     const initialEdges = React.useMemo(
         () => [
+            {
+                id: "e0",
+                source: "knowledgeBase",
+                target: "reviewer",
+                type: "smoothstep",
+                animated: true,
+                style: {
+                    stroke: edgeColors.cyan,
+                    strokeWidth: 4,
+                },
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: edgeColors.cyan,
+                },
+            },
             {
                 id: "e1",
                 source: "userCode",

@@ -34,7 +34,7 @@ const data = {
             url: "#",
         },
         {
-            title: "Models",
+            title: "Workflow configuration",
             url: "#",
             icon: Bot,
         },
