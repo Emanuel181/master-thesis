@@ -18,12 +18,15 @@ import {
 
 import { CodeInput } from "@/components/code-input";
 import { ModelsDialog } from "@/components/models-dialog";
-import { Documentation } from "@/components/documentation";
+import KnowledgeBaseVisualization from "@/components/knowledge-base-visualization";
+
+import { Results } from "@/components/results";
 
 export default function Page() {
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     const [activeComponent, setActiveComponent] = useState("Code input")
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
+    const [initialCode, setInitialCode] = useState("");
 
     const handleNavigation = (item) => {
         if (item.title === "Models") {
@@ -47,13 +50,16 @@ export default function Page() {
     const renderComponent = () => {
         switch (activeComponent) {
             case "Code input":
-                return <CodeInput />
-            case "Documentation":
-                return <Documentation />
+                return <CodeInput code={initialCode} setCode={setInitialCode} />
+            case "Knowledge base":
+                return <KnowledgeBaseVisualization />
+            case "Results":
+                return <Results initialCode={initialCode} />
             default:
-                return <CodeInput />
+                return <CodeInput code={initialCode} setCode={setInitialCode} />
         }
     }
+
 
     return (
         <SidebarProvider>

@@ -4,18 +4,14 @@ import * as React from "react"
 import {
     BookOpen,
     Bot,
-    Frame,
-    ShieldCheck ,
-    Map,
-    PieChart,
-    Settings2,
+    ShieldCheck,
     SquareTerminal,
+    FileText,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
+import { ModeToggle } from "@/components/mode-toggle"
 import {
     Sidebar,
     SidebarContent,
@@ -25,11 +21,6 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-    user: {
-        name: "shadcn",
-        email: "m@example.com",
-        avatar: "/avatars/shadcn.jpg",
-    },
     team: {
             name: "Code security enhancer",
             logo: ShieldCheck,
@@ -48,9 +39,14 @@ const data = {
             icon: Bot,
         },
         {
-            title: "Documentation",
+            title: "Knowledge base",
             url: "#",
             icon: BookOpen,
+        },
+        {
+            title: "Results",
+            url: "#",
+            icon: FileText,
         },
     ],
 }
@@ -65,7 +61,9 @@ export function AppSidebar({ onNavigate, ...props }) {
                 <NavMain items={data.navMain} onNavigate={onNavigate} />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                <div className="p-2">
+                    <ModeToggle />
+                </div>
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>
