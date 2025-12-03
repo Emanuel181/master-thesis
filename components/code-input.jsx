@@ -24,6 +24,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases";
 import { Play, Clipboard } from "lucide-react";
 
 export function CodeInput({ code, setCode, onStart }) {
@@ -38,13 +39,7 @@ export function CodeInput({ code, setCode, onStart }) {
         { name: "Java", prism: "java" },
     ];
 
-    const codeTypes = [
-        { value: "bugfix", label: "Bug Fix" },
-        { value: "refactor", label: "Refactor" },
-        { value: "feature", label: "New Feature" },
-        { value: "docs", label: "Documentation" },
-        { value: "test", label: "Tests" },
-    ];
+    const codeTypes = knowledgeBaseUseCases.map(uc => ({ value: uc.id, label: uc.name }));
 
     const BASE_PLACEHOLDER = "Enter your code here...";
     const commentPrefixFor = (lang) => {
