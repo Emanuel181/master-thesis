@@ -24,11 +24,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { Play, Clipboard } from "lucide-react";
 
 export function CodeInput({ code, setCode, onStart }) {
     const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
     const [codeType, setCodeType] = useState("");
+    const [isCopied, setIsCopied] = useState(false);
 
     const supportedLanguages = [
         { name: "JavaScript", prism: "javascript" },
@@ -81,7 +82,7 @@ export function CodeInput({ code, setCode, onStart }) {
                         'editor.background': '#171717',
                         'minimap.background': '#171717',
                         'editor.stickyScroll.background': '#171717',
-                        'minimap.selectionHighlight': '#2563eb80',
+                        'minimap.selectionHighlight': '#2563eb40',
                         'minimap.errorHighlight': '#ef444480',
                         'minimap.warningHighlight': '#f59e0b80',
                         'minimap.findMatchHighlight': '#22c55e80',
@@ -151,6 +152,17 @@ export function CodeInput({ code, setCode, onStart }) {
         }
     };
 
+    const handleCopy = () => {
+        if (hasCode && !isPlaceholder) {
+            navigator.clipboard.writeText(code).then(() => {
+                setIsCopied(true);
+                setTimeout(() => {
+                    setIsCopied(false);
+                }, 2000);
+            });
+        }
+    };
+
     const handleStart = () => {
         if (onStart && hasCode && !isPlaceholder) {
             onStart(code, language, codeType);
@@ -160,9 +172,9 @@ export function CodeInput({ code, setCode, onStart }) {
     const editorValue = isPlaceholder ? placeholderText : code;
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <Card>
-                <CardHeader>
+        <div className="flex flex-col h-full w-full p-4">
+            <Card className="flex-1 flex flex-col overflow-hidden min-h-0 w-full gap-0 py-0">
+                <CardHeader className="pt-6">
                     <div className="flex justify-between items-center">
                         <CardTitle>Code Editor</CardTitle>
                         <div className="flex items-center gap-2">
@@ -195,6 +207,10 @@ export function CodeInput({ code, setCode, onStart }) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <Button variant="outline" onClick={handleCopy} disabled={!hasCode || isPlaceholder}>
+                                <Clipboard className="mr-2 h-4 w-4" />
+                                {isCopied ? "Copied!" : "Copy"}
+                            </Button>
                             <Button onClick={handleStart} disabled={!hasCode || isPlaceholder}>
                                 <Play className="mr-2 h-4 w-4" />
                                 Start agentic review
@@ -202,11 +218,11 @@ export function CodeInput({ code, setCode, onStart }) {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="relative">
+                <CardContent className="flex-1 overflow-hidden min-h-0 p-6">
+                    <div className="relative h-full w-full">
                         <Editor
                             key={language.prism}
-                            height="400px"
+
                             language={language.prism}
                             value={editorValue}
                             onChange={handleChange}
@@ -239,9 +255,10 @@ export function CodeInput({ code, setCode, onStart }) {
                                     inherit: true,
                                     rules: [],
                                     colors: {
-                                        'editor.background': '#00000000', // transparent
-                                        'minimap.background': '#00000000',
-                                        'minimap.selectionHighlight': '#2563eb80',
+                                        'editor.background': '#171717',
+                                        'minimap.background': '#171717',
+                                        'editor.stickyScroll.background': '#171717',
+                                        'minimap.selectionHighlight': '#2563eb40',
                                         'minimap.errorHighlight': '#ef444480',
                                         'minimap.warningHighlight': '#f59e0b80',
                                         'minimap.findMatchHighlight': '#22c55e80',

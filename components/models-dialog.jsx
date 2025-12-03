@@ -94,7 +94,7 @@ export function ModelsDialog({ isOpen, onOpenChange }) {
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="text-lg font-medium">Reviewer Agent</CardTitle>
-                                            <ScanSearch className="w-6 h-6 text-muted-foreground" />
+                                            <ScanSearch className="w-6 h-6 text-blue-500" />
                                         </CardHeader>
                                         <CardContent>
                                             <div className="grid gap-2">
@@ -118,7 +118,7 @@ export function ModelsDialog({ isOpen, onOpenChange }) {
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="text-lg font-medium">Implementation Agent</CardTitle>
-                                            <Wrench className="w-6 h-6 text-muted-foreground" />
+                                            <Wrench className="w-6 h-6 text-green-500" />
                                         </CardHeader>
                                         <CardContent>
                                             <div className="grid gap-2">
@@ -142,7 +142,7 @@ export function ModelsDialog({ isOpen, onOpenChange }) {
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="text-lg font-medium">Tester Agent</CardTitle>
-                                            <BugPlay  className="w-6 h-6 text-muted-foreground" />
+                                            <BugPlay  className="w-6 h-6 text-orange-500" />
                                         </CardHeader>
                                         <CardContent>
                                             <div className="grid gap-2">
@@ -166,7 +166,7 @@ export function ModelsDialog({ isOpen, onOpenChange }) {
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="text-lg font-medium">Report Agent</CardTitle>
-                                            <FileText className="w-6 h-6 text-muted-foreground" />
+                                            <FileText className="w-6 h-6 text-purple-500" />
                                         </CardHeader>
                                         <CardContent>
                                             <div className="grid gap-2">
