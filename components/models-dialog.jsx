@@ -81,6 +81,11 @@ export function ModelsDialog({ isOpen, onOpenChange }) {
                                     models={models}
                                     agentModels={agentModels}
                                     onModelChange={handleModelChange}
+                                    onSave={() => {
+                                        // Here you would typically save the configuration
+                                        onOpenChange(false);
+                                    }}
+                                    onCancel={() => onOpenChange(false)}
                                 />
                             </TabsContent>
 
@@ -183,18 +188,22 @@ export function ModelsDialog({ isOpen, onOpenChange }) {
                                         </CardContent>
                                     </Card>
                                 </div>
+                                <div className="flex justify-end gap-2 px-4 mt-4">
+                                    <Button onClick={() => {
+                                        // Here you would typically save the configuration
+                                        onOpenChange(false);
+                                    }}>
+                                        Save Configuration
+                                    </Button>
+                                    <Button onClick={() => onOpenChange(false)} variant="outline">
+                                        Cancel
+                                    </Button>
+                                </div>
                             </TabsContent>
                         </Tabs>
                     </div>
-                    <DrawerFooter className="flex-row gap-2">
-                        <Button>Save Configuration</Button>
-                        <DrawerClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DrawerClose>
-                    </DrawerFooter>
                 </div>
-            </DrawerContent>
-        </Drawer>
-    )
-}
-
+                </DrawerContent>
+            </Drawer>
+        )
+    }

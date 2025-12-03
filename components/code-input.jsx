@@ -78,7 +78,9 @@ export function CodeInput({ code, setCode, onStart }) {
                     inherit: true,
                     rules: [],
                     colors: {
-                        'minimap.background': '#0b1220',
+                        'editor.background': '#171717',
+                        'minimap.background': '#171717',
+                        'editor.stickyScroll.background': '#171717',
                         'minimap.selectionHighlight': '#2563eb80',
                         'minimap.errorHighlight': '#ef444480',
                         'minimap.warningHighlight': '#f59e0b80',
@@ -90,7 +92,9 @@ export function CodeInput({ code, setCode, onStart }) {
                     inherit: true,
                     rules: [],
                     colors: {
-                        'minimap.background': '#f5f7fa',
+                        'editor.background': '#ffffff',
+                        'minimap.background': '#ffffff',
+                        'editor.stickyScroll.background': '#ffffff',
                         'minimap.selectionHighlight': '#3b82f680',
                         'minimap.errorHighlight': '#dc262680',
                         'minimap.warningHighlight': '#d9770680',
@@ -107,6 +111,12 @@ export function CodeInput({ code, setCode, onStart }) {
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         return () => observer.disconnect();
     }, []);
+
+    React.useEffect(() => {
+        if (monacoRef.current) {
+            monacoRef.current.editor.setTheme(isDarkMode ? 'custom-dark' : 'custom-light');
+        }
+    }, [isDarkMode]);
 
     React.useEffect(() => {
         // Update placeholder to match current language
@@ -200,7 +210,7 @@ export function CodeInput({ code, setCode, onStart }) {
                             language={language.prism}
                             value={editorValue}
                             onChange={handleChange}
-                            theme={isDarkMode ? "vs-dark" : "light"}
+                            theme={isDarkMode ? "custom-dark" : "custom-light"}
                             options={{
                                 fontFamily: '"Fira Code", "Fira Mono", monospace',
                                 fontSize: 16,
@@ -229,7 +239,8 @@ export function CodeInput({ code, setCode, onStart }) {
                                     inherit: true,
                                     rules: [],
                                     colors: {
-                                        'minimap.background': '#0b1220',
+                                        'editor.background': '#00000000', // transparent
+                                        'minimap.background': '#00000000',
                                         'minimap.selectionHighlight': '#2563eb80',
                                         'minimap.errorHighlight': '#ef444480',
                                         'minimap.warningHighlight': '#f59e0b80',
@@ -241,7 +252,9 @@ export function CodeInput({ code, setCode, onStart }) {
                                     inherit: true,
                                     rules: [],
                                     colors: {
-                                        'minimap.background': '#f5f7fa',
+                                        'editor.background': '#00000000', // transparent
+                                        'editor.stickyScroll.background': '#ffffff',
+                                        'minimap.background': '#00000000',
                                         'minimap.selectionHighlight': '#3b82f680',
                                         'minimap.errorHighlight': '#dc262680',
                                         'minimap.warningHighlight': '#d9770680',
