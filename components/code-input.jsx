@@ -25,11 +25,13 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases";
-import { Play, Clipboard } from "lucide-react";
+import { Play, Clipboard, Wand2 } from "lucide-react";
+import { formatCode, getFormattingOptions } from "@/lib/code-formatter";
 
 export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
     const [isCopied, setIsCopied] = useState(false);
+    const [isFormatting, setIsFormatting] = useState(false);
 
     const supportedLanguages = [
         { name: "JavaScript", prism: "javascript" },
@@ -163,6 +165,40 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
         }
     };
 
+    const handleFormat = async () => {
+        if (!editorRef.current) {
+            console.error('Editor not ready');
+            return;
+        }
+
+        if (!hasCode || isPlaceholder) {
+            return;
+        }
+
+        setIsFormatting(true);
+
+        try {
+            // Get language-specific formatting options
+            const formatOptions = getFormattingOptions(language.prism);
+
+            // Update editor options before formatting
+            editorRef.current.updateOptions({
+                tabSize: formatOptions.tabSize,
+                insertSpaces: formatOptions.insertSpaces,
+            });
+
+            // Use the unified formatter that tries API first, then Monaco
+            const formattedCode = await formatCode(code, language.prism, editorRef.current);
+
+            // Update the code state with formatted code
+            setCode(formattedCode);
+        } catch (error) {
+            console.error('Error formatting code:', error);
+        } finally {
+            setIsFormatting(false);
+        }
+    };
+
     const editorValue = isPlaceholder ? placeholderText : code;
 
     return (
@@ -201,6 +237,14 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <Button
+                                variant="outline"
+                                onClick={handleFormat}
+                                disabled={!hasCode || isPlaceholder || isFormatting}
+                            >
+                                <Wand2 className="mr-2 h-4 w-4" />
+                                {isFormatting ? 'Formatting...' : 'Format'}
+                            </Button>
                             <Button variant="outline" onClick={handleCopy} disabled={!hasCode || isPlaceholder}>
                                 <Clipboard className="mr-2 h-4 w-4" />
                                 {isCopied ? "Copied!" : "Copy"}
@@ -231,8 +275,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                 smoothScrolling: true,
                                 cursorBlinking: 'phase',
                                 renderWhitespace: 'selection',
-                                tabSize: 2,
-                                insertSpaces: true,
+                                ...getFormattingOptions(language.prism),
                                 automaticLayout: true,
                                 suggestOnTriggerCharacters: true,
                                 quickSuggestions: true,
@@ -275,6 +318,13 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                 monaco.editor.defineTheme('custom-dark', darkTheme);
                                 monaco.editor.defineTheme('custom-light', lightTheme);
                                 monaco.editor.setTheme(isDarkMode ? 'custom-dark' : 'custom-light');
+
+                                // Add keyboard shortcut for formatting (Shift+Alt+F)
+                                editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+                                    if (hasCode && !isPlaceholder) {
+                                        handleFormat();
+                                    }
+                                });
 
                                 // Clear placeholder on initial user input
                                 editor.onDidChangeModelContent(() => {

@@ -11,7 +11,6 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { TeamSwitcher } from "@/components/team-switcher"
-import { ModeToggle } from "@/components/mode-toggle"
 import {
     Sidebar,
     SidebarContent,
@@ -19,6 +18,8 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar"
+import {NavUser} from "@/components/nav-user";
+import {useSession} from "next-auth/react";
 
 const data = {
     team: {
@@ -26,6 +27,11 @@ const data = {
             logo: ShieldCheck,
             plan: "Agentic",
         },
+    user: {
+        name: "shadcn",
+        email: "m@example.com",
+        avatar: "/avatars/shadcn.jpg",
+    },
     navMain: [
         {
             title: "Code input",
@@ -52,6 +58,9 @@ const data = {
 }
 
 export function AppSidebar({ onNavigate, ...props }) {
+    const { data: session, status } = useSession()
+    console.log("Session:", session, "Status:", status)
+
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
@@ -61,9 +70,13 @@ export function AppSidebar({ onNavigate, ...props }) {
                 <NavMain items={data.navMain} onNavigate={onNavigate} />
             </SidebarContent>
             <SidebarFooter>
-                <div className="p-2">
-                    <ModeToggle />
-                </div>
+                {status === "loading" ? (
+                    <div className="p-4 text-sm text-muted-foreground">Loading...</div>
+                ) : session?.user ? (
+                    <NavUser user={session.user}/>
+                ) : (
+                    <div className="p-4 text-sm text-muted-foreground">Not logged in</div>
+                )}
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

@@ -1,10 +1,13 @@
 "use client"
 
 import React, { useState, useRef } from "react"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { File, X, Upload, Search, FolderOpen } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
@@ -13,6 +16,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { knowledgeBaseUseCases as initialUseCases } from "@/lib/knowledge-base-cases";
 import { AddCategoryDialog } from "@/components/add-category-dialog";
 import { CategoryCard } from "@/components/category-card";
+
+// Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
+const PdfViewerDialog = dynamic(
+  () => import("@/components/pdf-viewer-dialog").then(mod => mod.PdfViewerDialog),
+  { ssr: false }
+);
 
 export default function KnowledgeBaseVisualization() {
     const [useCases, setUseCases] = useState(initialUseCases || []);
@@ -51,6 +60,15 @@ export default function KnowledgeBaseVisualization() {
     const [currentPage, setCurrentPage] = useState(1);
     const categoriesPerPage = 8;
 
+    // PDF Viewer state
+    const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+    const [selectedPdf, setSelectedPdf] = useState({ url: null, name: null });
+
+    // PDF Name Dialog state
+    const [nameDialogOpen, setNameDialogOpen] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState([]);
+    const [customPdfNames, setCustomPdfNames] = useState({});
+
     // --- Logic Handlers ---
 
     const handleAddCategory = (newCategory) => {
@@ -85,45 +103,109 @@ export default function KnowledgeBaseVisualization() {
     const validFileTypes = ["application/pdf"]
     const validExtensions = ['.pdf']
 
-    const handleFile = (file) => {
-        if (!file) return
+    const handleFiles = (files) => {
+        if (!files || files.length === 0) return;
 
-        const fileExt = '.' + file.name.split('.').pop()?.toLowerCase()
-        const isValidType = validFileTypes.includes(file.type) || validExtensions.includes(fileExt)
+        const validFiles = [];
+        const invalidFiles = [];
 
-        if (isValidType) {
-            setUploadState({ file, progress: 0, uploading: true })
+        Array.from(files).forEach(file => {
+            const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+            const isValidType = validFileTypes.includes(file.type) || validExtensions.includes(fileExt);
 
-            const interval = setInterval(() => {
-                setUploadState((prev) => {
-                    const newProgress = prev.progress + 10
-                    if (newProgress >= 100) {
-                        clearInterval(interval)
-                        const newDoc = {
-                            name: file.name,
-                            size: formatFileSize(file.size),
-                            type: "pdf"
-                        }
-                        setDocuments(prev => ({
-                            ...prev,
-                            [selectedUseCase]: [...(prev[selectedUseCase] || []), newDoc]
-                        }))
-                        toast.success("Document uploaded successfully!")
-                        if (fileInputRef.current) fileInputRef.current.value = ""
-                        return { file: null, progress: 0, uploading: false }
-                    }
-                    return { ...prev, progress: newProgress }
-                })
-            }, 150)
-        } else {
-            toast.error("Please upload a PDF file.")
+            if (isValidType) {
+                validFiles.push(file);
+            } else {
+                invalidFiles.push(file.name);
+            }
+        });
+
+        if (invalidFiles.length > 0) {
+            toast.error(`Invalid files: ${invalidFiles.join(', ')}. Only PDF files are allowed.`);
+        }
+
+        if (validFiles.length > 0) {
+            // Open name dialog to let user customize the PDF names
+            setPendingFiles(validFiles);
+
+            // Pre-fill names without .pdf extension
+            const initialNames = {};
+            validFiles.forEach((file, index) => {
+                initialNames[index] = file.name.replace('.pdf', '');
+            });
+            setCustomPdfNames(initialNames);
+            setNameDialogOpen(true);
         }
     }
 
-    const handleFileChange = (event) => handleFile(event.target.files?.[0])
+    const confirmUpload = () => {
+        if (!pendingFiles || pendingFiles.length === 0) return;
+
+        setNameDialogOpen(false);
+
+        // Process files sequentially
+        const totalFiles = pendingFiles.length;
+        const filesToProcess = [...pendingFiles]; // Create a copy
+        const namesToUse = { ...customPdfNames }; // Create a copy
+
+        const processNextFile = (fileIndex) => {
+            if (fileIndex >= totalFiles) {
+                toast.success(`${totalFiles} document${totalFiles > 1 ? 's' : ''} uploaded successfully!`);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                setPendingFiles([]);
+                setCustomPdfNames({});
+                setUploadState({ file: null, progress: 0, uploading: false });
+                return;
+            }
+
+            const file = filesToProcess[fileIndex];
+            const customName = namesToUse[fileIndex]?.trim();
+            const finalName = customName ? `${customName}.pdf` : file.name;
+
+            let progress = 0;
+            setUploadState({ file: file, progress: 0, uploading: true });
+
+            const interval = setInterval(() => {
+                progress += 10;
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+
+                    // Add document to list
+                    const newDoc = {
+                        name: finalName,
+                        size: formatFileSize(file.size),
+                        type: "pdf"
+                    };
+                    setDocuments(prev => ({
+                        ...prev,
+                        [selectedUseCase]: [...(prev[selectedUseCase] || []), newDoc]
+                    }));
+
+                    setUploadState({ file: null, progress: 0, uploading: false });
+
+                    // Process next file after a short delay
+                    setTimeout(() => processNextFile(fileIndex + 1), 100);
+                } else {
+                    setUploadState({ file: file, progress: progress, uploading: true });
+                }
+            }, 100);
+        };
+
+        processNextFile(0);
+    }
+
+    const cancelUpload = () => {
+        setNameDialogOpen(false);
+        setPendingFiles([]);
+        setCustomPdfNames({});
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+
+    const handleFileChange = (event) => handleFiles(event.target.files)
     const handleDrop = (event) => {
         event.preventDefault()
-        handleFile(event.dataTransfer.files?.[0])
+        handleFiles(event.dataTransfer.files)
     }
 
     const deleteDocument = (useCase, docName) => {
@@ -132,6 +214,16 @@ export default function KnowledgeBaseVisualization() {
             [useCase]: prev[useCase].filter(doc => doc.name !== docName)
         }))
         toast.success("Document deleted successfully!")
+    }
+
+    const openPdfViewer = (docName) => {
+        // For demo purposes, we'll use a sample PDF URL
+        // In production, you would fetch the actual PDF URL from your backend/database
+        // Using a publicly available sample PDF for demonstration
+        const samplePdfUrl = "https://pdfobject.com/pdf/sample.pdf";
+        setSelectedPdf({ url: samplePdfUrl, name: docName });
+        setPdfViewerOpen(true);
+        toast.info("Opening PDF viewer...", { duration: 2000 });
     }
 
     const formatFileSize = (bytes) => {
@@ -146,7 +238,8 @@ export default function KnowledgeBaseVisualization() {
     const selectedCategoryName = useCases.find(uc => uc.id === selectedUseCase)?.name || "Category";
 
     return (
-        // MAIN CONTAINER
+        <>
+        {/* MAIN CONTAINER */}
         <div className="grid flex-1 grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-8 h-[calc(100vh-120px)] overflow-hidden">
 
             {/* ---------------------------------------------------------------------------
@@ -264,13 +357,14 @@ export default function KnowledgeBaseVisualization() {
                                                     type="file"
                                                     className="sr-only"
                                                     accept=".pdf,application/pdf"
+                                                    multiple
                                                     onChange={handleFileChange}
                                                     ref={fileInputRef}
                                                 />
                                             </label>
-                                            <p className="pl-1">or drag and drop PDF</p>
+                                            <p className="pl-1">or drag and drop PDFs</p>
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-1">Maximum file size 10MB</p>
+                                        <p className="text-xs text-muted-foreground mt-1">You can upload multiple files at once • Maximum 10MB per file</p>
                                     </div>
                                 </div>
 
@@ -303,13 +397,17 @@ export default function KnowledgeBaseVisualization() {
                                 ) : (
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         {currentDocs.map((doc, index) => (
-                                            <div key={index} className="group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200">
+                                            <div
+                                                key={index}
+                                                className="group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer"
+                                                onClick={() => openPdfViewer(doc.name)}
+                                            >
                                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                                                     <File className="h-6 w-6" />
                                                 </div>
 
                                                 <div className="flex-1 min-w-0 pt-1">
-                                                    <p className="text-sm font-medium text-foreground truncate pr-6" title={doc.name}>
+                                                    <p className="text-sm font-medium text-foreground truncate pr-6 hover:text-primary transition-colors" title={doc.name}>
                                                         {doc.name}
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-1">
@@ -323,7 +421,10 @@ export default function KnowledgeBaseVisualization() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-                                                    onClick={() => deleteDocument(selectedUseCase, doc.name)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        deleteDocument(selectedUseCase, doc.name);
+                                                    }}
                                                 >
                                                     <X className="h-4 w-4" />
                                                 </Button>
@@ -333,7 +434,7 @@ export default function KnowledgeBaseVisualization() {
                                 )}
 
                                 {/* Spacer to allow final document card to scroll fully into view */}
-                                <div className="h-48" aria-hidden="true" />
+                                <div className="h-96" aria-hidden="true" />
                             </div>
                         </ScrollArea>
                     </>
@@ -349,5 +450,68 @@ export default function KnowledgeBaseVisualization() {
             </div>
 
         </div>
+
+        {/* PDF Viewer Dialog */}
+        <PdfViewerDialog
+            open={pdfViewerOpen}
+            onOpenChange={setPdfViewerOpen}
+            pdfUrl={selectedPdf.url}
+            fileName={selectedPdf.name}
+        />
+
+        {/* PDF Name Dialog */}
+        <Dialog open={nameDialogOpen} onOpenChange={setNameDialogOpen}>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
+                <DialogHeader>
+                    <DialogTitle>Name Your PDF{pendingFiles.length > 1 ? 's' : ''}</DialogTitle>
+                    <DialogDescription>
+                        {pendingFiles.length === 1
+                            ? 'Choose a custom name for this PDF document. The .pdf extension will be added automatically.'
+                            : `Customize names for ${pendingFiles.length} PDF documents. The .pdf extension will be added automatically.`
+                        }
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[400px] pr-4">
+                    <div className="grid gap-4 py-4">
+                        {pendingFiles.map((file, index) => (
+                            <div key={index} className="grid gap-2 p-4 rounded-lg border bg-muted/30">
+                                <Label htmlFor={`pdf-name-${index}`}>
+                                    Document {pendingFiles.length > 1 ? `${index + 1}` : 'Name'}
+                                </Label>
+                                <Input
+                                    id={`pdf-name-${index}`}
+                                    value={customPdfNames[index] || ''}
+                                    onChange={(e) => setCustomPdfNames(prev => ({
+                                        ...prev,
+                                        [index]: e.target.value
+                                    }))}
+                                    placeholder="Enter document name"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && index === pendingFiles.length - 1) {
+                                            confirmUpload();
+                                        }
+                                    }}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Original: {file.name}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
+                <DialogFooter>
+                    <Button variant="outline" onClick={cancelUpload}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={confirmUpload}
+                        disabled={Object.values(customPdfNames).some(name => !name?.trim())}
+                    >
+                        Upload {pendingFiles.length > 1 ? `${pendingFiles.length} Files` : ''}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    </>
     )
 }
