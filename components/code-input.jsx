@@ -24,18 +24,20 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases";
-import { Play, Clipboard, Wand2 } from "lucide-react";
+import { Play, Clipboard, Wand2, RefreshCw, Lock, Unlock } from "lucide-react";
 import { formatCode } from "@/lib/code-formatter";
 import { useSettings, editorThemes, editorFonts, editorFontSizes, syntaxColorPresets } from "@/contexts/settingsContext";
+import { useUseCases } from "@/contexts/useCasesContext";
 
-export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
+export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLocked, onLockChange }) {
     const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
     const [isCopied, setIsCopied] = useState(false);
     const [isFormatting, setIsFormatting] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Get editor settings from context
     const { settings, mounted: settingsMounted } = useSettings();
+    const { useCases, refresh: refreshUseCases } = useUseCases();
 
     const supportedLanguages = [
         { name: "JavaScript", prism: "javascript" },
@@ -49,7 +51,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
         { name: "Go", prism: "go" },
     ];
 
-    const codeTypes = knowledgeBaseUseCases.map(uc => ({ value: uc.id, label: uc.name }));
+    const codeTypes = useCases.map(uc => ({ value: uc.id, label: uc.title }));
 
     const BASE_PLACEHOLDER = "Enter your code here...";
     const commentPrefixFor = (lang) => {
@@ -266,53 +268,106 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
         <div className="flex flex-col h-full w-full p-4">
             <Card className="flex-1 flex flex-col overflow-hidden min-h-0 w-full gap-0 py-0">
                 <CardHeader className="pt-6">
-                    <div className="flex justify-between items-center">
-                        <CardTitle>Code Editor</CardTitle>
+                    <div className="flex items-center justify-between gap-4">
+                        {/* Left side - Title and Lock */}
+                        <div className="flex items-center gap-3">
+                            <CardTitle>Code Editor</CardTitle>
+                            <Button
+                                variant={isLocked ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => onLockChange(!isLocked)}
+                                className={isLocked ? "bg-red-500 hover:bg-red-600" : ""}
+                                disabled={!hasCode}
+                            >
+                                {isLocked ? <Lock className="h-4 w-4 mr-2" /> : <Unlock className="h-4 w-4 mr-2" />}
+                                {isLocked ? "Locked" : "Lock Code"}
+                            </Button>
+                        </div>
+
+                        {/* Center - Language and Code Type controls */}
+                        <div className="flex items-center gap-6">
+                            {/* Language Group */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex flex-col">
+                                    <span className="text-xxl font-medium text-muted-foreground">Language</span>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" disabled={isLocked}>
+                                            {language.name}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        {supportedLanguages.map((lang) => (
+                                            <DropdownMenuItem
+                                                key={lang.name}
+                                                onClick={() => setLanguage(lang)}
+                                                disabled={isLocked}
+                                            >
+                                                {lang.name}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            {/* Separator */}
+                            <div className="h-8 w-px bg-border"></div>
+
+                            {/* Code Type Group */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex flex-col">
+                                    <span className="text-xxl font-medium text-muted-foreground">Code use case</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Select value={codeType} onValueChange={setCodeType} disabled={!hasCode || isPlaceholder}>
+                                        <SelectTrigger className="w-[160px] h-8">
+                                            <SelectValue placeholder="Select type..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {codeTypes.map((type) => (
+                                                <SelectItem key={type.value} value={type.value}>
+                                                    {type.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() => {
+                                            setIsRefreshing(true);
+                                            refreshUseCases();
+                                            setTimeout(() => setIsRefreshing(false), 1500);
+                                        }}
+                                        title="Refresh use cases"
+                                        disabled={isRefreshing || !hasCode}
+                                    >
+                                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right side - Action buttons */}
                         <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-muted-foreground">Language:</span>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">{language.name}</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    {supportedLanguages.map((lang) => (
-                                        <DropdownMenuItem
-                                            key={lang.name}
-                                            onClick={() => setLanguage(lang)}
-                                        >
-                                            {lang.name}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <span className="text-sm font-medium text-muted-foreground">Code Type:</span>
-                            <Select value={codeType} onValueChange={setCodeType} disabled={!hasCode || isPlaceholder}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Select type..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {codeTypes.map((type) => (
-                                        <SelectItem key={type.value} value={type.value}>
-                                            {type.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                             <Button
                                 variant="outline"
+                                size="sm"
                                 onClick={handleFormat}
-                                disabled={!hasCode || isPlaceholder || isFormatting}
+                                disabled={!hasCode || isPlaceholder || isFormatting || isLocked}
                             >
                                 <Wand2 className="mr-2 h-4 w-4" />
-                                {isFormatting ? 'Formatting...' : 'Format'}
+                                Format
                             </Button>
-                            <Button variant="outline" onClick={handleCopy} disabled={!hasCode || isPlaceholder}>
+                            <Button variant="outline" size="sm" onClick={handleCopy} disabled={!hasCode || isPlaceholder}>
                                 <Clipboard className="mr-2 h-4 w-4" />
-                                {isCopied ? "Copied!" : "Copy"}
+                                Copy
                             </Button>
-                            <Button onClick={handleStart} disabled={!hasCode || isPlaceholder}>
+                            <Button onClick={handleStart} disabled={!hasCode || isPlaceholder || !isLocked} size="sm">
                                 <Play className="mr-2 h-4 w-4" />
-                                Start agentic review
+                                Start Review
                             </Button>
                         </div>
                     </div>
@@ -340,6 +395,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                 suggestOnTriggerCharacters: true,
                                 quickSuggestions: true,
                                 parameterHints: { enabled: true },
+                                readOnly: isLocked,
                                 // Explicitly disabling Monaco's default formatting behaviors
                                 formatOnPaste: false,
                                 formatOnType: false,
@@ -360,6 +416,14 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                 editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
                                     if (hasCode && !isPlaceholder) {
                                         handleFormat();
+                                    }
+                                });
+
+                                editor.onDidFocusEditorText(() => {
+                                    if (isPlaceholder) {
+                                        setIsPlaceholder(false);
+                                        setCode("");
+                                        editor.setValue("");
                                     }
                                 });
 

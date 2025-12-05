@@ -30,6 +30,7 @@ import {
     ZoomOut,
     Database,
     ChevronDown,
+    RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import * as LucideIcons from "lucide-react";
 
 // -------- Custom Animated Edge --------
 
@@ -133,6 +135,10 @@ function AgentNode({ data }) {
                     <div className="text-xs text-muted-foreground mb-3">
                         {data.description}
                     </div>
+                    <div className="mb-2">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">AI Model:</div>
+                        <span className="text-xs text-muted-foreground">Select the AI model for this agent</span>
+                    </div>
                     <Select
                         value={data.model}
                         onValueChange={(value) => data.onModelChange(data.id, value)}
@@ -179,6 +185,7 @@ function UserCodeNode({ data }) {
 
 function KnowledgeBaseNode({ data }) {
     const [open, setOpen] = React.useState(false);
+    const [isRefreshing, setIsRefreshing] = React.useState(false);
     const borderColorMap = {
         "bg-cyan-500": "border-cyan-500 dark:border-cyan-400",
     };
@@ -196,7 +203,23 @@ function KnowledgeBaseNode({ data }) {
         }
     };
 
-    const isDisabled = !data.codeType;
+    const handleCodeTypeChange = (newCodeType) => {
+        if (data.onCodeTypeChange) {
+            data.onCodeTypeChange(newCodeType);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        // Simulate refresh delay - in real implementation, this would be an API call
+        setTimeout(() => {
+            setIsRefreshing(false);
+        }, 1500);
+    };
+
+    // Determine if knowledge base selection should be disabled
+    // Disabled when: no code type selected
+    const isKnowledgeBaseDisabled = !data.codeType;
 
     return (
         <>
@@ -217,19 +240,55 @@ function KnowledgeBaseNode({ data }) {
                         {data.description}
                     </div>
 
+                    {/* Code Type Selector */}
+                    <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="text-xs font-medium text-muted-foreground">Code Type:</div>
+                            <span className="text-xs text-muted-foreground">Select use case for analysis</span>
+                        </div>
+                        <Select
+                            value={data.codeType || ""}
+                            onValueChange={handleCodeTypeChange}
+                        >
+                            <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Select code type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {data.useCases?.map((uc) => (
+                                    <SelectItem key={uc.id} value={uc.id} className="text-xs">
+                                        {uc.title}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="flex-1">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">Knowledge Bases:</div>
+                            <span className="text-xs text-muted-foreground">Choose sources for RAG context</span>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            title="Refresh knowledge bases"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
+
                     <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 className="w-full h-auto justify-between text-left font-normal p-2"
-                                disabled={isDisabled}
+                                disabled={isKnowledgeBaseDisabled}
                             >
                                 <div className="flex-1 min-w-0">
-                                    {isDisabled ? (
-                                        <span className="text-xs text-muted-foreground">
-                                            Select code type first
-                                        </span>
-                                    ) : selectedCount > 0 ? (
+                                    {selectedCount > 0 ? (
                                         <span className="text-xs truncate block">
                                             {selectedNames}
                                         </span>
@@ -251,7 +310,7 @@ function KnowledgeBaseNode({ data }) {
                             </div>
                             <div className="p-2 max-h-[300px] overflow-y-auto">
                                 {data.knowledgeBases.map((kb) => {
-                                    const IconComponent = kb.icon;
+                                    const IconComponent = LucideIcons[kb.icon];
                                     const isSelected = data.selectedKnowledgeBases?.includes(kb.id);
 
                                     return (
@@ -319,8 +378,11 @@ export function AIWorkflowVisualization({
                                             selectedKnowledgeBases = [],
                                             onKnowledgeBaseChange,
                                             codeType,
+                                            onCodeTypeChange,
+                                            useCases = [],
                                             onSave,
                                             onCancel,
+                                            isCodeLocked = false,
                                         }) {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
 
@@ -381,7 +443,7 @@ export function AIWorkflowVisualization({
             {
                 id: "knowledgeBase",
                 type: "knowledgeBaseNode",
-                position: { x: 40, y: 20 },
+                position: { x: 40, y: -50 },
                 data: {
                     label: "Knowledge Base",
                     description: "RAG context source",
@@ -390,6 +452,9 @@ export function AIWorkflowVisualization({
                     selectedKnowledgeBases,
                     onKnowledgeBaseChange,
                     codeType,
+                    onCodeTypeChange,
+                    useCases,
+                    isCodeLocked,
                 },
             },
             {
@@ -462,7 +527,7 @@ export function AIWorkflowVisualization({
                 },
             },
         ],
-        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, isCodeLocked]
     );
 
     const initialEdges = React.useMemo(
@@ -570,6 +635,22 @@ export function AIWorkflowVisualization({
             })
         );
     }, [agentModels, setNodes]);
+
+    // Update nodes when data changes
+    React.useEffect(() => {
+        setNodes(initialNodes);
+    }, [initialNodes, setNodes]);
+
+    // Auto-select knowledge base when codeType changes
+    React.useEffect(() => {
+        if (codeType && onKnowledgeBaseChange) {
+            // Auto-select the knowledge base that matches the code type
+            const matchingKnowledgeBase = knowledgeBases.find(kb => kb.id === codeType);
+            if (matchingKnowledgeBase && !selectedKnowledgeBases.includes(codeType)) {
+                onKnowledgeBaseChange(codeType);
+            }
+        }
+    }, [codeType, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange]);
 
     return (
         <div className="w-full">

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth"; // ⬅ NEW v5 session API
+import { auth } from "@/auth";
 
 // GET - Fetch all use cases for the current user
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const session = await auth(); // ⬅ replaces getServerSession
+        const session = await auth();
 
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,11 +16,10 @@ export async function GET() {
             include: {
                 useCases: {
                     include: { pdfs: true },
-                    orderBy: [{ createdAt: "desc" }],
+                    orderBy: { createdAt: "desc" },
                 },
             },
         });
-
 
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -37,9 +36,9 @@ export async function GET() {
 }
 
 // POST - Create a new use case
-export async function POST(request) {
+export async function POST(request: Request) {
     try {
-        const session = await auth(); // ⬅ replaces getServerSession
+        const session = await auth();
 
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { deleteFromS3 } from "@/lib/s3";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { auth } from "@/auth";
 
 // GET - Fetch a single use case
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -59,7 +58,7 @@ export async function GET(request, { params }) {
 // PUT - Update a use case
 export async function PUT(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -121,7 +120,7 @@ export async function PUT(request, { params }) {
 // DELETE - Delete a use case and its associated PDFs from S3
 export async function DELETE(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.email) {
       return NextResponse.json(

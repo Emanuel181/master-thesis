@@ -6,11 +6,12 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavingState, onCancel }) {
+export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavingState, onCancel, onImageUpload }) {
     const [profile, setProfile] = useState({
         firstName: '',
         lastName: '',
         email: '',
+        image: '',
         phone: '',
         jobTitle: '',
         company: '',
@@ -30,6 +31,13 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
             fetchProfile();
         }
     }, [isEditing]);
+
+    // Connect the onImageUpload prop to our handler
+    useEffect(() => {
+        if (onImageUpload) {
+            // The image upload is handled by the parent component
+        }
+    }, [onImageUpload]);
 
     const fetchProfile = async () => {
         try {
@@ -60,6 +68,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
     const handleInputChange = (field, value) => {
         setProfile(prev => ({ ...prev, [field]: value }));
     };
+
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -134,7 +143,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                                 placeholder="First name"
                                 maxLength={100}
                                 readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted/50" : ""}
+                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -146,7 +155,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                                 placeholder="Last name"
                                 maxLength={100}
                                 readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted/50" : ""}
+                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -171,7 +180,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                                 placeholder="Phone number"
                                 maxLength={20}
                                 readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted/50" : ""}
+                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -183,7 +192,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                                 placeholder="Job title"
                                 maxLength={100}
                                 readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted/50" : ""}
+                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -195,7 +204,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                                 placeholder="Company name"
                                 maxLength={100}
                                 readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted/50" : ""}
+                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                             />
                         </div>
                     </div>
@@ -209,7 +218,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                             rows={4}
                             maxLength={1000}
                             readOnly={!isEditing}
-                            className={!isEditing ? "bg-muted/50" : ""}
+                            className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                         />
                         <p className="text-xs text-muted-foreground">
                             {profile.bio.length}/1000 characters
@@ -224,7 +233,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                             placeholder="Location"
                             maxLength={100}
                             readOnly={!isEditing}
-                            className={!isEditing ? "bg-muted/50" : ""}
+                            className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
                         />
                     </div>
                 </form>

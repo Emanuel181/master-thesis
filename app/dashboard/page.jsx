@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
     Breadcrumb,
@@ -24,14 +25,18 @@ import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
 
 import { Results } from "@/components/results";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 
 export default function Page() {
     const { settings, mounted } = useSettings()
+    const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     const [activeComponent, setActiveComponent] = useState("Code input")
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
     const [initialCode, setInitialCode] = useState("");
     const [codeType, setCodeType] = useState("");
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const [isCodeLocked, setIsCodeLocked] = useState(false);
 
     // Sidebar state based on sidebarMode setting
     const [sidebarOpen, setSidebarOpen] = useState(settings.sidebarMode !== 'icon')
@@ -43,9 +48,34 @@ export default function Page() {
         }
     }, [settings.sidebarMode, mounted])
 
+    // Handle navigation from URL params
+    useEffect(() => {
+        const active = searchParams.get('active')
+        const workflow = searchParams.get('workflow')
+        if (active) {
+            setActiveComponent(active)
+            const newBreadcrumbs = [
+                { label: 'Home', href: '#' },
+                { label: active, href: '#' }
+            ]
+            setBreadcrumbs(newBreadcrumbs)
+        }
+        if (workflow === 'true') {
+            setIsModelsDialogOpen(true)
+        }
+    }, [searchParams])
+
     const handleNavigation = (item) => {
         if (item.title === "Workflow configuration") {
+            if (!isCodeLocked) {
+                // Don't allow workflow configuration if code is not locked
+                return;
+            }
             setIsModelsDialogOpen(true)
+            return
+        }
+        if (item.title === "Feedback") {
+            setIsFeedbackOpen(true)
             return
         }
 
@@ -65,13 +95,13 @@ export default function Page() {
     const renderComponent = () => {
         switch (activeComponent) {
             case "Code input":
-                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} />
+                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
             case "Knowledge base":
                 return <KnowledgeBaseVisualization />
             case "Results":
                 return <Results initialCode={initialCode} />
             default:
-                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} />
+                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
         }
     }
 
@@ -82,7 +112,7 @@ export default function Page() {
             open={sidebarOpen}
             onOpenChange={setSidebarOpen}
         >
-            <AppSidebar onNavigate={handleNavigation}/>
+            <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
             <SidebarInset className="flex flex-col overflow-hidden">
                 <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                     <div className="flex items-center justify-between w-full gap-2 px-4">
@@ -119,7 +149,8 @@ export default function Page() {
                     {renderComponent()}
                 </div>
             </SidebarInset>
-            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} />
+            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
+            <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
         </SidebarProvider>
     )
 }

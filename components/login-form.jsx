@@ -18,7 +18,7 @@ export function LoginForm({
                 <div className="flex flex-col items-center gap-1 text-center">
                     <h1 className="text-2xl font-bold">Login to your account</h1>
                     <p className="text-muted-foreground text-sm text-balance">
-                        Sign in with your GitHub account to continue
+                        Sign in with your preferred account to continue
                     </p>
                 </div>
                 <Field>
@@ -39,6 +39,15 @@ export function LoginForm({
                             />
                         </svg>
                         Login with Google
+                    </Button>
+                    <Button variant="outline" type="button" onClick={() => signIn("azure-ad", {callbackUrl: "/dashboard"})} className="w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="mr-2 h-5 w-5">
+                            <path
+                                d="M1 1h10v10H1V1zm12 0h10v10H13V1zM1 13h10v10H1V13zm12 0h10v10H13V13z"
+                                fill="currentColor"
+                            />
+                        </svg>
+                        Login with Microsoft
                     </Button>
                 </Field>
             </FieldGroup>

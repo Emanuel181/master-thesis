@@ -18,18 +18,23 @@ import {
 import { Label } from "@/components/ui/label"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScanSearch, Wrench, BugPlay, FileText, Database } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw } from "lucide-react"
 import { AIWorkflowVisualization } from "@/components/ai-workflow-visualization"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases"
+import { useUseCases } from "@/contexts/useCasesContext"
+import * as LucideIcons from "lucide-react"
 
-export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
+export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
     const [reviewerModel, setReviewerModel] = React.useState("");
     const [implementationModel, setImplementationModel] = React.useState("");
     const [testerModel, setTesterModel] = React.useState("");
     const [reportModel, setReportModel] = React.useState("");
     // Auto-select based on code type
     const [selectedKnowledgeBases, setSelectedKnowledgeBases] = React.useState([]);
+    const [isRefreshingModels, setIsRefreshingModels] = React.useState(false);
+    const [isRefreshingUseCases, setIsRefreshingUseCases] = React.useState(false);
+
+    const { useCases, refresh: refreshUseCases } = useUseCases();
 
     // Auto-select knowledge base when codeType changes
     React.useEffect(() => {
@@ -78,6 +83,21 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
         }
     };
 
+    const handleRefreshModels = () => {
+        setIsRefreshingModels(true);
+        // TODO: Add actual refresh logic
+        setTimeout(() => {
+            // Simulate model refresh
+            _setModels(["Model A", "Model B", "Model C"]);
+            setIsRefreshingModels(false);
+        }, 2000);
+    };
+
+    const handleRefreshUseCases = () => {
+        setIsRefreshingUseCases(true);
+        refreshUseCases().finally(() => setIsRefreshingUseCases(false));
+    };
+
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange}>
             <DrawerContent>
@@ -104,10 +124,17 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
                                     models={models}
                                     agentModels={agentModels}
                                     onModelChange={handleModelChange}
-                                    knowledgeBases={knowledgeBaseUseCases}
+                                    knowledgeBases={useCases.map(uc => ({
+                                        id: uc.id,
+                                        name: uc.title,
+                                        description: uc.content,
+                                        icon: uc.icon
+                                    }))}
                                     selectedKnowledgeBases={selectedKnowledgeBases}
                                     onKnowledgeBaseChange={toggleKnowledgeBase}
                                     codeType={codeType}
+                                    onCodeTypeChange={onCodeTypeChange}
+                                    useCases={useCases}
                                     onSave={() => {
                                         // Here you would typically save the configuration
                                         onOpenChange(false);
@@ -117,6 +144,31 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
                             </TabsContent>
 
                             <TabsContent value="models">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-semibold">Agent Configuration</h3>
+                                        <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        title="Refresh available models"
+                                        onClick={handleRefreshModels}
+                                        disabled={isRefreshingModels}
+                                    >
+                                        {isRefreshingModels ? (
+                                            <>
+                                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                Refreshing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="h-4 w-4 mr-2" />
+                                                Refresh Models
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -240,13 +292,32 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="text-sm text-muted-foreground mb-4">
-                                                Select one or more knowledge bases for RAG (Retrieval-Augmented Generation) to provide context to the AI agents. At least one must be selected.
+                                            <div className="text-sm text-muted-foreground mb-4 flex items-center justify-between">
+                                                <span>Select one or more knowledge bases for RAG (Retrieval-Augmented Generation) to provide context to the AI agents. At least one must be selected.</span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handleRefreshUseCases}
+                                                    title="Refresh knowledge bases"
+                                                    disabled={isRefreshingUseCases}
+                                                >
+                                                    {isRefreshingUseCases ? (
+                                                        <>
+                                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                            Refreshing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <RefreshCw className="h-4 w-4 mr-2" />
+                                                            Refresh
+                                                        </>
+                                                    )}
+                                                </Button>
                                             </div>
 
                                             <div className="space-y-3">
-                                        {knowledgeBaseUseCases.map((kb) => {
-                                            const IconComponent = kb.icon;
+                                        {useCases.map((kb) => {
+                                            const IconComponent = LucideIcons[kb.icon];
                                             const isSelected = selectedKnowledgeBases.includes(kb.id);
 
                                             return (
@@ -273,9 +344,9 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
                                                                 }`} />
                                                             </div>
                                                             <div className="flex-1">
-                                                                <h3 className="font-semibold text-base mb-1">{kb.name}</h3>
+                                                                <h3 className="font-semibold text-base mb-1">{kb.title}</h3>
                                                                 <p className="text-sm text-muted-foreground">
-                                                                    {kb.description}
+                                                                    {kb.content}
                                                                 </p>
                                                             </div>
                                                         </div>

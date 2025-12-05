@@ -7,6 +7,7 @@ import {
     ShieldCheck,
     SquareTerminal,
     FileText,
+    MessageSquare,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -17,6 +18,9 @@ import {
     SidebarFooter,
     SidebarHeader,
     SidebarRail,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import {NavUser} from "@/components/nav-user";
 import {useSession} from "next-auth/react";
@@ -32,27 +36,27 @@ const data = {
             title: "Code input",
             icon: SquareTerminal,
             isActive: true,
-            url: "#",
+            url: "/dashboard?active=Code input",
         },
         {
             title: "Workflow configuration",
-            url: "#",
+            url: "/dashboard?workflow=true",
             icon: Bot,
         },
         {
             title: "Knowledge base",
-            url: "#",
+            url: "/dashboard?active=Knowledge base",
             icon: BookOpen,
         },
         {
             title: "Results",
-            url: "#",
+            url: "/dashboard?active=Results",
             icon: FileText,
         },
     ],
 }
 
-export function AppSidebar({ onNavigate, ...props }) {
+export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
     const { data: session, status } = useSession()
     console.log("Session:", session, "Status:", status)
 
@@ -62,13 +66,25 @@ export function AppSidebar({ onNavigate, ...props }) {
                 <TeamSwitcher team={data.team} />
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} onNavigate={onNavigate} />
+                <NavMain items={data.navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} />
             </SidebarContent>
             <SidebarFooter>
                 {status === "loading" ? (
                     <div className="p-4 text-sm text-muted-foreground">Loading...</div>
                 ) : session?.user ? (
-                    <NavUser user={session.user}/>
+                    <>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    onClick={() => onNavigate({ title: "Feedback" })}
+                                >
+                                    <MessageSquare />
+                                    <span>Feedback</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                        <NavUser user={session.user}/>
+                    </>
                 ) : (
                     <div className="p-4 text-sm text-muted-foreground">Not logged in</div>
                 )}

@@ -11,11 +11,19 @@ export default function ProfileHeader({
                                           isEditing,
                                           onEdit,
                                           onCancel,
-                                          isSaving
+                                          isSaving,
+                                          onImageUpload
                                       }) {
     const initials = user?.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : 'U';
+
+    const handleImageUpload = (event) => {
+        const file = event.target.files[0];
+        if (file && onImageUpload) {
+            onImageUpload(file);
+        }
+    };
 
     return (
         <Card>
@@ -30,13 +38,24 @@ export default function ProfileHeader({
                         </Avatar>
                         {/* Show camera only when editing */}
                         {isEditing && (
-                            <Button
-                                size="icon"
-                                variant="secondary"
-                                className="absolute -right-2 -bottom-2 h-8 w-8 rounded-full shadow-md hover:bg-muted"
-                            >
-                                <Camera className="h-4 w-4" />
-                            </Button>
+                            <>
+                                <Button
+                                    size="icon"
+                                    variant="secondary"
+                                    className="absolute -right-2 -bottom-2 h-8 w-8 rounded-full shadow-md hover:bg-primary hover:text-primary-foreground hover:scale-110 hover:shadow-lg transition-all duration-200 cursor-pointer border-2 border-background hover:border-primary"
+                                    onClick={() => document.getElementById('profile-image-upload').click()}
+                                    title="Click to upload profile image"
+                                >
+                                    <Camera className="h-4 w-4" />
+                                </Button>
+                                <input
+                                    id="profile-image-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleImageUpload}
+                                />
+                            </>
                         )}
                     </div>
 

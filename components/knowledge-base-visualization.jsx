@@ -18,7 +18,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { File, X, Upload, Search, FolderOpen, Loader2 } from "lucide-react"
+import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -381,15 +381,21 @@ export default function KnowledgeBaseVisualization() {
         }
     }
 
-    const openPdfViewer = (docName, docUrl) => {
-        // Fetch the actual PDF URL from your backend/database
-        if (!docUrl) {
-            toast.error("PDF URL not available");
-            return;
+    const openPdfViewer = async (doc) => {
+        try {
+            // Fetch a fresh presigned URL from the API
+            const response = await fetch(`/api/pdfs/${doc.id}`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch PDF URL");
+            }
+            const data = await response.json();
+            setSelectedPdf({ url: data.pdf.url, name: doc.name });
+            setPdfViewerOpen(true);
+            toast.info("Opening PDF viewer...", { duration: 2000 });
+        } catch (error) {
+            console.error("Error fetching PDF:", error);
+            toast.error("Failed to open PDF viewer");
         }
-        setSelectedPdf({ url: docUrl, name: docName });
-        setPdfViewerOpen(true);
-        toast.info("Opening PDF viewer...", { duration: 2000 });
     }
 
     const formatFileSize = (bytes) => {
@@ -424,7 +430,18 @@ export default function KnowledgeBaseVisualization() {
                             className="w-full pl-8 bg-background"
                         />
                     </div>
-                    <AddCategoryDialog onAddCategory={handleAddCategory} />
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={fetchUseCases}
+                            title="Refresh use cases"
+                            disabled={isLoading}
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                        <AddCategoryDialog onAddCategory={handleAddCategory} />
+                    </div>
                 </div>
 
                 {/* Scrollable List */}
@@ -573,7 +590,7 @@ export default function KnowledgeBaseVisualization() {
                                             <div
                                                 key={index}
                                                 className="group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer"
-                                                onClick={() => openPdfViewer(doc.name, doc.url)}
+                                                onClick={() => openPdfViewer(doc)}
                                             >
                                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                                                     <File className="h-6 w-6" />

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { auth } from "@/auth";
 
 export async function GET(request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -20,6 +19,7 @@ export async function GET(request) {
         id: true,
         name: true,
         email: true,
+        image: true,
         firstName: true,
         lastName: true,
         phone: true,
@@ -51,7 +51,7 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -80,6 +80,7 @@ export async function PUT(request) {
       company,
       bio,
       location,
+      image,
     } = body;
 
     // Validate input
@@ -132,21 +133,25 @@ export async function PUT(request) {
       );
     }
 
+    // Build update data object with only provided fields
+    const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName || null;
+    if (lastName !== undefined) updateData.lastName = lastName || null;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (jobTitle !== undefined) updateData.jobTitle = jobTitle || null;
+    if (company !== undefined) updateData.company = company || null;
+    if (bio !== undefined) updateData.bio = bio || null;
+    if (location !== undefined) updateData.location = location || null;
+    if (image !== undefined) updateData.image = image || null;
+
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
-      data: {
-        firstName: firstName || null,
-        lastName: lastName || null,
-        phone: phone || null,
-        jobTitle: jobTitle || null,
-        company: company || null,
-        bio: bio || null,
-        location: location || null,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
+        image: true,
         firstName: true,
         lastName: true,
         phone: true,
