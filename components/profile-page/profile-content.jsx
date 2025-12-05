@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdateSavingState }) {
+export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavingState, onCancel }) {
     const [profile, setProfile] = useState({
         firstName: '',
         lastName: '',
@@ -24,7 +24,7 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
         fetchProfile();
     }, []);
 
-    // When edit mode is cancelled (isEditing turns false externally), revert data
+    // When edit mode is cancelled (isEditing turns false externally), revert data to what is in DB
     useEffect(() => {
         if (!isEditing) {
             fetchProfile();
@@ -33,7 +33,9 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
 
     const fetchProfile = async () => {
         try {
-            setIsLoading(true);
+            // Only show full loading spinner on initial load, not on cancel revert
+            if (!profile.email) setIsLoading(true);
+
             const response = await fetch('/api/profile');
             if (!response.ok) throw new Error('Failed to fetch profile');
             const data = await response.json();
@@ -50,7 +52,6 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
             });
         } catch (error) {
             console.error('Error fetching profile:', error);
-            // toast.error('Failed to load profile data'); // Optional: reduce noise
         } finally {
             setIsLoading(false);
         }
@@ -61,9 +62,9 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
     };
 
     const handleSave = async (e) => {
-        e.preventDefault(); // Prevent page reload
+        e.preventDefault();
 
-        // Notify parent that saving started (for Header spinner)
+        // Notify parent that saving started
         if (onUpdateSavingState) onUpdateSavingState(true);
 
         try {
@@ -79,16 +80,14 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
             }
 
             const data = await response.json();
-            setProfile({
-                firstName: data.user.firstName || '',
-                lastName: data.user.lastName || '',
-                email: data.user.email || '',
-                phone: data.user.phone || '',
-                jobTitle: data.user.jobTitle || '',
-                company: data.user.company || '',
-                bio: data.user.bio || '',
-                location: data.user.location || '',
-            });
+
+            // Update local state with confirmed data
+            setProfile(prev => ({
+                ...prev,
+                firstName: data.user.firstName || prev.firstName,
+                lastName: data.user.lastName || prev.lastName,
+                // ... update other fields as needed
+            }));
 
             toast.success('Profile updated successfully!');
 
@@ -98,8 +97,7 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
         } catch (error) {
             console.error('Error updating profile:', error);
             toast.error(error.message || 'Failed to update profile');
-        } finally {
-            // Notify parent that saving finished
+            // Stop spinner on error
             if (onUpdateSavingState) onUpdateSavingState(false);
         }
     };
@@ -124,7 +122,7 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                 </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-                {/* IMPORTANT: id="profile-form" connects to the Submit button in ProfileHeader */}
+                {/* ID matches the Button form attribute in ProfileHeader */}
                 <form id="profile-form" onSubmit={handleSave} className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="space-y-2">
@@ -135,7 +133,8 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                                 placeholder="First name"
                                 maxLength={100}
-                                disabled={!isEditing}
+                                readOnly={!isEditing}
+                                className={!isEditing ? "bg-muted/50" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -146,7 +145,8 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
                                 placeholder="Last name"
                                 maxLength={100}
-                                disabled={!isEditing}
+                                readOnly={!isEditing}
+                                className={!isEditing ? "bg-muted/50" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -155,8 +155,10 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                                 id="email"
                                 type="email"
                                 value={profile.email}
-                                disabled={true}
+                                // ALWAYS READ ONLY
+                                readOnly={true}
                                 placeholder="Email address"
+                                className="bg-muted text-muted-foreground opacity-100"
                             />
                             <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                         </div>
@@ -168,7 +170,8 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                                 onChange={(e) => handleInputChange('phone', e.target.value)}
                                 placeholder="Phone number"
                                 maxLength={20}
-                                disabled={!isEditing}
+                                readOnly={!isEditing}
+                                className={!isEditing ? "bg-muted/50" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -179,7 +182,8 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                                 onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                                 placeholder="Job title"
                                 maxLength={100}
-                                disabled={!isEditing}
+                                readOnly={!isEditing}
+                                className={!isEditing ? "bg-muted/50" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -190,7 +194,8 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                                 onChange={(e) => handleInputChange('company', e.target.value)}
                                 placeholder="Company name"
                                 maxLength={100}
-                                disabled={!isEditing}
+                                readOnly={!isEditing}
+                                className={!isEditing ? "bg-muted/50" : ""}
                             />
                         </div>
                     </div>
@@ -203,7 +208,8 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                             onChange={(e) => handleInputChange('bio', e.target.value)}
                             rows={4}
                             maxLength={1000}
-                            disabled={!isEditing}
+                            readOnly={!isEditing}
+                            className={!isEditing ? "bg-muted/50" : ""}
                         />
                         <p className="text-xs text-muted-foreground">
                             {profile.bio.length}/1000 characters
@@ -217,10 +223,12 @@ export default function ProfileContent({ user, isEditing, onSaveSuccess, onUpdat
                             onChange={(e) => handleInputChange('location', e.target.value)}
                             placeholder="Location"
                             maxLength={100}
-                            disabled={!isEditing}
+                            readOnly={!isEditing}
+                            className={!isEditing ? "bg-muted/50" : ""}
                         />
                     </div>
                 </form>
+                {/* Removed the duplicate buttons here; Header handles them */}
             </CardContent>
         </Card>
     );

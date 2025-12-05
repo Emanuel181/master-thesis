@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -16,8 +16,8 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar"
-import ProfileHeader from "@/components/examples/profile-page/components/profile-header"
-import ProfileContent from "@/components/examples/profile-page/components/profile-content"
+import ProfileHeader from "@/components/profile-page/profile-header"
+import ProfileContent from "@/components/profile-page/profile-content"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomizationDialog } from "@/components/customization-dialog"
 import { useSettings } from "@/contexts/settingsContext"
@@ -28,19 +28,29 @@ export default function ProfilePage() {
     const { data: session } = useSession()
     const router = useRouter()
 
-    // Handle navigation from sidebar - redirect to dashboard with the selected item
+    // 1. Add State Management here
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
     const handleNavigation = (item) => {
-        // Navigate to dashboard - the dashboard will handle showing the correct component
         router.push('/dashboard')
     }
 
-    // Derive sidebar open state from settings
     const defaultSidebarOpen = useMemo(() => {
         return mounted ? settings.sidebarMode !== 'icon' : true
     }, [settings.sidebarMode, mounted])
 
-    // Update sidebar when settings change (controlled by key prop on SidebarProvider)
     const sidebarKey = `${settings.sidebarMode}-${mounted}`
+
+    // 2. Handlers to control the flow
+    const handleEditStart = () => setIsEditing(true);
+    const handleEditCancel = () => setIsEditing(false);
+
+    // Called when the child component successfully saves data
+    const handleSaveSuccess = () => {
+        setIsEditing(false); // Switch back to Read-Only
+        setIsSaving(false);
+    };
 
     return (
         <SidebarProvider
@@ -84,12 +94,26 @@ export default function ProfilePage() {
                     <div className={`container mx-auto space-y-6 px-4 py-10 ${
                         settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
                     }`}>
-                        <ProfileHeader user={session?.user} />
-                        <ProfileContent user={session?.user} />
+
+                        {/* 3. Pass state and handlers to Header */}
+                        <ProfileHeader
+                            user={session?.user}
+                            isEditing={isEditing}
+                            onEdit={handleEditStart}
+                            onCancel={handleEditCancel}
+                            isSaving={isSaving}
+                        />
+
+                        {/* 4. Pass state and handlers to Content */}
+                        <ProfileContent
+                            isEditing={isEditing}
+                            onCancel={handleEditCancel}
+                            onUpdateSavingState={setIsSaving}
+                            onSaveSuccess={handleSaveSuccess}
+                        />
                     </div>
                 </div>
             </SidebarInset>
         </SidebarProvider>
     )
 }
-
