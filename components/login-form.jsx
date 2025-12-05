@@ -40,7 +40,7 @@ export function LoginForm({
                         </svg>
                         Login with Google
                     </Button>
-                    <Button variant="outline" type="button" onClick={() => signIn("azure-ad", {callbackUrl: "/dashboard"})} className="w-full">
+                    <Button variant="outline" type="button" onClick={() => signIn("microsoft-entra-id", {callbackUrl: "/dashboard"})} className="w-full">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="mr-2 h-5 w-5">
                             <path
                                 d="M1 1h10v10H1V1zm12 0h10v10H13V1zM1 13h10v10H1V13zm12 0h10v10H13V13z"

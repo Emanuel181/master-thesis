@@ -16,13 +16,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         strategy: "database",
     },
 
-    // pages: {
-    //     signIn: "/login",
-    // },
+    pages: {
+        signIn: "/login",
+    },
 
     providers: [
-        Github,
-        Google,
+        Github({
+            clientId: process.env.AUTH_GITHUB_ID!,
+            clientSecret: process.env.AUTH_GITHUB_SECRET!,
+        }),
+        Google({
+            clientId: process.env.AUTH_GOOGLE_ID!,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+        }),
         MicrosoftEntraID({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID!,
             clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
