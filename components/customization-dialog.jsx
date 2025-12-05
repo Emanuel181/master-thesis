@@ -26,7 +26,7 @@ export function CustomizationDialog({ className = "" }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-72 p-3"
+        className="w-[340px] p-3"
         align="end"
         side="bottom"
         sideOffset={8}

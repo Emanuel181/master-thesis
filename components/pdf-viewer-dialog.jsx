@@ -25,6 +25,12 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
     const [containerWidth, setContainerWidth] = useState(null);
     const [isViewerFocused, setIsViewerFocused] = useState(false);
     const viewerRef = React.useRef(null);
+    const scrollAreaRef = React.useRef(null);
+
+    // Drag/pan state
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 });
 
     function onDocumentLoadSuccess({ numPages }) {
         setNumPages(numPages);
@@ -58,7 +64,42 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
     };
 
     const zoomOut = () => {
-        setScale((prev) => Math.max(prev - 0.2, 0.5));
+        setScale((prev) => Math.max(prev - 0.2, 0.1));
+    };
+
+    // Drag/pan handlers
+    const handleMouseDown = (e) => {
+        // Only start drag with left mouse button
+        if (e.button !== 0) return;
+
+        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (!scrollArea) return;
+
+        setIsDragging(true);
+        setDragStart({ x: e.clientX, y: e.clientY });
+        setScrollStart({ x: scrollArea.scrollLeft, y: scrollArea.scrollTop });
+        e.preventDefault();
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+
+        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (!scrollArea) return;
+
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+
+        scrollArea.scrollLeft = scrollStart.x - deltaX;
+        scrollArea.scrollTop = scrollStart.y - deltaY;
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
     };
 
     // Handle wheel/touchpad zoom
@@ -78,7 +119,7 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
                 setScale((prev) => Math.min(prev + zoomAmount, 3.0));
             } else {
                 // Scrolling down - zoom out
-                setScale((prev) => Math.max(prev - zoomAmount, 0.5));
+                setScale((prev) => Math.max(prev - zoomAmount, 0.1));
             }
         }
     };
@@ -175,13 +216,17 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
                 {/* PDF Viewer */}
                 <div
                     ref={viewerRef}
-                    className="flex-1 relative overflow-hidden outline-none"
+                    className={`flex-1 relative overflow-hidden outline-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                     onWheel={handleWheel}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
                     onFocus={() => setIsViewerFocused(true)}
                     onBlur={() => setIsViewerFocused(false)}
                     tabIndex={0}
                 >
-                    <ScrollArea className="h-full w-full">
+                    <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
                         <div className="p-6 bg-muted/20 min-h-full">
                             {pdfUrl ? (
                                 <div className="inline-block min-w-full">

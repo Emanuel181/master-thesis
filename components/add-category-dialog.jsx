@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import * as LucideIcons from "lucide-react"
+import { toast } from "sonner"
 
 const iconNames = [
   "Activity", "Airplay", "AlarmClock", "AlertCircle", "Anchor", "Archive",
@@ -49,19 +50,54 @@ export function AddCategoryDialog({ onAddCategory }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [icon, setIcon] = useState("File")
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleAdd = () => {
-    if (name && description) {
-      onAddCategory({
-        id: `${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
-        name,
-        description,
-        icon,
+  const handleAdd = async () => {
+    if (!name || !description) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/use-cases", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: name,
+          content: description,
+          icon,
+        }),
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to create use case")
+      }
+
+      const { useCase } = await response.json()
+
+      // Call the callback with the created use case
+      onAddCategory({
+        id: useCase.id,
+        name: useCase.title,
+        description: useCase.content,
+        icon: useCase.icon,
+        pdfs: [],
+      })
+
+      toast.success("Use case created successfully!")
       setName("")
       setDescription("")
       setIcon("File")
       setOpen(false)
+    } catch (error) {
+      console.error("Error creating use case:", error)
+      toast.error(error.message || "Failed to create use case")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -132,7 +168,10 @@ export function AddCategoryDialog({ onAddCategory }) {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleAdd}>Add Category</Button>
+          <Button onClick={handleAdd} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading ? "Creating..." : "Add Category"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

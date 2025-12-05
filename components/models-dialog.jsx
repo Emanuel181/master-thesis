@@ -24,10 +24,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases"
 
 export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
-    const [reviewerModel, setReviewerModel] = React.useState("GPT-4");
-    const [implementationModel, setImplementationModel] = React.useState("Claude 3.5 Sonnet");
-    const [testerModel, setTesterModel] = React.useState("GPT-4");
-    const [reportModel, setReportModel] = React.useState("GPT-4");
+    const [reviewerModel, setReviewerModel] = React.useState("");
+    const [implementationModel, setImplementationModel] = React.useState("");
+    const [testerModel, setTesterModel] = React.useState("");
+    const [reportModel, setReportModel] = React.useState("");
     // Auto-select based on code type
     const [selectedKnowledgeBases, setSelectedKnowledgeBases] = React.useState([]);
 
@@ -36,9 +36,11 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType }) {
         if (codeType && selectedKnowledgeBases.length === 0) {
             setSelectedKnowledgeBases([codeType]);
         }
-    }, [codeType]);
+    }, [codeType, selectedKnowledgeBases.length]);
 
-    const models = ["GPT-4", "GPT-4 Turbo", "Claude 3.5 Sonnet", "Claude 3 Opus", "Gemini Pro", "Llama 3 70B"];
+    // Models list - will be populated from database/API
+    // TODO: Fetch models from AWS backend
+    const [models, _setModels] = React.useState([]);
 
     const toggleKnowledgeBase = (kbId) => {
         setSelectedKnowledgeBases(prev => {

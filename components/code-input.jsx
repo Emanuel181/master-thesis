@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Editor from "@monaco-editor/react";
 import "prismjs/themes/prism.css";
 import "@/app/github-theme.css";
@@ -26,18 +26,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { knowledgeBaseUseCases } from "@/lib/knowledge-base-cases";
 import { Play, Clipboard, Wand2 } from "lucide-react";
-import { formatCode, getFormattingOptions } from "@/lib/code-formatter";
+import { formatCode } from "@/lib/code-formatter";
+import { useSettings, editorThemes, editorFonts, editorFontSizes, syntaxColorPresets } from "@/contexts/settingsContext";
 
 export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
     const [isCopied, setIsCopied] = useState(false);
     const [isFormatting, setIsFormatting] = useState(false);
 
+    // Get editor settings from context
+    const { settings, mounted: settingsMounted } = useSettings();
+
     const supportedLanguages = [
         { name: "JavaScript", prism: "javascript" },
+        { name: "TypeScript", prism: "typescript" },
         { name: "Python", prism: "python" },
-        { name: "Go", prism: "go" },
         { name: "Java", prism: "java" },
+        { name: "C#", prism: "csharp" },
+        { name: "C", prism: "c" },
+        { name: "C++", prism: "cpp" },
+        { name: "PHP", prism: "php" },
+        { name: "Go", prism: "go" },
     ];
 
     const codeTypes = knowledgeBaseUseCases.map(uc => ({ value: uc.id, label: uc.name }));
@@ -47,9 +56,15 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
         switch (lang) {
             case 'python':
                 return '# ';
+            case 'php':
+                return '// ';
             case 'javascript':
+            case 'typescript':
             case 'java':
             case 'go':
+            case 'c':
+            case 'csharp':
+            case 'rust':
             default:
                 return '// ';
         }
@@ -59,73 +74,131 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     const [isPlaceholder, setIsPlaceholder] = useState(!hasCode);
     const [placeholderText, setPlaceholderText] = useState(() => `${commentPrefixFor('javascript')}${BASE_PLACEHOLDER}`);
 
-    // detect dark mode for Monaco theme
-    const [isDarkMode, setIsDarkMode] = React.useState(false);
-    const monacoRef = React.useRef(null);
-    const editorRef = React.useRef(null);
-    React.useEffect(() => {
-        const checkDarkMode = () => {
-            const isDark = document.documentElement.classList.contains('dark');
-            setIsDarkMode(isDark);
-            // apply theme if monaco is ready
-            const monaco = monacoRef.current;
-            if (monaco) {
-                const darkTheme = {
-                    base: 'vs-dark',
-                    inherit: true,
-                    rules: [],
-                    colors: {
-                        'editor.background': '#171717',
-                        'minimap.background': '#171717',
-                        'editor.stickyScroll.background': '#171717',
-                        'minimap.selectionHighlight': '#2563eb40',
-                        'minimap.errorHighlight': '#ef444480',
-                        'minimap.warningHighlight': '#f59e0b80',
-                        'minimap.findMatchHighlight': '#22c55e80',
-                    },
-                };
-                const lightTheme = {
-                    base: 'vs',
-                    inherit: true,
-                    rules: [],
-                    colors: {
-                        'editor.background': '#ffffff',
-                        'minimap.background': '#ffffff',
-                        'editor.stickyScroll.background': '#ffffff',
-                        'minimap.selectionHighlight': '#3b82f680',
-                        'minimap.errorHighlight': '#dc262680',
-                        'minimap.warningHighlight': '#d9770680',
-                        'minimap.findMatchHighlight': '#16a34a80',
-                    },
-                };
-                monaco.editor.defineTheme('custom-dark', darkTheme);
-                monaco.editor.defineTheme('custom-light', lightTheme);
-                monaco.editor.setTheme(isDark ? 'custom-dark' : 'custom-light');
+    const monacoRef = useRef(null);
+    const editorRef = useRef(null);
+
+    // Get current editor configuration from settings
+    // Automatically select appropriate theme based on app mode if needed
+    const getEditorConfig = () => {
+        const appMode = settings?.mode || 'light';
+        let themeKey = settings?.editorTheme || 'default-dark';
+
+        // Get the selected theme
+        let theme = editorThemes[themeKey];
+
+        // If the selected theme doesn't match the app mode, find an appropriate one
+        if (theme) {
+            const isAppDark = appMode === 'dark';
+            const isThemeDark = theme.base === 'vs-dark';
+
+            // If app mode and editor theme mode don't match, switch to a matching theme
+            if (isAppDark !== isThemeDark) {
+                // Switch to default theme for the current mode
+                if (isAppDark) {
+                    themeKey = 'default-dark';
+                    theme = editorThemes['default-dark'];
+                } else {
+                    themeKey = 'default-light';
+                    theme = editorThemes['default-light'];
+                }
             }
-        };
-        checkDarkMode();
-        const observer = new MutationObserver(checkDarkMode);
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-        return () => observer.disconnect();
-    }, []);
-
-    React.useEffect(() => {
-        if (monacoRef.current) {
-            monacoRef.current.editor.setTheme(isDarkMode ? 'custom-dark' : 'custom-light');
+        } else {
+            // Fallback to default based on app mode
+            themeKey = appMode === 'dark' ? 'default-dark' : 'default-light';
+            theme = editorThemes[themeKey];
         }
-    }, [isDarkMode]);
 
-    React.useEffect(() => {
-        // Update placeholder to match current language
+        const fontKey = settings?.editorFont || 'fira-code';
+        const fontSizeKey = settings?.editorFontSize || 'md';
+
+        const font = editorFonts[fontKey] || editorFonts['fira-code'];
+        const fontSize = editorFontSizes[fontSizeKey]?.size || 16;
+        const ligatures = settings?.editorLigatures ?? true;
+        const minimap = settings?.editorMinimap ?? true;
+
+        return { theme, font, fontSize, ligatures, minimap, themeKey };
+    };
+
+    // Build Monaco theme from editor config with custom syntax colors
+    const buildMonacoTheme = (editorTheme) => {
+        const appMode = settings?.mode || 'light';
+        // Get custom syntax colors or fallback to default preset
+        const syntaxColors = settings?.customSyntaxColors?.[appMode] || syntaxColorPresets.default[appMode];
+
+        return {
+            base: editorTheme.base,
+            inherit: true,
+            rules: [
+                { token: 'comment', foreground: syntaxColors.comment, fontStyle: 'italic' },
+                { token: 'keyword', foreground: syntaxColors.keyword, fontStyle: 'bold' },
+                { token: 'keyword.control', foreground: syntaxColors.keyword, fontStyle: 'bold' },
+                { token: 'string', foreground: syntaxColors.string },
+                { token: 'number', foreground: syntaxColors.number },
+                { token: 'type', foreground: syntaxColors.type },
+                { token: 'function', foreground: syntaxColors.function },
+                { token: 'variable', foreground: syntaxColors.variable },
+                { token: 'variable.parameter', foreground: syntaxColors.variable },
+                { token: 'operator', foreground: syntaxColors.operator },
+                { token: 'delimiter', foreground: editorTheme.colors.foreground.replace('#', '') },
+                { token: 'identifier', foreground: syntaxColors.variable },
+                { token: 'namespace', foreground: syntaxColors.type },
+                { token: 'class', foreground: syntaxColors.type, fontStyle: 'bold' },
+                { token: 'regexp', foreground: syntaxColors.string },
+                { token: 'tag', foreground: syntaxColors.keyword },
+                { token: 'attribute.name', foreground: syntaxColors.variable },
+                { token: 'attribute.value', foreground: syntaxColors.string },
+                { token: 'constant', foreground: syntaxColors.number },
+            ],
+            colors: {
+                'editor.background': editorTheme.colors.background,
+                'editor.foreground': editorTheme.colors.foreground,
+                'editor.lineHighlightBackground': editorTheme.colors.lineHighlight,
+                'editorLineNumber.foreground': editorTheme.colors.lineNumber,
+                'editorLineNumber.activeForeground': editorTheme.colors.lineNumberActive,
+                'minimap.background': editorTheme.colors.background,
+                'editor.stickyScroll.background': editorTheme.colors.background,
+                'minimap.selectionHighlight': '#2563eb40',
+                'minimap.errorHighlight': '#ef444480',
+                'minimap.warningHighlight': '#f59e0b80',
+                'minimap.findMatchHighlight': '#22c55e80',
+            },
+        };
+    };
+
+
+    // Apply editor theme when settings change (including app mode and syntax colors)
+    useEffect(() => {
+        const monaco = monacoRef.current;
+        if (monaco && settingsMounted) {
+            const { theme, themeKey } = getEditorConfig();
+            const monacoTheme = buildMonacoTheme(theme);
+            monaco.editor.defineTheme(`custom-${themeKey}`, monacoTheme);
+            monaco.editor.setTheme(`custom-${themeKey}`);
+        }
+    }, [settings?.editorTheme, settings?.mode, settings?.customSyntaxColors, settings?.syntaxColorPreset, settingsMounted]);
+
+    // Update editor options when font settings change
+    useEffect(() => {
+        const editor = editorRef.current;
+        if (editor && settingsMounted) {
+            const { font, fontSize, ligatures, minimap } = getEditorConfig();
+            editor.updateOptions({
+                fontFamily: font.family,
+                fontSize: fontSize,
+                fontLigatures: ligatures && font.ligatures,
+                minimap: { enabled: minimap, renderCharacters: false, maxColumn: 120, side: 'right', scale: 2 },
+            });
+        }
+    }, [settings?.editorFont, settings?.editorFontSize, settings?.editorLigatures, settings?.editorMinimap, settingsMounted]);
+
+    useEffect(() => {
         const nextPlaceholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
         setPlaceholderText(nextPlaceholder);
 
         if (!hasCode) {
-            // If no code, show the placeholder
             setIsPlaceholder(true);
             setCode("");
         } else {
-            // If code exists, keep showing code (not placeholder)
             setIsPlaceholder(false);
         }
     }, [hasCode, language.prism, setCode]);
@@ -135,12 +208,10 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
         const currentPlaceholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
 
         if (isPlaceholder) {
-            // if user types something different than placeholder, switch off placeholder
             if (next !== currentPlaceholder) {
                 setIsPlaceholder(false);
                 setCode(next);
             } else {
-                // keep placeholder, but don't propagate as code
                 setCode("");
             }
         } else {
@@ -166,11 +237,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     };
 
     const handleFormat = async () => {
-        if (!editorRef.current) {
-            console.error('Editor not ready');
-            return;
-        }
-
         if (!hasCode || isPlaceholder) {
             return;
         }
@@ -178,28 +244,23 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
         setIsFormatting(true);
 
         try {
-            // Get language-specific formatting options
-            const formatOptions = getFormattingOptions(language.prism);
-
-            // Update editor options before formatting
-            editorRef.current.updateOptions({
-                tabSize: formatOptions.tabSize,
-                insertSpaces: formatOptions.insertSpaces,
-            });
-
-            // Use the unified formatter that tries API first, then Monaco
-            const formattedCode = await formatCode(code, language.prism, editorRef.current);
-
-            // Update the code state with formatted code
-            setCode(formattedCode);
+            // Strictly use the backend formatter; no local Monaco fallback or config
+            const formattedCode = await formatCode(code, language.prism);
+            if (formattedCode) {
+                setCode(formattedCode);
+            }
         } catch (error) {
-            console.error('Error formatting code:', error);
+            console.error('Error formatting code:', error.message);
+            // The error is already logged in formatCode, we just catch it here
         } finally {
             setIsFormatting(false);
         }
     };
 
     const editorValue = isPlaceholder ? placeholderText : code;
+
+    // Get current editor config for rendering
+    const { theme, font, fontSize, ligatures, minimap, themeKey } = getEditorConfig();
 
     return (
         <div className="flex flex-col h-full w-full p-4">
@@ -259,74 +320,49 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                 <CardContent className="flex-1 overflow-hidden min-h-0 p-6">
                     <div className="relative h-full w-full">
                         <Editor
-                            key={language.prism}
-
+                            key={`${language.prism}-${themeKey}`}
                             language={language.prism}
                             value={editorValue}
                             onChange={handleChange}
-                            theme={isDarkMode ? "custom-dark" : "custom-light"}
+                            theme={`custom-${themeKey}`}
                             options={{
-                                fontFamily: '"Fira Code", "Fira Mono", monospace',
-                                fontSize: 16,
-                                lineHeight: 26,
+                                fontFamily: font.family,
+                                fontSize: fontSize,
+                                fontLigatures: ligatures && font.ligatures,
+                                lineHeight: Math.round(fontSize * 1.6),
                                 wordWrap: 'on',
-                                minimap: { enabled: true, renderCharacters: false, maxColumn: 120, side: 'right', scale: 2 },
+                                minimap: { enabled: minimap, renderCharacters: false, maxColumn: 120, side: 'right', scale: 2 },
                                 scrollbar: { vertical: 'auto', horizontal: 'auto' },
                                 smoothScrolling: true,
                                 cursorBlinking: 'phase',
                                 renderWhitespace: 'selection',
-                                ...getFormattingOptions(language.prism),
                                 automaticLayout: true,
                                 suggestOnTriggerCharacters: true,
                                 quickSuggestions: true,
                                 parameterHints: { enabled: true },
-                                formatOnPaste: true,
-                                formatOnType: true,
+                                // Explicitly disabling Monaco's default formatting behaviors
+                                formatOnPaste: false,
+                                formatOnType: false,
+                            }}
+                            beforeMount={(monaco) => {
+                                // Define theme BEFORE the editor mounts to avoid race condition
+                                const monacoTheme = buildMonacoTheme(theme);
+                                monaco.editor.defineTheme(`custom-${themeKey}`, monacoTheme);
                             }}
                             onMount={(editor, monaco) => {
                                 monacoRef.current = monaco;
                                 editorRef.current = editor;
-                                // Define and set theme for initial render
-                                const darkTheme = {
-                                    base: 'vs-dark',
-                                    inherit: true,
-                                    rules: [],
-                                    colors: {
-                                        'editor.background': '#171717',
-                                        'minimap.background': '#171717',
-                                        'editor.stickyScroll.background': '#171717',
-                                        'minimap.selectionHighlight': '#2563eb40',
-                                        'minimap.errorHighlight': '#ef444480',
-                                        'minimap.warningHighlight': '#f59e0b80',
-                                        'minimap.findMatchHighlight': '#22c55e80',
-                                    },
-                                };
-                                const lightTheme = {
-                                    base: 'vs',
-                                    inherit: true,
-                                    rules: [],
-                                    colors: {
-                                        'editor.background': '#00000000', // transparent
-                                        'editor.stickyScroll.background': '#ffffff',
-                                        'minimap.background': '#00000000',
-                                        'minimap.selectionHighlight': '#3b82f680',
-                                        'minimap.errorHighlight': '#dc262680',
-                                        'minimap.warningHighlight': '#d9770680',
-                                        'minimap.findMatchHighlight': '#16a34a80',
-                                    },
-                                };
-                                monaco.editor.defineTheme('custom-dark', darkTheme);
-                                monaco.editor.defineTheme('custom-light', lightTheme);
-                                monaco.editor.setTheme(isDarkMode ? 'custom-dark' : 'custom-light');
 
-                                // Add keyboard shortcut for formatting (Shift+Alt+F)
+                                // Set the correct theme
+                                monaco.editor.setTheme(`custom-${themeKey}`);
+
+                                // Keep keyboard shortcut but point it to our API handler
                                 editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
                                     if (hasCode && !isPlaceholder) {
                                         handleFormat();
                                     }
                                 });
 
-                                // Clear placeholder on initial user input
                                 editor.onDidChangeModelContent(() => {
                                     const current = editor.getValue();
                                     const currentPlaceholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;

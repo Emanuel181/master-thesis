@@ -1,19 +1,28 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { File, X, Upload, Search, FolderOpen } from "lucide-react"
+import { File, X, Upload, Search, FolderOpen, Loader2 } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { knowledgeBaseUseCases as initialUseCases } from "@/lib/knowledge-base-cases";
 import { AddCategoryDialog } from "@/components/add-category-dialog";
 import { CategoryCard } from "@/components/category-card";
 
@@ -24,30 +33,12 @@ const PdfViewerDialog = dynamic(
 );
 
 export default function KnowledgeBaseVisualization() {
-    const [useCases, setUseCases] = useState(initialUseCases || []);
-    const [selectedUseCase, setSelectedUseCase] = useState("login")
+    const [useCases, setUseCases] = useState([]);
+    const [selectedUseCase, setSelectedUseCase] = useState(null)
+    const [isLoading, setIsLoading] = useState(true)
 
-    // Mock data state
-    const [documents, setDocuments] = useState({
-        login: [
-            { name: "auth-implementation.pdf", size: "2.3 MB", type: "pdf" },
-            { name: "oauth-guide.pdf", size: "1.8 MB", type: "pdf" },
-            { name: "jwt-tokens.pdf", size: "1.2 MB", type: "pdf" },
-            { name: "legacy-systems.pdf", size: "3.2 MB", type: "pdf" },
-            { name: "sso-saml-setup.pdf", size: "1.4 MB", type: "pdf" },
-            { name: "password-hashing.pdf", size: "0.9 MB", type: "pdf" },
-            { name: "mfa-workflow.pdf", size: "1.7 MB", type: "pdf" },
-        ],
-        serverApi: [
-            { name: "rest-api-design.pdf", size: "3.2 MB", type: "pdf" },
-            { name: "middleware-patterns.pdf", size: "2.1 MB", type: "pdf" },
-            { name: "database-schema.pdf", size: "1.5 MB", type: "pdf" },
-        ],
-        clientCode: [
-            { name: "react-best-practices.pdf", size: "2.7 MB", type: "pdf" },
-            { name: "state-management.pdf", size: "1.9 MB", type: "pdf" },
-        ],
-    })
+    // Documents state - initialized empty, will be populated from database
+    const [documents, setDocuments] = useState({})
 
     const [uploadState, setUploadState] = useState({
         file: null,
@@ -68,6 +59,59 @@ export default function KnowledgeBaseVisualization() {
     const [nameDialogOpen, setNameDialogOpen] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]);
     const [customPdfNames, setCustomPdfNames] = useState({});
+
+    // Track documents being deleted to prevent duplicate calls
+    const [deletingDocs, setDeletingDocs] = useState(new Set());
+
+    // Delete confirmation dialog state
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [documentToDelete, setDocumentToDelete] = useState(null);
+
+    // Fetch use cases from database on mount
+    useEffect(() => {
+        fetchUseCases();
+    }, []);
+
+    const fetchUseCases = async () => {
+        try {
+            setIsLoading(true);
+            const response = await fetch("/api/use-cases");
+            if (!response.ok) {
+                throw new Error("Failed to fetch use cases");
+            }
+            const data = await response.json();
+
+            // Transform data to match expected format
+            const transformedUseCases = data.useCases.map(uc => ({
+                id: uc.id,
+                name: uc.title,
+                description: uc.content,
+                icon: uc.icon,
+            }));
+
+            // Build documents map from PDFs
+            const docsMap = {};
+            data.useCases.forEach(uc => {
+                docsMap[uc.id] = uc.pdfs.map(pdf => ({
+                    id: pdf.id,
+                    name: pdf.title,
+                    size: formatFileSize(pdf.size),
+                    sizeBytes: pdf.size,
+                    type: "pdf",
+                    url: pdf.url,
+                    s3Key: pdf.s3Key,
+                }));
+            });
+
+            setUseCases(transformedUseCases);
+            setDocuments(docsMap);
+        } catch (error) {
+            console.error("Error fetching use cases:", error);
+            toast.error("Failed to load use cases");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // --- Logic Handlers ---
 
@@ -138,17 +182,17 @@ export default function KnowledgeBaseVisualization() {
         }
     }
 
-    const confirmUpload = () => {
+    const confirmUpload = async () => {
         if (!pendingFiles || pendingFiles.length === 0) return;
 
         setNameDialogOpen(false);
 
         // Process files sequentially
         const totalFiles = pendingFiles.length;
-        const filesToProcess = [...pendingFiles]; // Create a copy
-        const namesToUse = { ...customPdfNames }; // Create a copy
+        const filesToProcess = [...pendingFiles];
+        const namesToUse = { ...customPdfNames };
 
-        const processNextFile = (fileIndex) => {
+        const processNextFile = async (fileIndex) => {
             if (fileIndex >= totalFiles) {
                 toast.success(`${totalFiles} document${totalFiles > 1 ? 's' : ''} uploaded successfully!`);
                 if (fileInputRef.current) fileInputRef.current.value = "";
@@ -162,34 +206,92 @@ export default function KnowledgeBaseVisualization() {
             const customName = namesToUse[fileIndex]?.trim();
             const finalName = customName ? `${customName}.pdf` : file.name;
 
-            let progress = 0;
             setUploadState({ file: file, progress: 0, uploading: true });
 
-            const interval = setInterval(() => {
-                progress += 10;
+            try {
+                // Step 1: Get presigned URL from API
+                setUploadState(prev => ({ ...prev, progress: 10 }));
 
-                if (progress >= 100) {
-                    clearInterval(interval);
+                const presignedResponse = await fetch("/api/pdfs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        fileName: finalName,
+                        fileSize: file.size,
+                        useCaseId: selectedUseCase,
+                    }),
+                });
 
-                    // Add document to list
-                    const newDoc = {
-                        name: finalName,
-                        size: formatFileSize(file.size),
-                        type: "pdf"
-                    };
-                    setDocuments(prev => ({
-                        ...prev,
-                        [selectedUseCase]: [...(prev[selectedUseCase] || []), newDoc]
-                    }));
-
-                    setUploadState({ file: null, progress: 0, uploading: false });
-
-                    // Process next file after a short delay
-                    setTimeout(() => processNextFile(fileIndex + 1), 100);
-                } else {
-                    setUploadState({ file: file, progress: progress, uploading: true });
+                if (!presignedResponse.ok) {
+                    const errorData = await presignedResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || "Failed to get upload URL");
                 }
-            }, 100);
+
+                const { uploadUrl, s3Key } = await presignedResponse.json();
+                setUploadState(prev => ({ ...prev, progress: 30 }));
+
+                // Step 2: Upload file directly to S3
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/pdf" },
+                    body: file,
+                });
+
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text().catch(() => "");
+                    console.error("S3 upload error:", uploadResponse.status, errorText);
+                    throw new Error(`S3 upload failed (${uploadResponse.status}). Check CORS configuration.`);
+                }
+
+                setUploadState(prev => ({ ...prev, progress: 70 }));
+
+                // Step 3: Confirm upload and save to database
+                const confirmResponse = await fetch("/api/pdfs/confirm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        s3Key,
+                        fileName: finalName,
+                        fileSize: file.size,
+                        useCaseId: selectedUseCase,
+                    }),
+                });
+
+                if (!confirmResponse.ok) {
+                    throw new Error("Failed to confirm upload");
+                }
+
+                const { pdf } = await confirmResponse.json();
+                setUploadState(prev => ({ ...prev, progress: 100 }));
+
+                // Add document to local state
+                const newDoc = {
+                    id: pdf.id,
+                    name: pdf.title,
+                    size: formatFileSize(pdf.size),
+                    sizeBytes: pdf.size,
+                    type: "pdf",
+                    url: pdf.url,
+                    s3Key: pdf.s3Key,
+                };
+
+                setDocuments(prev => ({
+                    ...prev,
+                    [selectedUseCase]: [...(prev[selectedUseCase] || []), newDoc]
+                }));
+
+                setUploadState({ file: null, progress: 0, uploading: false });
+
+                // Process next file after a short delay
+                setTimeout(() => processNextFile(fileIndex + 1), 100);
+
+            } catch (error) {
+                console.error("Upload error:", error);
+                toast.error(`Failed to upload ${finalName}: ${error.message}`);
+                setUploadState({ file: null, progress: 0, uploading: false });
+                // Continue with next file
+                setTimeout(() => processNextFile(fileIndex + 1), 100);
+            }
         };
 
         processNextFile(0);
@@ -208,20 +310,63 @@ export default function KnowledgeBaseVisualization() {
         handleFiles(event.dataTransfer.files)
     }
 
-    const deleteDocument = (useCase, docName) => {
-        setDocuments(prev => ({
-            ...prev,
-            [useCase]: prev[useCase].filter(doc => doc.name !== docName)
-        }))
-        toast.success("Document deleted successfully!")
+    // Open delete confirmation dialog
+    const confirmDelete = (useCaseId, doc) => {
+        setDocumentToDelete({ useCaseId, doc });
+        setDeleteDialogOpen(true);
+    };
+
+    // Handle actual deletion after confirmation
+    const handleConfirmedDelete = async () => {
+        if (!documentToDelete) return;
+
+        const { useCaseId, doc } = documentToDelete;
+        const docId = doc.id;
+
+        // Close dialog first
+        setDeleteDialogOpen(false);
+        setDocumentToDelete(null);
+
+        // Prevent duplicate delete calls
+        if (deletingDocs.has(docId)) {
+            return;
+        }
+
+        setDeletingDocs(prev => new Set(prev).add(docId));
+
+        try {
+            const response = await fetch(`/api/pdfs/${docId}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to delete document");
+            }
+
+            setDocuments(prev => ({
+                ...prev,
+                [useCaseId]: prev[useCaseId].filter(d => d.id !== docId)
+            }));
+            toast.success("Document deleted successfully!");
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error("Failed to delete document");
+        } finally {
+            setDeletingDocs(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(docId);
+                return newSet;
+            });
+        }
     }
 
-    const openPdfViewer = (docName) => {
-        // For demo purposes, we'll use a sample PDF URL
-        // In production, you would fetch the actual PDF URL from your backend/database
-        // Using a publicly available sample PDF for demonstration
-        const samplePdfUrl = "https://pdfobject.com/pdf/sample.pdf";
-        setSelectedPdf({ url: samplePdfUrl, name: docName });
+    const openPdfViewer = (docName, docUrl) => {
+        // Fetch the actual PDF URL from your backend/database
+        if (!docUrl) {
+            toast.error("PDF URL not available");
+            return;
+        }
+        setSelectedPdf({ url: docUrl, name: docName });
         setPdfViewerOpen(true);
         toast.info("Opening PDF viewer...", { duration: 2000 });
     }
@@ -264,7 +409,12 @@ export default function KnowledgeBaseVisualization() {
                 {/* Scrollable List */}
                 <ScrollArea className="flex-1 h-full">
                     <div className="p-4 lg:p-6 pt-2 space-y-3 min-h-full">
-                        {paginatedCategories.length > 0 ? (
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-10">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                <p className="mt-2 text-sm text-muted-foreground">Loading categories...</p>
+                            </div>
+                        ) : paginatedCategories.length > 0 ? (
                             paginatedCategories.map((useCase) => (
                                 <CategoryCard
                                     key={useCase.id}
@@ -400,7 +550,7 @@ export default function KnowledgeBaseVisualization() {
                                             <div
                                                 key={index}
                                                 className="group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer"
-                                                onClick={() => openPdfViewer(doc.name)}
+                                                onClick={() => openPdfViewer(doc.name, doc.url)}
                                             >
                                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                                                     <File className="h-6 w-6" />
@@ -420,13 +570,18 @@ export default function KnowledgeBaseVisualization() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                    className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                                                    disabled={deletingDocs.has(doc.id)}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        deleteDocument(selectedUseCase, doc.name);
+                                                        confirmDelete(selectedUseCase, doc);
                                                     }}
                                                 >
-                                                    <X className="h-4 w-4" />
+                                                    {deletingDocs.has(doc.id) ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <X className="h-4 w-4" />
+                                                    )}
                                                 </Button>
                                             </div>
                                         ))}
@@ -512,6 +667,29 @@ export default function KnowledgeBaseVisualization() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to delete "{documentToDelete?.doc?.name}"? This action cannot be undone and the document will be permanently removed from storage.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDocumentToDelete(null)}>
+                        Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleConfirmedDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
     )
 }

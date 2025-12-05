@@ -27,11 +27,6 @@ const data = {
             logo: ShieldCheck,
             plan: "Agentic",
         },
-    user: {
-        name: "shadcn",
-        email: "m@example.com",
-        avatar: "/avatars/shadcn.jpg",
-    },
     navMain: [
         {
             title: "Code input",
