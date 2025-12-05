@@ -3,10 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DescriptionDialog } from "./description-dialog";
+import { Edit, Trash2 } from "lucide-react";
 
 const MAX_DESC_WORDS = 20;
 
-export function CategoryCard({ useCase, onSelect, isSelected }) {
+export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete }) {
     const words = useCase.description.split(/\s+/);
     const isLongDescription = words.length > MAX_DESC_WORDS;
 
@@ -15,14 +16,23 @@ export function CategoryCard({ useCase, onSelect, isSelected }) {
         : useCase.description;
 
     const handleCardClick = (e) => {
-        // Prevent card selection if the click is on the 'Show More' button's container
-        if (e.target.closest('.show-more-button-container')) {
+        // Prevent card selection if the click is on buttons or 'Show More' button's container
+        if (e.target.closest('.action-button') || e.target.closest('.show-more-button-container')) {
             e.stopPropagation();
             return;
         }
         onSelect(useCase.id);
     };
 
+    const handleEdit = (e) => {
+        e.stopPropagation();
+        onEdit(useCase);
+    };
+
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        onDelete(useCase);
+    };
 
     return (
         <Card
@@ -32,7 +42,25 @@ export function CategoryCard({ useCase, onSelect, isSelected }) {
         >
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{useCase.name}</CardTitle>
-                {useCase.icon && <div className="text-muted-foreground">{useCase.icon}</div>}
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="action-button h-6 w-6 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        onClick={handleEdit}
+                    >
+                        <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="action-button h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={handleDelete}
+                    >
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                    {useCase.icon && <div className="text-muted-foreground ml-1">{useCase.icon}</div>}
+                </div>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col">
                 <div className="text-xs text-muted-foreground break-words whitespace-pre-wrap flex-grow">

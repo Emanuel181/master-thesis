@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { AddCategoryDialog } from "@/components/add-category-dialog";
+import { EditCategoryDialog } from "@/components/edit-category-dialog";
 import { CategoryCard } from "@/components/category-card";
 
 // Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
@@ -66,6 +67,14 @@ export default function KnowledgeBaseVisualization() {
     // Delete confirmation dialog state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState(null);
+
+    // Edit use case dialog state
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [useCaseToEdit, setUseCaseToEdit] = useState(null);
+
+    // Delete use case confirmation dialog state
+    const [deleteUseCaseDialogOpen, setDeleteUseCaseDialogOpen] = useState(false);
+    const [useCaseToDelete, setUseCaseToDelete] = useState(null);
 
     // Fetch use cases from database on mount
     useEffect(() => {
@@ -316,6 +325,18 @@ export default function KnowledgeBaseVisualization() {
         setDeleteDialogOpen(true);
     };
 
+    // Handle edit use case
+    const handleEditUseCase = (useCase) => {
+        setUseCaseToEdit(useCase);
+        setEditDialogOpen(true);
+    };
+
+    // Handle delete use case confirmation
+    const handleDeleteUseCase = (useCase) => {
+        setUseCaseToDelete(useCase);
+        setDeleteUseCaseDialogOpen(true);
+    };
+
     // Handle actual deletion after confirmation
     const handleConfirmedDelete = async () => {
         if (!documentToDelete) return;
@@ -421,6 +442,8 @@ export default function KnowledgeBaseVisualization() {
                                     useCase={useCase}
                                     onSelect={setSelectedUseCase}
                                     isSelected={selectedUseCase === useCase.id}
+                                    onEdit={handleEditUseCase}
+                                    onDelete={handleDeleteUseCase}
                                 />
                             ))
                         ) : (
@@ -674,7 +697,7 @@ export default function KnowledgeBaseVisualization() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Document</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete "{documentToDelete?.doc?.name}"? This action cannot be undone and the document will be permanently removed from storage.
+                        Are you sure you want to delete &quot;{documentToDelete?.doc?.name}&quot;? This action cannot be undone and the document will be permanently removed from storage.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -683,6 +706,68 @@ export default function KnowledgeBaseVisualization() {
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleConfirmedDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Edit Category Dialog */}
+        <EditCategoryDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            useCase={useCaseToEdit}
+            onUpdate={(updatedCategory) => {
+                setUseCases(prev => prev.map(uc => uc.id === updatedCategory.id ? updatedCategory : uc));
+                toast.success(`Category "${updatedCategory.name}" updated successfully!`);
+            }}
+        />
+
+        {/* Delete Use Case Confirmation Dialog */}
+        <AlertDialog open={deleteUseCaseDialogOpen} onOpenChange={setDeleteUseCaseDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Use Case</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to delete this use case? All associated documents will also be deleted.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setUseCaseToDelete(null)}>
+                        Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={async () => {
+                            if (!useCaseToDelete) return;
+
+                            const { id } = useCaseToDelete;
+
+                            setDeleteUseCaseDialogOpen(false);
+                            setUseCaseToDelete(null);
+
+                            try {
+                                const response = await fetch(`/api/use-cases/${id}`, {
+                                    method: "DELETE",
+                                });
+
+                                if (!response.ok) {
+                                    throw new Error("Failed to delete use case");
+                                }
+
+                                setUseCases(prev => prev.filter(uc => uc.id !== id));
+                                setDocuments(prev => {
+                                    const newDocs = { ...prev };
+                                    delete newDocs[id];
+                                    return newDocs;
+                                });
+                                toast.success("Use case deleted successfully!");
+                            } catch (error) {
+                                console.error("Delete use case error:", error);
+                                toast.error("Failed to delete use case");
+                            }
+                        }}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                         Delete

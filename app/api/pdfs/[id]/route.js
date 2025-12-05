@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { deleteFromS3, getPresignedDownloadUrl } from "@/lib/s3";
+import { authOptions } from "../../auth/[...nextauth]/route";
 
 // GET - Get a fresh presigned URL for viewing a PDF
 export async function GET(request, { params }) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -64,7 +65,7 @@ export async function GET(request, { params }) {
 // DELETE - Delete a PDF from S3 and database
 export async function DELETE(request, { params }) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -128,4 +129,3 @@ export async function DELETE(request, { params }) {
     );
   }
 }
-

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
+import { authOptions } from "../../auth/[...nextauth]/route";
 import { getPresignedDownloadUrl } from "@/lib/s3";
 
 // POST - Confirm PDF upload (save to database after successful S3 upload)
 export async function POST(request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -74,4 +75,3 @@ export async function POST(request) {
     );
   }
 }
-

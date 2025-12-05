@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
+import { authOptions } from "../../api/auth/[...nextauth]/route";
 
 // GET - Fetch all use cases for the current user
 export async function GET(request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -48,7 +49,7 @@ export async function GET(request) {
 // POST - Create a new use case
 export async function POST(request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -96,4 +97,3 @@ export async function POST(request) {
     );
   }
 }
-
