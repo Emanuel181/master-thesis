@@ -93,7 +93,7 @@ export function HomePage() {
             const response = await fetch("/api/github/repos")
             if (response.ok) {
                 const data = await response.json()
-                setRepos(data.repos)
+                setRepos(data)
                 setIsGithubConnected(true)
             } else {
                 setIsGithubConnected(false)

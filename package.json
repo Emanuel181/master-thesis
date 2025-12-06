@@ -18,6 +18,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@dprint/formatter": "^0.4.1",
     "@monaco-editor/react": "^4.7.0",
+    "@octokit/rest": "^22.0.1",
     "@prettier/plugin-php": "^0.24.0",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",

@@ -33,7 +33,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronRight, ChevronDown, File, Folder } from "lucide-react";
+import { ChevronRight, File, Folder } from "lucide-react";
+import { useSession, signIn } from "next-auth/react";
 
 export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLocked, onLockChange }) {
     const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
@@ -41,11 +42,13 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const [isRefreshing, setIsRefreshing] = useState(false);
     const { settings, mounted: settingsMounted } = useSettings();
     const { useCases, refresh: refreshUseCases } = useUseCases();
-    const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode } = useProject();
+    const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo } = useProject();
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [repoUrl, setRepoUrl] = useState("");
     const [isImporting, setIsImporting] = useState(false);
-    const [currentRepo, setCurrentRepo] = useState(null); // { owner, repo }
+    const { data: session } = useSession();
+    const [repos, setRepos] = useState([]);
+    const [isLoadingRepos, setIsLoadingRepos] = useState(false);
 
     const supportedLanguages = [
         { name: "JavaScript", prism: "javascript" },
@@ -214,7 +217,31 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         }
     }, [hasCode, language.prism, setCode]);
 
-    const handleChange = (val) => {
+    // Load repos when dialog opens
+    useEffect(() => {
+        if (isImportDialogOpen && session && repos.length === 0) {
+            loadRepos();
+        }
+    }, [isImportDialogOpen, session]);
+
+    const loadRepos = async () => {
+        setIsLoadingRepos(true);
+        try {
+            const response = await fetch('/api/github/repos');
+            if (response.ok) {
+                const data = await response.json();
+                setRepos(data);
+            } else {
+                console.error('Failed to load repos');
+            }
+        } catch (error) {
+            console.error('Error loading repos:', error);
+        } finally {
+            setIsLoadingRepos(false);
+        }
+    };
+
+    const handleChange = (val = "") => {
         const next = val ?? "";
         const currentPlaceholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
 
@@ -265,12 +292,16 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     const handleImport = async () => {
         if (!repoUrl.trim()) return;
+        if (!session) {
+            alert('Please connect your GitHub account first');
+            return;
+        }
         setIsImporting(true);
         try {
             const [owner, repo] = repoUrl.split('/');
             if (!owner || !repo) throw new Error('Invalid repo URL format. Use owner/repo');
 
-            const structure = await fetchRepoContents(owner, repo);
+            const structure = await fetchRepoTree(owner, repo);
             setProjectStructure(structure);
             setCurrentRepo({ owner, repo });
             setViewMode('project');
@@ -284,43 +315,66 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         }
     };
 
-    const fetchRepoContents = async (owner, repo, path = '') => {
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
-        if (!response.ok) throw new Error('Failed to fetch repo contents');
-        const items = await response.json();
+    const handleSelectRepo = async (repo) => {
+        setIsImporting(true);
+        try {
+            const structure = await fetchRepoTree(repo.owner.login, repo.name);
+            setProjectStructure(structure);
+            setCurrentRepo({ owner: repo.owner.login, repo: repo.name });
+            setViewMode('project');
+            setIsImportDialogOpen(false);
+        } catch (error) {
+            console.error('Error importing repo:', error);
+            alert('Failed to import repo: ' + error.message);
+        } finally {
+            setIsImporting(false);
+        }
+    };
 
-        const node = {
-            name: path.split('/').pop() || repo,
-            path,
+    const fetchRepoTree = async (owner, repo) => {
+        const response = await fetch(`/api/github/tree?owner=${owner}&repo=${repo}`);
+        if (!response.ok) throw new Error('Failed to fetch repo tree');
+        const treeData = await response.json();
+
+        // Build hierarchical structure from flat tree
+        const root = {
+            name: repo,
+            path: '',
             type: 'folder',
             children: []
         };
 
-        for (const item of items) {
-            if (item.type === 'file') {
-                node.children.push({
-                    name: item.name,
-                    path: item.path,
-                    type: 'file',
-                    content: null // Will load on demand
-                });
-            } else if (item.type === 'dir') {
-                const child = await fetchRepoContents(owner, repo, item.path);
-                node.children.push(child);
-            }
-        }
+        const pathMap = { '': root };
 
-        return node;
+        treeData.tree.forEach(item => {
+            const parts = item.path.split('/');
+            const parentPath = parts.slice(0, -1).join('/') || '';
+            const parent = pathMap[parentPath];
+
+            if (parent) {
+                const node = {
+                    name: item.path.split('/').pop(),
+                    path: item.path,
+                    type: item.type === 'tree' ? 'folder' : 'file',
+                    children: item.type === 'tree' ? [] : undefined
+                };
+                parent.children.push(node);
+                if (item.type === 'tree') {
+                    pathMap[item.path] = node;
+                }
+            }
+        });
+
+        return root;
     };
 
     const loadFileContent = async (file) => {
         if (!currentRepo) throw new Error('No repo selected');
         const { owner, repo } = currentRepo;
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`);
+        const response = await fetch(`/api/github/contents?owner=${owner}&repo=${repo}&path=${encodeURIComponent(file.path)}`);
         if (!response.ok) throw new Error('Failed to fetch file content');
         const data = await response.json();
-        const content = atob(data.content); // Decode base64
-        return { ...file, content };
+        return { ...file, content: data.content };
     };
 
     // Switch button UI
@@ -398,23 +452,73 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                             Import Repo
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Import GitHub Repository</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="repo-url">Repository URL (owner/repo)</Label>
-                                <Input
-                                    id="repo-url"
-                                    placeholder="e.g., facebook/react"
-                                    value={repoUrl}
-                                    onChange={(e) => setRepoUrl(e.target.value)}
-                                />
-                            </div>
-                            <Button onClick={handleImport} disabled={isImporting} className="w-full">
-                                {isImporting ? 'Importing...' : 'Import'}
-                            </Button>
+                            {!session ? (
+                                <div className="text-center py-8">
+                                    <p className="text-muted-foreground mb-4">
+                                        Connect your GitHub account to import repositories
+                                    </p>
+                                    <Button onClick={() => signIn('github')}>
+                                        Connect GitHub
+                                    </Button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label>Select Repository</Label>
+                                        {isLoadingRepos ? (
+                                            <div className="text-center py-4">Loading repositories...</div>
+                                        ) : repos.length === 0 ? (
+                                            <div className="text-center py-4 text-muted-foreground">
+                                                No repositories found
+                                            </div>
+                                        ) : (
+                                            <div className="max-h-64 overflow-y-auto border rounded p-2">
+                                                {repos.map((repo) => (
+                                                    <div
+                                                        key={repo.id}
+                                                        className="flex items-center justify-between p-2 hover:bg-muted rounded cursor-pointer"
+                                                        onClick={() => handleSelectRepo(repo)}
+                                                    >
+                                                        <div>
+                                                            <div className="font-medium">{repo.name}</div>
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {repo.owner.login}/{repo.name}
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {repo.private ? 'Private' : 'Public'}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="border-t pt-4">
+                                        <Label htmlFor="repo-url" className="text-sm font-medium">
+                                            Or enter repository URL manually (owner/repo)
+                                        </Label>
+                                        <Input
+                                            id="repo-url"
+                                            placeholder="e.g., facebook/react"
+                                            value={repoUrl}
+                                            onChange={(e) => setRepoUrl(e.target.value)}
+                                            className="mt-1"
+                                        />
+                                        <Button
+                                            onClick={handleImport}
+                                            disabled={isImporting || !repoUrl.trim()}
+                                            className="w-full mt-2"
+                                        >
+                                            {isImporting ? 'Importing...' : 'Import Manually'}
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </DialogContent>
                 </Dialog>
