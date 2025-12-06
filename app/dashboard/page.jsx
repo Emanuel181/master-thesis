@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/dashboard/sidebar/app-sidebar"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -17,21 +17,22 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-import { CodeInput } from "@/components/code-input";
-import { ModelsDialog } from "@/components/models-dialog";
-import KnowledgeBaseVisualization from "@/components/knowledge-base-visualization";
+import { CodeInput } from "@/components/dashboard/code-page/code-input";
+import { ModelsDialog } from "@/components/dashboard/workflow-configuration-page/models-dialog";
+import KnowledgeBaseVisualization from "@/components/dashboard/knowledge-base-page/knowledge-base-visualization";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
 
-import { Results } from "@/components/results";
-import { FeedbackDialog } from "@/components/feedback-dialog";
+import { Results } from "@/components/dashboard/results-page/results";
+import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
+import { HomePage } from "@/components/home/home-page";
 
 export default function Page() {
     const { settings, mounted } = useSettings()
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
-    const [activeComponent, setActiveComponent] = useState("Code input")
+    const [activeComponent, setActiveComponent] = useState("Home")
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
     const [initialCode, setInitialCode] = useState("");
     const [codeType, setCodeType] = useState("");
@@ -54,11 +55,15 @@ export default function Page() {
         const workflow = searchParams.get('workflow')
         if (active) {
             setActiveComponent(active)
-            const newBreadcrumbs = [
-                { label: 'Home', href: '#' },
-                { label: active, href: '#' }
-            ]
-            setBreadcrumbs(newBreadcrumbs)
+            if (active === "Home") {
+                setBreadcrumbs([{ label: 'Home', href: '#' }])
+            } else {
+                const newBreadcrumbs = [
+                    { label: 'Home', href: '#' },
+                    { label: active, href: '#' }
+                ]
+                setBreadcrumbs(newBreadcrumbs)
+            }
         }
         if (workflow === 'true') {
             setIsModelsDialogOpen(true)
@@ -79,16 +84,20 @@ export default function Page() {
             return
         }
 
-        const newBreadcrumbs = [
-            { label: 'Home', href: '#' },
-            { label: item.title, href: item.url }
-        ]
+        if (item.title === "Home") {
+            setBreadcrumbs([{ label: 'Home', href: '#' }])
+        } else {
+            const newBreadcrumbs = [
+                { label: 'Home', href: '#' },
+                { label: item.title, href: item.url }
+            ]
 
-        if (item.parent) {
-            newBreadcrumbs.splice(1, 0, { label: item.parent, href: '#' })
+            if (item.parent) {
+                newBreadcrumbs.splice(1, 0, { label: item.parent, href: '#' })
+            }
+
+            setBreadcrumbs(newBreadcrumbs)
         }
-
-        setBreadcrumbs(newBreadcrumbs)
         setActiveComponent(item.title)
     }
 
@@ -100,6 +109,8 @@ export default function Page() {
                 return <KnowledgeBaseVisualization />
             case "Results":
                 return <Results initialCode={initialCode} />
+            case "Home":
+                return <HomePage />
             default:
                 return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
         }

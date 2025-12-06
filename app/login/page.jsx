@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react';
-import { LoginForm } from "@/components/login-form" // Ensure this path is correct for your project
+import { LoginForm } from "@/components/login/login-form" // Ensure this path is correct for your project
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {

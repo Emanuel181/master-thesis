@@ -16,8 +16,8 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar"
-import ProfileHeader from "@/components/profile-page/profile-header"
-import ProfileContent from "@/components/profile-page/profile-content"
+import ProfileHeader from "@/components/profile/profile-header"
+import ProfileContent from "@/components/profile/profile-content"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomizationDialog } from "@/components/customization-dialog"
 import { useSettings } from "@/contexts/settingsContext"
