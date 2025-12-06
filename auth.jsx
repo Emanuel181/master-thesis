@@ -4,7 +4,8 @@ import Google from "next-auth/providers/google"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import prisma from "@/lib/prisma"
+import prisma from "@/lib/prisma";
+
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     debug: true,
@@ -51,6 +52,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 session.user.id = user.id
             }
             return session
-        },
-    },
+        }
+    }
+
+
 })

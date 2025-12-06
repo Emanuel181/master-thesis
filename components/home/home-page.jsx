@@ -21,13 +21,17 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Edit, Trash2, Github } from "lucide-react"
 import { toast } from "sonner"
-import { useSession } from "next-auth/react"
+import { useSession, signIn } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useProject } from "@/contexts/projectContext"
+import { useRouter } from "next/navigation"
 
 const agents = ["reviewer", "implementation", "tester", "report"]
 
 export function HomePage() {
     const { status } = useSession()
+    const { setProjectStructure, setViewMode, setCurrentRepo } = useProject()
+    const router = useRouter()
 
     // ---------------------------
     // PROMPTS STATE
@@ -179,9 +183,49 @@ export function HomePage() {
     // ---------------------------
     // GITHUB IMPORT PLACEHOLDER
     // ---------------------------
-    const handleImportRepo = (repo) => {
-        toast.success(`Repository ${repo.full_name} imported successfully!`)
-        // TODO: Implement actual repo import logic here
+    const handleImportRepo = async (repo) => {
+        try {
+            const [owner, repoName] = repo.full_name.split('/')
+            const structure = await fetchRepoContents(owner, repoName)
+            setProjectStructure(structure)
+            setCurrentRepo({ owner, repo: repoName })
+            setViewMode('project')
+            toast.success(`Repository ${repo.full_name} imported successfully!`)
+            // Navigate to code input
+            router.push('/dashboard?active=Code%20input')
+        } catch (error) {
+            console.error('Error importing repo:', error)
+            toast.error('Failed to import repository: ' + error.message)
+        }
+    }
+
+    const fetchRepoContents = async (owner, repo, path = '') => {
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`)
+        if (!response.ok) throw new Error('Failed to fetch repo contents')
+        const items = await response.json()
+
+        const node = {
+            name: path.split('/').pop() || repo,
+            path,
+            type: 'folder',
+            children: []
+        }
+
+        for (const item of items) {
+            if (item.type === 'file') {
+                node.children.push({
+                    name: item.name,
+                    path: item.path,
+                    type: 'file',
+                    content: null // Will load on demand
+                })
+            } else if (item.type === 'dir') {
+                const child = await fetchRepoContents(owner, repo, item.path)
+                node.children.push(child)
+            }
+        }
+
+        return node
     }
 
     // ---------------------------
@@ -214,9 +258,9 @@ export function HomePage() {
                                     automatically unless safe email linking is enabled by the administrator.
                                 </p>
 
-                                <Button className="w-full" disabled>
+                                <Button className="w-full" onClick={() => signIn("github")}>
                                     <Github className="h-4 w-4 mr-2" />
-                                    Connect GitHub (Disabled)
+                                    Connect GitHub
                                 </Button>
                             </div>
                         ) : (

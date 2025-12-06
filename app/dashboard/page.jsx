@@ -23,6 +23,7 @@ import KnowledgeBaseVisualization from "@/components/dashboard/knowledge-base-pa
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
+import { ProjectProvider } from "@/contexts/projectContext";
 
 import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
@@ -118,50 +119,52 @@ export default function Page() {
 
 
     return (
-        <SidebarProvider
-            className="h-screen overflow-hidden"
-            open={sidebarOpen}
-            onOpenChange={setSidebarOpen}
-        >
-            <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
-            <SidebarInset className="flex flex-col overflow-hidden">
-                <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                    <div className="flex items-center justify-between w-full gap-2 px-4">
-                        <div className="flex items-center gap-2">
-                            <SidebarTrigger className="-ml-1" />
-                            <Separator
-                                orientation="vertical"
-                                className="mr-2 data-[orientation=vertical]:h-4"
-                            />
-                            <Breadcrumb>
-                                <BreadcrumbList>
-                                    {breadcrumbs.map((crumb, index) => (
-                                        <React.Fragment key={index}>
-                                            <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
-                                                <BreadcrumbLink href={crumb.href}>
-                                                    {crumb.label}
-                                                </BreadcrumbLink>
-                                            </BreadcrumbItem>
-                                            {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                                        </React.Fragment>
-                                    ))}
-                                </BreadcrumbList>
-                            </Breadcrumb>
+        <ProjectProvider>
+            <SidebarProvider
+                className="h-screen overflow-hidden"
+                open={sidebarOpen}
+                onOpenChange={setSidebarOpen}
+            >
+                <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
+                <SidebarInset className="flex flex-col overflow-hidden">
+                    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                        <div className="flex items-center justify-between w-full gap-2 px-4">
+                            <div className="flex items-center gap-2">
+                                <SidebarTrigger className="-ml-1" />
+                                <Separator
+                                    orientation="vertical"
+                                    className="mr-2 data-[orientation=vertical]:h-4"
+                                />
+                                <Breadcrumb>
+                                    <BreadcrumbList>
+                                        {breadcrumbs.map((crumb, index) => (
+                                            <React.Fragment key={index}>
+                                                <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
+                                                    <BreadcrumbLink href={crumb.href}>
+                                                        {crumb.label}
+                                                    </BreadcrumbLink>
+                                                </BreadcrumbItem>
+                                                {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                                            </React.Fragment>
+                                        ))}
+                                    </BreadcrumbList>
+                                </Breadcrumb>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CustomizationDialog />
+                                <ThemeToggle />
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <CustomizationDialog />
-                            <ThemeToggle />
-                        </div>
+                    </header>
+                    <div className={`flex-1 flex flex-col overflow-hidden w-full ${
+                        settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-4' : ''
+                    }`}>
+                        {renderComponent()}
                     </div>
-                </header>
-                <div className={`flex-1 flex flex-col overflow-hidden w-full ${
-                    settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-4' : ''
-                }`}>
-                    {renderComponent()}
-                </div>
-            </SidebarInset>
-            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
-            <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
-        </SidebarProvider>
+                </SidebarInset>
+                <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
+                <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
+            </SidebarProvider>
+        </ProjectProvider>
     )
 }

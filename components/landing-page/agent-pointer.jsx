@@ -4,16 +4,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 
-interface AgentPointerProps {
-    x: number;
-    y: number;
-    label: string;
-    color: 'red' | 'blue' | 'emerald' | 'purple' | 'orange';
-    isVisible: boolean;
-    icon: LucideIcon;
-}
 
-export const AgentPointer = ({ x, y, label, color, isVisible, icon: Icon }: AgentPointerProps) => {
+export const AgentPointer = ({ x, y, label, color, isVisible, icon: Icon }) => {
     const colors = {
         red: "bg-red-500 border-red-400 ring-red-900/30",
         blue: "bg-blue-500 border-blue-400 ring-blue-900/30",

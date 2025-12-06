@@ -1,12 +1,6 @@
 import React from 'react';
 
-interface BadgeProps {
-    children: React.ReactNode;
-    variant?: 'default' | 'blue' | 'red' | 'green' | 'purple' | 'orange';
-    className?: string;
-}
-
-export const Badge = ({ children, variant = "default", className = "" }: BadgeProps) => {
+export const Badge = ({ children, variant = "default", className = "" }) => {
     const variants = {
         default: "bg-neutral-800 text-neutral-400 border-neutral-700",
         blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
