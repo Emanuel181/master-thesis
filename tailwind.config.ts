@@ -1,4 +1,6 @@
-const config = {
+import type { Config } from "tailwindcss";
+
+const config: Config = {
     content: [
         "./pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,8 +13,10 @@ const config = {
             },
             keyframes: {
                 move: {
-                    "0%": { transform: "translateX(-200px)" },
-                    "100%": { transform: "translateX(200px)" },
+                    "0%": { transform: "translateX(-200px)", opacity: "0" },
+                    "10%": { opacity: "1" },
+                    "90%": { opacity: "1" },
+                    "100%": { transform: "translateX(200px)", opacity: "0" },
                 },
             },
         },

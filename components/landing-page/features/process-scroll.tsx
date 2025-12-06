@@ -48,8 +48,8 @@ const content = [
 
 export function ProcessScroll() {
     return (
-        <div className="w-full bg-slate-950 py-10">
-            <StickyScroll content={content} />
+        <div className="w-full py-10">
+            <StickyScroll content={content} contentClassName="" />
         </div>
     );
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Terminal, Shield, Database, Search, AlertTriangle, FileCode, Loader2,
+    Terminal, Database, Search, AlertTriangle, FileCode, Loader2,
     CheckCircle2, Play, Beaker, FileText, ClipboardCheck, Check
 } from 'lucide-react';
 import { Badge } from '@/components/landing-page/badge';
@@ -145,7 +145,7 @@ export const SecurityCodeDemo = () => {
                                         <CheckCircle2 size={14} className="text-emerald-400" />
                                         <span className="text-emerald-400/90 font-bold text-[11px] tracking-wider uppercase">RAG Patch Applied (OWASP A03:2021)</span>
                                     </div>
-                                    {'  '}<span className="text-purple-400">const</span> query = <span className="text-emerald-200">"SELECT * FROM users WHERE user = ?"</span>;
+                                    {'  '}<span className="text-purple-400">const</span> query = <span className="text-emerald-200">&quot;SELECT * FROM users WHERE user = ?&quot;</span>;
                                 </motion.div>
                                 {'  '}<span className="text-purple-400">return</span> <span className="text-blue-400">await</span> db.execute(query, [user]);
                                 {'\n'}
