@@ -10,7 +10,10 @@ import { PhilosophyText } from '@/components/landing-page/features/philosophy-te
 import { TimelineDemo } from '@/components/landing-page/features/timeline';
 import { FeaturesGrid } from '@/components/landing-page/features/features-grid';
 import { ModelSelector } from '@/components/landing-page/features/model-selector';
+// NEW IMPORT
+import { VulnIQLamp } from '@/components/landing-page/vulniq-lamp';
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
+import { Footer } from "@/components/landing-page/footer";
 
 export default function LandingPage() {
     return (
@@ -64,38 +67,28 @@ export default function LandingPage() {
                 <PhilosophyText />
             </section>
 
-            {/* --- SECTION 3: THE PIPELINE (Timeline) --- */}
-            <section className="relative z-10 w-full py-24">
-                <div className="max-w-7xl mx-auto px-6">
-                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                        The Remediation Pipeline
-                    </h2>
-                    <p className="text-zinc-400 max-w-2xl text-lg mb-12">
-                        We don&#39;t just autocomplete code. We run a rigorous, multi-step defense process for every vulnerability detected.
-                    </p>
-                    <div className="w-full">
-                        <TimelineDemo />
-                    </div>
-                </div>
-            </section>
-
             {/* --- SECTION 4: FEATURES & ORCHESTRATION --- */}
-            {/* Added a border-t to separate it visually from the timeline since the Gemini effect is gone */}
             <section className="relative z-10 py-32 border-t border-zinc-800/50">
                 <div className="max-w-7xl mx-auto px-6">
-
-                    <div className="mb-24 text-center">
-                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-                            Enterprise-Grade Security Architecture
-                        </h2>
-                        <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
-                            Built for security teams that demand privacy, accuracy, and auditability.
-                        </p>
-                    </div>
 
                     <div className="mb-32">
                         <FeaturesGrid />
                     </div>
+
+                    {/* --- SECTION 3: THE PIPELINE (Timeline) --- */}
+                    <section className="relative z-10 w-full py-24">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                                The Remediation Pipeline
+                            </h2>
+                            <p className="text-zinc-400 max-w-2xl text-lg mb-12">
+                                We don&#39;t just autocomplete code. We run a rigorous, multi-step defense process for every vulnerability detected.
+                            </p>
+                            <div className="w-full">
+                                <TimelineDemo />
+                            </div>
+                        </div>
+                    </section>
 
                     {/* MODEL SELECTOR: Side-by-Side Layout */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -128,10 +121,15 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* --- SECTION 5: VULNIQ BRANDING (Lamp) --- */}
+            <section className="relative z-10 w-full bg-transparent">
+                <VulnIQLamp />
+            </section>
+
             {/* --- FOOTER --- */}
-            <footer className="py-12 border-t border-zinc-900 bg-[#020617] text-center text-zinc-500 relative z-10">
-                <p>© 2025 SecureRAG System. All rights reserved.</p>
-            </footer>
+            <div className="relative z-10">
+                <Footer />
+            </div>
 
         </div>
     );
