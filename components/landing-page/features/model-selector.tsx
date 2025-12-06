@@ -1,93 +1,20 @@
 "use client";
-import { animate, motion } from "motion/react";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import { GoCopilot } from "react-icons/go";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
 export function ModelSelector() {
     return (
-        <Card>
-            <CardSkeletonContainer>
+        <Card className={undefined}>
+            <CardContent className="h-[15rem] md:h-[20rem] rounded-xl z-40 bg-neutral-300 dark:bg-neutral-900/70 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]">
                 <Skeleton />
-            </CardSkeletonContainer>
-            <CardTitle>Damn good card</CardTitle>
-            <CardDescription>
-                A card that showcases a set of tools that you use to create your
-                product.
-            </CardDescription>
+            </CardContent>
         </Card>
     );
 }
 
 const Skeleton = () => {
-    const scale = [1, 1.1, 1];
-    const transform = ["translateY(0px)", "translateY(-4px)", "translateY(0px)"];
-    const sequence = [
-        [
-            ".circle-1",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-        [
-            ".circle-2",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-        [
-            ".circle-3",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-        [
-            ".circle-4",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-        [
-            ".circle-5",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-        [
-            ".circle-6",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-        [
-            ".circle-7",
-            {
-                scale,
-                transform,
-            },
-            { duration: 0.8 },
-        ],
-    ];
-
-    useEffect(() => {
-        // @ts-ignore
-        animate(sequence, {
-            repeat: Infinity,
-            repeatDelay: 1,
-        });
-    }, []);
     return (
         <div className="p-8 overflow-hidden h-full relative flex items-center justify-center">
             <div className="flex flex-row shrink-0 justify-center items-center gap-2">
@@ -95,13 +22,13 @@ const Skeleton = () => {
                     <ClaudeLogo className="h-4 w-4 " />
                 </Container>
                 <Container className="h-12 w-12 circle-2">
-                    <GoCopilot className="h-6 w-6 dark:text-white" />
+                    <GoCopilot className="h-6 w-6 dark:text-neutral-50" />
                 </Container>
                 <Container className="h-12 w-12 circle-4">
                     <MetaIconOutline className="h-6 w-6 " />
                 </Container>
                 <Container className="circle-3">
-                    <OpenAILogo className="h-8 w-8 dark:text-white" />
+                    <OpenAILogo className="h-8 w-8 dark:text-neutral-50" />
                 </Container>
                 <Container className="h-8 w-8 circle-5">
                     <GeminiLogo className="h-4 w-4 " />
@@ -110,138 +37,11 @@ const Skeleton = () => {
                     <MistralLogo className="h-5 w-5 " />
                 </Container>
                 <Container className="h-12 w-12 circle-7">
-                    <LlamaLogo className="h-6 w-6 dark:text-white" />
+                    <LlamaLogo className="h-6 w-6 dark:text-neutral-50" />
                 </Container>
             </div>
 
             {/* Removed the blue line */}
-        </div>
-    );
-};
-const Sparkles = () => {
-    const [sparkles, setSparkles] = useState([]);
-
-    useEffect(() => {
-        const newSparkles = [...Array(12)].map((_, i) => ({
-            id: i,
-            top: Math.random() * 100,
-            left: Math.random() * 100,
-            moveTop: Math.random() * 2 - 1,
-            moveLeft: Math.random() * 2 - 1,
-            opacity: Math.random(),
-            duration: Math.random() * 2 + 4,
-        }));
-        setSparkles(newSparkles);
-    }, []);
-
-    return (
-        <div className="absolute inset-0">
-            {sparkles.map((sparkle) => (
-                <motion.span
-                    key={`star-${sparkle.id}`}
-                    animate={{
-                        top: `calc(${sparkle.top}% + ${sparkle.moveTop}px)`,
-                        left: `calc(${sparkle.left}% + ${sparkle.moveLeft}px)`,
-                        opacity: sparkle.opacity,
-                        scale: [1, 1.2, 0],
-                    }}
-                    transition={{
-                        duration: sparkle.duration,
-                        repeat: Infinity,
-                        ease: "linear",
-                    }}
-                    style={{
-                        position: "absolute",
-                        top: `${sparkle.top}%`,
-                        left: `${sparkle.left}%`,
-                        width: `2px`,
-                        height: `2px`,
-                        borderRadius: "50%",
-                        zIndex: 1,
-                    }}
-                    className="inline-block bg-black dark:bg-white"
-                ></motion.span>
-            ))}
-        </div>
-    );
-};
-
-export const Card = ({
-                         className,
-                         children,
-                     }: {
-    className?: string;
-    children: React.ReactNode;
-}) => {
-    return (
-        <div
-            className={cn(
-                "w-full mx-auto p-8 rounded-xl border border-[rgba(255,255,255,0.10)] dark:bg-[rgba(40,40,40,0.70)] bg-gray-100 shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
-                className
-            )}
-        >
-            {children}
-        </div>
-    );
-};
-
-export const CardTitle = ({
-                              children,
-                              className,
-                          }: {
-    children: React.ReactNode;
-    className?: string;
-}) => {
-    return (
-        <h3
-            className={cn(
-                "text-lg font-semibold text-gray-800 dark:text-white py-2",
-                className
-            )}
-        >
-            {children}
-        </h3>
-    );
-};
-
-export const CardDescription = ({
-                                    children,
-                                    className,
-                                }: {
-    children: React.ReactNode;
-    className?: string;
-}) => {
-    return (
-        <p
-            className={cn(
-                "text-sm font-normal text-neutral-600 dark:text-neutral-400 max-w-sm",
-                className
-            )}
-        >
-            {children}
-        </p>
-    );
-};
-
-export const CardSkeletonContainer = ({
-                                          className,
-                                          children,
-                                          showGradient = true,
-                                      }: {
-    className?: string;
-    children: React.ReactNode;
-    showGradient?: boolean;
-}) => {
-    return (
-        <div
-            className={cn(
-                "h-[15rem] md:h-[20rem] rounded-xl z-40",
-                className,
-                showGradient &&
-                "bg-neutral-300 dark:bg-[rgba(40,40,40,0.70)] [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"
-            )}
-        >
-            {children}
         </div>
     );
 };
@@ -256,8 +56,8 @@ const Container = ({
     return (
         <div
             className={cn(
-                `h-16 w-16 rounded-full flex items-center justify-center bg-[rgba(248,248,248,0.01)]
-    shadow-[0px_0px_8px_0px_rgba(248,248,248,0.25)_inset,0px_32px_24px_-16px_rgba(0,0,0,0.40)]
+                `h-16 w-16 rounded-full flex items-center justify-center bg-neutral-50/1
+    shadow-[0px_0px_8px_0px_rgba(100,116,139,0.25)_inset,0px_32px_24px_-16px_rgba(0,0,0,0.40)]
     `,
                 className
             )}
@@ -436,7 +236,6 @@ export const LlamaLogo = ({ className }: { className?: string }) => {
             className={className}
         >
             <circle cx="12" cy="12" r="10" fill="#8B5CF6" />
-            <text x="12" y="16" textAnchor="middle" fill="white" fontSize="10" fontFamily="Arial, sans-serif">Llama</text>
         </svg>
     );
 };

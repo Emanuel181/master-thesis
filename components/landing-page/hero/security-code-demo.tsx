@@ -87,16 +87,16 @@ export const SecurityCodeDemo = () => {
 
     return (
         <div className="w-full font-sans max-w-4xl mx-auto select-none relative z-10 my-8 lg:my-0">
-            <div className="rounded-xl border border-zinc-800 bg-[#09090b]/80 shadow-2xl overflow-hidden ring-1 ring-white/10 relative backdrop-blur-md h-[550px]">
+            <div className="rounded-xl border border-neutral-800 bg-[#09090b]/80 shadow-2xl overflow-hidden ring-1 ring-neutral-50/10 relative backdrop-blur-md h-[550px]">
 
                 {/* Toolbar */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-900/50">
                     <div className="flex space-x-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium font-mono">
+                    <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium font-mono">
                         <FileCode size={14} className="text-blue-500/80" />
                         <span>auth_service.ts</span>
                         {step >= 4 && <span className="text-emerald-500/80 transition-opacity"> — Fixed</span>}
@@ -105,8 +105,8 @@ export const SecurityCodeDemo = () => {
                 </div>
 
                 {/* Editor Body */}
-                <div className="relative p-6 h-full bg-[#09090b]/40 font-mono text-sm leading-7 text-zinc-300 overflow-hidden">
-                    <div className="absolute left-0 top-6 bottom-0 w-12 flex flex-col items-end gap-0 pr-4 text-zinc-800 text-xs border-r border-zinc-800/30 font-mono select-none">
+                <div className="relative p-6 h-full bg-[#09090b]/40 font-mono text-sm leading-7 text-neutral-300 overflow-hidden">
+                    <div className="absolute left-0 top-6 bottom-0 w-12 flex flex-col items-end gap-0 pr-4 text-neutral-800 text-xs border-r border-neutral-800/30 font-mono select-none">
                         {Array.from({length: 15}).map((_, i) => <div key={i} className="leading-7">{i+1}</div>)}
                     </div>
 
@@ -121,7 +121,7 @@ export const SecurityCodeDemo = () => {
                                     if (chunk.includes('SELECT'))
                                         return <span key={i} className="text-orange-300">{chunk}</span>;
                                     if (chunk.includes('//'))
-                                        return <span key={i} className="text-zinc-500 italic">{chunk}</span>;
+                                        return <span key={i} className="text-neutral-500 italic">{chunk}</span>;
                                     return <span key={i}>{chunk}</span>;
                                 })}
                                 {step === 1 && !typingFinished && (
@@ -178,17 +178,17 @@ export const SecurityCodeDemo = () => {
                                         <div className="bg-blue-950/30 px-4 py-3 border-b border-blue-500/20 flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Database size={14} className="text-blue-400" />
-                                                <span className="text-xs font-bold text-zinc-100">RAG Context Retrieval</span>
+                                                <span className="text-xs font-bold text-neutral-100">RAG Context Retrieval</span>
                                             </div>
                                             <Loader2 size={12} className="text-blue-400 animate-spin" />
                                         </div>
                                         <div className="p-4 space-y-4">
                                             <div className="space-y-2">
-                                                <div className="flex justify-between text-[10px] uppercase text-zinc-500 font-bold tracking-wider">
+                                                <div className="flex justify-between text-[10px] uppercase text-neutral-500 font-bold tracking-wider">
                                                     <span>Vector DB Search</span>
                                                     <span className="text-blue-400">Running...</span>
                                                 </div>
-                                                <div className="h-1.5 w-full bg-zinc-800/50 rounded-full overflow-hidden">
+                                                <div className="h-1.5 w-full bg-neutral-800/50 rounded-full overflow-hidden">
                                                     <motion.div
                                                         className="h-full bg-blue-500"
                                                         initial={{ width: "0%" }}
@@ -205,8 +205,8 @@ export const SecurityCodeDemo = () => {
                                             >
                                                 <div className="flex items-start gap-3">
                                                     <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
-                                                    <div className="text-[11px] leading-relaxed text-zinc-300">
-                                                        <span className="text-zinc-100 font-bold block mb-1">Critical Match Found:</span>
+                                                    <div className="text-[11px] leading-relaxed text-neutral-300">
+                                                        <span className="text-neutral-100 font-bold block mb-1">Critical Match Found:</span>
                                                         Pattern matches <span className="text-red-300">CWE-89 (SQL Injection)</span>.
                                                     </div>
                                                 </div>
@@ -229,10 +229,10 @@ export const SecurityCodeDemo = () => {
                                         <div className="flex items-center gap-2 mb-3 text-purple-400 font-bold uppercase tracking-wider">
                                             <Terminal size={12} /> AI Test Runner Output
                                         </div>
-                                        <div className="space-y-1.5 text-zinc-400">
+                                        <div className="space-y-1.5 text-neutral-400">
                                             <div>$ run-security-tests --target=auth_service.ts</div>
                                             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 1}}>
-                                                Running Test Suite: <span className="text-zinc-300">SQL Injection Patterns</span>
+                                                Running Test Suite: <span className="text-neutral-300">SQL Injection Patterns</span>
                                             </motion.div>
                                             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay: 2.5}} className="flex items-center gap-2 text-emerald-400">
                                                 <CheckCircle2 size={12} /> [PASS] Isolate malicious payload
@@ -254,22 +254,22 @@ export const SecurityCodeDemo = () => {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm"
                                 >
-                                    <div className="w-[400px] bg-zinc-900 border border-orange-500/20 rounded-2xl shadow-2xl overflow-hidden relative">
+                                    <div className="w-[400px] bg-neutral-900 border border-orange-500/20 rounded-2xl shadow-2xl overflow-hidden relative">
                                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500/0 via-orange-500/50 to-orange-500/0 animate-shimmer" style={{backgroundSize: '200% auto'}}/>
                                         <div className="p-6 text-center">
                                             <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 ring-1 ring-orange-500/30">
                                                 <ClipboardCheck size={32} className="text-orange-400" />
                                             </div>
                                             <h3 className="text-xl font-bold text-white mb-2">Security Remediation Report</h3>
-                                            <p className="text-zinc-400 text-sm mb-6">Automated fix applied and verified.</p>
-                                            <div className="bg-zinc-950/50 rounded-lg border border-zinc-800 p-4 text-sm space-y-3">
+                                            <p className="text-neutral-400 text-sm mb-6">Automated fix applied and verified.</p>
+                                            <div className="bg-neutral-950/50 rounded-lg border border-neutral-800 p-4 text-sm space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-zinc-500 flex items-center gap-2"><AlertTriangle size={12}/> Vulnerability</span>
+                                                    <span className="text-neutral-500 flex items-center gap-2"><AlertTriangle size={12}/> Vulnerability</span>
                                                     <span className="text-red-300 font-medium">SQL Injection</span>
                                                 </div>
-                                                <div className="h-px bg-zinc-800/50 w-full" />
+                                                <div className="h-px bg-neutral-800/50 w-full" />
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-zinc-500 flex items-center gap-2"><Beaker size={12}/> QA Status</span>
+                                                    <span className="text-neutral-500 flex items-center gap-2"><Beaker size={12}/> QA Status</span>
                                                     <span className="text-emerald-400 font-bold flex items-center gap-1"><Check size={12}/> Verified Safe</span>
                                                 </div>
                                             </div>

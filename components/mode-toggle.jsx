@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useSettings } from "@/contexts/settingsContext"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,7 +13,22 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ModeToggle() {
-  const { setTheme } = useTheme()
+  const { settings, updateSettings } = useSettings()
+
+  const setLight = () => {
+    if (!settings) return
+    updateSettings({ ...settings, mode: "light" })
+  }
+  const setDark = () => {
+    if (!settings) return
+    updateSettings({ ...settings, mode: "dark" })
+  }
+  const setSystem = () => {
+    if (!settings) return
+    const prefersDark =
+      window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+    updateSettings({ ...settings, mode: prefersDark ? "dark" : "light" })
+  }
 
   return (
     <DropdownMenu>
@@ -25,17 +40,10 @@ export function ModeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={setLight}>Light</DropdownMenuItem>
+        <DropdownMenuItem onClick={setDark}>Dark</DropdownMenuItem>
+        <DropdownMenuItem onClick={setSystem}>System</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
-

@@ -22,7 +22,7 @@ export const AgentPointer = ({ x, y, label, color, isVisible, icon: Icon }: Agen
         orange: "bg-orange-600 border-orange-400 ring-orange-900/30",
     };
 
-    const textColor = color === 'orange' ? 'text-zinc-900' : 'text-white';
+    const textColor = color === 'orange' ? 'text-neutral-900' : 'text-white';
     const arrowColor = color === 'red' ? 'text-red-500' :
         color === 'blue' ? 'text-blue-500' :
             color === 'purple' ? 'text-purple-600' :
