@@ -23,6 +23,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   useCases      KnowledgeBaseCategory[]
+  prompts       Prompt[]
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 }
@@ -83,4 +84,14 @@ model Pdf {
   useCaseId String
   useCase   KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
   createdAt DateTime              @default(now())
+}
+
+model Prompt {
+  id        String   @id @default(cuid())
+  agent     String
+  text      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

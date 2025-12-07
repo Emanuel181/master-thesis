@@ -25,6 +25,7 @@ import { useSession, signIn } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useProject } from "@/contexts/projectContext"
 import { useRouter } from "next/navigation"
+import { fetchRepoTree } from "@/lib/github-api";
 
 const agents = ["reviewer", "implementation", "tester", "report"]
 
@@ -44,29 +45,23 @@ export function HomePage() {
         return initial
     })
 
-    // Load saved prompts from localStorage once on mount
+    // Load saved prompts from API on mount
     useEffect(() => {
-        try {
-            if (typeof window === "undefined") return
-            const saved = localStorage.getItem("aiPrompts")
-            if (!saved) return
-
-            const parsed = JSON.parse(saved)
-            const restored = {}
-
-            agents.forEach((agent) => {
-                if (Array.isArray(parsed?.[agent])) {
-                    restored[agent] = parsed[agent]
-                } else {
-                    restored[agent] = []
+        const fetchPrompts = async () => {
+            try {
+                const response = await fetch('/api/prompts')
+                if (response.ok) {
+                    const data = await response.json()
+                    setPrompts(data)
                 }
-            })
-
-            setPrompts(restored)
-        } catch (error) {
-            console.error("Error loading prompts from localStorage:", error)
+            } catch (error) {
+                console.error('Error loading prompts:', error)
+            }
         }
-    }, [])
+        if (status === 'authenticated') {
+            fetchPrompts()
+        }
+    }, [status])
 
     // ---------------------------
     // OTHER UI STATE
@@ -84,6 +79,23 @@ export function HomePage() {
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
     const [isGithubConnected, setIsGithubConnected] = useState(false)
 
+    // Load repos and connection status from localStorage on mount
+    useEffect(() => {
+        try {
+            if (typeof window === "undefined") return
+            const savedRepos = localStorage.getItem("githubRepos")
+            const savedConnected = localStorage.getItem("isGithubConnected")
+            if (savedRepos) {
+                setRepos(JSON.parse(savedRepos))
+            }
+            if (savedConnected === "true") {
+                setIsGithubConnected(true)
+            }
+        } catch (error) {
+            console.error("Error loading GitHub data from localStorage:", error)
+        }
+    }, [])
+
     // ---------------------------
     // GITHUB FETCH LOGIC
     // ---------------------------
@@ -95,12 +107,17 @@ export function HomePage() {
                 const data = await response.json()
                 setRepos(data)
                 setIsGithubConnected(true)
+                // Save repos and connection status to localStorage
+                localStorage.setItem("githubRepos", JSON.stringify(data))
+                localStorage.setItem("isGithubConnected", "true")
             } else {
                 setIsGithubConnected(false)
+                localStorage.setItem("isGithubConnected", "false")
             }
         } catch (err) {
             console.error("Error fetching repos:", err)
             setIsGithubConnected(false)
+            localStorage.setItem("isGithubConnected", "false")
         } finally {
             setIsLoadingRepos(false)
         }
@@ -115,69 +132,88 @@ export function HomePage() {
     // ---------------------------
     // PROMPTS HELPERS
     // ---------------------------
-    const handleAddPrompt = () => {
+    const handleAddPrompt = async () => {
         if (!newPrompt.trim()) {
             toast.error("Please enter a prompt")
             return
         }
 
-        const item = {
-            id: Date.now(),
-            text: newPrompt.trim(),
+        try {
+            const response = await fetch('/api/prompts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agent: currentAgent, text: newPrompt.trim() }),
+            })
+
+            if (response.ok) {
+                const newPromptData = await response.json()
+                setPrompts((prev) => ({
+                    ...prev,
+                    [currentAgent]: [...(prev[currentAgent] || []), newPromptData],
+                }))
+                setNewPrompt("")
+                setIsDialogOpen(false)
+                toast.success("Prompt added successfully!")
+            } else {
+                toast.error("Failed to add prompt")
+            }
+        } catch (error) {
+            console.error('Error adding prompt:', error)
+            toast.error("Failed to add prompt")
         }
-
-        setPrompts((prev) => {
-            const next = {
-                ...prev,
-                [currentAgent]: [...(prev[currentAgent] || []), item],
-            }
-            if (typeof window !== "undefined") {
-                localStorage.setItem("aiPrompts", JSON.stringify(next))
-            }
-            return next
-        })
-
-        setNewPrompt("")
-        setIsDialogOpen(false)
-        toast.success("Prompt added successfully!")
     }
 
-    const handleEditPrompt = (agent, id, newText) => {
+    const handleEditPrompt = async (agent, id, newText) => {
         const trimmed = newText.trim()
         if (!trimmed) {
             toast.error("Prompt cannot be empty")
             return
         }
 
-        setPrompts((prev) => {
-            const next = {
-                ...prev,
-                [agent]: prev[agent].map((p) =>
-                    p.id === id ? { ...p, text: trimmed } : p
-                ),
-            }
-            if (typeof window !== "undefined") {
-                localStorage.setItem("aiPrompts", JSON.stringify(next))
-            }
-            return next
-        })
+        try {
+            const response = await fetch(`/api/prompts/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: trimmed }),
+            })
 
-        setEditingPrompt(null)
-        toast.success("Prompt updated successfully!")
+            if (response.ok) {
+                setPrompts((prev) => ({
+                    ...prev,
+                    [agent]: prev[agent].map((p) =>
+                        p.id === id ? { ...p, text: trimmed } : p
+                    ),
+                }))
+                setEditingPrompt(null)
+                toast.success("Prompt updated successfully!")
+            } else {
+                toast.error("Failed to update prompt")
+            }
+        } catch (error) {
+            console.error('Error updating prompt:', error)
+            toast.error("Failed to update prompt")
+        }
     }
 
-    const handleDeletePrompt = (agent, id) => {
-        setPrompts((prev) => {
-            const next = {
-                ...prev,
-                [agent]: prev[agent].filter((p) => p.id !== id),
+    const handleDeletePrompt = async (agent, id) => {
+        try {
+            const response = await fetch(`/api/prompts/${id}`, {
+                method: 'DELETE',
+            })
+
+            if (response.ok) {
+                setPrompts((prev) => ({
+                    ...prev,
+                    [agent]: prev[agent].filter((p) => p.id !== id),
+                }))
+                toast.success("Prompt deleted successfully!")
+            } else {
+                toast.error("Failed to delete prompt")
             }
-            if (typeof window !== "undefined") {
-                localStorage.setItem("aiPrompts", JSON.stringify(next))
-            }
-            return next
-        })
-        toast.success("Prompt deleted successfully!")
+        } catch (error) {
+            console.error('Error deleting prompt:', error)
+            toast.error("Failed to delete prompt")
+        }
     }
 
     // ---------------------------
@@ -186,7 +222,7 @@ export function HomePage() {
     const handleImportRepo = async (repo) => {
         try {
             const [owner, repoName] = repo.full_name.split('/')
-            const structure = await fetchRepoContents(owner, repoName)
+            const structure = await fetchRepoTree(owner, repoName)
             setProjectStructure(structure)
             setCurrentRepo({ owner, repo: repoName })
             setViewMode('project')
@@ -199,34 +235,6 @@ export function HomePage() {
         }
     }
 
-    const fetchRepoContents = async (owner, repo, path = '') => {
-        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`)
-        if (!response.ok) throw new Error('Failed to fetch repo contents')
-        const items = await response.json()
-
-        const node = {
-            name: path.split('/').pop() || repo,
-            path,
-            type: 'folder',
-            children: []
-        }
-
-        for (const item of items) {
-            if (item.type === 'file') {
-                node.children.push({
-                    name: item.name,
-                    path: item.path,
-                    type: 'file',
-                    content: null // Will load on demand
-                })
-            } else if (item.type === 'dir') {
-                const child = await fetchRepoContents(owner, repo, item.path)
-                node.children.push(child)
-            }
-        }
-
-        return node
-    }
 
     // ---------------------------
     // RENDER
@@ -237,6 +245,12 @@ export function HomePage() {
                 {/* GitHub Integration Card */}
                 <Card>
                     <CardHeader>
+                        {isGithubConnected && (
+                            <div className="flex items-center gap-1 mb-2">
+                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-sm text-green-600">Connected</span>
+                            </div>
+                        )}
                         <CardTitle className="flex items-center gap-2">
                             <Github className="h-5 w-5" />
                             GitHub Repositories
@@ -250,12 +264,6 @@ export function HomePage() {
                             <div className="space-y-4 p-3 border rounded-md bg-muted/20">
                                 <p className="text-sm text-muted-foreground">
                                     GitHub integration is disabled because your account is not linked with GitHub.
-                                </p>
-
-                                <p className="text-xs text-red-500">
-                                    You may have signed in using Google. For security reasons, accounts
-                                    using the same email across different providers cannot be linked
-                                    automatically unless safe email linking is enabled by the administrator.
                                 </p>
 
                                 <Button className="w-full" onClick={() => signIn("github")}>

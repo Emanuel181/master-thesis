@@ -39,8 +39,8 @@ export function UseCasesProvider({ children }) {
     fetchUseCases();
   }, [fetchUseCases]);
 
-  const refresh = () => {
-    fetchUseCases();
+  const refresh = async () => {
+    await fetchUseCases();
   };
 
   return (
