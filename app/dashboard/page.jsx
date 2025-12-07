@@ -157,7 +157,7 @@ export default function Page() {
                         </div>
                     </header>
                     <div className={`flex-1 flex flex-col overflow-hidden w-full ${
-                        settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-4' : ''
+                        settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-4' : 'px-4'
                     }`}>
                         {renderComponent()}
                     </div>

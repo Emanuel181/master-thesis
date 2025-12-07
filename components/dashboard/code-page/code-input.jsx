@@ -306,7 +306,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         : "Unallowed";
 
     return (
-        <div className="flex flex-col h-full w-full p-4 gap-2">
+        <div className="flex flex-col h-full w-full gap-2">
 
             {/* Top Toolbar */}
             <div className="flex justify-between items-center w-full">
@@ -327,34 +327,36 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                     </Button>
                 </div>
 
-                <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                            <FolderOpen className="mr-2 h-4 w-4" /> Switch project
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Switch Project</DialogTitle></DialogHeader>
-                        {!session ? (
-                            <Button onClick={() => signIn('github')}>Connect GitHub</Button>
-                        ) : (
-                            <div className="space-y-4 pt-4">
-                                <div className="space-y-2">
-                                    <Label>Search Projects</Label>
-                                    <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search projects..." />
-                                    <div className="max-h-48 overflow-y-auto border rounded p-2">
-                                        {isLoadingRepos ? <p className="text-sm p-2">Loading...</p> : repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
-                                            <div key={r.id} onClick={() => handleSelectRepo(r)} className="p-2 hover:bg-muted cursor-pointer flex justify-between text-sm">
-                                                <span>{r.name}</span>
-                                                <span className="text-muted-foreground">{r.private ? 'Private' : 'Public'}</span>
-                                            </div>
-                                        ))}
+                {viewMode === 'project' && (
+                    <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <FolderOpen className="mr-2 h-4 w-4" /> Switch project
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Switch Project</DialogTitle></DialogHeader>
+                            {!session ? (
+                                <Button onClick={() => signIn('github')}>Connect GitHub</Button>
+                            ) : (
+                                <div className="space-y-4 pt-4">
+                                    <div className="space-y-2">
+                                        <Label>Search Projects</Label>
+                                        <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search projects..." />
+                                        <div className="max-h-48 overflow-y-auto border rounded p-2">
+                                            {isLoadingRepos ? <p className="text-sm p-2">Loading...</p> : repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
+                                                <div key={r.id} onClick={() => handleSelectRepo(r)} className="p-2 hover:bg-muted cursor-pointer flex justify-between text-sm">
+                                                    <span>{r.name}</span>
+                                                    <span className="text-muted-foreground">{r.private ? 'Private' : 'Public'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </DialogContent>
-                </Dialog>
+                            )}
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
 
             {/* Main Content */}
