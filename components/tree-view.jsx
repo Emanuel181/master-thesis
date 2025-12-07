@@ -1,195 +1,270 @@
-import React, { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
-import { ChevronRight, Folder, File, Search, ChevronsDown, ChevronsUp } from 'lucide-react';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+"use client";
 
-// Helper: Safely get a unique identifier for an item
-// Prioritizes id, then path (common in file trees), then key, then name
+import React, { useMemo, useState, useEffect } from "react";
+import { Tree } from "react-arborist";
+import { Input } from "@/components/ui/input";
+import {
+    Search,
+    ChevronsDown,
+    ChevronsUp,
+    File as DefaultFileIcon,
+    Folder as DefaultFolderIcon,
+    FolderOpen as DefaultFolderOpen,
+} from "lucide-react";
+import {
+    Tooltip,
+    TooltipTrigger,
+    TooltipContent,
+    TooltipProvider,
+} from "@/components/ui/tooltip";
+
+// ---------- CONFIG ----------
+const BASE_ICON_URL = "https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons";
+
+// "Extension" mapped to "Filename in Repo"
+const EXTENSION_ALIASES = {
+    // JavaScript / React
+    js: "javascript",
+    jsx: "react",        // JSX gets the React Atom icon
+    ts: "typescript",
+    tsx: "react_ts",     // TSX gets the React + TS icon
+    mjs: "javascript",
+    cjs: "javascript",
+    vue: "vue",
+    svelte: "svelte",
+    angular: "angular",
+
+    // Styles
+    css: "css",
+    scss: "sass",
+    sass: "sass",
+    less: "less",
+    styl: "stylus",
+
+    // Backend / Systems
+    py: "python",
+    rb: "ruby",
+    rs: "rust",
+    go: "go",
+    java: "java",
+    php: "php",
+    cs: "csharp",
+    cpp: "cpp",
+    c: "c",
+    h: "c",            // Header files
+    hpp: "cpp",
+
+    // Data / Config
+    json: "json",
+    xml: "xml",
+    yaml: "yaml",
+    yml: "yaml",
+    toml: "yaml",      // Fallback
+    env: "tune",       // .env usually uses the 'tune' settings icon
+    lock: "lock",      // Generic lock
+
+    // Documents / Assets
+    md: "markdown",
+    mdx: "markdown",
+    txt: "document",   // "txt.svg" doesn't exist, mapped to "document.svg"
+    pdf: "pdf",
+    zip: "zip",
+    rar: "zip",
+    "7z": "zip",
+    tar: "zip",
+    gz: "zip",
+
+    // Images
+    png: "image",
+    jpg: "image",
+    jpeg: "image",
+    svg: "svg",
+    ico: "image",
+
+    // Shell / Executables
+    sh: "console",
+    bash: "console",
+    zsh: "console",
+    bat: "console",
+    cmd: "console",
+    exe: "exe",
+};
+
+// ---------- HELPER: URL GENERATORS ----------
+const getFolderUrl = (name, open) => {
+    return `${BASE_ICON_URL}/folder-${name.toLowerCase()}${open ? "-open" : ""}.svg`;
+};
+
+const getGenericFolderUrl = (open) => {
+    return `${BASE_ICON_URL}/folder${open ? "-open" : ""}.svg`;
+};
+
+const getFileUrl = (name) => {
+    const lowerName = name.toLowerCase();
+
+    // 1. Check exact filenames first (highest priority)
+    if (lowerName === "package.json") return `${BASE_ICON_URL}/nodejs.svg`;
+    if (lowerName === "favicon.ico") return `${BASE_ICON_URL}/favicon.svg`;
+    if (lowerName === ".gitignore") return `${BASE_ICON_URL}/git.svg`;
+    if (lowerName === "readme.md") return `${BASE_ICON_URL}/readme.svg`;
+    if (lowerName === "dockerfile") return `${BASE_ICON_URL}/docker.svg`;
+    if (lowerName === "license") return `${BASE_ICON_URL}/license.svg`;
+    if (lowerName === "jenkinsfile") return `${BASE_ICON_URL}/jenkins.svg`;
+
+    // 2. Check Extension
+    const parts = lowerName.split(".");
+    const ext = parts.length > 1 ? parts.pop() : ""; // get last part
+
+    // 3. Translate extension using Alias Map, or use extension as-is
+    const iconName = EXTENSION_ALIASES[ext] || ext;
+
+    return `${BASE_ICON_URL}/${iconName}.svg`;
+};
+
+// ---------- COMPONENT: SMART FILE ICON ----------
+const SmartFileIcon = ({ name, isDir, isOpen }) => {
+    const [error, setError] = useState(false);
+
+    // Reset error if name changes
+    useEffect(() => {
+        setError(false);
+    }, [name, isDir]);
+
+    // Fallback to Lucide if image fails to load
+    if (error) {
+        if (isDir) {
+            return isOpen ?
+                <DefaultFolderOpen className="w-4 h-4 text-blue-500" /> :
+                <DefaultFolderIcon className="w-4 h-4 text-blue-500" />;
+        }
+        return <DefaultFileIcon className="w-4 h-4 text-gray-400" />;
+    }
+
+    // --- FOLDER LOGIC (Anti-Flicker) ---
+    if (isDir) {
+        const closedSrc = getFolderUrl(name, false);
+        const openSrc = getFolderUrl(name, true);
+
+        const handleFolderError = (e) => {
+            // If specific folder icon fails, switch to generic folder
+            if (!e.target.src.includes("/folder.svg") && !e.target.src.includes("/folder-open.svg")) {
+                const isOpenImg = e.target.getAttribute("data-state") === "open";
+                e.target.src = getGenericFolderUrl(isOpenImg);
+            } else {
+                setError(true);
+            }
+        };
+
+        return (
+            <>
+                <img
+                    src={closedSrc}
+                    alt={name}
+                    data-state="closed"
+                    className="w-4 h-4 object-contain"
+                    style={{ display: isOpen ? "none" : "block" }}
+                    onError={handleFolderError}
+                />
+                <img
+                    src={openSrc}
+                    alt={name}
+                    data-state="open"
+                    className="w-4 h-4 object-contain"
+                    style={{ display: isOpen ? "block" : "none" }}
+                    onError={handleFolderError}
+                />
+            </>
+        );
+    }
+
+    // --- FILE LOGIC ---
+    return (
+        <img
+            src={getFileUrl(name)}
+            alt={name}
+            className="w-4 h-4 object-contain"
+            onError={() => setError(true)}
+        />
+    );
+};
+
+// ---------- HELPERS ----------
 const getId = (item) => item.id || item.path || item.key || item.name;
 
-// Helper: Filter tree
 function filterTree(items, q) {
     if (!q) return items;
     const lower = q.toLowerCase();
     const matches = [];
     for (const it of items) {
-        const name = it.name || '';
-        // Recursively filter children
-        const children = it.children ? filterTree(it.children, q) : [];
-
-        // If the name matches OR if it has matching children, keep it
+        const name = it.name || "";
+        const children = Array.isArray(it.children) ? filterTree(it.children, q) : undefined;
         if (name.toLowerCase().includes(lower) || (children && children.length > 0)) {
-            matches.push({ ...it, children });
+            matches.push({ ...it, children: children || it.children });
         }
     }
     return matches;
 }
 
+// ---------- MAIN COMPONENT ----------
 export function TreeView({
                              data = [],
                              title,
                              showCheckboxes = false,
                              showExpandAll = false,
-                             searchPlaceholder = 'Search...',
-                             iconMap = {},
+                             searchPlaceholder = "Search...",
                              onCheckChange = () => {},
                              onItemClick = () => {},
-                             className = ''
+                             className = "",
                          }) {
-    const [query, setQuery] = useState('');
-    const [expanded, setExpanded] = useState(new Set());
+    const [query, setQuery] = useState("");
     const [checked, setChecked] = useState(new Set());
 
-    // Derive the visible data based on search query
     const filtered = useMemo(() => filterTree(data, query), [data, query]);
-
-    const toggleExpand = (id) => {
-        setExpanded((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    };
 
     const toggleCheck = (item) => {
         const id = getId(item);
         setChecked((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-                onCheckChange(item, false);
-            } else {
-                next.add(id);
-                onCheckChange(item, true);
-            }
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            onCheckChange(item, next.has(id));
             return next;
         });
     };
 
-    const handleExpandAll = () => {
-        const allIds = new Set();
-        const walk = (items) => {
-            for (const it of items) {
-                if (it.children && it.children.length > 0) {
-                    allIds.add(getId(it));
-                    walk(it.children);
-                }
-            }
-        };
-        walk(data); // Always walk the full data tree, not filtered
-        setExpanded(allIds); // Set directly, not new Set(allIds)
-    };
-
-    const handleCollapseAll = () => {
-        setExpanded(new Set());
-    };
-
-    const renderIcon = (item) => {
-        if (iconMap && iconMap[item.type]) return iconMap[item.type];
-        return item.children ? <Folder className="h-4 w-4" /> : <File className="h-4 w-4" />;
-    };
-
-    const renderNode = (item, level = 0) => {
-        const id = getId(item); // Use the safe ID getter
-        const isExpanded = expanded.has(id);
-        const hasChildren = item.children && item.children.length > 0;
-
-        return (
-            <div key={id} className="flex flex-col">
-                <div className={`flex items-center gap-2 py-1 select-none`} style={{ paddingLeft: Math.min(level * 16, 96) }}>
-                    {hasChildren ? (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); toggleExpand(id); }}
-                            className="p-1 rounded hover:bg-muted/20 transition-colors"
-                        >
-                            <ChevronRight className={`h-4 w-4 transform transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
-                        </button>
-                    ) : (
-                        <div style={{ width: 24 }} /> // Spacer for non-folder items
-                    )}
-
-                    <div
-                        className="flex items-center gap-2 cursor-pointer flex-1 overflow-hidden"
-                        onClick={(e) => {
-                            if (hasChildren) {
-                                e.stopPropagation();
-                                toggleExpand(id);
-                                return;
-                            }
-                            onItemClick(item);
-                        }}
-                    >
-                        {renderIcon(item)}
-                        {showCheckboxes && (
-                            <input
-                                type="checkbox"
-                                checked={checked.has(id)}
-                                onChange={(e) => {
-                                    e.stopPropagation();
-                                    toggleCheck(item);
-                                }}
-                                className="cursor-pointer"
-                            />
-                        )}
-                        <span className="text-sm truncate">{item.name}</span>
-                    </div>
-                </div>
-                {hasChildren && isExpanded && (
-                    <div className="ml-0">
-                        {item.children.map((c) => renderNode(c, level + 1))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     return (
         <div className={`flex flex-col h-full ${className}`}>
+            {/* HEADER */}
             {(title || showExpandAll) && (
-                <div className="flex items-center justify-between px-2 pb-2 shrink-0">
-                    <div className="flex items-center gap-2">
-                        {title && <div className="text-sm font-medium">{title}</div>}
-                    </div>
+                <div className="flex items-center justify-between px-2 pb-2">
+                    <div className="text-sm font-medium">{title}</div>
                     {showExpandAll && (
-                        <div className="flex items-center gap-1">
-                            <TooltipProvider>
+                        <TooltipProvider>
+                            <div className="flex items-center gap-1">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <button
-                                            className="p-2 rounded hover:bg-muted/20 transition-colors"
-                                            onClick={handleExpandAll}
-                                            aria-label="Expand all"
-                                        >
+                                        <button className="p-2 rounded hover:bg-muted/20" onClick={() => window.__treeRef?.openAll()}>
                                             <ChevronsDown className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <span>Expand all</span>
-                                    </TooltipContent>
+                                    <TooltipContent>Expand all</TooltipContent>
                                 </Tooltip>
-
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <button
-                                            className="p-2 rounded hover:bg-muted/20 transition-colors"
-                                            onClick={handleCollapseAll}
-                                            aria-label="Collapse all"
-                                        >
+                                        <button className="p-2 rounded hover:bg-muted/20" onClick={() => window.__treeRef?.closeAll()}>
                                             <ChevronsUp className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <span>Collapse all</span>
-                                    </TooltipContent>
+                                    <TooltipContent>Collapse all</TooltipContent>
                                 </Tooltip>
-                            </TooltipProvider>
-                        </div>
+                            </div>
+                        </TooltipProvider>
                     )}
                 </div>
             )}
 
-            <div className="px-2 pb-2 shrink-0">
+            {/* SEARCH */}
+            <div className="px-2 pb-2">
                 <div className="relative flex items-center">
                     <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -201,12 +276,62 @@ export function TreeView({
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2">
-                {filtered.length > 0 ? (
-                    filtered.map((item) => renderNode(item, 0))
-                ) : (
-                    <div className="text-sm text-muted-foreground text-center py-4">No results found</div>
-                )}
+            {/* TREE */}
+            <div className="flex-1 overflow-hidden">
+                <Tree
+                    data={filtered}
+                    width="100%"
+                    childrenAccessor="children"
+                    idAccessor={getId}
+                    rowHeight={28}
+                    padding={4}
+                    indent={20}
+                    ref={(r) => (window.__treeRef = r)}
+                    onSelect={(nodes) => {
+                        const node = nodes[0];
+                        if (node && !Array.isArray(node.data.children)) {
+                            onItemClick(node.data);
+                        }
+                    }}
+                >
+                    {({ node, style }) => {
+                        const item = node.data;
+                        const id = getId(item);
+                        const isDir = Array.isArray(item.children) || item.isFolder;
+                        const isOpen = node.isOpen;
+
+                        return (
+                            <div
+                                style={style}
+                                className="flex items-center gap-2 px-2 text-sm cursor-pointer select-none hover:bg-muted/30 group"
+                                onClick={() => node.toggle()}
+                            >
+                                {/* ICON */}
+                                <div className="flex-shrink-0 flex items-center justify-center w-5 h-5">
+                                    <SmartFileIcon name={item.name} isDir={isDir} isOpen={isOpen} />
+                                </div>
+
+                                {/* CHECKBOX */}
+                                {showCheckboxes && (
+                                    <input
+                                        type="checkbox"
+                                        checked={checked.has(id)}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            toggleCheck(item);
+                                        }}
+                                        className="mr-1"
+                                    />
+                                )}
+
+                                {/* NAME */}
+                                <span className="truncate flex-1 text-muted-foreground group-hover:text-foreground">
+                    {item.name}
+                </span>
+                            </div>
+                        );
+                    }}
+                </Tree>
             </div>
         </div>
     );

@@ -226,9 +226,9 @@ export function HomePage() {
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="flex">
                 {/* GitHub Card */}
-                <Card>
+                <Card className="w-70 -ml-4 flex-shrink-0">
                     <CardHeader>
                         {isGithubConnected && (
                             <div className="flex items-center gap-1 mb-2">
@@ -295,7 +295,7 @@ export function HomePage() {
                 </Card>
 
                 {/* Prompts Card — unchanged except logic cleanup */}
-                <Card>
+                <Card className="flex-1">
                     <CardHeader>
                         <CardTitle>AI Agent Prompts</CardTitle>
                     </CardHeader>

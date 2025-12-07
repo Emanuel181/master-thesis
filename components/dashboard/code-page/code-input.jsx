@@ -294,7 +294,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         finally { setLoadingFilePath(null); }
     };
 
-    let editorValue = isPlaceholder ? placeholderText : code;
+    let editorValue = selectedFile?.content || (isPlaceholder ? placeholderText : code);
     if (viewMode === 'project' && selectedFile?.content) {
         editorValue = selectedFile.content;
     }
