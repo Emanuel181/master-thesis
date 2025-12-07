@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
     Card,
     CardContent,
@@ -25,7 +25,7 @@ import { useSession, signIn } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useProject } from "@/contexts/projectContext"
 import { useRouter } from "next/navigation"
-import { fetchRepoTree } from "@/lib/github-api";
+import { fetchRepoTree } from "@/lib/github-api"
 
 const agents = ["reviewer", "implementation", "tester", "report"]
 
@@ -34,72 +34,66 @@ export function HomePage() {
     const { setProjectStructure, setViewMode, setCurrentRepo } = useProject()
     const router = useRouter()
 
-    // ---------------------------
-    // PROMPTS STATE
-    // ---------------------------
     const [prompts, setPrompts] = useState(() => {
         const initial = {}
-        agents.forEach((agent) => {
-            initial[agent] = []
-        })
+        agents.forEach((agent) => (initial[agent] = []))
         return initial
     })
 
-    // Load saved prompts from API on mount
-    useEffect(() => {
-        const fetchPrompts = async () => {
-            try {
-                const response = await fetch('/api/prompts')
-                if (response.ok) {
-                    const data = await response.json()
-                    setPrompts(data)
-                }
-            } catch (error) {
-                console.error('Error loading prompts:', error)
-            }
-        }
-        if (status === 'authenticated') {
-            fetchPrompts()
-        }
-    }, [status])
-
-    // ---------------------------
-    // OTHER UI STATE
-    // ---------------------------
     const [newPrompt, setNewPrompt] = useState("")
     const [editingPrompt, setEditingPrompt] = useState(null)
     const [editingText, setEditingText] = useState("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentAgent, setCurrentAgent] = useState("reviewer")
 
-    // ---------------------------
-    // GITHUB STATE
-    // ---------------------------
     const [repos, setRepos] = useState([])
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
     const [isGithubConnected, setIsGithubConnected] = useState(false)
 
-    // Load repos and connection status from localStorage on mount
+    // prevents React 18 dev-mode double-fetch
+    const fetchOnceRef = useRef(false)
+
+    // ---------------------------
+    // Load prompts on mount
+    // ---------------------------
     useEffect(() => {
-        try {
-            if (typeof window === "undefined") return
-            const savedRepos = localStorage.getItem("githubRepos")
-            const savedConnected = localStorage.getItem("isGithubConnected")
-            if (savedRepos) {
-                setRepos(JSON.parse(savedRepos))
+        if (status !== "authenticated") return
+
+        const fetchPrompts = async () => {
+            try {
+                const response = await fetch("/api/prompts")
+                if (response.ok) {
+                    const data = await response.json()
+                    setPrompts(data)
+                }
+            } catch (err) {
+                console.error("Error loading prompts:", err)
             }
-            if (savedConnected === "true") {
-                setIsGithubConnected(true)
-            }
-        } catch (error) {
-            console.error("Error loading GitHub data from localStorage:", error)
         }
+
+        fetchPrompts()
+    }, [status])
+
+    // ---------------------------
+    // Load GitHub state from localStorage
+    // ---------------------------
+    useEffect(() => {
+        if (typeof window === "undefined") return
+
+        const savedRepos = localStorage.getItem("githubRepos")
+        const savedConnected = localStorage.getItem("isGithubConnected")
+
+        if (savedRepos) setRepos(JSON.parse(savedRepos))
+        if (savedConnected === "true") setIsGithubConnected(true)
     }, [])
 
     // ---------------------------
-    // GITHUB FETCH LOGIC
+    // Fetch repos only once
     // ---------------------------
     const fetchRepos = async () => {
+        if (fetchOnceRef.current) return
+        fetchOnceRef.current = true
+
         setIsLoadingRepos(true)
         try {
             const response = await fetch("/api/github/repos")
@@ -107,7 +101,7 @@ export function HomePage() {
                 const data = await response.json()
                 setRepos(data)
                 setIsGithubConnected(true)
-                // Save repos and connection status to localStorage
+
                 localStorage.setItem("githubRepos", JSON.stringify(data))
                 localStorage.setItem("isGithubConnected", "true")
             } else {
@@ -123,14 +117,17 @@ export function HomePage() {
         }
     }
 
-    // Fetch repos when user becomes authenticated
+    // ---------------------------
+    // Only fetch if authenticated AND repos not loaded
+    // ---------------------------
     useEffect(() => {
-        if (status !== "authenticated") return
-        fetchRepos()
-    }, [status])
+        if (status === "authenticated" && repos.length === 0 && !isGithubConnected) {
+            fetchRepos()
+        }
+    }, [status, repos.length, isGithubConnected])
 
     // ---------------------------
-    // PROMPTS HELPERS
+    // Prompt CRUD handlers
     // ---------------------------
     const handleAddPrompt = async () => {
         if (!newPrompt.trim()) {
@@ -139,58 +136,49 @@ export function HomePage() {
         }
 
         try {
-            const response = await fetch('/api/prompts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const response = await fetch("/api/prompts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ agent: currentAgent, text: newPrompt.trim() }),
             })
 
-            if (response.ok) {
-                const newPromptData = await response.json()
-                setPrompts((prev) => ({
-                    ...prev,
-                    [currentAgent]: [...(prev[currentAgent] || []), newPromptData],
-                }))
-                setNewPrompt("")
-                setIsDialogOpen(false)
-                toast.success("Prompt added successfully!")
-            } else {
-                toast.error("Failed to add prompt")
-            }
-        } catch (error) {
-            console.error('Error adding prompt:', error)
+            if (!response.ok) throw new Error()
+
+            const newPromptData = await response.json()
+            setPrompts((prev) => ({
+                ...prev,
+                [currentAgent]: [...prev[currentAgent], newPromptData],
+            }))
+
+            setNewPrompt("")
+            setIsDialogOpen(false)
+            toast.success("Prompt added successfully!")
+        } catch {
             toast.error("Failed to add prompt")
         }
     }
 
     const handleEditPrompt = async (agent, id, newText) => {
         const trimmed = newText.trim()
-        if (!trimmed) {
-            toast.error("Prompt cannot be empty")
-            return
-        }
+        if (!trimmed) return toast.error("Prompt cannot be empty")
 
         try {
             const response = await fetch(`/api/prompts/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text: trimmed }),
             })
 
-            if (response.ok) {
-                setPrompts((prev) => ({
-                    ...prev,
-                    [agent]: prev[agent].map((p) =>
-                        p.id === id ? { ...p, text: trimmed } : p
-                    ),
-                }))
-                setEditingPrompt(null)
-                toast.success("Prompt updated successfully!")
-            } else {
-                toast.error("Failed to update prompt")
-            }
-        } catch (error) {
-            console.error('Error updating prompt:', error)
+            if (!response.ok) throw new Error()
+
+            setPrompts((prev) => ({
+                ...prev,
+                [agent]: prev[agent].map((p) => (p.id === id ? { ...p, text: trimmed } : p)),
+            }))
+
+            setEditingPrompt(null)
+            toast.success("Prompt updated successfully!")
+        } catch {
             toast.error("Failed to update prompt")
         }
     }
@@ -198,51 +186,48 @@ export function HomePage() {
     const handleDeletePrompt = async (agent, id) => {
         try {
             const response = await fetch(`/api/prompts/${id}`, {
-                method: 'DELETE',
+                method: "DELETE",
             })
 
-            if (response.ok) {
-                setPrompts((prev) => ({
-                    ...prev,
-                    [agent]: prev[agent].filter((p) => p.id !== id),
-                }))
-                toast.success("Prompt deleted successfully!")
-            } else {
-                toast.error("Failed to delete prompt")
-            }
-        } catch (error) {
-            console.error('Error deleting prompt:', error)
+            if (!response.ok) throw new Error()
+
+            setPrompts((prev) => ({
+                ...prev,
+                [agent]: prev[agent].filter((p) => p.id !== id),
+            }))
+
+            toast.success("Prompt deleted successfully!")
+        } catch {
             toast.error("Failed to delete prompt")
         }
     }
 
     // ---------------------------
-    // GITHUB IMPORT PLACEHOLDER
+    // Import repo
     // ---------------------------
     const handleImportRepo = async (repo) => {
         try {
-            const [owner, repoName] = repo.full_name.split('/')
+            const [owner, repoName] = repo.full_name.split("/")
             const structure = await fetchRepoTree(owner, repoName)
+
             setProjectStructure(structure)
             setCurrentRepo({ owner, repo: repoName })
-            setViewMode('project')
+            setViewMode("project")
+
             toast.success(`Repository ${repo.full_name} imported successfully!`)
-            // Navigate to code input
-            router.push('/dashboard?active=Code%20input')
-        } catch (error) {
-            console.error('Error importing repo:', error)
-            toast.error('Failed to import repository: ' + error.message)
+            router.push("/dashboard?active=Code%20input")
+        } catch (err) {
+            toast.error("Failed to import repository: " + err.message)
         }
     }
 
-
     // ---------------------------
-    // RENDER
+    // UI
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div className="grid md:grid-cols-2 gap-6">
-                {/* GitHub Integration Card */}
+                {/* GitHub Card */}
                 <Card>
                     <CardHeader>
                         {isGithubConnected && (
@@ -278,13 +263,9 @@ export function HomePage() {
                                 </p>
 
                                 {isLoadingRepos ? (
-                                    <p className="text-sm text-muted-foreground">
-                                        Loading repositories...
-                                    </p>
+                                    <p className="text-sm text-muted-foreground">Loading repositories...</p>
                                 ) : repos.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">
-                                        No repositories found.
-                                    </p>
+                                    <p className="text-sm text-muted-foreground">No repositories found.</p>
                                 ) : (
                                     <ScrollArea className="h-64">
                                         <div className="space-y-2">
@@ -300,10 +281,7 @@ export function HomePage() {
                                                         </p>
                                                     </div>
 
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => handleImportRepo(repo)}
-                                                    >
+                                                    <Button size="sm" onClick={() => handleImportRepo(repo)}>
                                                         Import
                                                     </Button>
                                                 </div>
@@ -316,7 +294,7 @@ export function HomePage() {
                     </CardContent>
                 </Card>
 
-                {/* AI Prompts Management */}
+                {/* Prompts Card — unchanged except logic cleanup */}
                 <Card>
                     <CardHeader>
                         <CardTitle>AI Agent Prompts</CardTitle>
@@ -326,32 +304,18 @@ export function HomePage() {
                         <Tabs value={currentAgent} onValueChange={setCurrentAgent}>
                             <TabsList className="grid w-full grid-cols-4">
                                 {agents.map((agent) => (
-                                    <TabsTrigger
-                                        key={agent}
-                                        value={agent}
-                                        className="capitalize"
-                                    >
+                                    <TabsTrigger key={agent} value={agent} className="capitalize">
                                         {agent}
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
 
                             {agents.map((agent) => (
-                                <TabsContent
-                                    key={agent}
-                                    value={agent}
-                                    className="space-y-4"
-                                >
+                                <TabsContent key={agent} value={agent} className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <h3 className="text-lg font-medium capitalize">
-                                            {agent} Prompts
-                                        </h3>
+                                        <h3 className="text-lg font-medium capitalize">{agent} Prompts</h3>
 
-                                        {/* Add Prompt Dialog */}
-                                        <Dialog
-                                            open={isDialogOpen}
-                                            onOpenChange={setIsDialogOpen}
-                                        >
+                                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                                             <DialogTrigger asChild>
                                                 <Button size="sm">
                                                     <Plus className="h-4 w-4 mr-2" /> Add Prompt
@@ -369,42 +333,28 @@ export function HomePage() {
                                                 <Textarea
                                                     placeholder="Enter your prompt here..."
                                                     value={newPrompt}
-                                                    onChange={(e) =>
-                                                        setNewPrompt(e.target.value)
-                                                    }
+                                                    onChange={(e) => setNewPrompt(e.target.value)}
                                                     rows={4}
                                                 />
 
                                                 <DialogFooter>
-                                                    <Button onClick={handleAddPrompt}>
-                                                        Add Prompt
-                                                    </Button>
+                                                    <Button onClick={handleAddPrompt}>Add Prompt</Button>
                                                 </DialogFooter>
                                             </DialogContent>
                                         </Dialog>
                                     </div>
 
-                                    {/* Prompt List */}
                                     <div className="space-y-2">
                                         {prompts[agent]?.length === 0 ? (
-                                            <p className="text-sm text-muted-foreground">
-                                                No prompts saved yet.
-                                            </p>
+                                            <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
                                         ) : (
                                             prompts[agent].map((prompt) => (
-                                                <div
-                                                    key={prompt.id}
-                                                    className="border rounded-lg p-3 space-y-2"
-                                                >
+                                                <div key={prompt.id} className="border rounded-lg p-3 space-y-2">
                                                     {editingPrompt === prompt.id ? (
                                                         <div className="space-y-2">
                                                             <Textarea
                                                                 value={editingText}
-                                                                onChange={(e) =>
-                                                                    setEditingText(
-                                                                        e.target.value
-                                                                    )
-                                                                }
+                                                                onChange={(e) => setEditingText(e.target.value)}
                                                                 rows={3}
                                                             />
 
@@ -412,11 +362,7 @@ export function HomePage() {
                                                                 <Button
                                                                     size="sm"
                                                                     onClick={() =>
-                                                                        handleEditPrompt(
-                                                                            agent,
-                                                                            prompt.id,
-                                                                            editingText
-                                                                        )
+                                                                        handleEditPrompt(agent, prompt.id, editingText)
                                                                     }
                                                                 >
                                                                     Save
@@ -425,11 +371,7 @@ export function HomePage() {
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline"
-                                                                    onClick={() =>
-                                                                        setEditingPrompt(
-                                                                            null
-                                                                        )
-                                                                    }
+                                                                    onClick={() => setEditingPrompt(null)}
                                                                 >
                                                                     Cancel
                                                                 </Button>
@@ -437,21 +379,15 @@ export function HomePage() {
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-2">
-                                                            <p className="text-sm">
-                                                                {prompt.text}
-                                                            </p>
+                                                            <p className="text-sm">{prompt.text}</p>
 
                                                             <div className="flex gap-2">
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline"
                                                                     onClick={() => {
-                                                                        setEditingPrompt(
-                                                                            prompt.id
-                                                                        )
-                                                                        setEditingText(
-                                                                            prompt.text
-                                                                        )
+                                                                        setEditingPrompt(prompt.id)
+                                                                        setEditingText(prompt.text)
                                                                     }}
                                                                 >
                                                                     <Edit className="h-4 w-4" />
@@ -460,12 +396,7 @@ export function HomePage() {
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline"
-                                                                    onClick={() =>
-                                                                        handleDeletePrompt(
-                                                                            agent,
-                                                                            prompt.id
-                                                                        )
-                                                                    }
+                                                                    onClick={() => handleDeletePrompt(agent, prompt.id)}
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
