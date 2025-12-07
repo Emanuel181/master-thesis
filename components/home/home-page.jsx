@@ -226,9 +226,9 @@ export function HomePage() {
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="flex">
+            <div className="flex gap-4">
                 {/* GitHub Card */}
-                <Card className="w-70 -ml-4 flex-shrink-0">
+                <Card className="flex-1 -ml-4">
                     <CardHeader>
                         {isGithubConnected && (
                             <div className="flex items-center gap-1 mb-2">
@@ -295,12 +295,12 @@ export function HomePage() {
                 </Card>
 
                 {/* Prompts Card — unchanged except logic cleanup */}
-                <Card className="flex-1">
+                <Card className="flex-1 -mr-4">
                     <CardHeader>
                         <CardTitle>AI Agent Prompts</CardTitle>
                     </CardHeader>
 
-                    <CardContent>
+                    <CardContent className="space-y-4">
                         <Tabs value={currentAgent} onValueChange={setCurrentAgent}>
                             <TabsList className="grid w-full grid-cols-4">
                                 {agents.map((agent) => (
