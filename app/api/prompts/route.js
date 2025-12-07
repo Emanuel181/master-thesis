@@ -17,15 +17,17 @@ export async function GET(request) {
         });
 
         // Group by agent
+        const agents = ["reviewer", "implementation", "tester", "report"];
         const grouped = {};
+        agents.forEach(agent => grouped[agent] = []);
+
         prompts.forEach(prompt => {
-            if (!grouped[prompt.agent]) {
-                grouped[prompt.agent] = [];
+            if (grouped[prompt.agent]) {
+                grouped[prompt.agent].push({
+                    id: prompt.id,
+                    text: prompt.text,
+                });
             }
-            grouped[prompt.agent].push({
-                id: prompt.id,
-                text: prompt.text,
-            });
         });
 
         return NextResponse.json(grouped);
