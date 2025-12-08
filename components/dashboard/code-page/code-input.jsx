@@ -270,6 +270,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         try {
             const fileWithContent = await apiFetchFileContent(currentRepo.owner, currentRepo.repo, node.path);
             setSelectedFile(fileWithContent);
+            setCode(fileWithContent.content);
+            setIsPlaceholder(false);
 
             // Trigger detection immediately
             const lang = detectLanguageFromContent(fileWithContent.name, fileWithContent.content);
