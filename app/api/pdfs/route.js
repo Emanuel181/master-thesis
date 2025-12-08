@@ -1,47 +1,19 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { getPresignedUploadUrl, generateS3Key } from "@/lib/s3";
 
-// GET - Fetch all use cases for the current user
-export async function GET(request) {
-    try {
-        const session = await auth();
 
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
-            include: {
-                useCases: {
-                    include: { pdfs: true },
-                    orderBy: { createdAt: "desc" },
-                },
-            },
-        });
-
-        if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
-
-        return NextResponse.json({ useCases: user.useCases });
-    } catch (error) {
-        console.error("Error fetching use cases:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch use cases" },
-            { status: 500 }
-        );
-    }
-}
-
-// POST - Create a new use case
+// POST - Generate presigned URL for PDF upload
 export async function POST(request) {
     try {
         const session = await auth();
 
         if (!session?.user?.email) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
         const user = await prisma.user.findUnique({
@@ -49,33 +21,48 @@ export async function POST(request) {
         });
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return NextResponse.json(
+                { error: "User not found" },
+                { status: 404 }
+            );
         }
 
         const body = await request.json();
-        const { title, content, icon } = body;
+        const { fileName, fileSize, useCaseId } = body;
 
-        if (!title || !content) {
+        if (!fileName || !fileSize || !useCaseId) {
             return NextResponse.json(
-                { error: "Title and content are required" },
+                { error: "fileName, fileSize, and useCaseId are required" },
                 { status: 400 }
             );
         }
 
-        const useCase = await prisma.knowledgeBaseCategory.create({
-            data: {
-                title,
-                content,
-                icon: icon || "File",
+        // Verify the use case belongs to the user
+        const useCase = await prisma.knowledgeBaseCategory.findFirst({
+            where: {
+                id: useCaseId,
                 userId: user.id,
             },
         });
 
-        return NextResponse.json({ useCase }, { status: 201 });
+        if (!useCase) {
+            return NextResponse.json(
+                { error: "Use case not found" },
+                { status: 404 }
+            );
+        }
+
+        // Generate S3 key
+        const s3Key = generateS3Key(user.id, useCaseId, fileName);
+
+        // Generate presigned upload URL
+        const uploadUrl = await getPresignedUploadUrl(s3Key, "application/pdf");
+
+        return NextResponse.json({ uploadUrl, s3Key }, { status: 200 });
     } catch (error) {
-        console.error("Error creating use case:", error);
+        console.error("Error generating presigned URL:", error);
         return NextResponse.json(
-            { error: "Failed to create use case" },
+            { error: "Failed to generate upload URL" },
             { status: 500 }
         );
     }

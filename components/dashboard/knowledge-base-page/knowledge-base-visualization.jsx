@@ -18,6 +18,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
@@ -52,6 +53,9 @@ export default function KnowledgeBaseVisualization() {
     const [currentPage, setCurrentPage] = useState(1);
     const categoriesPerPage = 8;
 
+    const [currentDocPage, setCurrentDocPage] = useState(1);
+    const docsPerPage = 10;
+
     // PDF Viewer state
     const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
     const [selectedPdf, setSelectedPdf] = useState({ url: null, name: null });
@@ -76,10 +80,19 @@ export default function KnowledgeBaseVisualization() {
     const [deleteUseCaseDialogOpen, setDeleteUseCaseDialogOpen] = useState(false);
     const [useCaseToDelete, setUseCaseToDelete] = useState(null);
 
+    // Track selected documents for bulk actions
+    const [selectedDocs, setSelectedDocs] = useState(new Set());
+
     // Fetch use cases from database on mount
     useEffect(() => {
         fetchUseCases();
     }, []);
+
+    // Reset document page and selection when use case changes
+    useEffect(() => {
+        setCurrentDocPage(1);
+        setSelectedDocs(new Set());
+    }, [selectedUseCase]);
 
     const fetchUseCases = async () => {
         try {
@@ -409,6 +422,131 @@ export default function KnowledgeBaseVisualization() {
     const currentDocs = documents[selectedUseCase] || [];
     const selectedCategoryName = useCases.find(uc => uc.id === selectedUseCase)?.name || "Category";
 
+    const paginatedDocs = currentDocs.slice(
+        (currentDocPage - 1) * docsPerPage,
+        currentDocPage * docsPerPage
+    );
+
+    const totalDocPages = Math.ceil(currentDocs.length / docsPerPage);
+
+    // Handle document selection
+    const handleDocSelect = (docId, checked) => {
+        setSelectedDocs(prev => {
+            const newSet = new Set(prev);
+            if (checked) {
+                newSet.add(docId);
+            } else {
+                newSet.delete(docId);
+            }
+            return newSet;
+        });
+    };
+
+    // Select all documents in current category
+    const selectAllDocs = () => {
+        setSelectedDocs(new Set(currentDocs.map(doc => doc.id)));
+    };
+
+    // Clear all selections
+    const clearSelection = () => {
+        setSelectedDocs(new Set());
+    };
+
+    // Bulk delete selected documents
+    const handleBulkDelete = async () => {
+        if (selectedDocs.size === 0) return;
+
+        const docIds = Array.from(selectedDocs);
+        const docsToDelete = currentDocs.filter(doc => selectedDocs.has(doc.id));
+
+        // Prevent duplicate delete calls
+        setDeletingDocs(prev => new Set([...prev, ...docIds]));
+
+        try {
+            // Delete each document
+            for (const docId of docIds) {
+                const response = await fetch(`/api/pdfs/${docId}`, {
+                    method: "DELETE",
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to delete document ${docId}`);
+                }
+            }
+
+            // Update local state
+            setDocuments(prev => ({
+                ...prev,
+                [selectedUseCase]: prev[selectedUseCase].filter(doc => !selectedDocs.has(doc.id))
+            }));
+
+            toast.success(`${selectedDocs.size} document${selectedDocs.size > 1 ? 's' : ''} deleted successfully!`);
+            setSelectedDocs(new Set());
+        } catch (error) {
+            console.error("Bulk delete error:", error);
+            toast.error("Failed to delete some documents");
+        } finally {
+            setDeletingDocs(prev => {
+                const newSet = new Set(prev);
+                docIds.forEach(id => newSet.delete(id));
+                return newSet;
+            });
+        }
+    };
+
+    const currentDocsDisplay = paginatedDocs.map(doc => {
+        const isSelected = selectedDocs.has(doc.id);
+        return (
+            <div
+                key={doc.id}
+                className={`group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer ${isSelected ? 'bg-accent/10' : ''}`}
+                onClick={() => openPdfViewer(doc)}
+            >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                    <File className="h-6 w-6" />
+                </div>
+
+                <div className="flex-1 min-w-0 pt-1">
+                    <p className="text-sm font-medium text-foreground truncate pr-6 hover:text-primary transition-colors" title={doc.name}>
+                        {doc.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PDF</span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">{doc.size}</span>
+                    </div>
+                </div>
+
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                    disabled={deletingDocs.has(doc.id)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        confirmDelete(selectedUseCase, doc);
+                    }}
+                >
+                    {deletingDocs.has(doc.id) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <X className="h-4 w-4" />
+                    )}
+                </Button>
+
+                <div className="absolute left-4 top-4 flex items-center">
+                    <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleDocSelect(doc.id, checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-5 w-5"
+                        aria-label={`Select document ${doc.name}`}
+                    />
+                </div>
+            </div>
+        );
+    });
+
     return (
         <>
         {/* MAIN CONTAINER */}
@@ -577,6 +715,41 @@ export default function KnowledgeBaseVisualization() {
                                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                         Attached Documents ({currentDocs.length})
                                     </h3>
+
+                                    {currentDocs.length > 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={selectAllDocs}
+                                            disabled={selectedDocs.size === currentDocs.length}
+                                            className="text-muted-foreground hover:bg-muted"
+                                        >
+                                            Select All
+                                        </Button>
+                                    )}
+
+                                    {/* Bulk actions (hidden if no documents selected) */}
+                                    {selectedDocs.size > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={clearSelection}
+                                                className="text-muted-foreground hover:bg-muted"
+                                            >
+                                                Clear Selection
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={handleBulkDelete}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <X className="h-4 w-4" />
+                                                Delete Selected
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {currentDocs.length === 0 ? (
@@ -586,45 +759,37 @@ export default function KnowledgeBaseVisualization() {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                        {currentDocs.map((doc, index) => (
-                                            <div
-                                                key={index}
-                                                className="group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer"
-                                                onClick={() => openPdfViewer(doc)}
-                                            >
-                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                                                    <File className="h-6 w-6" />
-                                                </div>
+                                        {currentDocsDisplay}
+                                    </div>
+                                )}
 
-                                                <div className="flex-1 min-w-0 pt-1">
-                                                    <p className="text-sm font-medium text-foreground truncate pr-6 hover:text-primary transition-colors" title={doc.name}>
-                                                        {doc.name}
-                                                    </p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PDF</span>
-                                                        <span className="text-xs text-muted-foreground">•</span>
-                                                        <span className="text-xs text-muted-foreground">{doc.size}</span>
-                                                    </div>
-                                                </div>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
-                                                    disabled={deletingDocs.has(doc.id)}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        confirmDelete(selectedUseCase, doc);
-                                                    }}
-                                                >
-                                                    {deletingDocs.has(doc.id) ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <X className="h-4 w-4" />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        ))}
+                                {totalDocPages > 1 && (
+                                    <div className="mt-6">
+                                        <Pagination>
+                                            <PaginationContent>
+                                                <PaginationItem>
+                                                    <PaginationPrevious
+                                                        href="#"
+                                                        onClick={(e) => { e.preventDefault(); setCurrentDocPage(p => Math.max(p - 1, 1)); }}
+                                                        // @ts-ignore
+                                                        disabled={currentDocPage === 1}
+                                                    />
+                                                </PaginationItem>
+                                                <PaginationItem>
+                                                    <span className="text-xs text-muted-foreground px-2">
+                                                        {currentDocPage}/{totalDocPages}
+                                                    </span>
+                                                </PaginationItem>
+                                                <PaginationItem>
+                                                    <PaginationNext
+                                                        href="#"
+                                                        onClick={(e) => { e.preventDefault(); setCurrentDocPage(p => Math.min(p + 1, totalDocPages)); }}
+                                                        // @ts-ignore
+                                                        disabled={currentDocPage === totalDocPages}
+                                                    />
+                                                </PaginationItem>
+                                            </PaginationContent>
+                                        </Pagination>
                                     </div>
                                 )}
 
