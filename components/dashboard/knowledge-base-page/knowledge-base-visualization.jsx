@@ -412,7 +412,7 @@ export default function KnowledgeBaseVisualization() {
     return (
         <>
         {/* MAIN CONTAINER */}
-        <div className="grid flex-1 grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-8 h-[calc(100vh-120px)] overflow-hidden">
+        <div className="grid flex-1 grid-cols-1 gap-4 pt-0 pb-4 pl-0 md:grid-cols-12 md:gap-8 h-[calc(100vh-120px)] overflow-hidden">
 
             {/* ---------------------------------------------------------------------------
           COLUMN 1: CATEGORIES

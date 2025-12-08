@@ -90,6 +90,7 @@ model Prompt {
   id        String   @id @default(cuid())
   agent     String
   text      String
+  s3Key     String
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

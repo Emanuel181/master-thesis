@@ -19,7 +19,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Github } from "lucide-react"
+import { Plus, Edit, Trash2, Github, Eye, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { useSession, signIn } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -40,6 +40,7 @@ export function HomePage() {
         addPrompt: addPromptContext,
         editPrompt: editPromptContext,
         deletePrompt: deletePromptContext,
+        refresh: refreshPrompts,
     } = usePrompts()
 
     const [newPrompt, setNewPrompt] = useState("")
@@ -47,10 +48,14 @@ export function HomePage() {
     const [editingText, setEditingText] = useState("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentAgent, setCurrentAgent] = useState("reviewer")
+    const [currentPage, setCurrentPage] = useState({})
+    const [viewFullTextPrompt, setViewFullTextPrompt] = useState(null)
 
     const [repos, setRepos] = useState([])
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
     const [isGithubConnected, setIsGithubConnected] = useState(false)
+    const [isRefreshingRepos, setIsRefreshingRepos] = useState(false)
+    const [isRefreshingPrompts, setIsRefreshingPrompts] = useState(false)
 
     // prevents React 18 dev-mode double-fetch
     const fetchOnceRef = useRef(false)
@@ -71,9 +76,9 @@ export function HomePage() {
     // ---------------------------
     // Fetch repos only once
     // ---------------------------
-    const fetchRepos = async () => {
-        if (fetchOnceRef.current) return
-        fetchOnceRef.current = true
+    const fetchRepos = async (allowRefresh = false) => {
+        if (!allowRefresh && fetchOnceRef.current) return
+        if (allowRefresh) fetchOnceRef.current = false // Allow refresh
 
         setIsLoadingRepos(true)
         try {
@@ -96,6 +101,23 @@ export function HomePage() {
         } finally {
             setIsLoadingRepos(false)
         }
+    }
+
+    // ---------------------------
+    // Refresh handlers
+    // ---------------------------
+    const handleRefreshRepos = async () => {
+        setIsRefreshingRepos(true)
+        await fetchRepos(true)
+        setIsRefreshingRepos(false)
+        toast.success("GitHub repositories refreshed!")
+    }
+
+    const handleRefreshPrompts = async () => {
+        setIsRefreshingPrompts(true)
+        await refreshPrompts()
+        setIsRefreshingPrompts(false)
+        toast.success("Prompts refreshed!")
     }
 
     // ---------------------------
@@ -182,10 +204,27 @@ export function HomePage() {
                                 <span className="text-sm text-green-600">Connected</span>
                             </div>
                         )}
-                        <CardTitle className="flex items-center gap-2">
-                            <Github className="h-5 w-5" />
-                            GitHub Repositories
-                        </CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <Github className="h-5 w-5" />
+                                GitHub Repositories
+                            </CardTitle>
+                            {isGithubConnected && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRefreshRepos}
+                                    disabled={isRefreshingRepos}
+                                    title="Refresh repositories"
+                                >
+                                    {isRefreshingRepos ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            )}
+                        </div>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
@@ -243,7 +282,22 @@ export function HomePage() {
                 {/* Prompts Card — unchanged except logic cleanup */}
                 <Card className="flex-1 -mr-4">
                     <CardHeader>
-                        <CardTitle>AI Agent Prompts</CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>AI Agent Prompts</CardTitle>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRefreshPrompts}
+                                disabled={isRefreshingPrompts}
+                                title="Refresh prompts"
+                            >
+                                {isRefreshingPrompts ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="h-4 w-4" />
+                                )}
+                            </Button>
+                        </div>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
@@ -290,67 +344,111 @@ export function HomePage() {
                                         </Dialog>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-4">
                                         {(!prompts[agent] || prompts[agent].length === 0) ? (
                                             <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
                                         ) : (
-                                            prompts[agent].map((prompt) => (
-                                                <div key={prompt.id} className="border rounded-lg p-3 space-y-2">
-                                                    {editingPrompt === prompt.id ? (
-                                                        <div className="space-y-2">
-                                                            <Textarea
-                                                                value={editingText}
-                                                                onChange={(e) => setEditingText(e.target.value)}
-                                                                rows={3}
-                                                            />
+                                            <>
+                                                {(() => {
+                                                    const page = currentPage[agent] || 0;
+                                                    const promptsPerPage = 3;
+                                                    const startIndex = page * promptsPerPage;
+                                                    const endIndex = startIndex + promptsPerPage;
+                                                    const visiblePrompts = prompts[agent].slice(startIndex, endIndex);
+                                                    const totalPages = Math.ceil(prompts[agent].length / promptsPerPage);
 
-                                                            <div className="flex gap-2">
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() =>
-                                                                        handleEditPrompt(agent, prompt.id, editingText)
-                                                                    }
-                                                                >
-                                                                    Save
-                                                                </Button>
-
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => setEditingPrompt(null)}
-                                                                >
-                                                                    Cancel
-                                                                </Button>
+                                                    return (
+                                                        <>
+                                                            <div className="space-y-2">
+                                                                {visiblePrompts.map((prompt) => (
+                                                                    <div key={prompt.id} className="border rounded-lg p-3">
+                                                                        {editingPrompt === prompt.id ? (
+                                                                            <div className="space-y-2">
+                                                                                <Textarea
+                                                                                    value={editingText}
+                                                                                    onChange={(e) => setEditingText(e.target.value)}
+                                                                                    rows={3}
+                                                                                />
+                                                                                <div className="flex gap-2">
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={() =>
+                                                                                            handleEditPrompt(agent, prompt.id, editingText)
+                                                                                        }
+                                                                                    >
+                                                                                        Save
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => setEditingPrompt(null)}
+                                                                                    >
+                                                                                        Cancel
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex items-center justify-between">
+                                                                                <p className="text-sm flex-1 mr-4 truncate">{prompt.text}</p>
+                                                                                <div className="flex gap-2">
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => setViewFullTextPrompt(prompt)}
+                                                                                    >
+                                                                                        <Eye className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => {
+                                                                                            setEditingPrompt(prompt.id)
+                                                                                            setEditingText(prompt.text)
+                                                                                        }}
+                                                                                    >
+                                                                                        <Edit className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => handleDeletePrompt(agent, prompt.id)}
+                                                                                    >
+                                                                                        <Trash2 className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <p className="text-sm">{prompt.text}</p>
 
-                                                            <div className="flex gap-2">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => {
-                                                                        setEditingPrompt(prompt.id)
-                                                                        setEditingText(prompt.text)
-                                                                    }}
-                                                                >
-                                                                    <Edit className="h-4 w-4" />
-                                                                </Button>
-
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => handleDeletePrompt(agent, prompt.id)}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))
+                                                            {totalPages > 1 && (
+                                                                <div className="flex justify-between items-center mt-4">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
+                                                                        disabled={page === 0}
+                                                                    >
+                                                                        Previous
+                                                                    </Button>
+                                                                    <span className="text-sm">
+                                                                        Page {page + 1} of {totalPages}
+                                                                    </span>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
+                                                                        disabled={page >= totalPages - 1}
+                                                                    >
+                                                                        Next
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
+                                            </>
                                         )}
                                     </div>
                                 </TabsContent>
@@ -359,6 +457,29 @@ export function HomePage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Full Text Dialog */}
+            <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Full Prompt Text</DialogTitle>
+                        <DialogDescription>
+                            Complete text of the selected prompt.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {viewFullTextPrompt && (
+                        <Textarea
+                            value={viewFullTextPrompt.text}
+                            readOnly
+                            rows={10}
+                            className="resize-none"
+                        />
+                    )}
+                    <DialogFooter>
+                        <Button onClick={() => setViewFullTextPrompt(null)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -15,26 +15,26 @@ export function PromptsProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const fetchPrompts = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch("/api/prompts");
+            if (response.ok) {
+                const data = await response.json();
+                setPrompts(data);
+            } else {
+                setError('Failed to load prompts');
+            }
+        } catch (err) {
+            console.error("Error loading prompts:", err);
+            setError('Error loading prompts');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Fetch prompts on mount
     useEffect(() => {
-        const fetchPrompts = async () => {
-            try {
-                setLoading(true);
-                const response = await fetch("/api/prompts");
-                if (response.ok) {
-                    const data = await response.json();
-                    setPrompts(data);
-                } else {
-                    setError('Failed to load prompts');
-                }
-            } catch (err) {
-                console.error("Error loading prompts:", err);
-                setError('Error loading prompts');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchPrompts();
     }, []);
 
@@ -164,6 +164,7 @@ export function PromptsProvider({ children }) {
         deletePrompt,
         editPrompt,
         setSelectedPrompts,
+        refresh: fetchPrompts,
     };
 
     return (

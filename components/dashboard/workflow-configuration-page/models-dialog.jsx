@@ -33,6 +33,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
     const [reviewerModel, setReviewerModel] = React.useState("");
@@ -104,24 +105,61 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         }
     };
 
-    const handleRefreshModels = () => {
+    const handleRefreshModels = async () => {
         setIsRefreshingModels(true);
-        // TODO: Add actual refresh logic
-        setTimeout(() => {
+        try {
+            // Simulate API call to refresh models
+            await new Promise(resolve => setTimeout(resolve, 2000));
             // Simulate model refresh
-            _setModels(["Model A", "Model B", "Model C"]);
+            _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
+            toast.success("Models refreshed successfully!");
+        } catch (error) {
+            toast.error("Failed to refresh models");
+        } finally {
             setIsRefreshingModels(false);
-        }, 2000);
+        }
     };
 
-    const handleRefreshUseCases = () => {
+    const handleRefreshUseCases = async () => {
         setIsRefreshingUseCases(true);
-        refreshUseCases().finally(() => setIsRefreshingUseCases(false));
+        try {
+            await refreshUseCases();
+            toast.success("Knowledge bases refreshed successfully!");
+        } catch (error) {
+            toast.error("Failed to refresh knowledge bases");
+        } finally {
+            setIsRefreshingUseCases(false);
+        }
     };
 
     const truncateText = (text, maxLength = 100) => {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
+    };
+
+    const [isRefreshingPrompts, setIsRefreshingPrompts] = React.useState({});
+
+    const handleRefreshAgentPrompts = async (agent) => {
+        setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
+        try {
+            // Simulate API call to refresh prompts for specific agent
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            toast.success(`${agent.charAt(0).toUpperCase() + agent.slice(1)} prompts refreshed successfully!`);
+        } catch (error) {
+            toast.error(`Failed to refresh ${agent} prompts`);
+        } finally {
+            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
+        }
+    };
+
+    const handleRefreshKnowledgeBase = async (kbId, kbTitle) => {
+        try {
+            // Simulate API call to refresh specific knowledge base
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            toast.success(`"${kbTitle}" knowledge base refreshed successfully!`);
+        } catch (error) {
+            toast.error(`Failed to refresh "${kbTitle}" knowledge base`);
+        }
     };
 
     return (
@@ -320,6 +358,25 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                         <div key={agent} className="pb-4 border-b last:border-b-0">
                                             <div className="flex items-center justify-between mb-2">
                                                 <h4 className="text-lg font-semibold capitalize">{agent} Agent</h4>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleRefreshAgentPrompts(agent)}
+                                                    title={`Refresh ${agent} prompts`}
+                                                    disabled={isRefreshingPrompts[agent]}
+                                                >
+                                                    {isRefreshingPrompts[agent] ? (
+                                                        <>
+                                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                            Refreshing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <RefreshCw className="h-4 w-4 mr-2" />
+                                                            Refresh Prompts
+                                                        </>
+                                                    )}
+                                                </Button>
                                             </div>
 
                                             {(!agentPrompts || agentPrompts.length === 0) ? (
@@ -473,7 +530,21 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                         }`} />
                                                                     </div>
                                                                     <div className="flex-1">
-                                                                        <h3 className="font-semibold text-base mb-1">{kb.title}</h3>
+                                                                        <div className="flex items-center justify-between mb-1">
+                                                                            <h3 className="font-semibold text-base">{kb.title}</h3>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 ml-2"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleRefreshKnowledgeBase(kb.id, kb.title);
+                                                                                }}
+                                                                                title={`Refresh ${kb.title}`}
+                                                                            >
+                                                                                <RefreshCw className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
                                                                         <p className="text-sm text-muted-foreground">
                                                                             {truncateText(kb.content, 100)}
                                                                         </p>

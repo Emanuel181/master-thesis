@@ -107,6 +107,16 @@ function AgentNode({ data }) {
     const borderColor =
         borderColorMap[data.iconBg] || "border-gray-300 dark:border-gray-600";
 
+    const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        // Simulate refresh - in real implementation, this would refresh models for this agent
+        setTimeout(() => {
+            setIsRefreshing(false);
+        }, 1500);
+    };
+
     return (
         <>
             {/* Input from Previous Agent (Left) */}
@@ -138,7 +148,17 @@ function AgentNode({ data }) {
                         <div className={`p-3 rounded-lg ${data.iconBg}`}>
                             <Icon className="w-6 h-6 text-white" strokeWidth={2.5} />
                         </div>
-                        <div className="font-semibold text-base">{data.label}</div>
+                        <div className="flex-1 font-semibold text-base">{data.label}</div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            title={`Refresh ${data.label.toLowerCase()} data`}
+                        >
+                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
                     </div>
                     <div className="text-xs text-muted-foreground mb-3">
                         {data.description}
@@ -367,10 +387,20 @@ function PromptNode({ data }) {
         .map(p => p.text.length > 30 ? p.text.substring(0, 30) + "..." : p.text)
         .join(", ");
 
+    const [isRefreshing, setIsRefreshing] = React.useState(false);
+
     const handleToggle = (promptId) => {
         if (data.onPromptChange) {
             data.onPromptChange(data.agent, promptId);
         }
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        // Simulate refresh - in real implementation, this would refresh prompts for this agent
+        setTimeout(() => {
+            setIsRefreshing(false);
+        }, 1500);
     };
 
     // LOGIC CHANGE: No prompt nodes show KB input anymore
@@ -396,6 +426,16 @@ function PromptNode({ data }) {
                                 {selectedCount} selected
                             </div>
                         </div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            title={`Refresh ${data.agent} prompts`}
+                        >
+                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
                     </div>
                     <div className="text-xs text-muted-foreground mb-3">
                         {data.description}

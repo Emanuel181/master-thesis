@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { uploadTextToS3, generatePromptS3Key } from '@/lib/s3';
 
 export async function GET(request) {
     try {
@@ -51,11 +52,16 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Agent and text are required' }, { status: 400 });
         }
 
+        // Upload to S3
+        const s3Key = generatePromptS3Key(userId, agent);
+        await uploadTextToS3(s3Key, text);
+
         const prompt = await prisma.prompt.create({
             data: {
                 agent,
                 text,
                 userId,
+                s3Key,
             },
         });
 
