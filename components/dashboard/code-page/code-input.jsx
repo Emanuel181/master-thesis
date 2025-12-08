@@ -527,7 +527,9 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                 onMount={(editor, monaco) => {
                                     monacoRef.current = monaco;
                                     editorRef.current = editor;
-                                    monaco.editor.setTheme(`custom-${themeKey}`);
+                                    const monacoTheme = buildMonacoTheme(editorThemes[settings.editorTheme]);
+                                    monaco.editor.defineTheme(`custom-${settings.editorTheme}`, monacoTheme);
+                                    monaco.editor.setTheme(`custom-${settings.editorTheme}`);
                                     editor.onDidChangeModelContent(() => {
                                         const current = editor.getValue();
                                         const placeholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
@@ -545,3 +547,4 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         </div>
     );
 }
+
