@@ -62,12 +62,12 @@ export function PromptsProvider({ children }) {
         }));
     };
 
-    const addPrompt = async (agent, text) => {
+    const addPrompt = async (agent, promptData) => {
         try {
             const response = await fetch('/api/prompts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agent, text })
+                body: JSON.stringify({ agent, title: promptData.title, text: promptData.text })
             });
             if (response.ok) {
                 const newPrompt = await response.json();
@@ -130,17 +130,17 @@ export function PromptsProvider({ children }) {
         }
     };
 
-    const editPrompt = async (agent, promptId, newText) => {
+    const editPrompt = async (agent, promptId, promptData) => {
         try {
             const response = await fetch(`/api/prompts/${promptId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: newText })
+                body: JSON.stringify({ title: promptData.title, text: promptData.text })
             });
             if (response.ok) {
                 setPrompts(prev => ({
                     ...prev,
-                    [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, text: newText } : p)
+                    [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, title: promptData.title, text: promptData.text } : p)
                 }));
                 return { success: true };
             } else {

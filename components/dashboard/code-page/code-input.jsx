@@ -50,6 +50,9 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const [isLoadingRepos, setIsLoadingRepos] = useState(false);
     const [loadingFilePath, setLoadingFilePath] = useState(null);
 
+    // --- GitHub Connection State ---
+    const [isGithubConnected, setIsGithubConnected] = useState(false);
+
     // --- Detection State ---
     const [detectedLanguage, setDetectedLanguage] = useState("javascript");
     const [isLanguageSupported, setIsLanguageSupported] = useState(true);
@@ -84,6 +87,13 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
+
+    // --- Load GitHub state from localStorage ---
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const savedConnected = localStorage.getItem("isGithubConnected");
+        if (savedConnected === "true") setIsGithubConnected(true);
+    }, []);
 
     // --- Helper: Detect Language ---
     const detectLanguageFromContent = useCallback((filename, content) => {
@@ -314,7 +324,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                     <Label htmlFor="view-mode-switch">One File View</Label>
                 </div>
 
-                {viewMode === 'project' && (
+                {viewMode === 'project' && isGithubConnected && (
                     <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -323,7 +333,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader><DialogTitle>Switch Project</DialogTitle></DialogHeader>
-                            {!session ? (
+                            {!isGithubConnected ? (
                                 <Button onClick={() => signIn('github')}>Connect GitHub</Button>
                             ) : (
                                 <div className="space-y-4 pt-4">
@@ -339,7 +349,13 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                             ))}
                                         </div>
                                     </div>
-                                    <Button variant="outline" onClick={() => signOut()}>Disconnect GitHub</Button>
+                                    <Button variant="outline" onClick={() => {
+                                        signOut();
+                                        localStorage.removeItem("githubRepos");
+                                        localStorage.setItem("isGithubConnected", "false");
+                                        setIsGithubConnected(false);
+                                        toast.success("Disconnected from GitHub!");
+                                    }}>Disconnect GitHub</Button>
                                 </div>
                             )}
                         </DialogContent>

@@ -46,7 +46,7 @@ export async function POST(request) {
         }
 
         const userId = session.user.id;
-        const { agent, text } = await request.json();
+        const { agent, title, text } = await request.json();
 
         if (!agent || !text) {
             return NextResponse.json({ error: 'Agent and text are required' }, { status: 400 });
@@ -59,6 +59,7 @@ export async function POST(request) {
         const prompt = await prisma.prompt.create({
             data: {
                 agent,
+                title: title || "Untitled",
                 text,
                 userId,
                 s3Key,
@@ -67,6 +68,7 @@ export async function POST(request) {
 
         return NextResponse.json({
             id: prompt.id,
+            title: prompt.title,
             text: prompt.text,
         });
     } catch (error) {

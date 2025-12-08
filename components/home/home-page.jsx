@@ -67,6 +67,9 @@ export function HomePage() {
     const [newTitle, setNewTitle] = useState("")
     const [editingTitle, setEditingTitle] = useState("")
 
+    // Delete confirmation dialog
+    const [deleteDialog, setDeleteDialog] = useState(null) // { type: 'single' | 'selected' | 'category', agent?: string, id?: string }
+
     // prevents React 18 dev-mode double-fetch
     const fetchOnceRef = useRef(false)
 
@@ -152,6 +155,18 @@ export function HomePage() {
     }, [status, repos.length, isGithubConnected])
 
     // ---------------------------
+    // Clear GitHub state when logged out
+    // ---------------------------
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            setIsGithubConnected(false);
+            setRepos([]);
+            localStorage.removeItem("githubRepos");
+            localStorage.setItem("isGithubConnected", "false");
+        }
+    }, [status]);
+
+    // ---------------------------
     // Prompt CRUD handlers
     // ---------------------------
     const handleAddPrompt = async () => {
@@ -197,9 +212,6 @@ export function HomePage() {
     const handleDeleteSelected = async () => {
         if (selectedPrompts.size === 0) return;
 
-        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedPrompts.size} selected prompt(s)?`);
-        if (!confirmDelete) return;
-
         const deletePromises = Array.from(selectedPrompts).map(key => {
             const [agent, id] = key.split('-');
             return deletePromptContext(agent, id);
@@ -218,9 +230,6 @@ export function HomePage() {
     }
 
     const handleDeleteAllFromCategory = async (agent) => {
-        const confirmDelete = window.confirm(`Are you sure you want to delete all prompts from ${agent}?`);
-        if (!confirmDelete) return;
-
         const promptsToDelete = prompts[agent] || [];
         const deletePromises = promptsToDelete.map(prompt => deletePromptContext(agent, prompt.id));
         const results = await Promise.all(deletePromises);
@@ -231,6 +240,23 @@ export function HomePage() {
         } else {
             toast.error(`Failed to delete some prompts. ${successCount} deleted.`);
         }
+    };
+
+    // ---------------------------
+    // Confirm delete
+    // ---------------------------
+    const confirmDelete = async () => {
+        if (!deleteDialog) return;
+
+        if (deleteDialog.type === 'single') {
+            await handleDeletePrompt(deleteDialog.agent, deleteDialog.id);
+        } else if (deleteDialog.type === 'selected') {
+            await handleDeleteSelected();
+        } else if (deleteDialog.type === 'category') {
+            await handleDeleteAllFromCategory(deleteDialog.agent);
+        }
+
+        setDeleteDialog(null);
     };
 
     // ---------------------------
@@ -253,11 +279,16 @@ export function HomePage() {
     }
 
     // ---------------------------
+    // Check if both cards are empty
+    // ---------------------------
+    const isBothEmpty = !isGithubConnected && Object.values(prompts).every(arr => !arr || arr.length === 0);
+
+    // ---------------------------
     // UI
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="flex gap-4">
+            <div className={`flex gap-4 ${isBothEmpty ? '' : 'items-start'}`}>
                 {/* GitHub Card */}
                 <Card className="flex-1 -ml-4">
                     <CardHeader>
@@ -375,7 +406,7 @@ export function HomePage() {
                                     <Button
                                         variant="destructive"
                                         size="sm"
-                                        onClick={handleDeleteSelected}
+                                        onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
                                     >
                                         Delete Selected ({selectedPrompts.size})
                                     </Button>
@@ -398,7 +429,7 @@ export function HomePage() {
                                 <TabsContent key={agent} value={agent} className="space-y-4">
                                     <div className="flex justify-end items-center">
                                         <div className="flex gap-2">
-                                            <Button size="sm" variant="destructive" onClick={() => handleDeleteAllFromCategory(agent)}>
+                                            <Button size="sm" variant="destructive" onClick={() => setDeleteDialog({ type: 'category', agent })}>
                                                 Delete All {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompts
                                             </Button>
 
@@ -537,7 +568,7 @@ export function HomePage() {
                                                                                     <Button
                                                                                         size="sm"
                                                                                         variant="outline"
-                                                                                        onClick={() => handleDeletePrompt(agent, prompt.id)}
+                                                                                        onClick={() => setDeleteDialog({ type: 'single', agent, id: prompt.id })}
                                                                                     >
                                                                                         <Trash2 className="h-4 w-4" />
                                                                                     </Button>
@@ -603,6 +634,28 @@ export function HomePage() {
                     )}
                     <DialogFooter>
                         <Button onClick={() => setViewFullTextPrompt(null)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Deletion</DialogTitle>
+                        <DialogDescription>
+                            {deleteDialog?.type === 'single' && "Are you sure you want to delete this prompt? This action cannot be undone."}
+                            {deleteDialog?.type === 'selected' && `Are you sure you want to delete the selected ${deleteDialog.count || 0} prompt(s)? This action cannot be undone.`}
+                            {deleteDialog?.type === 'category' && `Are you sure you want to delete all prompts from the ${deleteDialog.agent} category? This action cannot be undone.`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteDialog(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            Delete
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

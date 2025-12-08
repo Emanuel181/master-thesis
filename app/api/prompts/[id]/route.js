@@ -12,7 +12,7 @@ export async function PUT(request, { params }) {
 
         const userId = session.user.id;
         const { id } = await params;
-        const { text } = await request.json();
+        const { title, text } = await request.json();
 
         if (!text) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 });
@@ -33,7 +33,7 @@ export async function PUT(request, { params }) {
         // Update the prompt in the database
         const prompt = await prisma.prompt.updateMany({
             where: { id, userId },
-            data: { text },
+            data: { title: title || "Untitled", text },
         });
 
         if (prompt.count === 0) {
