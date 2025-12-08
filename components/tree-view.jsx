@@ -23,25 +23,20 @@ const BASE_ICON_URL = "https://raw.githubusercontent.com/PKief/vscode-material-i
 
 // "Extension" mapped to "Filename in Repo"
 const EXTENSION_ALIASES = {
-    // JavaScript / React
     js: "javascript",
-    jsx: "react",        // JSX gets the React Atom icon
+    jsx: "react",
     ts: "typescript",
-    tsx: "react_ts",     // TSX gets the React + TS icon
+    tsx: "react_ts",
     mjs: "javascript",
     cjs: "javascript",
     vue: "vue",
     svelte: "svelte",
     angular: "angular",
-
-    // Styles
     css: "css",
     scss: "sass",
     sass: "sass",
     less: "less",
     styl: "stylus",
-
-    // Backend / Systems
     py: "python",
     rb: "ruby",
     rs: "rust",
@@ -51,37 +46,29 @@ const EXTENSION_ALIASES = {
     cs: "csharp",
     cpp: "cpp",
     c: "c",
-    h: "c",            // Header files
+    h: "c",
     hpp: "cpp",
-
-    // Data / Config
     json: "json",
     xml: "xml",
     yaml: "yaml",
     yml: "yaml",
-    toml: "yaml",      // Fallback
-    env: "tune",       // .env usually uses the 'tune' settings icon
-    lock: "lock",      // Generic lock
-
-    // Documents / Assets
+    toml: "yaml",
+    env: "tune",
+    lock: "lock",
     md: "markdown",
     mdx: "markdown",
-    txt: "document",   // "txt.svg" doesn't exist, mapped to "document.svg"
+    txt: "document",
     pdf: "pdf",
     zip: "zip",
     rar: "zip",
     "7z": "zip",
     tar: "zip",
     gz: "zip",
-
-    // Images
     png: "image",
     jpg: "image",
     jpeg: "image",
     svg: "svg",
     ico: "image",
-
-    // Shell / Executables
     sh: "console",
     bash: "console",
     zsh: "console",
@@ -101,8 +88,6 @@ const getGenericFolderUrl = (open) => {
 
 const getFileUrl = (name) => {
     const lowerName = name.toLowerCase();
-
-    // 1. Check exact filenames first (highest priority)
     if (lowerName === "package.json") return `${BASE_ICON_URL}/nodejs.svg`;
     if (lowerName === "favicon.ico") return `${BASE_ICON_URL}/favicon.svg`;
     if (lowerName === ".gitignore") return `${BASE_ICON_URL}/git.svg`;
@@ -111,13 +96,9 @@ const getFileUrl = (name) => {
     if (lowerName === "license") return `${BASE_ICON_URL}/license.svg`;
     if (lowerName === "jenkinsfile") return `${BASE_ICON_URL}/jenkins.svg`;
 
-    // 2. Check Extension
     const parts = lowerName.split(".");
-    const ext = parts.length > 1 ? parts.pop() : ""; // get last part
-
-    // 3. Translate extension using Alias Map, or use extension as-is
+    const ext = parts.length > 1 ? parts.pop() : "";
     const iconName = EXTENSION_ALIASES[ext] || ext;
-
     return `${BASE_ICON_URL}/${iconName}.svg`;
 };
 
@@ -125,29 +106,30 @@ const getFileUrl = (name) => {
 const SmartFileIcon = ({ name, isDir, isOpen }) => {
     const [error, setError] = useState(false);
 
-    // Reset error if name changes
     useEffect(() => {
         setError(false);
     }, [name, isDir]);
 
-    // Fallback to Lucide if image fails to load
     if (error) {
         if (isDir) {
-            return isOpen ?
-                <DefaultFolderOpen className="w-4 h-4 text-blue-500" /> :
-                <DefaultFolderIcon className="w-4 h-4 text-blue-500" />;
+            return isOpen ? (
+                <DefaultFolderOpen className="w-4 h-4 text-blue-500" />
+            ) : (
+                <DefaultFolderIcon className="w-4 h-4 text-blue-500" />
+            );
         }
         return <DefaultFileIcon className="w-4 h-4 text-gray-400" />;
     }
 
-    // --- FOLDER LOGIC (Anti-Flicker) ---
     if (isDir) {
         const closedSrc = getFolderUrl(name, false);
         const openSrc = getFolderUrl(name, true);
 
         const handleFolderError = (e) => {
-            // If specific folder icon fails, switch to generic folder
-            if (!e.target.src.includes("/folder.svg") && !e.target.src.includes("/folder-open.svg")) {
+            if (
+                !e.target.src.includes("/folder.svg") &&
+                !e.target.src.includes("/folder-open.svg")
+            ) {
                 const isOpenImg = e.target.getAttribute("data-state") === "open";
                 e.target.src = getGenericFolderUrl(isOpenImg);
             } else {
@@ -177,7 +159,6 @@ const SmartFileIcon = ({ name, isDir, isOpen }) => {
         );
     }
 
-    // --- FILE LOGIC ---
     return (
         <img
             src={getFileUrl(name)}
@@ -236,14 +217,17 @@ export function TreeView({
         <div className={`flex flex-col h-full ${className}`}>
             {/* HEADER */}
             {(title || showExpandAll) && (
-                <div className="flex items-center justify-between px-2 pb-2">
+                <div className="flex items-center justify-between px-2 pb-2 pt-2">
                     <div className="text-sm font-medium">{title}</div>
                     {showExpandAll && (
                         <TooltipProvider>
                             <div className="flex items-center gap-1">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <button className="p-2 rounded hover:bg-muted/20" onClick={() => window.__treeRef?.openAll()}>
+                                        <button
+                                            className="p-2 rounded hover:bg-muted/20"
+                                            onClick={() => window.__treeRef?.openAll()}
+                                        >
                                             <ChevronsDown className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
@@ -251,7 +235,10 @@ export function TreeView({
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <button className="p-2 rounded hover:bg-muted/20" onClick={() => window.__treeRef?.closeAll()}>
+                                        <button
+                                            className="p-2 rounded hover:bg-muted/20"
+                                            onClick={() => window.__treeRef?.closeAll()}
+                                        >
                                             <ChevronsUp className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
@@ -276,17 +263,20 @@ export function TreeView({
                 </div>
             </div>
 
-            {/* TREE */}
-            <div className="flex-1 overflow-hidden">
+            {/* TREE with Custom Scrollbar Styling */}
+            <div className="flex-1 min-h-0 relative">
                 <Tree
                     data={filtered}
                     width="100%"
+                    height={800} // Virtualizer needs a base, but flex container overrides it visually
                     childrenAccessor="children"
                     idAccessor={getId}
                     rowHeight={28}
                     padding={4}
                     indent={20}
                     ref={(r) => (window.__treeRef = r)}
+                    // Tailwind classes to force the scrollbar to look dark/transparent
+                    className="h-full w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
                     onSelect={(nodes) => {
                         const node = nodes[0];
                         if (node && !Array.isArray(node.data.children)) {
@@ -303,7 +293,7 @@ export function TreeView({
                         return (
                             <div
                                 style={style}
-                                className="flex items-center gap-2 px-2 text-sm cursor-pointer select-none hover:bg-muted/30 group"
+                                className="flex items-center gap-2 px-2 text-sm cursor-pointer select-none hover:bg-muted/30 group transition-colors"
                                 onClick={() => node.toggle()}
                             >
                                 {/* ICON */}
@@ -326,8 +316,8 @@ export function TreeView({
 
                                 {/* NAME */}
                                 <span className="truncate flex-1 text-muted-foreground group-hover:text-foreground">
-                    {item.name}
-                </span>
+                                    {item.name}
+                                </span>
                             </div>
                         );
                     }}
