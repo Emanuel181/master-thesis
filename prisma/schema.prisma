@@ -89,6 +89,7 @@ model Pdf {
 model Prompt {
   id        String   @id @default(cuid())
   agent     String
+  title     String   @default("Untitled")
   text      String
   s3Key     String
   userId    String

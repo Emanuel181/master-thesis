@@ -393,12 +393,16 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <div className="flex gap-4 overflow-x-auto">
                                                                     {visiblePrompts.map((prompt) => (
                                                                         <div key={prompt.id} className="flex-1 min-w-[200px] p-3 rounded-lg border bg-muted flex flex-col items-center justify-between">
-                                                                            <p className="text-sm text-center mb-2">{truncateText(prompt.text, 50)}</p>
+                                                                            <div className="text-center mb-2">
+                                                                                <p className="text-sm font-medium">{prompt.title || "Untitled"}</p>
+                                                                                <p className="text-xs text-muted-foreground">{truncateText(prompt.text, 30)}</p>
+                                                                            </div>
                                                                             <div className="flex gap-2">
                                                                                 <Button
                                                                                     variant="outline"
                                                                                     size="sm"
                                                                                     onClick={() => setViewPrompt(prompt)}
+
                                                                                 >
                                                                                     View Full
                                                                                 </Button>
@@ -445,7 +449,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
                                         <DialogContent className="max-w-2xl">
                                             <DialogHeader>
-                                                <DialogTitle>Full Prompt</DialogTitle>
+                                                <DialogTitle>{viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
                                                 <DialogDescription>
                                                     Complete text of the selected prompt.
                                                 </DialogDescription>

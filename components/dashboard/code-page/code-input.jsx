@@ -17,7 +17,8 @@ import { useProject } from "@/contexts/projectContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSession, signIn } from 'next-auth/react';
+import { Switch } from "@/components/ui/switch";
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { fetchRepoTree as apiFetchRepoTree, fetchFileContent as apiFetchFileContent } from '../../../lib/github-api';
 import ProjectTree from './project-tree';
 import { Badge } from "@/components/ui/badge";
@@ -303,21 +304,14 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
             {/* Top Toolbar */}
             <div className="flex justify-between items-center w-full">
-                <div className="flex gap-2">
-                    <Button
-                        variant={viewMode === 'project' ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setViewMode('project')}
-                    >
-                        Project View
-                    </Button>
-                    <Button
-                        variant={viewMode === 'file' ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setViewMode('file')}
-                    >
-                        One File View
-                    </Button>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="view-mode-switch">Project View</Label>
+                    <Switch
+                        id="view-mode-switch"
+                        checked={viewMode === 'file'}
+                        onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
+                    />
+                    <Label htmlFor="view-mode-switch">One File View</Label>
                 </div>
 
                 {viewMode === 'project' && (
@@ -345,6 +339,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                             ))}
                                         </div>
                                     </div>
+                                    <Button variant="outline" onClick={() => signOut()}>Disconnect GitHub</Button>
                                 </div>
                             )}
                         </DialogContent>

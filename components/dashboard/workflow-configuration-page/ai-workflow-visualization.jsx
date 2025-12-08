@@ -384,7 +384,7 @@ function PromptNode({ data }) {
     const selectedCount = data.selectedPrompts?.length || 0;
     const selectedTexts = data.prompts
         .filter(p => data.selectedPrompts?.includes(p.id))
-        .map(p => p.text.length > 30 ? p.text.substring(0, 30) + "..." : p.text)
+        .map(p => (p.title || p.text).length > 30 ? (p.title || p.text).substring(0, 30) + "..." : (p.title || p.text))
         .join(", ");
 
     const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -484,8 +484,11 @@ function PromptNode({ data }) {
                                                 className="mt-0.5 pointer-events-none"
                                             />
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm">
-                                                    {prompt.text}
+                                                <p className="text-sm font-medium">
+                                                    {prompt.title || "Untitled"}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {prompt.text.length > 50 ? prompt.text.substring(0, 50) + "..." : prompt.text}
                                                 </p>
                                             </div>
                                         </div>

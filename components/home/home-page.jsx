@@ -21,12 +21,15 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Edit, Trash2, Github, Eye, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
-import { useSession, signIn } from "next-auth/react"
+import { useSession, signIn, signOut } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useProject } from "@/contexts/projectContext"
 import { usePrompts } from "@/contexts/promptsContext"
 import { useRouter } from "next/navigation"
 import { fetchRepoTree } from "@/lib/github-api"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 const agents = ["reviewer", "implementation", "tester", "report"]
 
@@ -56,6 +59,13 @@ export function HomePage() {
     const [isGithubConnected, setIsGithubConnected] = useState(false)
     const [isRefreshingRepos, setIsRefreshingRepos] = useState(false)
     const [isRefreshingPrompts, setIsRefreshingPrompts] = useState(false)
+
+    // Selected prompts for bulk delete
+    const [selectedPrompts, setSelectedPrompts] = useState(new Set())
+
+    // New title state
+    const [newTitle, setNewTitle] = useState("")
+    const [editingTitle, setEditingTitle] = useState("")
 
     // prevents React 18 dev-mode double-fetch
     const fetchOnceRef = useRef(false)
@@ -121,6 +131,18 @@ export function HomePage() {
     }
 
     // ---------------------------
+    // Disconnect GitHub
+    // ---------------------------
+    const handleDisconnectGitHub = () => {
+        signOut()
+        setIsGithubConnected(false)
+        setRepos([])
+        localStorage.removeItem("githubRepos")
+        localStorage.setItem("isGithubConnected", "false")
+        toast.success("Disconnected from GitHub!")
+    }
+
+    // ---------------------------
     // Only fetch if authenticated AND repos not loaded
     // ---------------------------
     useEffect(() => {
@@ -133,13 +155,14 @@ export function HomePage() {
     // Prompt CRUD handlers
     // ---------------------------
     const handleAddPrompt = async () => {
-        if (!newPrompt.trim()) {
-            toast.error("Please enter a prompt")
+        if (!newTitle.trim() || !newPrompt.trim()) {
+            toast.error("Please enter both title and prompt")
             return
         }
 
-        const result = await addPromptContext(currentAgent, newPrompt.trim());
+        const result = await addPromptContext(currentAgent, { title: newTitle.trim(), text: newPrompt.trim() });
         if (result.success) {
+            setNewTitle("")
             setNewPrompt("")
             setIsDialogOpen(false)
             toast.success("Prompt added successfully!")
@@ -148,11 +171,12 @@ export function HomePage() {
         }
     }
 
-    const handleEditPrompt = async (agent, id, newText) => {
-        const trimmed = newText.trim()
-        if (!trimmed) return toast.error("Prompt cannot be empty")
+    const handleEditPrompt = async (agent, id, newTitle, newText) => {
+        const trimmedTitle = newTitle.trim()
+        const trimmedText = newText.trim()
+        if (!trimmedTitle || !trimmedText) return toast.error("Title and prompt cannot be empty")
 
-        const result = await editPromptContext(agent, id, trimmed);
+        const result = await editPromptContext(agent, id, { title: trimmedTitle, text: trimmedText });
         if (result.success) {
             setEditingPrompt(null)
             toast.success("Prompt updated successfully!")
@@ -169,6 +193,45 @@ export function HomePage() {
             toast.error(result.error || "Failed to delete prompt")
         }
     }
+
+    const handleDeleteSelected = async () => {
+        if (selectedPrompts.size === 0) return;
+
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedPrompts.size} selected prompt(s)?`);
+        if (!confirmDelete) return;
+
+        const deletePromises = Array.from(selectedPrompts).map(key => {
+            const [agent, id] = key.split('-');
+            return deletePromptContext(agent, id);
+        });
+
+        const results = await Promise.all(deletePromises);
+        const successCount = results.filter(r => r.success).length;
+
+        if (successCount === selectedPrompts.size) {
+            toast.success(`${successCount} prompt(s) deleted successfully!`);
+        } else {
+            toast.error(`Failed to delete some prompts. ${successCount} deleted.`);
+        }
+
+        setSelectedPrompts(new Set());
+    }
+
+    const handleDeleteAllFromCategory = async (agent) => {
+        const confirmDelete = window.confirm(`Are you sure you want to delete all prompts from ${agent}?`);
+        if (!confirmDelete) return;
+
+        const promptsToDelete = prompts[agent] || [];
+        const deletePromises = promptsToDelete.map(prompt => deletePromptContext(agent, prompt.id));
+        const results = await Promise.all(deletePromises);
+        const successCount = results.filter(r => r.success).length;
+
+        if (successCount === promptsToDelete.length) {
+            toast.success(`All ${successCount} prompts from ${agent} deleted successfully!`);
+        } else {
+            toast.error(`Failed to delete some prompts. ${successCount} deleted.`);
+        }
+    };
 
     // ---------------------------
     // Import repo
@@ -210,19 +273,29 @@ export function HomePage() {
                                 GitHub Repositories
                             </CardTitle>
                             {isGithubConnected && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleRefreshRepos}
-                                    disabled={isRefreshingRepos}
-                                    title="Refresh repositories"
-                                >
-                                    {isRefreshingRepos ? (
-                                        <RefreshCw className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <RefreshCw className="h-4 w-4" />
-                                    )}
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleRefreshRepos}
+                                        disabled={isRefreshingRepos}
+                                        title="Refresh repositories"
+                                    >
+                                        {isRefreshingRepos ? (
+                                            <RefreshCw className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDisconnectGitHub}
+                                        title="Disconnect from GitHub"
+                                    >
+                                        Disconnect
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </CardHeader>
@@ -284,19 +357,30 @@ export function HomePage() {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>AI Agent Prompts</CardTitle>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleRefreshPrompts}
-                                disabled={isRefreshingPrompts}
-                                title="Refresh prompts"
-                            >
-                                {isRefreshingPrompts ? (
-                                    <RefreshCw className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <RefreshCw className="h-4 w-4" />
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRefreshPrompts}
+                                    disabled={isRefreshingPrompts}
+                                    title="Refresh prompts"
+                                >
+                                    {isRefreshingPrompts ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="h-4 w-4" />
+                                    )}
+                                </Button>
+                                {selectedPrompts.size > 0 && (
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={handleDeleteSelected}
+                                    >
+                                        Delete Selected ({selectedPrompts.size})
+                                    </Button>
                                 )}
-                            </Button>
+                            </div>
                         </div>
                     </CardHeader>
 
@@ -312,36 +396,53 @@ export function HomePage() {
 
                             {agents.map((agent) => (
                                 <TabsContent key={agent} value={agent} className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="text-lg font-medium capitalize">{agent} Prompts</h3>
+                                    <div className="flex justify-end items-center">
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="destructive" onClick={() => handleDeleteAllFromCategory(agent)}>
+                                                Delete All {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompts
+                                            </Button>
 
-                                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button size="sm">
-                                                    <Plus className="h-4 w-4 mr-2" /> Add Prompt
-                                                </Button>
-                                            </DialogTrigger>
+                                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                                <DialogTrigger asChild>
+                                                    <Button size="sm">
+                                                        <Plus className="h-4 w-4 mr-2" /> Add {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompt
+                                                    </Button>
+                                                </DialogTrigger>
 
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Add New Prompt</DialogTitle>
-                                                    <DialogDescription>
-                                                        Create a new prompt for the {agent} agent.
-                                                    </DialogDescription>
-                                                </DialogHeader>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Add New Prompt</DialogTitle>
+                                                        <DialogDescription>
+                                                            Create a new prompt for the {agent} agent.
+                                                        </DialogDescription>
+                                                    </DialogHeader>
 
-                                                <Textarea
-                                                    placeholder="Enter your prompt here..."
-                                                    value={newPrompt}
-                                                    onChange={(e) => setNewPrompt(e.target.value)}
-                                                    rows={4}
-                                                />
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-2">
+                                                            <Label>Title</Label>
+                                                            <Input
+                                                                value={newTitle}
+                                                                onChange={(e) => setNewTitle(e.target.value)}
+                                                                placeholder="Enter prompt title..."
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Prompt</Label>
+                                                            <Textarea
+                                                                placeholder="Enter your prompt here..."
+                                                                value={newPrompt}
+                                                                onChange={(e) => setNewPrompt(e.target.value)}
+                                                                rows={4}
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                                <DialogFooter>
-                                                    <Button onClick={handleAddPrompt}>Add Prompt</Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
+                                                    <DialogFooter>
+                                                        <Button onClick={handleAddPrompt}>Add Prompt</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-4">
@@ -364,6 +465,11 @@ export function HomePage() {
                                                                     <div key={prompt.id} className="border rounded-lg p-3">
                                                                         {editingPrompt === prompt.id ? (
                                                                             <div className="space-y-2">
+                                                                                <Input
+                                                                                    value={editingTitle}
+                                                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                                                    placeholder="Title"
+                                                                                />
                                                                                 <Textarea
                                                                                     value={editingText}
                                                                                     onChange={(e) => setEditingText(e.target.value)}
@@ -373,7 +479,7 @@ export function HomePage() {
                                                                                     <Button
                                                                                         size="sm"
                                                                                         onClick={() =>
-                                                                                            handleEditPrompt(agent, prompt.id, editingText)
+                                                                                            handleEditPrompt(agent, prompt.id, editingTitle, editingText)
                                                                                         }
                                                                                     >
                                                                                         Save
@@ -389,7 +495,26 @@ export function HomePage() {
                                                                             </div>
                                                                         ) : (
                                                                             <div className="flex items-center justify-between">
-                                                                                <p className="text-sm flex-1 mr-4 truncate">{prompt.text}</p>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Checkbox
+                                                                                        checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
+                                                                                        onCheckedChange={(checked) => {
+                                                                                            setSelectedPrompts(prev => {
+                                                                                                const newSet = new Set(prev);
+                                                                                                if (checked) {
+                                                                                                    newSet.add(`${agent}-${prompt.id}`);
+                                                                                                } else {
+                                                                                                    newSet.delete(`${agent}-${prompt.id}`);
+                                                                                                }
+                                                                                                return newSet;
+                                                                                            });
+                                                                                        }}
+                                                                                    />
+                                                                                    <div className="flex-1 mr-4">
+                                                                                        <h4 className="font-medium text-sm">{prompt.title || "Untitled"}</h4>
+                                                                                        <p className="text-sm text-muted-foreground truncate">{prompt.text}</p>
+                                                                                    </div>
+                                                                                </div>
                                                                                 <div className="flex gap-2">
                                                                                     <Button
                                                                                         size="sm"
@@ -404,6 +529,7 @@ export function HomePage() {
                                                                                         onClick={() => {
                                                                                             setEditingPrompt(prompt.id)
                                                                                             setEditingText(prompt.text)
+                                                                                            setEditingTitle(prompt.title || "")
                                                                                         }}
                                                                                     >
                                                                                         <Edit className="h-4 w-4" />
@@ -462,7 +588,7 @@ export function HomePage() {
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Full Prompt Text</DialogTitle>
+                        <DialogTitle>{viewFullTextPrompt?.title || "Untitled Prompt"}</DialogTitle>
                         <DialogDescription>
                             Complete text of the selected prompt.
                         </DialogDescription>
