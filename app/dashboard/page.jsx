@@ -151,7 +151,7 @@ export default function Page() {
                                 </Breadcrumb>
                             </div>
                             <div className="flex items-center gap-2">
-                                <CustomizationDialog />
+                                <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
                                 <ThemeToggle />
                             </div>
                         </div>

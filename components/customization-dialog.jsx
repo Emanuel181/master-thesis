@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover"
 import ThemeCustomization from "@/components/theme-customization"
 
-export function CustomizationDialog({ className = "" }) {
+export function CustomizationDialog({ className = "", showEditorTabs = true }) {
     const [open, setOpen] = useState(false)
 
     return (
@@ -31,7 +31,7 @@ export function CustomizationDialog({ className = "" }) {
                 side="bottom"
                 sideOffset={8}
             >
-                <ThemeCustomization />
+                <ThemeCustomization showEditorTabs={showEditorTabs} />
             </PopoverContent>
         </Popover>
     )

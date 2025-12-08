@@ -182,7 +182,7 @@ export default function ProfilePage() {
                             </Breadcrumb>
                         </div>
                         <div className="flex items-center gap-2">
-                            <CustomizationDialog />
+                            <CustomizationDialog showEditorTabs={false} />
                             <ThemeToggle />
                         </div>
                     </div>
