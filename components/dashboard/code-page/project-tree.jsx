@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import TreeView from '../../tree-view';
+import TreeView from './tree-view';
 import { ChevronLeft, ChevronRight, FolderOpen, FolderClosed } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,8 @@ export default function ProjectTree({
     const containerRef = useRef(null);
     const animationFrameRef = useRef(null); // Ref for throttling drag updates
 
+    const controlsRef = useRef(null); // Ref for TreeView controls (openAll/closeAll)
+
     const mapStructure = useCallback((node) => {
         if (!node) return null;
         const mapNode = (n, parentPath = '') => {
@@ -53,8 +55,23 @@ export default function ProjectTree({
     useEffect(() => { onDragStateChange?.(isDragging); }, [isDragging, onDragStateChange]);
 
     // --- Global Expand/Collapse Handlers ---
-    const handleExpandAll = () => setTreeData(prev => setExpansionState(prev, true));
-    const handleCollapseAll = () => setTreeData(prev => setExpansionState(prev, false));
+    const handleExpandAll = () => {
+        // Try imperative API first (if available), then update source treeData to ensure consistency.
+        try {
+            controlsRef.current?.openAll?.();
+        } catch (e) {
+            // ignore
+        }
+        setTreeData(prev => setExpansionState(prev, true));
+    };
+    const handleCollapseAll = () => {
+        try {
+            controlsRef.current?.closeAll?.();
+        } catch (e) {
+            // ignore
+        }
+        setTreeData(prev => setExpansionState(prev, false));
+    };
 
     const startResize = useCallback((e) => {
         e.preventDefault();
@@ -144,7 +161,7 @@ export default function ProjectTree({
                 {!collapsed ? (
                     <ScrollArea className="h-full w-full">
                         <div className="p-2">
-                            <TreeView data={treeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
+                            <TreeView ref={controlsRef} data={treeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
                         </div>
                     </ScrollArea>
                 ) : (

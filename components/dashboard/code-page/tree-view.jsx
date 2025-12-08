@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Tree } from "react-arborist";
 import { Input } from "@/components/ui/input";
 import {
     Search,
     ChevronsDown,
     ChevronsUp,
+    ChevronRight,
+    ChevronDown,
     File as DefaultFileIcon,
     Folder as DefaultFolderIcon,
     FolderOpen as DefaultFolderOpen,
@@ -107,7 +109,9 @@ const SmartFileIcon = ({ name, isDir, isOpen }) => {
     const [error, setError] = useState(false);
 
     useEffect(() => {
-        setError(false);
+        // Reset error asynchronously to avoid triggering sync state updates during render/effect
+        const t = setTimeout(() => setError(false), 0);
+        return () => clearTimeout(t);
     }, [name, isDir]);
 
     if (error) {
@@ -170,7 +174,8 @@ const SmartFileIcon = ({ name, isDir, isOpen }) => {
 };
 
 // ---------- HELPERS ----------
-const getId = (item) => item.id || item.path || item.key || item.name;
+// IMPORTANT: ID must be unique. Prefer Path > ID > Name
+const getId = (item) => item.path || item.id || item.name;
 
 function filterTree(items, q) {
     if (!q) return items;
@@ -187,7 +192,7 @@ function filterTree(items, q) {
 }
 
 // ---------- MAIN COMPONENT ----------
-export function TreeView({
+const TreeView = forwardRef(function TreeView({
                              data = [],
                              title,
                              showCheckboxes = false,
@@ -196,9 +201,10 @@ export function TreeView({
                              onCheckChange = () => {},
                              onItemClick = () => {},
                              className = "",
-                         }) {
+                         }, ref) {
     const [query, setQuery] = useState("");
     const [checked, setChecked] = useState(new Set());
+    const treeRef = useRef();
 
     const filtered = useMemo(() => filterTree(data, query), [data, query]);
 
@@ -213,6 +219,12 @@ export function TreeView({
         });
     };
 
+    // Expose methods via ref
+    useImperativeHandle(ref, () => ({
+        openAll: () => treeRef.current?.openAll && treeRef.current.openAll(),
+        closeAll: () => treeRef.current?.closeAll && treeRef.current.closeAll(),
+    }), []);
+
     return (
         <div className={`flex flex-col h-full ${className}`}>
             {/* HEADER */}
@@ -226,7 +238,7 @@ export function TreeView({
                                     <TooltipTrigger asChild>
                                         <button
                                             className="p-2 rounded hover:bg-muted/20"
-                                            onClick={() => window.__treeRef?.openAll()}
+                                            onClick={() => treeRef.current?.openAll()}
                                         >
                                             <ChevronsDown className="h-4 w-4" />
                                         </button>
@@ -237,7 +249,7 @@ export function TreeView({
                                     <TooltipTrigger asChild>
                                         <button
                                             className="p-2 rounded hover:bg-muted/20"
-                                            onClick={() => window.__treeRef?.closeAll()}
+                                            onClick={() => treeRef.current?.closeAll()}
                                         >
                                             <ChevronsUp className="h-4 w-4" />
                                         </button>
@@ -268,37 +280,70 @@ export function TreeView({
                 <Tree
                     data={filtered}
                     width="100%"
-                    height={800} // Virtualizer needs a base, but flex container overrides it visually
+                    height={800}
                     childrenAccessor="children"
                     idAccessor={getId}
                     rowHeight={28}
                     padding={4}
                     indent={20}
-                    ref={(r) => (window.__treeRef = r)}
-                    // Tailwind classes to force the scrollbar to look dark/transparent
+                    ref={instance => { treeRef.current = instance; }}
                     className="h-full w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
                     onSelect={(nodes) => {
                         const node = nodes[0];
-                        if (node && !Array.isArray(node.data.children)) {
-                            onItemClick(node.data);
+                        if (node) {
+                            if (!Array.isArray(node.data.children)) {
+                                onItemClick(node.data);
+                            }
                         }
                     }}
                 >
                     {({ node, style }) => {
                         const item = node.data;
                         const id = getId(item);
-                        const isDir = Array.isArray(item.children) || item.isFolder;
+                        const hasChildren = item.children && item.children.length > 0;
+                        const isFolder = Array.isArray(item.children) || item.isFolder;
                         const isOpen = node.isOpen;
 
                         return (
                             <div
                                 style={style}
-                                className="flex items-center gap-2 px-2 text-sm cursor-pointer select-none hover:bg-muted/30 group transition-colors"
-                                onClick={() => node.toggle()}
+                                className={`flex items-center px-2 text-sm cursor-pointer select-none transition-colors hover:bg-muted/30 group ${
+                                    node.isSelected ? "bg-muted/40" : ""
+                                }`}
+                                onClick={() => {
+                                    if (hasChildren) {
+                                        node.toggle();
+                                    } else {
+                                        node.select();
+                                    }
+                                }}
                             >
-                                {/* ICON */}
-                                <div className="flex-shrink-0 flex items-center justify-center w-5 h-5">
-                                    <SmartFileIcon name={item.name} isDir={isDir} isOpen={isOpen} />
+                                {/* --- TOGGLE ARROW ICON --- */}
+                                <div
+                                    className={`flex items-center justify-center w-4 h-4 mr-1 rounded-sm ${
+                                        hasChildren ? "hover:bg-black/10 dark:hover:bg-white/10" : ""
+                                    }`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (hasChildren) node.toggle();
+                                    }}
+                                >
+                                    {/* Only show arrow if it is a folder AND has children */}
+                                    {isFolder && hasChildren ? (
+                                        isOpen ? (
+                                            <ChevronDown className="w-3 h-3 text-muted-foreground pointer-events-none" />
+                                        ) : (
+                                            <ChevronRight className="w-3 h-3 text-muted-foreground pointer-events-none" />
+                                        )
+                                    ) : (
+                                        // Spacer for alignment if no arrow (files or empty folders)
+                                        <span className="w-3 h-3" />
+                                    )}
+                                </div>
+
+                                {/* FILE/FOLDER ICON */}
+                                <div className="flex-shrink-0 flex items-center justify-center w-5 h-5 mr-2">
+                                    <SmartFileIcon name={item.name} isDir={isFolder} isOpen={isOpen} />
                                 </div>
 
                                 {/* CHECKBOX */}
@@ -310,7 +355,7 @@ export function TreeView({
                                             e.stopPropagation();
                                             toggleCheck(item);
                                         }}
-                                        className="mr-1"
+                                        className="mr-2"
                                     />
                                 )}
 
@@ -325,6 +370,7 @@ export function TreeView({
             </div>
         </div>
     );
-}
+});
 
 export default TreeView;
+
