@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { useSession, signIn } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useProject } from "@/contexts/projectContext"
+import { usePrompts } from "@/contexts/promptsContext"
 import { useRouter } from "next/navigation"
 import { fetchRepoTree } from "@/lib/github-api"
 
@@ -34,11 +35,12 @@ export function HomePage() {
     const { setProjectStructure, setViewMode, setCurrentRepo } = useProject()
     const router = useRouter()
 
-    const [prompts, setPrompts] = useState(() => {
-        const initial = {}
-        agents.forEach((agent) => (initial[agent] = []))
-        return initial
-    })
+    const {
+        prompts,
+        addPrompt: addPromptContext,
+        editPrompt: editPromptContext,
+        deletePrompt: deletePromptContext,
+    } = usePrompts()
 
     const [newPrompt, setNewPrompt] = useState("")
     const [editingPrompt, setEditingPrompt] = useState(null)
@@ -52,27 +54,6 @@ export function HomePage() {
 
     // prevents React 18 dev-mode double-fetch
     const fetchOnceRef = useRef(false)
-
-    // ---------------------------
-    // Load prompts on mount
-    // ---------------------------
-    useEffect(() => {
-        if (status !== "authenticated") return
-
-        const fetchPrompts = async () => {
-            try {
-                const response = await fetch("/api/prompts")
-                if (response.ok) {
-                    const data = await response.json()
-                    setPrompts(data)
-                }
-            } catch (err) {
-                console.error("Error loading prompts:", err)
-            }
-        }
-
-        fetchPrompts()
-    }, [status])
 
     // ---------------------------
     // Load GitHub state from localStorage
@@ -135,26 +116,13 @@ export function HomePage() {
             return
         }
 
-        try {
-            const response = await fetch("/api/prompts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ agent: currentAgent, text: newPrompt.trim() }),
-            })
-
-            if (!response.ok) throw new Error()
-
-            const newPromptData = await response.json()
-            setPrompts((prev) => ({
-                ...prev,
-                [currentAgent]: [...prev[currentAgent], newPromptData],
-            }))
-
+        const result = await addPromptContext(currentAgent, newPrompt.trim());
+        if (result.success) {
             setNewPrompt("")
             setIsDialogOpen(false)
             toast.success("Prompt added successfully!")
-        } catch {
-            toast.error("Failed to add prompt")
+        } else {
+            toast.error(result.error || "Failed to add prompt")
         }
     }
 
@@ -162,43 +130,21 @@ export function HomePage() {
         const trimmed = newText.trim()
         if (!trimmed) return toast.error("Prompt cannot be empty")
 
-        try {
-            const response = await fetch(`/api/prompts/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: trimmed }),
-            })
-
-            if (!response.ok) throw new Error()
-
-            setPrompts((prev) => ({
-                ...prev,
-                [agent]: prev[agent].map((p) => (p.id === id ? { ...p, text: trimmed } : p)),
-            }))
-
+        const result = await editPromptContext(agent, id, trimmed);
+        if (result.success) {
             setEditingPrompt(null)
             toast.success("Prompt updated successfully!")
-        } catch {
-            toast.error("Failed to update prompt")
+        } else {
+            toast.error(result.error || "Failed to update prompt")
         }
     }
 
     const handleDeletePrompt = async (agent, id) => {
-        try {
-            const response = await fetch(`/api/prompts/${id}`, {
-                method: "DELETE",
-            })
-
-            if (!response.ok) throw new Error()
-
-            setPrompts((prev) => ({
-                ...prev,
-                [agent]: prev[agent].filter((p) => p.id !== id),
-            }))
-
+        const result = await deletePromptContext(agent, id);
+        if (result.success) {
             toast.success("Prompt deleted successfully!")
-        } catch {
-            toast.error("Failed to delete prompt")
+        } else {
+            toast.error(result.error || "Failed to delete prompt")
         }
     }
 
@@ -345,7 +291,7 @@ export function HomePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        {prompts[agent]?.length === 0 ? (
+                                        {(!prompts[agent] || prompts[agent].length === 0) ? (
                                             <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
                                         ) : (
                                             prompts[agent].map((prompt) => (

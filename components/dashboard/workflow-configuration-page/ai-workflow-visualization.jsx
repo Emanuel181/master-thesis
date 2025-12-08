@@ -31,6 +31,7 @@ import {
     Database,
     ChevronDown,
     RefreshCw,
+    MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
+import "reactflow/dist/style.css";
 
 // -------- Custom Animated Edge --------
 
@@ -85,24 +87,8 @@ function AnimatedSVGEdge({
                     </textPath>
                 </text>
             )}
-            <circle r="8" fill={circleColor} opacity="0.8">
+            <circle r="6" fill={circleColor} opacity="0.8">
                 <animateMotion dur={duration} repeatCount="indefinite" path={edgePath} />
-            </circle>
-            <circle r="8" fill={circleColor} opacity="0.6">
-                <animateMotion
-                    dur={duration}
-                    repeatCount="indefinite"
-                    path={edgePath}
-                    begin="0.5s"
-                />
-            </circle>
-            <circle r="8" fill={circleColor} opacity="0.4">
-                <animateMotion
-                    dur={duration}
-                    repeatCount="indefinite"
-                    path={edgePath}
-                    begin="1s"
-                />
             </circle>
         </>
     );
@@ -123,7 +109,29 @@ function AgentNode({ data }) {
 
     return (
         <>
-            <Handle type="target" position={Position.Left} className="!bg-border" />
+            {/* Input from Previous Agent (Left) */}
+            <Handle type="target" position={Position.Left} id="flow-in" className="!bg-border !w-3 !h-3" />
+
+            {/* Input from Knowledge Base (Top - Offset Left) */}
+            <Handle
+                type="target"
+                position={Position.Top}
+                id="kb-in"
+                className="!bg-cyan-500 !w-3 !h-3"
+                style={{ left: '25%' }}
+                title="Knowledge Base Context"
+            />
+
+            {/* Input from Prompt (Top - Offset Right to avoid collision) */}
+            <Handle
+                type="target"
+                position={Position.Top}
+                id="prompt-in"
+                className="!bg-indigo-500 !w-3 !h-3"
+                style={{ left: '75%' }}
+                title="Prompt Instructions"
+            />
+
             <Card className={`min-w-[240px] shadow-lg border-2 ${borderColor}`}>
                 <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-3">
@@ -156,7 +164,9 @@ function AgentNode({ data }) {
                     </Select>
                 </CardContent>
             </Card>
-            <Handle type="source" position={Position.Right} className="!bg-border" />
+
+            {/* Output to Next Agent (Right) */}
+            <Handle type="source" position={Position.Right} id="flow-out" className="!bg-border !w-3 !h-3" />
         </>
     );
 }
@@ -164,7 +174,6 @@ function AgentNode({ data }) {
 function UserCodeNode({ data }) {
     return (
         <>
-            <Handle type="target" position={Position.Left} className="!bg-border" />
             <Card className="min-w-[220px] shadow-lg border-2 border-yellow-400 dark:border-yellow-400">
                 <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-3">
@@ -178,7 +187,7 @@ function UserCodeNode({ data }) {
                     </div>
                 </CardContent>
             </Card>
-            <Handle type="source" position={Position.Right} className="!bg-border" />
+            <Handle type="source" position={Position.Right} className="!bg-border !w-3 !h-3" />
         </>
     );
 }
@@ -211,14 +220,11 @@ function KnowledgeBaseNode({ data }) {
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        // Simulate refresh delay - in real implementation, this would be an API call
         setTimeout(() => {
             setIsRefreshing(false);
         }, 1500);
     };
 
-    // Determine if knowledge base selection should be disabled
-    // Disabled when: no code type selected
     const isKnowledgeBaseDisabled = !data.codeType;
 
     return (
@@ -240,11 +246,10 @@ function KnowledgeBaseNode({ data }) {
                         {data.description}
                     </div>
 
-                    {/* Code Type Selector */}
                     <div className="mb-3">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="text-xs font-medium text-muted-foreground">Code Type:</div>
-                            <span className="text-xs text-muted-foreground">Select use case for analysis</span>
+                            <span className="text-xs text-muted-foreground">Select use case</span>
                         </div>
                         <Select
                             value={data.codeType || ""}
@@ -266,13 +271,11 @@ function KnowledgeBaseNode({ data }) {
                     <div className="flex items-center gap-2 mb-3">
                         <div className="flex-1">
                             <div className="text-xs font-medium text-muted-foreground mb-1">Knowledge Bases:</div>
-                            <span className="text-xs text-muted-foreground">Choose sources for RAG context</span>
                         </div>
                         <Button
                             variant="outline"
                             size="icon"
                             className="h-6 w-6"
-                            title="Refresh knowledge bases"
                             onClick={handleRefresh}
                             disabled={isRefreshing}
                         >
@@ -304,9 +307,6 @@ function KnowledgeBaseNode({ data }) {
                         <PopoverContent className="w-[280px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Knowledge Bases</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Choose sources for RAG context
-                                </p>
                             </div>
                             <div className="p-2 max-h-[300px] overflow-y-auto">
                                 {data.knowledgeBases.map((kb) => {
@@ -319,7 +319,7 @@ function KnowledgeBaseNode({ data }) {
                                             className={cn(
                                                 "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
                                                 "hover:bg-accent",
-                                                isSelected && "bg-cyan-50 dark:bg-cyan-950/30"
+                                                isSelected && "bg-cyan-5 dark:bg-cyan-950/30"
                                             )}
                                             onClick={() => handleToggle(kb.id)}
                                         >
@@ -344,16 +344,121 @@ function KnowledgeBaseNode({ data }) {
                                     );
                                 })}
                             </div>
-                            <div className="p-3 border-t bg-muted/50">
-                                <p className="text-xs text-muted-foreground">
-                                    {selectedCount} of {data.knowledgeBases.length} selected
-                                </p>
+                        </PopoverContent>
+                    </Popover>
+                </CardContent>
+            </Card>
+            {/* Output to Prompts/Agents (Right) */}
+            <Handle type="source" position={Position.Right} className="!bg-border !w-3 !h-3" />
+        </>
+    );
+}
+
+function PromptNode({ data }) {
+    const [open, setOpen] = React.useState(false);
+    const borderColorMap = {
+        "bg-indigo-500": "border-indigo-500 dark:border-indigo-400",
+    };
+    const borderColor = borderColorMap[data.iconBg] || "border-indigo-500 dark:border-indigo-400";
+
+    const selectedCount = data.selectedPrompts?.length || 0;
+    const selectedTexts = data.prompts
+        .filter(p => data.selectedPrompts?.includes(p.id))
+        .map(p => p.text.length > 30 ? p.text.substring(0, 30) + "..." : p.text)
+        .join(", ");
+
+    const handleToggle = (promptId) => {
+        if (data.onPromptChange) {
+            data.onPromptChange(data.agent, promptId);
+        }
+    };
+
+    // LOGIC CHANGE: No prompt nodes show KB input anymore
+    // Reviewer, Implementation, Tester, and Report are all disconnected from KB.
+    const showKbInput = !["reviewer", "implementation", "tester", "report"].includes(data.agent);
+
+    return (
+        <>
+            {/* Input from KB (Left) - Conditionally Rendered */}
+            {showKbInput && (
+                <Handle type="target" position={Position.Left} className="!bg-cyan-500 !w-3 !h-3" />
+            )}
+
+            <Card className={`min-w-[280px] shadow-lg border-2 ${borderColor}`}>
+                <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className={`p-3 rounded-lg ${data.iconBg}`}>
+                            <MessageSquare className="w-6 h-6 text-white" strokeWidth={2.5} />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-semibold text-base">{data.label}</div>
+                            <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                                {selectedCount} selected
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-3">
+                        {data.description}
+                    </div>
+
+                    <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full h-auto justify-between text-left font-normal p-2"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    {selectedCount > 0 ? (
+                                        <span className="text-xs truncate block">
+                                            {selectedTexts}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground">
+                                            Select prompts
+                                        </span>
+                                    )}
+                                </div>
+                                <ChevronDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[320px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                            <div className="p-3 border-b">
+                                <p className="text-sm font-medium">Select Prompts for {data.agent}</p>
+                            </div>
+                            <div className="p-2 max-h-[300px] overflow-y-auto">
+                                {data.prompts.map((prompt) => {
+                                    const isSelected = data.selectedPrompts?.includes(prompt.id);
+
+                                    return (
+                                        <div
+                                            key={prompt.id}
+                                            className={cn(
+                                                "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
+                                                "hover:bg-accent",
+                                                isSelected && "bg-indigo-5 dark:bg-indigo-950/30"
+                                            )}
+                                            onClick={() => handleToggle(prompt.id)}
+                                        >
+                                            <Checkbox
+                                                checked={isSelected}
+                                                className="mt-0.5 pointer-events-none"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm">
+                                                    {prompt.text}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </PopoverContent>
                     </Popover>
                 </CardContent>
             </Card>
-            <Handle type="source" position={Position.Right} className="!bg-border" />
+
+            {/* Output to Agent (Bottom) */}
+            <Handle type="source" position={Position.Bottom} className="!bg-indigo-500 !w-3 !h-3" />
         </>
     );
 }
@@ -362,6 +467,7 @@ const nodeTypes = {
     agentNode: AgentNode,
     userCodeNode: UserCodeNode,
     knowledgeBaseNode: KnowledgeBaseNode,
+    promptNode: PromptNode,
 };
 
 const edgeTypes = {
@@ -380,13 +486,14 @@ export function AIWorkflowVisualization({
                                             codeType,
                                             onCodeTypeChange,
                                             useCases = [],
+                                            prompts = {},
+                                            selectedPrompts = {},
+                                            onPromptChange,
                                             onSave,
                                             onCancel,
                                             isCodeLocked = false,
                                         }) {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
-
-    // Store React Flow instance so we can control zoom
     const reactFlowInstanceRef = React.useRef(null);
 
     const MIN_ZOOM = 0.5;
@@ -396,54 +503,44 @@ export function AIWorkflowVisualization({
     const handleZoomIn = () => {
         const instance = reactFlowInstanceRef.current;
         if (!instance) return;
-        const currentZoom = instance.getZoom();
-        const nextZoom = Math.min(currentZoom + ZOOM_STEP, MAX_ZOOM);
-        instance.zoomTo(nextZoom);
+        instance.zoomTo(Math.min(instance.getZoom() + ZOOM_STEP, MAX_ZOOM));
     };
 
     const handleZoomOut = () => {
         const instance = reactFlowInstanceRef.current;
         if (!instance) return;
-        const currentZoom = instance.getZoom();
-        const nextZoom = Math.max(currentZoom - ZOOM_STEP, MIN_ZOOM);
-        instance.zoomTo(nextZoom);
+        instance.zoomTo(Math.max(instance.getZoom() - ZOOM_STEP, MIN_ZOOM));
     };
 
     React.useEffect(() => {
-        const checkDarkMode = () => {
-            setIsDarkMode(document.documentElement.classList.contains("dark"));
-        };
-
+        const checkDarkMode = () => setIsDarkMode(document.documentElement.classList.contains("dark"));
         checkDarkMode();
-
         const observer = new MutationObserver(checkDarkMode);
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ["class"],
-        });
-
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
         return () => observer.disconnect();
     }, []);
 
-    const getEdgeColors = React.useCallback((isDark) => {
-        return {
-            amber: "#facc15",  // bright yellow-400 to match UserCodeNode border
-            cyan: isDark ? "#22d3ee" : "#06b6d4",   // cyan-400/500 to match KnowledgeBaseNode border
-            blue: isDark ? "#60a5fa" : "#3b82f6",   // blue-400/500 to match Reviewer border
-            green: isDark ? "#4ade80" : "#22c55e",  // green-400/500 to match Implementation border
-            orange: isDark ? "#fb923c" : "#f97316", // orange-400/500 to match Tester border
-            purple: isDark ? "#c084fc" : "#a855f7", // purple-400/500 to match Report border
-        };
-    }, []);
+    const edgeColors = React.useMemo(() => ({
+        amber: "#facc15",
+        cyan: isDarkMode ? "#22d3ee" : "#06b6d4",
+        indigo: isDarkMode ? "#818cf8" : "#6366f1",
+        blue: isDarkMode ? "#60a5fa" : "#3b82f6",
+        green: isDarkMode ? "#4ade80" : "#22c55e",
+        orange: isDarkMode ? "#fb923c" : "#f97316",
+    }), [isDarkMode]);
 
-    const edgeColors = getEdgeColors(isDarkMode);
+    const GRID_START_X = 50;
+    const COL_WIDTH = 450;
+    const ROW_1_Y = 0;
+    const ROW_2_Y = 400;
 
     const initialNodes = React.useMemo(
         () => [
+            // --- Inputs Column (Left Most) ---
             {
                 id: "knowledgeBase",
                 type: "knowledgeBaseNode",
-                position: { x: 40, y: -50 },
+                position: { x: GRID_START_X, y: ROW_1_Y },
                 data: {
                     label: "Knowledge Base",
                     description: "RAG context source",
@@ -460,20 +557,36 @@ export function AIWorkflowVisualization({
             {
                 id: "userCode",
                 type: "userCodeNode",
-                position: { x: 40, y: 310 },
+                position: { x: GRID_START_X, y: ROW_2_Y + 40 },
                 data: {
                     label: "Your Code",
                     description: "Input code for review",
                 },
             },
+
+            // --- Column 2: Reviewer ---
+            {
+                id: "reviewerPrompt",
+                type: "promptNode",
+                position: { x: GRID_START_X + COL_WIDTH + 100, y: ROW_1_Y },
+                data: {
+                    label: "Reviewer Prompts",
+                    description: "Select prompts for reviewer",
+                    iconBg: "bg-indigo-500",
+                    agent: "reviewer",
+                    prompts: prompts.reviewer || [],
+                    selectedPrompts: selectedPrompts.reviewer || [],
+                    onPromptChange,
+                },
+            },
             {
                 id: "reviewer",
                 type: "agentNode",
-                position: { x: 400, y: 180 },
+                position: { x: GRID_START_X + COL_WIDTH, y: ROW_2_Y },
                 data: {
                     id: "reviewer",
                     label: "Reviewer Agent",
-                    description: "Analyzes and reviews code quality",
+                    description: "Analyzes code quality",
                     icon: ScanSearch,
                     iconBg: "bg-blue-500",
                     model: agentModels.reviewer,
@@ -481,10 +594,26 @@ export function AIWorkflowVisualization({
                     onModelChange,
                 },
             },
+
+            // --- Column 3: Implementation ---
+            {
+                id: "implementationPrompt",
+                type: "promptNode",
+                position: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_1_Y },
+                data: {
+                    label: "Implementation Prompts",
+                    description: "Select prompts for changes",
+                    iconBg: "bg-indigo-500",
+                    agent: "implementation",
+                    prompts: prompts.implementation || [],
+                    selectedPrompts: selectedPrompts.implementation || [],
+                    onPromptChange,
+                },
+            },
             {
                 id: "implementation",
                 type: "agentNode",
-                position: { x: 760, y: 200 },
+                position: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_2_Y },
                 data: {
                     id: "implementation",
                     label: "Implementation Agent",
@@ -496,10 +625,26 @@ export function AIWorkflowVisualization({
                     onModelChange,
                 },
             },
+
+            // --- Column 4: Tester ---
+            {
+                id: "testerPrompt",
+                type: "promptNode",
+                position: { x: GRID_START_X + COL_WIDTH * 3, y: ROW_1_Y },
+                data: {
+                    label: "Tester Prompts",
+                    description: "Select prompts for testing",
+                    iconBg: "bg-indigo-500",
+                    agent: "tester",
+                    prompts: prompts.tester || [],
+                    selectedPrompts: selectedPrompts.tester || [],
+                    onPromptChange,
+                },
+            },
             {
                 id: "tester",
                 type: "agentNode",
-                position: { x: 1120, y: 240 },
+                position: { x: GRID_START_X + COL_WIDTH * 3, y: ROW_2_Y },
                 data: {
                     id: "tester",
                     label: "Tester Agent",
@@ -511,10 +656,26 @@ export function AIWorkflowVisualization({
                     onModelChange,
                 },
             },
+
+            // --- Column 5: Report ---
+            {
+                id: "reportPrompt",
+                type: "promptNode",
+                position: { x: GRID_START_X + COL_WIDTH * 4, y: ROW_1_Y },
+                data: {
+                    label: "Report Prompts",
+                    description: "Select prompts for report",
+                    iconBg: "bg-indigo-500",
+                    agent: "report",
+                    prompts: prompts.report || [],
+                    selectedPrompts: selectedPrompts.report || [],
+                    onPromptChange,
+                },
+            },
             {
                 id: "report",
                 type: "agentNode",
-                position: { x: 1480, y: 200 },
+                position: { x: GRID_START_X + COL_WIDTH * 4, y: ROW_2_Y },
                 data: {
                     id: "report",
                     label: "Report Agent",
@@ -527,85 +688,99 @@ export function AIWorkflowVisualization({
                 },
             },
         ],
-        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, isCodeLocked]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, prompts, selectedPrompts, onPromptChange, isCodeLocked]
     );
 
     const initialEdges = React.useMemo(
         () => [
+            // --- 1. Knowledge Base Flow ---
+
+            // CONNECTS: Knowledge Base -> Reviewer Agent
             {
-                id: "e0",
+                id: "e_kb_reviewer",
                 source: "knowledgeBase",
                 target: "reviewer",
+                targetHandle: "kb-in",
                 type: "smoothstep",
                 animated: true,
-                style: {
-                    stroke: edgeColors.cyan,
-                    strokeWidth: 4,
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    color: edgeColors.cyan,
-                },
+                style: { stroke: edgeColors.cyan, strokeWidth: 2, strokeDasharray: "5,5" },
+            },
+
+            // --- 2. Vertical Downward Connections (Prompt -> Agent) ---
+            {
+                id: "e_reviewerPrompt_reviewer",
+                source: "reviewerPrompt",
+                target: "reviewer",
+                targetHandle: "prompt-in",
+                type: "default",
+                animated: false,
+                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
             },
             {
-                id: "e1",
+                id: "e_implementationPrompt_implementation",
+                source: "implementationPrompt",
+                target: "implementation",
+                targetHandle: "prompt-in",
+                type: "default",
+                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+            },
+            {
+                id: "e_testerPrompt_tester",
+                source: "testerPrompt",
+                target: "tester",
+                targetHandle: "prompt-in",
+                type: "default",
+                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+            },
+            {
+                id: "e_reportPrompt_report",
+                source: "reportPrompt",
+                target: "report",
+                targetHandle: "prompt-in",
+                type: "default",
+                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+            },
+
+            // --- 3. Horizontal Workflow Flow (Left to Right) ---
+            {
+                id: "e_userCode_reviewer",
                 source: "userCode",
                 target: "reviewer",
-                type: "smoothstep",
-                animated: true,
-                style: {
-                    stroke: edgeColors.amber,
-                    strokeWidth: 4,
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    color: edgeColors.amber,
-                },
+                targetHandle: "flow-in",
+                type: "animated",
+                style: { stroke: edgeColors.amber, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.amber },
             },
             {
-                id: "e2",
+                id: "e_reviewer_implementation",
                 source: "reviewer",
                 target: "implementation",
-                type: "smoothstep",
-                animated: true,
-                style: {
-                    stroke: edgeColors.blue,
-                    strokeWidth: 4,
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    color: edgeColors.blue,
-                },
+                targetHandle: "flow-in",
+                type: "animated",
+                style: { stroke: edgeColors.blue, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.blue },
             },
             {
-                id: "e3",
+                id: "e_implementation_tester",
                 source: "implementation",
                 target: "tester",
-                type: "smoothstep",
-                animated: true,
-                style: {
-                    stroke: edgeColors.green,
-                    strokeWidth: 4,
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    color: edgeColors.green,
-                },
+                targetHandle: "flow-in",
+                type: "animated",
+                style: { stroke: edgeColors.green, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.green },
             },
             {
-                id: "e4",
+                id: "e_tester_report",
                 source: "tester",
                 target: "report",
-                type: "smoothstep",
-                animated: true,
-                style: {
-                    stroke: edgeColors.orange,
-                    strokeWidth: 4,
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    color: edgeColors.orange,
-                },
+                targetHandle: "flow-in",
+                type: "animated",
+                style: { stroke: edgeColors.orange, strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.orange },
             },
         ],
         [edgeColors]
@@ -622,29 +797,19 @@ export function AIWorkflowVisualization({
         setNodes((nds) =>
             nds.map((node) => {
                 if (node.type === "agentNode" && node.data && node.data.id) {
-                    const id = node.data.id;
-                    return {
-                        ...node,
-                        data: {
-                            ...node.data,
-                            model: agentModels[id],
-                        },
-                    };
+                    return { ...node, data: { ...node.data, model: agentModels[node.data.id] } };
                 }
                 return node;
             })
         );
     }, [agentModels, setNodes]);
 
-    // Update nodes when data changes
     React.useEffect(() => {
         setNodes(initialNodes);
     }, [initialNodes, setNodes]);
 
-    // Auto-select knowledge base when codeType changes
     React.useEffect(() => {
         if (codeType && onKnowledgeBaseChange) {
-            // Auto-select the knowledge base that matches the code type
             const matchingKnowledgeBase = knowledgeBases.find(kb => kb.id === codeType);
             if (matchingKnowledgeBase && !selectedKnowledgeBases.includes(codeType)) {
                 onKnowledgeBaseChange(codeType);
@@ -655,43 +820,25 @@ export function AIWorkflowVisualization({
     return (
         <div className="w-full">
             <div className="border rounded-lg bg-background shadow-sm flex flex-col">
-                {/* Header with actions & zoom controls */}
                 <div className="flex items-center justify-between px-4 py-3 border-b gap-3">
                     <div className="text-sm font-medium text-foreground">
                         AI Workflow Configuration
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Zoom controls */}
                         <div className="flex items-center gap-1 mr-3">
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="outline"
-                                onClick={handleZoomOut}
-                            >
+                            <Button type="button" size="icon" variant="outline" onClick={handleZoomOut}>
                                 <ZoomOut className="w-4 h-4" />
                             </Button>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="outline"
-                                onClick={handleZoomIn}
-                            >
+                            <Button type="button" size="icon" variant="outline" onClick={handleZoomIn}>
                                 <ZoomIn className="w-4 h-4" />
                             </Button>
                         </div>
-                        {/* Save / Cancel */}
-                        <Button type="button" onClick={onSave}>
-                            Save Configuration
-                        </Button>
-                        <Button type="button" onClick={onCancel} variant="outline">
-                            Cancel
-                        </Button>
+                        <Button type="button" onClick={onSave}>Save Configuration</Button>
+                        <Button type="button" onClick={onCancel} variant="outline">Cancel</Button>
                     </div>
                 </div>
 
-                {/* Flow area */}
-                <div className="h-[600px]">
+                <div className="h-[800px]">
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -703,17 +850,14 @@ export function AIWorkflowVisualization({
                         fitViewOptions={{ padding: 0.2 }}
                         minZoom={MIN_ZOOM}
                         maxZoom={MAX_ZOOM}
-                        defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
+                        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                         nodesDraggable
                         nodesConnectable={false}
                         elementsSelectable
                         snapToGrid
                         snapGrid={[20, 20]}
-                        onInit={(instance) => {
-                            reactFlowInstanceRef.current = instance;
-                        }}
+                        onInit={(instance) => { reactFlowInstanceRef.current = instance; }}
                     >
-                        {/* You still get the built-in controls if you want them too */}
                         <Controls className="!bg-card !border-border" />
                     </ReactFlow>
                 </div>

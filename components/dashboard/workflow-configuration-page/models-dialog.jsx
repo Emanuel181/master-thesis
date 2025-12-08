@@ -23,6 +23,16 @@ import { AIWorkflowVisualization } from "./ai-workflow-visualization"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUseCases } from "@/contexts/useCasesContext"
 import * as LucideIcons from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { usePrompts } from "@/contexts/promptsContext"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
     const [reviewerModel, setReviewerModel] = React.useState("");
@@ -33,8 +43,19 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     const [selectedKnowledgeBases, setSelectedKnowledgeBases] = React.useState([]);
     const [isRefreshingModels, setIsRefreshingModels] = React.useState(false);
     const [isRefreshingUseCases, setIsRefreshingUseCases] = React.useState(false);
+    const [viewPrompt, setViewPrompt] = React.useState(null);
+    const [currentPage, setCurrentPage] = React.useState({});
 
     const { useCases, refresh: refreshUseCases } = useUseCases();
+
+    const {
+        prompts,
+        selectedPrompts,
+        handlePromptChange,
+        handlePromptTextChange,
+        addPrompt,
+        savePrompts,
+    } = usePrompts();
 
     // Auto-select knowledge base when codeType changes
     React.useEffect(() => {
@@ -98,6 +119,11 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         refreshUseCases().finally(() => setIsRefreshingUseCases(false));
     };
 
+    const truncateText = (text, maxLength = 100) => {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    };
+
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange}>
             <DrawerContent>
@@ -110,9 +136,10 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                     </DrawerHeader>
                     <div className="p-4">
                         <Tabs defaultValue="workflow" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3 mb-4">
+                            <TabsList className="grid w-full grid-cols-4 mb-4">
                                 <TabsTrigger value="workflow">Workflow Visualization</TabsTrigger>
                                 <TabsTrigger value="models">Agents Configuration</TabsTrigger>
+                                <TabsTrigger value="prompts">Prompts Configuration</TabsTrigger>
                                 <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
                             </TabsList>
 
@@ -135,6 +162,9 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     codeType={codeType}
                                     onCodeTypeChange={onCodeTypeChange}
                                     useCases={useCases}
+                                    prompts={prompts}
+                                    selectedPrompts={selectedPrompts}
+                                    onPromptChange={handlePromptChange}
                                     onSave={() => {
                                         // Here you would typically save the configuration
                                         onOpenChange(false);
@@ -280,6 +310,105 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                 </div>
                             </TabsContent>
 
+                            <TabsContent value="prompts">
+                                <div className="space-y-4">
+                                    <div className="text-sm text-muted-foreground mb-4">
+                                        Configure the prompts used by each AI agent. You can customize the prompts or use the default ones.
+                                    </div>
+
+                                    {Object.entries(prompts).map(([agent, agentPrompts]) => (
+                                        <div key={agent} className="pb-4 border-b last:border-b-0">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h4 className="text-lg font-semibold capitalize">{agent} Agent</h4>
+                                            </div>
+
+                                            {(!agentPrompts || agentPrompts.length === 0) ? (
+                                                <div className="text-sm text-muted-foreground italic">
+                                                    No prompts configured.
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {(() => {
+                                                        const page = currentPage[agent] || 0;
+                                                        const visiblePrompts = agentPrompts.slice(page * 5, (page + 1) * 5);
+                                                        return (
+                                                            <>
+                                                                <div className="flex gap-4 overflow-x-auto">
+                                                                    {visiblePrompts.map((prompt) => (
+                                                                        <div key={prompt.id} className="flex-1 min-w-[200px] p-3 rounded-lg border bg-muted flex flex-col items-center justify-between">
+                                                                            <p className="text-sm text-center mb-2">{truncateText(prompt.text, 50)}</p>
+                                                                            <div className="flex gap-2">
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    size="sm"
+                                                                                    onClick={() => setViewPrompt(prompt)}
+                                                                                >
+                                                                                    View Full
+                                                                                </Button>
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    size="sm"
+                                                                                    onClick={() => handlePromptChange(agent, prompt.id)}
+                                                                                >
+                                                                                    {selectedPrompts[agent]?.includes(prompt.id) ? 'Deselect' : 'Select'}
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <div className="flex justify-between items-center mt-4">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
+                                                                        disabled={(currentPage[agent] || 0) === 0}
+                                                                    >
+                                                                        Previous
+                                                                    </Button>
+                                                                    <span className="text-sm">
+                                                                        Page {(currentPage[agent] || 0) + 1} of {Math.ceil(agentPrompts.length / 5)}
+                                                                    </span>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
+                                                                        disabled={((currentPage[agent] || 0) + 1) * 5 >= agentPrompts.length}
+                                                                    >
+                                                                        Next
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
+                                        <DialogContent className="max-w-2xl">
+                                            <DialogHeader>
+                                                <DialogTitle>Full Prompt</DialogTitle>
+                                                <DialogDescription>
+                                                    Complete text of the selected prompt.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            {viewPrompt && (
+                                                <Textarea
+                                                    value={viewPrompt.text}
+                                                    readOnly
+                                                    rows={10}
+                                                    className="resize-none"
+                                                />
+                                            )}
+                                            <DialogFooter>
+                                                <Button onClick={() => setViewPrompt(null)}>Close</Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                            </TabsContent>
+
                             <TabsContent value="knowledge">
                                 <div className="space-y-4">
                                     {!codeType ? (
@@ -346,7 +475,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                     <div className="flex-1">
                                                                         <h3 className="font-semibold text-base mb-1">{kb.title}</h3>
                                                                         <p className="text-sm text-muted-foreground">
-                                                                            {kb.content}
+                                                                            {truncateText(kb.content, 100)}
                                                                         </p>
                                                                     </div>
                                                                 </div>
