@@ -20,6 +20,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus, Edit, Trash2, Github, Eye, RefreshCw } from "lucide-react"
+import { GitlabIcon } from "@/components/icons/gitlab"
 import { toast } from "sonner"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -58,7 +59,14 @@ export function HomePage() {
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
     const [isGithubConnected, setIsGithubConnected] = useState(false)
     const [isRefreshingRepos, setIsRefreshingRepos] = useState(false)
+
     const [isRefreshingPrompts, setIsRefreshingPrompts] = useState(false)
+
+    // Add GitLab states
+    const [gitlabRepos, setGitlabRepos] = useState([])
+    const [isLoadingGitlabRepos, setIsLoadingGitlabRepos] = useState(false)
+    const [isGitlabConnected, setIsGitlabConnected] = useState(false)
+    const [isRefreshingGitlabRepos, setIsRefreshingGitlabRepos] = useState(false)
 
     // Selected prompts for bulk delete
     const [selectedPrompts, setSelectedPrompts] = useState(new Set())
@@ -74,16 +82,20 @@ export function HomePage() {
     const fetchOnceRef = useRef(false)
 
     // ---------------------------
-    // Load GitHub state from localStorage
+    // Load GitHub and GitLab state from localStorage
     // ---------------------------
     useEffect(() => {
         if (typeof window === "undefined") return
 
-        const savedRepos = localStorage.getItem("githubRepos")
-        const savedConnected = localStorage.getItem("isGithubConnected")
+        const savedGithubRepos = localStorage.getItem("githubRepos")
+        const savedGithubConnected = localStorage.getItem("isGithubConnected")
+        const savedGitlabRepos = localStorage.getItem("gitlabRepos")
+        const savedGitlabConnected = localStorage.getItem("isGitlabConnected")
 
-        if (savedRepos) setRepos(JSON.parse(savedRepos))
-        if (savedConnected === "true") setIsGithubConnected(true)
+        if (savedGithubRepos) setRepos(JSON.parse(savedGithubRepos))
+        if (savedGithubConnected === "true") setIsGithubConnected(true)
+        if (savedGitlabRepos) setGitlabRepos(JSON.parse(savedGitlabRepos))
+        if (savedGitlabConnected === "true") setIsGitlabConnected(true)
     }, [])
 
     // ---------------------------
@@ -95,40 +107,86 @@ export function HomePage() {
 
         setIsLoadingRepos(true)
         try {
-            const response = await fetch("/api/github/repos")
+            const response = await fetch(`/api/github/repos`)
             const data = await response.json()
 
             if (response.ok) {
                 setRepos(data)
                 setIsGithubConnected(true)
 
-                localStorage.setItem("githubRepos", JSON.stringify(data))
-                localStorage.setItem("isGithubConnected", "true")
+                localStorage.setItem(`githubRepos`, JSON.stringify(data))
+                localStorage.setItem(`isGithubConnected`, "true")
             } else {
-                console.warn('[home] fetch /api/github/repos failed', data)
+                console.warn(`[home] fetch /api/github/repos failed`, data)
                 // surface debug info to the user console
                 setIsGithubConnected(false)
-                localStorage.setItem("isGithubConnected", "false")
+                localStorage.setItem(`isGithubConnected`, "false")
                 // show server debug message when available
                 if (data?.debug?.message) {
-                    toast.error(`GitHub: ${data.debug.message}`)
+                    toast.error(`github: ${data.debug.message}`)
                 } else if (data?.error) {
-                    toast.error(`GitHub: ${data.error}`)
+                    toast.error(`github: ${data.error}`)
                 } else {
-                    toast.error('Failed to fetch GitHub repositories')
+                    toast.error(`Failed to fetch github repositories`)
                 }
                 // If unauthorized, sign out to force re-login
                 if (response.status === 401) {
                     signOut();
-                    toast.error('GitHub token expired or invalid. Please login again.');
+                    toast.error(`github token expired or invalid. Please login again.`);
                 }
             }
         } catch (err) {
             console.error("Error fetching repos:", err)
             setIsGithubConnected(false)
-            localStorage.setItem("isGithubConnected", "false")
+            localStorage.setItem(`isGithubConnected`, "false")
         } finally {
             setIsLoadingRepos(false)
+        }
+    }
+
+    // ---------------------------
+    // Fetch GitLab repos
+    // ---------------------------
+    const fetchGitlabRepos = async (allowRefresh = false) => {
+        if (!allowRefresh && fetchOnceRef.current) return
+        if (allowRefresh) fetchOnceRef.current = false // Allow refresh
+
+        setIsLoadingGitlabRepos(true)
+        try {
+            const response = await fetch(`/api/gitlab/repos`)
+            const data = await response.json()
+
+            if (response.ok) {
+                setGitlabRepos(data)
+                setIsGitlabConnected(true)
+
+                localStorage.setItem(`gitlabRepos`, JSON.stringify(data))
+                localStorage.setItem(`isGitlabConnected`, "true")
+            } else {
+                console.warn(`[home] fetch /api/gitlab/repos failed`, data)
+                // surface debug info to the user console
+                setIsGitlabConnected(false)
+                localStorage.setItem(`isGitlabConnected`, "false")
+                // show server debug message when available
+                if (data?.debug?.message) {
+                    toast.error(`gitlab: ${data.debug.message}`)
+                } else if (data?.error) {
+                    toast.error(`gitlab: ${data.error}`)
+                } else {
+                    toast.error(`Failed to fetch gitlab repositories`)
+                }
+                // If unauthorized, sign out to force re-login
+                if (response.status === 401) {
+                    signOut();
+                    toast.error(`gitlab token expired or invalid. Please login again.`);
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching gitlab repos:", err)
+            setIsGitlabConnected(false)
+            localStorage.setItem(`isGitlabConnected`, "false")
+        } finally {
+            setIsLoadingGitlabRepos(false)
         }
     }
 
@@ -140,6 +198,13 @@ export function HomePage() {
         await fetchRepos(true)
         setIsRefreshingRepos(false)
         toast.success("GitHub repositories refreshed!")
+    }
+
+    const handleRefreshGitlabRepos = async () => {
+        setIsRefreshingGitlabRepos(true)
+        await fetchGitlabRepos(true)
+        setIsRefreshingGitlabRepos(false)
+        toast.success("GitLab repositories refreshed!")
     }
 
     const handleRefreshPrompts = async () => {
@@ -161,6 +226,15 @@ export function HomePage() {
         toast.success("Disconnected from GitHub!")
     }
 
+    const handleDisconnectGitlab = () => {
+        signOut()
+        setIsGitlabConnected(false)
+        setGitlabRepos([])
+        localStorage.removeItem("gitlabRepos")
+        localStorage.setItem("isGitlabConnected", "false")
+        toast.success("Disconnected from GitLab!")
+    }
+
     // ---------------------------
     // Only fetch if authenticated AND repos not loaded
     // ---------------------------
@@ -169,6 +243,7 @@ export function HomePage() {
             fetchRepos();
         }
     }, [status, session, repos.length]);
+
 
     // ---------------------------
     // Clear GitHub state when logged out
@@ -179,6 +254,10 @@ export function HomePage() {
             setRepos([]);
             localStorage.removeItem("githubRepos");
             localStorage.setItem("isGithubConnected", "false");
+            setIsGitlabConnected(false);
+            setGitlabRepos([]);
+            localStorage.removeItem("gitlabRepos");
+            localStorage.setItem("isGitlabConnected", "false");
         }
     }, [status]);
 
@@ -297,16 +376,16 @@ export function HomePage() {
     // ---------------------------
     // Check if both cards are empty
     // ---------------------------
-    const isBothEmpty = !isGithubConnected && Object.values(prompts).every(arr => !arr || arr.length === 0);
+    const isBothEmpty = !isGithubConnected && !isGitlabConnected && Object.values(prompts).every(arr => !arr || arr.length === 0);
 
     // ---------------------------
     // UI
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className={`flex gap-4 ${isBothEmpty ? '' : 'items-start'}`}>
+            <div className="flex gap-4">
                 {/* GitHub Card */}
-                <Card className="flex-1 -ml-4">
+                <Card className="flex-1">
                     <CardHeader>
                         {isGithubConnected && (
                             <div className="flex items-center gap-1 mb-2">
@@ -353,10 +432,10 @@ export function HomePage() {
                         ) : !isGithubConnected ? (
                             <div className="space-y-4 p-3 border rounded-md bg-muted/20">
                                 <p className="text-sm text-muted-foreground">
-                                    GitHub integration is disabled because your account is not linked with GitHub.
+                                    Connect to GitHub to import repositories.
                                 </p>
 
-                                <Button className="w-full" onClick={() => signIn("github")}>
+                                <Button onClick={() => { signIn("github"); }}>
                                     <Github className="h-4 w-4 mr-2" />
                                     Connect GitHub
                                 </Button>
@@ -399,237 +478,333 @@ export function HomePage() {
                     </CardContent>
                 </Card>
 
-                {/* Prompts Card — unchanged except logic cleanup */}
-                <Card className="flex-1 -mr-4">
+                {/* GitLab Card */}
+                <Card className="flex-1">
                     <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle>AI Agent Prompts</CardTitle>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleRefreshPrompts}
-                                    disabled={isRefreshingPrompts}
-                                    title="Refresh prompts"
-                                >
-                                    {isRefreshingPrompts ? (
-                                        <RefreshCw className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <RefreshCw className="h-4 w-4" />
-                                    )}
-                                </Button>
-                                {selectedPrompts.size > 0 && (
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
-                                    >
-                                        Delete Selected ({selectedPrompts.size})
-                                    </Button>
-                                )}
+                        {isGitlabConnected && (
+                            <div className="flex items-center gap-1 mb-2">
+                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-sm text-green-600">Connected</span>
                             </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <GitlabIcon className="h-5 w-5" />
+                                GitLab Repositories
+                            </CardTitle>
+                            {isGitlabConnected && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleRefreshGitlabRepos}
+                                        disabled={isRefreshingGitlabRepos}
+                                        title="Refresh repositories"
+                                    >
+                                        {isRefreshingGitlabRepos ? (
+                                            <RefreshCw className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDisconnectGitlab}
+                                        title="Disconnect from GitLab"
+                                    >
+                                        Disconnect
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
-                        <Tabs value={currentAgent} onValueChange={setCurrentAgent}>
-                            <TabsList className="grid w-full grid-cols-4">
-                                {agents.map((agent) => (
-                                    <TabsTrigger key={agent} value={agent} className="capitalize">
-                                        {agent}
-                                    </TabsTrigger>
-                                ))}
-                            </TabsList>
+                        {status === "loading" ? (
+                            <p className="text-sm text-muted-foreground">Loading...</p>
+                        ) : status === "unauthenticated" ? (
+                            <p className="text-sm text-muted-foreground">Please sign in to connect GitLab.</p>
+                        ) : !isGitlabConnected ? (
+                            <div className="space-y-4 p-3 border rounded-md bg-muted/20">
+                                <p className="text-sm text-muted-foreground">
+                                    Connect to GitLab to import repositories.
+                                </p>
 
-                            {agents.map((agent) => (
-                                <TabsContent key={agent} value={agent} className="space-y-4">
-                                    <div className="flex justify-end items-center">
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="destructive" onClick={() => setDeleteDialog({ type: 'category', agent })}>
-                                                Delete All {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompts
-                                            </Button>
+                                <Button onClick={() => { signIn("gitlab"); }}>
+                                    <GitlabIcon className="h-4 w-4 mr-2" />
+                                    Connect GitLab
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Select a repository to import for analysis.
+                                </p>
 
-                                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                                                <DialogTrigger asChild>
-                                                    <Button size="sm">
-                                                        <Plus className="h-4 w-4 mr-2" /> Add {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompt
-                                                    </Button>
-                                                </DialogTrigger>
-
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>Add New Prompt</DialogTitle>
-                                                        <DialogDescription>
-                                                            Create a new prompt for the {agent} agent.
-                                                        </DialogDescription>
-                                                    </DialogHeader>
-
-                                                    <div className="space-y-4">
-                                                        <div className="space-y-2">
-                                                            <Label>Title</Label>
-                                                            <Input
-                                                                value={newTitle}
-                                                                onChange={(e) => setNewTitle(e.target.value)}
-                                                                placeholder="Enter prompt title..."
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Prompt</Label>
-                                                            <Textarea
-                                                                placeholder="Enter your prompt here..."
-                                                                value={newPrompt}
-                                                                onChange={(e) => setNewPrompt(e.target.value)}
-                                                                rows={4}
-                                                            />
-                                                        </div>
+                                {isLoadingGitlabRepos ? (
+                                    <p className="text-sm text-muted-foreground">Loading repositories...</p>
+                                ) : gitlabRepos.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No repositories found.</p>
+                                ) : (
+                                    <ScrollArea className="h-64">
+                                        <div className="space-y-2">
+                                            {gitlabRepos.map((repo) => (
+                                                <div
+                                                    key={repo.id}
+                                                    className="flex items-center justify-between p-3 border rounded-lg"
+                                                >
+                                                    <div className="flex-1">
+                                                        <p className="font-medium">{repo.full_name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {repo.description || "No description"}
+                                                        </p>
                                                     </div>
 
-                                                    <DialogFooter>
-                                                        <Button onClick={handleAddPrompt}>Add Prompt</Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
+                                                    <Button size="sm" onClick={() => handleImportRepo(repo)}>
+                                                        Import
+                                                    </Button>
+                                                </div>
+                                            ))}
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {(!prompts[agent] || prompts[agent].length === 0) ? (
-                                            <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
-                                        ) : (
-                                            <>
-                                                {(() => {
-                                                    const page = currentPage[agent] || 0;
-                                                    const promptsPerPage = 3;
-                                                    const startIndex = page * promptsPerPage;
-                                                    const endIndex = startIndex + promptsPerPage;
-                                                    const visiblePrompts = prompts[agent].slice(startIndex, endIndex);
-                                                    const totalPages = Math.ceil(prompts[agent].length / promptsPerPage);
-
-                                                    return (
-                                                        <>
-                                                            <div className="space-y-2">
-                                                                {visiblePrompts.map((prompt) => (
-                                                                    <div key={prompt.id} className="border rounded-lg p-3">
-                                                                        {editingPrompt === prompt.id ? (
-                                                                            <div className="space-y-2">
-                                                                                <Input
-                                                                                    value={editingTitle}
-                                                                                    onChange={(e) => setEditingTitle(e.target.value)}
-                                                                                    placeholder="Title"
-                                                                                />
-                                                                                <Textarea
-                                                                                    value={editingText}
-                                                                                    onChange={(e) => setEditingText(e.target.value)}
-                                                                                    rows={3}
-                                                                                />
-                                                                                <div className="flex gap-2">
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        onClick={() =>
-                                                                                            handleEditPrompt(agent, prompt.id, editingTitle, editingText)
-                                                                                        }
-                                                                                    >
-                                                                                        Save
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="outline"
-                                                                                        onClick={() => setEditingPrompt(null)}
-                                                                                    >
-                                                                                        Cancel
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="flex items-center justify-between">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <Checkbox
-                                                                                        checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
-                                                                                        onCheckedChange={(checked) => {
-                                                                                            setSelectedPrompts(prev => {
-                                                                                                const newSet = new Set(prev);
-                                                                                                if (checked) {
-                                                                                                    newSet.add(`${agent}-${prompt.id}`);
-                                                                                                } else {
-                                                                                                    newSet.delete(`${agent}-${prompt.id}`);
-                                                                                                }
-                                                                                                return newSet;
-                                                                                            });
-                                                                                        }}
-                                                                                    />
-                                                                                    <div className="flex-1 mr-4">
-                                                                                        <h4 className="font-medium text-sm">{prompt.title || "Untitled"}</h4>
-                                                                                        <p className="text-sm text-muted-foreground truncate">{prompt.text}</p>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="flex gap-2">
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="outline"
-                                                                                        onClick={() => setViewFullTextPrompt(prompt)}
-                                                                                    >
-                                                                                        <Eye className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="outline"
-                                                                                        onClick={() => {
-                                                                                            setEditingPrompt(prompt.id)
-                                                                                            setEditingText(prompt.text)
-                                                                                            setEditingTitle(prompt.title || "")
-                                                                                        }}
-                                                                                    >
-                                                                                        <Edit className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant="outline"
-                                                                                        onClick={() => setDeleteDialog({ type: 'single', agent, id: prompt.id })}
-                                                                                    >
-                                                                                        <Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-
-                                                            {totalPages > 1 && (
-                                                                <div className="flex justify-between items-center mt-4">
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
-                                                                        disabled={page === 0}
-                                                                    >
-                                                                        Previous
-                                                                    </Button>
-                                                                    <span className="text-sm">
-                                                                        Page {page + 1} of {totalPages}
-                                                                    </span>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
-                                                                        disabled={page >= totalPages - 1}
-                                                                    >
-                                                                        Next
-                                                                    </Button>
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    );
-                                                })()}
-                                            </>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                            ))}
-                        </Tabs>
+                                    </ScrollArea>
+                                )}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Prompts Card */}
+            <Card className="w-full">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle>AI Agent Prompts</CardTitle>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRefreshPrompts}
+                                disabled={isRefreshingPrompts}
+                                title="Refresh prompts"
+                            >
+                                {isRefreshingPrompts ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="h-4 w-4" />
+                                )}
+                            </Button>
+                            {selectedPrompts.size > 0 && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
+                                >
+                                    Delete Selected ({selectedPrompts.size})
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                    <Tabs value={currentAgent} onValueChange={setCurrentAgent}>
+                        <TabsList className="grid w-full grid-cols-4">
+                            {agents.map((agent) => (
+                                <TabsTrigger key={agent} value={agent} className="capitalize">
+                                    {agent}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+
+                        {agents.map((agent) => (
+                            <TabsContent key={agent} value={agent} className="space-y-4">
+                                <div className="flex justify-end items-center">
+                                    <div className="flex gap-2">
+                                        <Button size="sm" variant="destructive" onClick={() => setDeleteDialog({ type: 'category', agent })}>
+                                            Delete All {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompts
+                                        </Button>
+
+                                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button size="sm">
+                                                    <Plus className="h-4 w-4 mr-2" /> Add {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompt
+                                                </Button>
+                                            </DialogTrigger>
+
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Add New Prompt</DialogTitle>
+                                                    <DialogDescription>
+                                                        Create a new prompt for the {agent} agent.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label>Title</Label>
+                                                        <Input
+                                                            value={newTitle}
+                                                            onChange={(e) => setNewTitle(e.target.value)}
+                                                            placeholder="Enter prompt title..."
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Prompt</Label>
+                                                        <Textarea
+                                                            placeholder="Enter your prompt here..."
+                                                            value={newPrompt}
+                                                            onChange={(e) => setNewPrompt(e.target.value)}
+                                                            rows={4}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <DialogFooter>
+                                                    <Button onClick={handleAddPrompt}>Add Prompt</Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {(!prompts[agent] || prompts[agent].length === 0) ? (
+                                        <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
+                                    ) : (
+                                        <>
+                                            {(() => {
+                                                const page = currentPage[agent] || 0;
+                                                const promptsPerPage = 3;
+                                                const startIndex = page * promptsPerPage;
+                                                const endIndex = startIndex + promptsPerPage;
+                                                const visiblePrompts = prompts[agent].slice(startIndex, endIndex);
+                                                const totalPages = Math.ceil(prompts[agent].length / promptsPerPage);
+
+                                                return (
+                                                    <>
+                                                        <div className="space-y-2">
+                                                            {visiblePrompts.map((prompt) => (
+                                                                <div key={prompt.id} className="border rounded-lg p-3">
+                                                                    {editingPrompt === prompt.id ? (
+                                                                        <div className="space-y-2">
+                                                                            <Input
+                                                                                value={editingTitle}
+                                                                                onChange={(e) => setEditingTitle(e.target.value)}
+                                                                                placeholder="Title"
+                                                                            />
+                                                                            <Textarea
+                                                                                value={editingText}
+                                                                                onChange={(e) => setEditingText(e.target.value)}
+                                                                                rows={3}
+                                                                            />
+                                                                            <div className="flex gap-2">
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    onClick={() =>
+                                                                                        handleEditPrompt(agent, prompt.id, editingTitle, editingText)
+                                                                                    }
+                                                                                >
+                                                                                    Save
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => setEditingPrompt(null)}
+                                                                                >
+                                                                                    Cancel
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Checkbox
+                                                                                    checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
+                                                                                    onCheckedChange={(checked) => {
+                                                                                        setSelectedPrompts(prev => {
+                                                                                            const newSet = new Set(prev);
+                                                                                            if (checked) {
+                                                                                                newSet.add(`${agent}-${prompt.id}`);
+                                                                                            } else {
+                                                                                                newSet.delete(`${agent}-${prompt.id}`);
+                                                                                            }
+                                                                                            return newSet;
+                                                                                        });
+                                                                                    }}
+                                                                                />
+                                                                                <div className="flex-1 mr-4">
+                                                                                    <h4 className="font-medium text-sm">{prompt.title || "Untitled"}</h4>
+                                                                                    <p className="text-sm text-muted-foreground truncate">{prompt.text}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex gap-2">
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => setViewFullTextPrompt(prompt)}
+                                                                                >
+                                                                                    <Eye className="h-4 w-4" />
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => {
+                                                                                        setEditingPrompt(prompt.id)
+                                                                                        setEditingText(prompt.text)
+                                                                                        setEditingTitle(prompt.title || "")
+                                                                                    }}
+                                                                                >
+                                                                                    <Edit className="h-4 w-4" />
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => setDeleteDialog({ type: 'single', agent, id: prompt.id })}
+                                                                                >
+                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        {totalPages > 1 && (
+                                                            <div className="flex justify-between items-center mt-4">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
+                                                                    disabled={page === 0}
+                                                                >
+                                                                    Previous
+                                                                </Button>
+                                                                <span className="text-sm">
+                                                                    Page {page + 1} of {totalPages}
+                                                                </span>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
+                                                                    disabled={page >= totalPages - 1}
+                                                                >
+                                                                    Next
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </>
+                                    )}
+                                </div>
+                            </TabsContent>
+                        ))}
+                    </Tabs>
+                </CardContent>
+            </Card>
 
             {/* Full Text Dialog */}
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>

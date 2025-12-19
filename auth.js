@@ -2,13 +2,13 @@ import NextAuth from "next-auth"
 import Github from "next-auth/providers/github"
 import Google from "next-auth/providers/google"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
+import Gitlab from "next-auth/providers/gitlab"
 
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "@/lib/prisma";
 
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-    debug: true,
 
     adapter: PrismaAdapter(prisma),
 
@@ -42,6 +42,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
             clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
             issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+            allowDangerousEmailAccountLinking: true,
+        }),
+
+        Gitlab({
+            clientId: process.env.GITLAB_CLIENT_ID,
+            clientSecret: process.env.GITLAB_CLIENT_SECRET,
+
+            authorization: {
+                params: {
+                    scope: "read_user read_repository",
+                },
+            },
             allowDangerousEmailAccountLinking: true,
         }),
     ],

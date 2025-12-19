@@ -7,6 +7,7 @@ import { Field, FieldGroup } from "@/components/ui/field"
 import { signIn } from "next-auth/react"
 import { motion } from "framer-motion"
 import { Loader2, LockKeyhole } from "lucide-react"
+import { GitlabIcon } from "@/components/icons/gitlab"
 
 export function LoginForm({ className, ...props }) {
     const [isLoading, setIsLoading] = React.useState(null)
@@ -123,6 +124,24 @@ export function LoginForm({ className, ...props }) {
                                     <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none" className="h-7 w-7"><path fill="#F35325" d="M1 1h6.5v6.5H1V1z"></path><path fill="#81BC06" d="M8.5 1H15v6.5H8.5V1z"></path><path fill="#05A6F0" d="M1 8.5h6.5V15H1V8.5z"></path><path fill="#FFBA08" d="M8.5 8.5H15V15H8.5V8.5z"></path></svg>
                                 )}
                                 Login with Microsoft
+                            </Button>
+                        </motion.div>
+
+                        {/* GitLab */}
+                        <motion.div variants={itemVariants} className="mt-3" whileTap={{ scale: 0.98 }}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                disabled={isLoading !== null}
+                                onClick={() => handleSignIn("gitlab")}
+                                className="w-full h-14 flex items-center justify-center gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium"
+                            >
+                                {isLoading === "gitlab" ? (
+                                    <Loader2 className="h-7 w-7 animate-spin" />
+                                ) : (
+                                    <GitlabIcon className="h-7 w-7" />
+                                )}
+                                Login with GitLab
                             </Button>
                         </motion.div>
                     </Field>
