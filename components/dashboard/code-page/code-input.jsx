@@ -315,13 +315,17 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             {/* Top Toolbar */}
             <div className="flex justify-between items-center w-full">
                 <div className="flex items-center gap-2">
-                    <Label htmlFor="view-mode-switch">Project View</Label>
-                    <Switch
-                        id="view-mode-switch"
-                        checked={viewMode === 'file'}
-                        onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
-                    />
-                    <Label htmlFor="view-mode-switch">One File View</Label>
+                    {currentRepo && (
+                        <>
+                            <Label htmlFor="view-mode-switch">Project View</Label>
+                            <Switch
+                                id="view-mode-switch"
+                                checked={viewMode === 'file'}
+                                onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
+                            />
+                            <Label htmlFor="view-mode-switch">One File View</Label>
+                        </>
+                    )}
                 </div>
 
                 {viewMode === 'project' && isGithubConnected && (

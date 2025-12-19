@@ -26,7 +26,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientSecret: process.env.AUTH_GITHUB_SECRET,
             authorization: {
                 params: {
-                    scope: "read:user user:email public_repo",
+                    scope: "read:user user:email repo",
                 },
             },
             allowDangerousEmailAccountLinking: true,
@@ -47,15 +47,23 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     ],
 
     callbacks: {
-        async jwt({ token, account }) {
+        async jwt({ token, account, user }) {
             if (account) {
+
                 token.accessToken = account.access_token;
             }
+            // store the user id on initial sign in so session callback can use it later
+            if (user) {
+                token.userId = user.id;
+            }
+            console.log('jwt callback', { hasAccount: !!account, tokenKeys: Object.keys(token), hasAccessToken: !!token.accessToken });
             return token;
         },
         async session({ session, token }) {
             session.accessToken = token.accessToken;
-            session.user.id = token.sub;
+            // prefer stored userId (from jwt) falling back to token.sub
+            session.user.id = token.userId ?? token.sub;
+            console.log('session callback', { hasTokenAccessToken: !!token.accessToken, sessionKeys: Object.keys(session), hasSessionAccessToken: !!session.accessToken });
             return session;
         }
     }

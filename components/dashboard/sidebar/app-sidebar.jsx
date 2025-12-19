@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sidebar"
 import {NavUser} from "./nav-user";
 import {useSession} from "next-auth/react";
+import { useProject } from "@/contexts/projectContext";
 
 const data = {
     team: {
@@ -32,7 +33,14 @@ const data = {
             logo: "https://amz-s3-pdfs-gp.s3.us-east-1.amazonaws.com/logo/logo.png",
             plan: "Agentic",
         },
-    navMain: [
+}
+
+export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
+    const { data: session, status } = useSession()
+    const { currentRepo } = useProject();
+    console.log("Session:", session, "Status:", status)
+
+    const navMain = [
         {
             title: "Home",
             icon: Home,
@@ -59,12 +67,7 @@ const data = {
             url: "/dashboard?active=Results",
             icon: FileText,
         },
-    ],
-}
-
-export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
-    const { data: session, status } = useSession()
-    console.log("Session:", session, "Status:", status)
+    ];
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -72,7 +75,7 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
                 <TeamSwitcher team={data.team} />
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} />
+                <NavMain items={navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} />
             </SidebarContent>
             <SidebarFooter>
                 {status === "loading" ? (

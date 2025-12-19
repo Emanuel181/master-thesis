@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label"
 const agents = ["reviewer", "implementation", "tester", "report"]
 
 export function HomePage() {
-    const { status } = useSession()
+    const { data: session, status } = useSession()
     const { setProjectStructure, setViewMode, setCurrentRepo } = useProject()
     const router = useRouter()
 
@@ -96,16 +96,32 @@ export function HomePage() {
         setIsLoadingRepos(true)
         try {
             const response = await fetch("/api/github/repos")
+            const data = await response.json()
+
             if (response.ok) {
-                const data = await response.json()
                 setRepos(data)
                 setIsGithubConnected(true)
 
                 localStorage.setItem("githubRepos", JSON.stringify(data))
                 localStorage.setItem("isGithubConnected", "true")
             } else {
+                console.warn('[home] fetch /api/github/repos failed', data)
+                // surface debug info to the user console
                 setIsGithubConnected(false)
                 localStorage.setItem("isGithubConnected", "false")
+                // show server debug message when available
+                if (data?.debug?.message) {
+                    toast.error(`GitHub: ${data.debug.message}`)
+                } else if (data?.error) {
+                    toast.error(`GitHub: ${data.error}`)
+                } else {
+                    toast.error('Failed to fetch GitHub repositories')
+                }
+                // If unauthorized, sign out to force re-login
+                if (response.status === 401) {
+                    signOut();
+                    toast.error('GitHub token expired or invalid. Please login again.');
+                }
             }
         } catch (err) {
             console.error("Error fetching repos:", err)
@@ -149,10 +165,10 @@ export function HomePage() {
     // Only fetch if authenticated AND repos not loaded
     // ---------------------------
     useEffect(() => {
-        if (status === "authenticated" && repos.length === 0 && !isGithubConnected) {
-            fetchRepos()
+        if (status === "authenticated" && session && repos.length === 0) {
+            fetchRepos();
         }
-    }, [status, repos.length, isGithubConnected])
+    }, [status, session, repos.length]);
 
     // ---------------------------
     // Clear GitHub state when logged out
