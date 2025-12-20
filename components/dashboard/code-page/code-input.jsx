@@ -47,11 +47,15 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const [searchTerm, setSearchTerm] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const [repos, setRepos] = useState([]);
+    const [gitlabRepos, setGitlabRepos] = useState([]);
     const [isLoadingRepos, setIsLoadingRepos] = useState(false);
     const [loadingFilePath, setLoadingFilePath] = useState(null);
 
     // --- GitHub Connection State ---
     const [isGithubConnected, setIsGithubConnected] = useState(false);
+
+    // --- GitLab Connection State ---
+    const [isGitlabConnected, setIsGitlabConnected] = useState(false);
 
     // --- Detection State ---
     const [detectedLanguage, setDetectedLanguage] = useState("javascript");
@@ -93,6 +97,13 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         if (typeof window === "undefined") return;
         const savedConnected = localStorage.getItem("isGithubConnected");
         if (savedConnected === "true") setIsGithubConnected(true);
+    }, []);
+
+    // --- Load GitLab state from localStorage ---
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const savedConnected = localStorage.getItem("isGitlabConnected");
+        if (savedConnected === "true") setIsGitlabConnected(true);
     }, []);
 
     // --- Helper: Detect Language ---
@@ -235,9 +246,22 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         finally { setIsLoadingRepos(false); }
     };
 
+    const loadGitlabRepos = async () => {
+        setIsLoadingRepos(true);
+        try {
+            const response = await fetch('/api/gitlab/repos');
+            if (response.ok) setGitlabRepos(await response.json());
+        } catch (error) { console.error(error); }
+        finally { setIsLoadingRepos(false); }
+    };
+
     useEffect(() => {
         if (isImportDialogOpen && session && repos.length === 0) loadRepos();
     }, [isImportDialogOpen, session, repos.length]);
+
+    useEffect(() => {
+        if (isImportDialogOpen && session && gitlabRepos.length === 0) loadGitlabRepos();
+    }, [isImportDialogOpen, session, gitlabRepos.length]);
 
     const handleImport = async () => {
         if (!searchTerm.trim() || !session) return;
@@ -275,11 +299,49 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         }
     };
 
+    const handleSelectGitlabRepo = async (repo) => {
+        setIsImporting(true);
+        try {
+            const structure = await apiFetchRepoTree(repo.path_with_namespace.split('/')[0], repo.name, 'gitlab');
+            setProjectStructure(structure);
+            setCurrentRepo({ owner: repo.path_with_namespace.split('/')[0], repo: repo.name, provider: 'gitlab' });
+            setViewMode('project');
+            setIsImportDialogOpen(false);
+            toast.success("Project switched successfully!");
+        } catch (error) {
+            toast.error("Failed to switch project: " + error.message);
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    const handleDisconnectGitHub = async () => {
+        try {
+            await fetch('/api/auth/disconnect?provider=github', { method: 'POST' });
+        } catch (err) {
+            console.error('Error disconnecting GitHub:', err);
+        }
+        setIsGithubConnected(false);
+        localStorage.setItem("isGithubConnected", "false");
+        toast.success("Disconnected from GitHub!");
+    };
+
+    const handleDisconnectGitlab = async () => {
+        try {
+            await fetch('/api/auth/disconnect?provider=gitlab', { method: 'POST' });
+        } catch (err) {
+            console.error('Error disconnecting GitLab:', err);
+        }
+        setIsGitlabConnected(false);
+        localStorage.setItem("isGitlabConnected", "false");
+        toast.success("Disconnected from GitLab!");
+    };
+
     const onFileClick = async (node) => {
         if (loadingFilePath === node.path) return;
         setLoadingFilePath(node.path);
         try {
-            const fileWithContent = await apiFetchFileContent(currentRepo.owner, currentRepo.repo, node.path);
+            const fileWithContent = await apiFetchFileContent(currentRepo.owner, currentRepo.repo, node.path, currentRepo.provider);
             setSelectedFile(fileWithContent);
             setCode(fileWithContent.content);
             setIsPlaceholder(false);
@@ -328,7 +390,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                     )}
                 </div>
 
-                {viewMode === 'project' && isGithubConnected && (
+                {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
                     <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -337,14 +399,15 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader><DialogTitle>Switch Project</DialogTitle></DialogHeader>
-                            {!isGithubConnected ? (
-                                <Button onClick={() => signIn('github')}>Connect GitHub</Button>
-                            ) : (
-                                <div className="space-y-4 pt-4">
+                            <div className="space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Search Projects</Label>
+                                    <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search projects..." />
+                                </div>
+                                {isGithubConnected && (
                                     <div className="space-y-2">
-                                        <Label>Search Projects</Label>
-                                        <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search projects..." />
-                                        <div className="max-h-48 overflow-y-auto border rounded p-2">
+                                        <Label>GitHub Projects</Label>
+                                        <div className="max-h-32 overflow-y-auto border rounded p-2">
                                             {isLoadingRepos ? <p className="text-sm p-2">Loading...</p> : repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
                                                 <div key={r.id} onClick={() => handleSelectRepo(r)} className="p-2 hover:bg-muted cursor-pointer flex justify-between text-sm">
                                                     <span>{r.name}</span>
@@ -353,15 +416,35 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                             ))}
                                         </div>
                                     </div>
-                                    <Button variant="outline" onClick={() => {
-                                        signOut();
-                                        localStorage.removeItem("githubRepos");
-                                        localStorage.setItem("isGithubConnected", "false");
-                                        setIsGithubConnected(false);
-                                        toast.success("Disconnected from GitHub!");
-                                    }}>Disconnect GitHub</Button>
+                                )}
+                                {isGitlabConnected && (
+                                    <div className="space-y-2">
+                                        <Label>GitLab Projects</Label>
+                                        <div className="max-h-32 overflow-y-auto border rounded p-2">
+                                            {isLoadingRepos ? <p className="text-sm p-2">Loading...</p> : gitlabRepos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
+                                                <div key={r.id} onClick={() => handleSelectGitlabRepo(r)} className="p-2 hover:bg-muted cursor-pointer flex justify-between text-sm">
+                                                    <span>{r.name}</span>
+                                                    <span className="text-muted-foreground">{r.visibility === 'private' ? 'Private' : 'Public'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {!isGithubConnected && !isGitlabConnected && (
+                                    <div className="space-y-2">
+                                        <Button onClick={() => signIn('github')}>Connect GitHub</Button>
+                                        <Button onClick={() => signIn('gitlab')}>Connect GitLab</Button>
+                                    </div>
+                                )}
+                                <div className="flex gap-2">
+                                    {isGithubConnected && (
+                                        <Button variant="outline" onClick={handleDisconnectGitHub}>Disconnect GitHub</Button>
+                                    )}
+                                    {isGitlabConnected && (
+                                        <Button variant="outline" onClick={handleDisconnectGitlab}>Disconnect GitLab</Button>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </DialogContent>
                     </Dialog>
                 )}

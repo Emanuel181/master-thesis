@@ -50,10 +50,15 @@ export async function GET(request) {
             console.warn('[github/repos] No github account or access token stored in DB');
         }
 
-        // Try tokens in order: session.accessToken (fresh), then DB token
+        // Try tokens in order: session.accessToken (only if from github), then DB token
         const tokenCandidates = [];
-        if (session.accessToken) tokenCandidates.push({ source: 'session', token: session.accessToken });
-        if (githubAccount && githubAccount.access_token) tokenCandidates.push({ source: 'db', token: githubAccount.access_token });
+        // Only use session token if it's from GitHub login and account exists
+        if (githubAccount && session.accessToken && session.provider === 'github') {
+            tokenCandidates.push({ source: 'session', token: session.accessToken });
+        }
+        if (githubAccount && githubAccount.access_token) {
+            tokenCandidates.push({ source: 'db', token: githubAccount.access_token });
+        }
 
         if (tokenCandidates.length === 0) {
             return NextResponse.json({ error: 'GitHub account not linked', debug: { hasAccount: !!githubAccount, accessTokenMask: maskToken(githubAccount?.access_token) } }, { status: 401 });

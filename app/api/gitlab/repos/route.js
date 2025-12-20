@@ -49,10 +49,15 @@ export async function GET(request) {
             console.warn('[gitlab/repos] No gitlab account or access token stored in DB');
         }
 
-        // Try tokens in order: session.accessToken (fresh), then DB token
+        // Try tokens in order: session.accessToken (only if from gitlab), then DB token
         const tokenCandidates = [];
-        if (session.accessToken) tokenCandidates.push({ source: 'session', token: session.accessToken });
-        if (gitlabAccount && gitlabAccount.access_token) tokenCandidates.push({ source: 'db', token: gitlabAccount.access_token });
+        // Only use session token if it's from GitLab login and account exists
+        if (gitlabAccount && session.accessToken && session.provider === 'gitlab') {
+            tokenCandidates.push({ source: 'session', token: session.accessToken });
+        }
+        if (gitlabAccount && gitlabAccount.access_token) {
+            tokenCandidates.push({ source: 'db', token: gitlabAccount.access_token });
+        }
 
         if (tokenCandidates.length === 0) {
             return NextResponse.json({ error: 'GitLab account not linked', debug: { hasAccount: !!gitlabAccount, accessTokenMask: maskToken(gitlabAccount?.access_token) } }, { status: 401 });
@@ -63,10 +68,14 @@ export async function GET(request) {
             try {
                 console.log('[gitlab/repos] trying token from', candidate.source, 'tokenMask:', maskToken(candidate.token));
 
-                const baseUrl = process.env.GITLAB_BASE_URL || 'https://gitlab.com';
-                const apiUrl = `${baseUrl}/api/v4/projects?membership=true&private_token=${candidate.token}&per_page=100`;
+                const baseUrl = process.env.GITLAB_URL || 'https://gitlab.com';
+                const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`;
 
-                const response = await fetch(apiUrl);
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${candidate.token}`
+                    }
+                });
                 if (!response.ok) {
                     throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
                 }
@@ -77,7 +86,7 @@ export async function GET(request) {
                 const repos = projects.map(project => ({
                     id: project.id,
                     name: project.name,
-                    full_name: project.name_with_namespace,
+                    full_name: project.path_with_namespace,
                     description: project.description,
                     html_url: project.web_url,
                     private: project.visibility === 'private',
@@ -85,7 +94,7 @@ export async function GET(request) {
                     updated_at: project.last_activity_at,
                     language: project.language || null,
                     owner: {
-                        login: project.namespace.name,
+                        login: project.namespace.path,
                         id: project.namespace.id,
                         type: project.namespace.kind,
                     },

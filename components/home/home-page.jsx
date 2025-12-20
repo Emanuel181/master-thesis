@@ -111,10 +111,11 @@ export function HomePage() {
             const data = await response.json()
 
             if (response.ok) {
-                setRepos(data)
+                const dataWithProvider = data.map(r => ({ ...r, provider: 'github' }));
+                setRepos(dataWithProvider)
                 setIsGithubConnected(true)
 
-                localStorage.setItem(`githubRepos`, JSON.stringify(data))
+                localStorage.setItem(`githubRepos`, JSON.stringify(dataWithProvider))
                 localStorage.setItem(`isGithubConnected`, "true")
             } else {
                 console.warn(`[home] fetch /api/github/repos failed`, data)
@@ -123,16 +124,11 @@ export function HomePage() {
                 localStorage.setItem(`isGithubConnected`, "false")
                 // show server debug message when available
                 if (data?.debug?.message) {
-                    toast.error(`github: ${data.debug.message}`)
+                    console.log(`github debug: ${data.debug.message}`)
                 } else if (data?.error) {
-                    toast.error(`github: ${data.error}`)
+                    console.log(`github error: ${data.error}`)
                 } else {
-                    toast.error(`Failed to fetch github repositories`)
-                }
-                // If unauthorized, sign out to force re-login
-                if (response.status === 401) {
-                    signOut();
-                    toast.error(`github token expired or invalid. Please login again.`);
+                    console.log(`Failed to fetch github repositories`)
                 }
             }
         } catch (err) {
@@ -157,10 +153,11 @@ export function HomePage() {
             const data = await response.json()
 
             if (response.ok) {
-                setGitlabRepos(data)
+                const dataWithProvider = data.map(r => ({ ...r, provider: 'gitlab' }));
+                setGitlabRepos(dataWithProvider)
                 setIsGitlabConnected(true)
 
-                localStorage.setItem(`gitlabRepos`, JSON.stringify(data))
+                localStorage.setItem(`gitlabRepos`, JSON.stringify(dataWithProvider))
                 localStorage.setItem(`isGitlabConnected`, "true")
             } else {
                 console.warn(`[home] fetch /api/gitlab/repos failed`, data)
@@ -169,16 +166,11 @@ export function HomePage() {
                 localStorage.setItem(`isGitlabConnected`, "false")
                 // show server debug message when available
                 if (data?.debug?.message) {
-                    toast.error(`gitlab: ${data.debug.message}`)
+                    console.log(`gitlab debug: ${data.debug.message}`)
                 } else if (data?.error) {
-                    toast.error(`gitlab: ${data.error}`)
+                    console.log(`gitlab error: ${data.error}`)
                 } else {
-                    toast.error(`Failed to fetch gitlab repositories`)
-                }
-                // If unauthorized, sign out to force re-login
-                if (response.status === 401) {
-                    signOut();
-                    toast.error(`gitlab token expired or invalid. Please login again.`);
+                    console.log(`Failed to fetch gitlab repositories`)
                 }
             }
         } catch (err) {
@@ -217,32 +209,45 @@ export function HomePage() {
     // ---------------------------
     // Disconnect GitHub
     // ---------------------------
-    const handleDisconnectGitHub = () => {
-        signOut()
-        setIsGithubConnected(false)
-        setRepos([])
-        localStorage.removeItem("githubRepos")
-        localStorage.setItem("isGithubConnected", "false")
-        toast.success("Disconnected from GitHub!")
+    const handleDisconnectGitHub = async () => {
+        try {
+            await fetch('/api/auth/disconnect?provider=github', { method: 'POST' });
+        } catch (err) {
+            console.error('Error disconnecting GitHub:', err);
+        }
+        setIsGithubConnected(false);
+        setRepos([]);
+        localStorage.removeItem("githubRepos");
+        localStorage.setItem("isGithubConnected", "false");
+        toast.success("Disconnected from GitHub!");
     }
 
-    const handleDisconnectGitlab = () => {
-        signOut()
-        setIsGitlabConnected(false)
-        setGitlabRepos([])
-        localStorage.removeItem("gitlabRepos")
-        localStorage.setItem("isGitlabConnected", "false")
-        toast.success("Disconnected from GitLab!")
+    const handleDisconnectGitlab = async () => {
+        try {
+            await fetch('/api/auth/disconnect?provider=gitlab', { method: 'POST' });
+        } catch (err) {
+            console.error('Error disconnecting GitLab:', err);
+        }
+        setIsGitlabConnected(false);
+        setGitlabRepos([]);
+        localStorage.removeItem("gitlabRepos");
+        localStorage.setItem("isGitlabConnected", "false");
+        toast.success("Disconnected from GitLab!");
     }
 
     // ---------------------------
     // Only fetch if authenticated AND repos not loaded
     // ---------------------------
     useEffect(() => {
-        if (status === "authenticated" && session && repos.length === 0) {
-            fetchRepos();
+        if (status === "authenticated" && session) {
+            if (repos.length === 0) {
+                fetchRepos();
+            }
+            if (gitlabRepos.length === 0) {
+                fetchGitlabRepos();
+            }
         }
-    }, [status, session, repos.length]);
+    }, [status, session, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
 
 
     // ---------------------------
@@ -360,10 +365,10 @@ export function HomePage() {
     const handleImportRepo = async (repo) => {
         try {
             const [owner, repoName] = repo.full_name.split("/")
-            const structure = await fetchRepoTree(owner, repoName)
+            const structure = await fetchRepoTree(owner, repoName, repo.provider)
 
             setProjectStructure(structure)
-            setCurrentRepo({ owner, repo: repoName })
+            setCurrentRepo({ owner, repo: repoName, provider: repo.provider })
             setViewMode("project")
 
             toast.success(`Repository ${repo.full_name} imported successfully!`)
@@ -383,428 +388,430 @@ export function HomePage() {
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="flex gap-4">
-                {/* GitHub Card */}
-                <Card className="flex-1">
-                    <CardHeader>
-                        {isGithubConnected && (
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-sm text-green-600">Connected</span>
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2">
-                                <Github className="h-5 w-5" />
-                                GitHub Repositories
-                            </CardTitle>
+            <div className="grid grid-cols-2 gap-4 h-full">
+                <div className="flex flex-col gap-4">
+                    {/* GitHub Card */}
+                    <Card className="flex-1">
+                        <CardHeader>
                             {isGithubConnected && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleRefreshRepos}
-                                        disabled={isRefreshingRepos}
-                                        title="Refresh repositories"
-                                    >
-                                        {isRefreshingRepos ? (
-                                            <RefreshCw className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <RefreshCw className="h-4 w-4" />
-                                        )}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleDisconnectGitHub}
-                                        title="Disconnect from GitHub"
-                                    >
-                                        Disconnect
-                                    </Button>
+                                <div className="flex items-center gap-1 mb-2">
+                                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-sm text-green-600">Connected</span>
                                 </div>
                             )}
-                        </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                        {status === "loading" ? (
-                            <p className="text-sm text-muted-foreground">Loading...</p>
-                        ) : !isGithubConnected ? (
-                            <div className="space-y-4 p-3 border rounded-md bg-muted/20">
-                                <p className="text-sm text-muted-foreground">
-                                    Connect to GitHub to import repositories.
-                                </p>
-
-                                <Button onClick={() => { signIn("github"); }}>
-                                    <Github className="h-4 w-4 mr-2" />
-                                    Connect GitHub
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Select a repository to import for analysis.
-                                </p>
-
-                                {isLoadingRepos ? (
-                                    <p className="text-sm text-muted-foreground">Loading repositories...</p>
-                                ) : repos.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">No repositories found.</p>
-                                ) : (
-                                    <ScrollArea className="h-64">
-                                        <div className="space-y-2">
-                                            {repos.map((repo) => (
-                                                <div
-                                                    key={repo.id}
-                                                    className="flex items-center justify-between p-3 border rounded-lg"
-                                                >
-                                                    <div className="flex-1">
-                                                        <p className="font-medium">{repo.full_name}</p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {repo.description || "No description"}
-                                                        </p>
-                                                    </div>
-
-                                                    <Button size="sm" onClick={() => handleImportRepo(repo)}>
-                                                        Import
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </ScrollArea>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Github className="h-5 w-5" />
+                                    GitHub Repositories
+                                </CardTitle>
+                                {isGithubConnected && (
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleRefreshRepos}
+                                            disabled={isRefreshingRepos}
+                                            title="Refresh repositories"
+                                        >
+                                            {isRefreshingRepos ? (
+                                                <RefreshCw className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <RefreshCw className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleDisconnectGitHub}
+                                            title="Disconnect from GitHub"
+                                        >
+                                            Disconnect
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardHeader>
 
-                {/* GitLab Card */}
-                <Card className="flex-1">
-                    <CardHeader>
-                        {isGitlabConnected && (
-                            <div className="flex items-center gap-1 mb-2">
-                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-sm text-green-600">Connected</span>
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2">
-                                <GitlabIcon className="h-5 w-5" />
-                                GitLab Repositories
-                            </CardTitle>
+                        <CardContent className="space-y-4">
+                            {status === "loading" ? (
+                                <p className="text-sm text-muted-foreground">Loading...</p>
+                            ) : !isGithubConnected ? (
+                                <div className="space-y-4 p-3 border rounded-md bg-muted/20">
+                                    <p className="text-sm text-muted-foreground">
+                                        Connect to GitHub to import repositories.
+                                    </p>
+
+                                    <Button onClick={() => { signIn("github"); }}>
+                                        <Github className="h-4 w-4 mr-2" />
+                                        Connect GitHub
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Select a repository to import for analysis.
+                                    </p>
+
+                                    {isLoadingRepos ? (
+                                        <p className="text-sm text-muted-foreground">Loading repositories...</p>
+                                    ) : repos.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">No repositories found.</p>
+                                    ) : (
+                                        <ScrollArea className="h-48">
+                                            <div className="space-y-2">
+                                                {repos.map((repo) => (
+                                                    <div
+                                                        key={repo.id}
+                                                        className="flex items-center justify-between p-3 border rounded-lg"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <p className="font-medium">{repo.full_name}</p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {repo.description || "No description"}
+                                                            </p>
+                                                        </div>
+
+                                                        <Button size="sm" onClick={() => handleImportRepo(repo)}>
+                                                            Import
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
+                                    )}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* GitLab Card */}
+                    <Card className="flex-1">
+                        <CardHeader>
                             {isGitlabConnected && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleRefreshGitlabRepos}
-                                        disabled={isRefreshingGitlabRepos}
-                                        title="Refresh repositories"
-                                    >
-                                        {isRefreshingGitlabRepos ? (
-                                            <RefreshCw className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <RefreshCw className="h-4 w-4" />
-                                        )}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleDisconnectGitlab}
-                                        title="Disconnect from GitLab"
-                                    >
-                                        Disconnect
-                                    </Button>
+                                <div className="flex items-center gap-1 mb-2">
+                                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-sm text-green-600">Connected</span>
                                 </div>
                             )}
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <GitlabIcon className="h-5 w-5" />
+                                    GitLab Repositories
+                                </CardTitle>
+                                {isGitlabConnected && (
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleRefreshGitlabRepos}
+                                            disabled={isRefreshingGitlabRepos}
+                                            title="Refresh repositories"
+                                        >
+                                            {isRefreshingGitlabRepos ? (
+                                                <RefreshCw className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <RefreshCw className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleDisconnectGitlab}
+                                            title="Disconnect from GitLab"
+                                        >
+                                            Disconnect
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+                            {status === "loading" ? (
+                                <p className="text-sm text-muted-foreground">Loading...</p>
+                            ) : status === "unauthenticated" ? (
+                                <p className="text-sm text-muted-foreground">Please sign in to connect GitLab.</p>
+                            ) : !isGitlabConnected ? (
+                                <div className="space-y-4 p-3 border rounded-md bg-muted/20">
+                                    <p className="text-sm text-muted-foreground">
+                                        Connect to GitLab to import repositories.
+                                    </p>
+
+                                    <Button onClick={() => { signIn("gitlab", { callbackUrl: "/" }); }}>
+                                        <GitlabIcon className="h-4 w-4 mr-2" />
+                                        Connect GitLab
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Select a repository to import for analysis.
+                                    </p>
+
+                                    {isLoadingGitlabRepos ? (
+                                        <p className="text-sm text-muted-foreground">Loading repositories...</p>
+                                    ) : gitlabRepos.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">No repositories found.</p>
+                                    ) : (
+                                        <ScrollArea className="h-48">
+                                            <div className="space-y-2">
+                                                {gitlabRepos.map((repo) => (
+                                                    <div
+                                                        key={repo.id}
+                                                        className="flex items-center justify-between p-3 border rounded-lg"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <p className="font-medium">{repo.full_name}</p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {repo.description || "No description"}
+                                                            </p>
+                                                        </div>
+
+                                                        <Button size="sm" onClick={() => handleImportRepo(repo)}>
+                                                            Import
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
+                                    )}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Prompts Card */}
+                <Card className="h-full">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>AI Agent Prompts</CardTitle>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRefreshPrompts}
+                                    disabled={isRefreshingPrompts}
+                                    title="Refresh prompts"
+                                >
+                                    {isRefreshingPrompts ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="h-4 w-4" />
+                                    )}
+                                </Button>
+                                {selectedPrompts.size > 0 && (
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
+                                    >
+                                        Delete Selected ({selectedPrompts.size})
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </CardHeader>
 
-                    <CardContent className="space-y-4">
-                        {status === "loading" ? (
-                            <p className="text-sm text-muted-foreground">Loading...</p>
-                        ) : status === "unauthenticated" ? (
-                            <p className="text-sm text-muted-foreground">Please sign in to connect GitLab.</p>
-                        ) : !isGitlabConnected ? (
-                            <div className="space-y-4 p-3 border rounded-md bg-muted/20">
-                                <p className="text-sm text-muted-foreground">
-                                    Connect to GitLab to import repositories.
-                                </p>
+                    <CardContent className="space-y-4 h-full overflow-hidden">
+                        <Tabs value={currentAgent} onValueChange={setCurrentAgent} className="h-full flex flex-col">
+                            <TabsList className="grid w-full grid-cols-4">
+                                {agents.map((agent) => (
+                                    <TabsTrigger key={agent} value={agent} className="capitalize">
+                                        {agent}
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
 
-                                <Button onClick={() => { signIn("gitlab"); }}>
-                                    <GitlabIcon className="h-4 w-4 mr-2" />
-                                    Connect GitLab
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Select a repository to import for analysis.
-                                </p>
+                            {agents.map((agent) => (
+                                <TabsContent key={agent} value={agent} className="flex-1 overflow-hidden">
+                                    <div className="flex justify-end items-center mb-4">
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="destructive" onClick={() => setDeleteDialog({ type: 'category', agent })}>
+                                                Delete All {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompts
+                                            </Button>
 
-                                {isLoadingGitlabRepos ? (
-                                    <p className="text-sm text-muted-foreground">Loading repositories...</p>
-                                ) : gitlabRepos.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">No repositories found.</p>
-                                ) : (
-                                    <ScrollArea className="h-64">
-                                        <div className="space-y-2">
-                                            {gitlabRepos.map((repo) => (
-                                                <div
-                                                    key={repo.id}
-                                                    className="flex items-center justify-between p-3 border rounded-lg"
-                                                >
-                                                    <div className="flex-1">
-                                                        <p className="font-medium">{repo.full_name}</p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {repo.description || "No description"}
-                                                        </p>
+                                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                                <DialogTrigger asChild>
+                                                    <Button size="sm">
+                                                        <Plus className="h-4 w-4 mr-2" /> Add {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompt
+                                                    </Button>
+                                                </DialogTrigger>
+
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Add New Prompt</DialogTitle>
+                                                        <DialogDescription>
+                                                            Create a new prompt for the {agent} agent.
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-2">
+                                                            <Label>Title</Label>
+                                                            <Input
+                                                                value={newTitle}
+                                                                onChange={(e) => setNewTitle(e.target.value)}
+                                                                placeholder="Enter prompt title..."
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Prompt</Label>
+                                                            <Textarea
+                                                                placeholder="Enter your prompt here..."
+                                                                value={newPrompt}
+                                                                onChange={(e) => setNewPrompt(e.target.value)}
+                                                                rows={4}
+                                                            />
+                                                        </div>
                                                     </div>
 
-                                                    <Button size="sm" onClick={() => handleImportRepo(repo)}>
-                                                        Import
-                                                    </Button>
-                                                </div>
-                                            ))}
+                                                    <DialogFooter>
+                                                        <Button onClick={handleAddPrompt}>Add Prompt</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
                                         </div>
-                                    </ScrollArea>
-                                )}
-                            </div>
-                        )}
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto">
+                                        {(!prompts[agent] || prompts[agent].length === 0) ? (
+                                            <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
+                                        ) : (
+                                            <>
+                                                {(() => {
+                                                    const page = currentPage[agent] || 0;
+                                                    const promptsPerPage = 3;
+                                                    const startIndex = page * promptsPerPage;
+                                                    const endIndex = startIndex + promptsPerPage;
+                                                    const visiblePrompts = prompts[agent].slice(startIndex, endIndex);
+                                                    const totalPages = Math.ceil(prompts[agent].length / promptsPerPage);
+
+                                                    return (
+                                                        <>
+                                                            <div className="space-y-2">
+                                                                {visiblePrompts.map((prompt) => (
+                                                                    <div key={prompt.id} className="border rounded-lg p-3">
+                                                                        {editingPrompt === prompt.id ? (
+                                                                            <div className="space-y-2">
+                                                                                <Input
+                                                                                    value={editingTitle}
+                                                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                                                    placeholder="Title"
+                                                                                />
+                                                                                <Textarea
+                                                                                    value={editingText}
+                                                                                    onChange={(e) => setEditingText(e.target.value)}
+                                                                                    rows={3}
+                                                                                />
+                                                                                <div className="flex gap-2">
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={() =>
+                                                                                            handleEditPrompt(agent, prompt.id, editingTitle, editingText)
+                                                                                        }
+                                                                                    >
+                                                                                        Save
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => setEditingPrompt(null)}
+                                                                                    >
+                                                                                        Cancel
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Checkbox
+                                                                                        checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
+                                                                                        onCheckedChange={(checked) => {
+                                                                                            setSelectedPrompts(prev => {
+                                                                                                const newSet = new Set(prev);
+                                                                                                if (checked) {
+                                                                                                    newSet.add(`${agent}-${prompt.id}`);
+                                                                                                } else {
+                                                                                                    newSet.delete(`${agent}-${prompt.id}`);
+                                                                                                }
+                                                                                                return newSet;
+                                                                                            });
+                                                                                        }}
+                                                                                    />
+                                                                                    <div className="flex-1 mr-4">
+                                                                                        <h4 className="font-medium text-sm">{prompt.title || "Untitled"}</h4>
+                                                                                        <p className="text-sm text-muted-foreground truncate">{prompt.text}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex gap-2">
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => setViewFullTextPrompt(prompt)}
+                                                                                    >
+                                                                                        <Eye className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => {
+                                                                                            setEditingPrompt(prompt.id)
+                                                                                            setEditingText(prompt.text)
+                                                                                            setEditingTitle(prompt.title || "")
+                                                                                        }}
+                                                                                    >
+                                                                                        <Edit className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="outline"
+                                                                                        onClick={() => setDeleteDialog({ type: 'single', agent, id: prompt.id })}
+                                                                                    >
+                                                                                        <Trash2 className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            {totalPages > 1 && (
+                                                                <div className="flex justify-between items-center mt-4">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
+                                                                        disabled={page === 0}
+                                                                    >
+                                                                        Previous
+                                                                    </Button>
+                                                                    <span className="text-sm">
+                                                                        Page {page + 1} of {totalPages}
+                                                                    </span>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
+                                                                        disabled={page >= totalPages - 1}
+                                                                    >
+                                                                        Next
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
+                                            </>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            ))}
+                        </Tabs>
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Prompts Card */}
-            <Card className="w-full">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>AI Agent Prompts</CardTitle>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleRefreshPrompts}
-                                disabled={isRefreshingPrompts}
-                                title="Refresh prompts"
-                            >
-                                {isRefreshingPrompts ? (
-                                    <RefreshCw className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <RefreshCw className="h-4 w-4" />
-                                )}
-                            </Button>
-                            {selectedPrompts.size > 0 && (
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
-                                >
-                                    Delete Selected ({selectedPrompts.size})
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                    <Tabs value={currentAgent} onValueChange={setCurrentAgent}>
-                        <TabsList className="grid w-full grid-cols-4">
-                            {agents.map((agent) => (
-                                <TabsTrigger key={agent} value={agent} className="capitalize">
-                                    {agent}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-
-                        {agents.map((agent) => (
-                            <TabsContent key={agent} value={agent} className="space-y-4">
-                                <div className="flex justify-end items-center">
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="destructive" onClick={() => setDeleteDialog({ type: 'category', agent })}>
-                                            Delete All {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompts
-                                        </Button>
-
-                                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button size="sm">
-                                                    <Plus className="h-4 w-4 mr-2" /> Add {agent.charAt(0).toUpperCase() + agent.slice(1)} Prompt
-                                                </Button>
-                                            </DialogTrigger>
-
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Add New Prompt</DialogTitle>
-                                                    <DialogDescription>
-                                                        Create a new prompt for the {agent} agent.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-
-                                                <div className="space-y-4">
-                                                    <div className="space-y-2">
-                                                        <Label>Title</Label>
-                                                        <Input
-                                                            value={newTitle}
-                                                            onChange={(e) => setNewTitle(e.target.value)}
-                                                            placeholder="Enter prompt title..."
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Prompt</Label>
-                                                        <Textarea
-                                                            placeholder="Enter your prompt here..."
-                                                            value={newPrompt}
-                                                            onChange={(e) => setNewPrompt(e.target.value)}
-                                                            rows={4}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <DialogFooter>
-                                                    <Button onClick={handleAddPrompt}>Add Prompt</Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {(!prompts[agent] || prompts[agent].length === 0) ? (
-                                        <p className="text-sm text-muted-foreground">No prompts saved yet.</p>
-                                    ) : (
-                                        <>
-                                            {(() => {
-                                                const page = currentPage[agent] || 0;
-                                                const promptsPerPage = 3;
-                                                const startIndex = page * promptsPerPage;
-                                                const endIndex = startIndex + promptsPerPage;
-                                                const visiblePrompts = prompts[agent].slice(startIndex, endIndex);
-                                                const totalPages = Math.ceil(prompts[agent].length / promptsPerPage);
-
-                                                return (
-                                                    <>
-                                                        <div className="space-y-2">
-                                                            {visiblePrompts.map((prompt) => (
-                                                                <div key={prompt.id} className="border rounded-lg p-3">
-                                                                    {editingPrompt === prompt.id ? (
-                                                                        <div className="space-y-2">
-                                                                            <Input
-                                                                                value={editingTitle}
-                                                                                onChange={(e) => setEditingTitle(e.target.value)}
-                                                                                placeholder="Title"
-                                                                            />
-                                                                            <Textarea
-                                                                                value={editingText}
-                                                                                onChange={(e) => setEditingText(e.target.value)}
-                                                                                rows={3}
-                                                                            />
-                                                                            <div className="flex gap-2">
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    onClick={() =>
-                                                                                        handleEditPrompt(agent, prompt.id, editingTitle, editingText)
-                                                                                    }
-                                                                                >
-                                                                                    Save
-                                                                                </Button>
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() => setEditingPrompt(null)}
-                                                                                >
-                                                                                    Cancel
-                                                                                </Button>
-                                                                            </div>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="flex items-center justify-between">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Checkbox
-                                                                                    checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
-                                                                                    onCheckedChange={(checked) => {
-                                                                                        setSelectedPrompts(prev => {
-                                                                                            const newSet = new Set(prev);
-                                                                                            if (checked) {
-                                                                                                newSet.add(`${agent}-${prompt.id}`);
-                                                                                            } else {
-                                                                                                newSet.delete(`${agent}-${prompt.id}`);
-                                                                                            }
-                                                                                            return newSet;
-                                                                                        });
-                                                                                    }}
-                                                                                />
-                                                                                <div className="flex-1 mr-4">
-                                                                                    <h4 className="font-medium text-sm">{prompt.title || "Untitled"}</h4>
-                                                                                    <p className="text-sm text-muted-foreground truncate">{prompt.text}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex gap-2">
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() => setViewFullTextPrompt(prompt)}
-                                                                                >
-                                                                                    <Eye className="h-4 w-4" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() => {
-                                                                                        setEditingPrompt(prompt.id)
-                                                                                        setEditingText(prompt.text)
-                                                                                        setEditingTitle(prompt.title || "")
-                                                                                    }}
-                                                                                >
-                                                                                    <Edit className="h-4 w-4" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() => setDeleteDialog({ type: 'single', agent, id: prompt.id })}
-                                                                                >
-                                                                                    <Trash2 className="h-4 w-4" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-
-                                                        {totalPages > 1 && (
-                                                            <div className="flex justify-between items-center mt-4">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
-                                                                    disabled={page === 0}
-                                                                >
-                                                                    Previous
-                                                                </Button>
-                                                                <span className="text-sm">
-                                                                    Page {page + 1} of {totalPages}
-                                                                </span>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
-                                                                    disabled={page >= totalPages - 1}
-                                                                >
-                                                                    Next
-                                                                </Button>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                );
-                                            })()}
-                                        </>
-                                    )}
-                                </div>
-                            </TabsContent>
-                        ))}
-                    </Tabs>
-                </CardContent>
-            </Card>
 
             {/* Full Text Dialog */}
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
