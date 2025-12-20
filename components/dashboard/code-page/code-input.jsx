@@ -484,6 +484,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         ? (isSupported ? (supportedLanguages.find(s => s.prism === detectedLanguage)?.name || detectedLanguage) : "Not supported")
         : "Unallowed";
 
+    const hasContent = activeTab || (selectedFile && selectedFile.content) || hasCode;
+
     return (
         <div className="flex flex-col h-full w-full gap-2">
 
@@ -577,6 +579,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                     size="sm"
                                     onClick={() => onLockChange(!isLocked)}
                                     className={isLocked ? "bg-red-500 hover:bg-red-600 text-white" : ""}
+                                    disabled={!hasContent}
                                 >
                                     {isLocked ? <Lock className="h-3.5 w-3.5 mr-2" /> : <Unlock className="h-3.5 w-3.5 mr-2" />}
                                     {isLocked ? "Locked" : "Lock Code"}
@@ -586,34 +589,36 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                             {/* Middle: Language & Config */}
                             <div className="flex items-center gap-6">
                                 {/* Language Selector with Status Indicator */}
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-muted-foreground">Language</span>
-                                    <div className="flex flex-col">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" disabled={isLocked} className="flex gap-2 min-w-[140px] justify-between relative">
-                                                    <div className="flex flex-col items-start">
-                                                        <div className="flex items-center gap-2">
-                                                            <FileCode2 className="h-3.5 w-3.5 opacity-70" />
-                                                            <span className="truncate max-w-[80px]">{displayLanguage}</span>
+                                {hasContent && (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-medium text-muted-foreground">Language</span>
+                                        <div className="flex flex-col">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="outline" size="sm" disabled={isLocked} className="flex gap-2 min-w-[140px] justify-between relative">
+                                                        <div className="flex flex-col items-start">
+                                                            <div className="flex items-center gap-2">
+                                                                <FileCode2 className="h-3.5 w-3.5 opacity-70" />
+                                                                <span className="truncate max-w-[80px]">{displayLanguage}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent>
-                                                {supportedLanguages.map((lang) => (
-                                                    <DropdownMenuItem key={lang.name} onClick={() => {
-                                                        setLanguage(lang);
-                                                        setDetectedLanguage(lang.prism);
-                                                        setIsLanguageSupported(true);
-                                                    }}>
-                                                        {lang.name}
-                                                    </DropdownMenuItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    {supportedLanguages.map((lang) => (
+                                                        <DropdownMenuItem key={lang.name} onClick={() => {
+                                                            setLanguage(lang);
+                                                            setDetectedLanguage(lang.prism);
+                                                            setIsLanguageSupported(true);
+                                                        }}>
+                                                            {lang.name}
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="h-6 w-px bg-border"></div>
 
@@ -621,7 +626,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                 <div className="flex items-center gap-3">
                                     <span className="text-sm font-medium text-muted-foreground">Use Case</span>
                                     <div className="flex items-center gap-2">
-                                        <Select value={codeType} onValueChange={setCodeType} disabled={isPlaceholder || isLocked}>
+                                        <Select value={codeType} onValueChange={setCodeType} disabled={isPlaceholder || isLocked || !hasContent}>
                                             <SelectTrigger className="w-[180px] h-9">
                                                 <SelectValue placeholder="Select type..." />
                                             </SelectTrigger>
@@ -631,7 +636,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <Button variant="ghost" size="icon" onClick={async () => { setIsRefreshing(true); try { await refreshUseCases(); } finally { setIsRefreshing(false); } }} disabled={isRefreshing}>
+                                        <Button variant="ghost" size="icon" onClick={async () => { setIsRefreshing(true); try { await refreshUseCases(); } finally { setIsRefreshing(false); } }} disabled={isRefreshing || !hasContent}>
                                             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                                         </Button>
                                     </div>
@@ -648,7 +653,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={handleFormat}
-                                                    disabled={isPlaceholder || isFormatting || isLocked || !isLanguageSupported}
+                                                    disabled={isPlaceholder || isFormatting || isLocked || !isLanguageSupported || !hasContent}
                                                 >
                                                     <Wand2 className="mr-2 h-4 w-4" /> Format
                                                 </Button>
@@ -663,7 +668,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                     variant="outline"
                                     size="sm"
                                     onClick={handleCopy}
-                                    disabled={isPlaceholder || isCopied}
+                                    disabled={isPlaceholder || isCopied || !hasContent}
                                     className="transition-all duration-200"
                                 >
                                     {isCopied ? (
