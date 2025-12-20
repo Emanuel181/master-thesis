@@ -20,8 +20,10 @@ export function LoginForm({ className, ...props }) {
     const handleSignIn = async (provider) => {
         setIsLoading(provider)
         try {
+            console.log('Signing in with provider:', provider, 'callbackUrl:', callbackUrl)
             await signIn(provider, { callbackUrl })
         } catch (error) {
+            console.log('Sign in error:', error)
             setIsLoading(null)
         }
     }

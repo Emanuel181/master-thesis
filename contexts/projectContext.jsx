@@ -1,15 +1,23 @@
 import React, { createContext, useContext, useState } from "react";
 
-const ProjectContext = createContext();
+const ProjectContext = createContext({
+    projectStructure: null,
+    setProjectStructure: () => {},
+    selectedFile: null,
+    setSelectedFile: () => {},
+    viewMode: "project",
+    setViewMode: () => {},
+
+    currentRepo: null,
+    setCurrentRepo: () => {},
+});
 
 export function ProjectProvider({ children }) {
     const [projectStructure, setProjectStructure] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [viewMode, setViewMode] = useState("project");
 
-    // ✅ ADD THESE TWO
-    const [currentRepo, setCurrentRepo] = useState(null);
-    // Example shape: { owner: "octocat", repo: "my-app" }
+    const [currentRepo, setCurrentRepo] = useState(null); // Example shape: { owner: "octocat", repo: "my-app" }
 
     return (
         <ProjectContext.Provider
@@ -21,7 +29,6 @@ export function ProjectProvider({ children }) {
                 viewMode,
                 setViewMode,
 
-                // ✅ MAKE THEM AVAILABLE
                 currentRepo,
                 setCurrentRepo,
             }}

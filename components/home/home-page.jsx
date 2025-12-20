@@ -239,15 +239,18 @@ export function HomePage() {
     // Only fetch if authenticated AND repos not loaded
     // ---------------------------
     useEffect(() => {
+        console.log('[HomePage] useEffect triggered:', { status, session: !!session, reposLength: repos.length, gitlabReposLength: gitlabRepos.length });
         if (status === "authenticated" && session) {
             if (repos.length === 0) {
+                console.log('[HomePage] Fetching GitHub repos...');
                 fetchRepos();
             }
             if (gitlabRepos.length === 0) {
+                console.log('[HomePage] Fetching GitLab repos...');
                 fetchGitlabRepos();
             }
         }
-    }, [status, session, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
+    }, [status, session?.user?.id, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
 
 
     // ---------------------------
@@ -384,6 +387,15 @@ export function HomePage() {
     const isBothEmpty = !isGithubConnected && !isGitlabConnected && Object.values(prompts).every(arr => !arr || arr.length === 0);
 
     // ---------------------------
+    // Helper function to truncate prompt text
+    // ---------------------------
+    const truncateText = (text, maxLength = 50) => {
+        if (!text) return "";
+        if (text.length <= maxLength) return text;
+        return text.slice(0, maxLength) + "...";
+    };
+
+    // ---------------------------
     // UI
     // ---------------------------
     return (
@@ -440,7 +452,7 @@ export function HomePage() {
                                     Connect to GitHub to import repositories.
                                 </p>
 
-                                <Button onClick={() => { signIn("github", { callbackUrl: "/" }); }}>
+                                <Button onClick={() => { signIn("github", { callbackUrl: "/dashboard" }); }}>
                                     <Github className="h-4 w-4 mr-2" />
                                     Connect GitHub
                                 </Button>
@@ -643,7 +655,7 @@ export function HomePage() {
                                                                                     />
                                                                                     <div className="flex-1 mr-4">
                                                                                         <h4 className="font-medium text-sm">{prompt.title || "Untitled"}</h4>
-                                                                                        <p className="text-sm text-muted-foreground truncate">{prompt.text}</p>
+                                                                                        <p className="text-sm text-muted-foreground truncate">{truncateText(prompt.text)}</p>
                                                                                     </div>
                                                                                 </div>
                                                                                 <div className="flex gap-2">
@@ -767,7 +779,7 @@ export function HomePage() {
                                     Connect to GitLab to import repositories.
                                 </p>
 
-                                <Button onClick={() => { signIn("gitlab", { callbackUrl: "/" }); }}>
+                                <Button onClick={() => { signIn("gitlab", { callbackUrl: "/dashboard" }); }}>
                                     <GitlabIcon className="h-4 w-4 mr-2" />
                                     Connect GitLab
                                 </Button>
@@ -813,23 +825,31 @@ export function HomePage() {
 
             {/* Full Text Dialog */}
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-4xl max-h-[80vh]">
                     <DialogHeader>
-                        <DialogTitle>{viewFullTextPrompt?.title || "Untitled Prompt"}</DialogTitle>
-                        <DialogDescription>
-                            Complete text of the selected prompt.
+                        <DialogTitle className="text-lg font-semibold">
+                            {viewFullTextPrompt?.title || "Untitled Prompt"}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground">
+                            Complete text of the selected prompt
                         </DialogDescription>
                     </DialogHeader>
                     {viewFullTextPrompt && (
-                        <Textarea
-                            value={viewFullTextPrompt.text}
-                            readOnly
-                            rows={10}
-                            className="resize-none"
-                        />
+                        <div className="space-y-4">
+                            <div className="border rounded-lg p-4 bg-muted/20">
+                                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed max-h-96 overflow-y-auto">
+                                    {viewFullTextPrompt.text}
+                                </pre>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                Character count: {viewFullTextPrompt.text.length}
+                            </div>
+                        </div>
                     )}
                     <DialogFooter>
-                        <Button onClick={() => setViewFullTextPrompt(null)}>Close</Button>
+                        <Button variant="outline" onClick={() => setViewFullTextPrompt(null)}>
+                            Close
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

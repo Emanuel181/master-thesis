@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Plus } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw } from "lucide-react"
 import { AIWorkflowVisualization } from "./ai-workflow-visualization"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUseCases } from "@/contexts/useCasesContext"
@@ -198,53 +198,12 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
 
     const [selectedAgentDetails, setSelectedAgentDetails] = React.useState(null);
     const [isLoadingAgentDetails, setIsLoadingAgentDetails] = React.useState(false);
-    const [newAgentName, setNewAgentName] = React.useState("");
-    const [newAgentFoundationModel, setNewAgentFoundationModel] = React.useState("");
-    const [newAgentDescription, setNewAgentDescription] = React.useState("");
-    const [newAgentInstruction, setNewAgentInstruction] = React.useState("");
-    const [isCreatingAgent, setIsCreatingAgent] = React.useState(false);
     const [selectedSystemPrompts, setSelectedSystemPrompts] = React.useState({
         reviewer: "",
         implementation: "",
         tester: "",
         report: "",
     });
-
-    const handleCreateAgent = async () => {
-        setIsCreatingAgent(true);
-        try {
-            const response = await fetch('/api/bedrock/agents', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: newAgentName,
-                    model: newAgentFoundationModel,
-                    description: newAgentDescription,
-                    instruction: newAgentInstruction,
-                }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                toast.success(`Agent "${data.name}" created successfully!`);
-                // Reset form states
-                setNewAgentName("");
-                setNewAgentFoundationModel("");
-                setNewAgentDescription("");
-                setNewAgentInstruction("");
-                // Optionally, refresh the agent list or perform other actions
-            } else {
-                const errorData = await response.json();
-                toast.error(`Error creating agent: ${errorData.error}`);
-            }
-        } catch (error) {
-            toast.error("Failed to create agent. Please try again later.");
-        } finally {
-            setIsCreatingAgent(false);
-        }
-    };
 
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange}>
@@ -258,10 +217,9 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                     </DrawerHeader>
                     <div className="p-4">
                         <Tabs defaultValue="workflow" className="w-full">
-                            <TabsList className="grid w-full grid-cols-5 mb-4">
+                            <TabsList className="grid w-full grid-cols-4 mb-4">
                                 <TabsTrigger value="workflow">Workflow Visualization</TabsTrigger>
                                 <TabsTrigger value="models">Agents Configuration</TabsTrigger>
-                                <TabsTrigger value="create">Create Agent</TabsTrigger>
                                 <TabsTrigger value="prompts">Prompts Configuration</TabsTrigger>
                                 <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
                             </TabsList>
@@ -287,6 +245,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     useCases={useCases}
                                     prompts={prompts}
                                     selectedPrompts={selectedPrompts}
+                                    selectedSystemPrompts={selectedSystemPrompts}
                                     onPromptChange={handlePromptChange}
                                     onSave={() => {
                                         // Here you would typically save the configuration
@@ -526,94 +485,6 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     <Button onClick={() => onOpenChange(false)} variant="outline">
                                         Cancel
                                     </Button>
-                                </div>
-                            </TabsContent>
-
-                            <TabsContent value="create">
-                                <div className="space-y-4">
-                                    <div className="text-sm text-muted-foreground mb-4">
-                                        Create a new AWS Bedrock AI agent with custom instructions and model selection.
-                                    </div>
-
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="text-lg font-medium flex items-center gap-2">
-                                                <Plus className="w-5 h-5" />
-                                                New AWS Bedrock Agent
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="grid gap-4">
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <Label htmlFor="agent-name">Agent Name *</Label>
-                                                        <Input
-                                                            id="agent-name"
-                                                            placeholder="Enter agent name (e.g., CodeReviewer, BugTester)"
-                                                            value={newAgentName}
-                                                            onChange={(e) => setNewAgentName(e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label htmlFor="agent-foundation-model">Foundation Model *</Label>
-                                                        <Select value={newAgentFoundationModel} onValueChange={setNewAgentFoundationModel}>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Select AI model" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="anthropic.claude-3-sonnet-20240229-v1:0">Claude 3 Sonnet</SelectItem>
-                                                                <SelectItem value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku</SelectItem>
-                                                                <SelectItem value="meta.llama2-13b-chat-v1">Llama 2 13B</SelectItem>
-                                                                <SelectItem value="amazon.titan-text-lite-v1">Titan Text Lite</SelectItem>
-                                                                <SelectItem value="amazon.titan-text-express-v1">Titan Text Express</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <Label htmlFor="agent-description">Description</Label>
-                                                    <Input
-                                                        id="agent-description"
-                                                        placeholder="Brief description of the agent's role"
-                                                        value={newAgentDescription}
-                                                        onChange={(e) => setNewAgentDescription(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Label htmlFor="agent-instruction">Instructions *</Label>
-                                                    <Textarea
-                                                        id="agent-instruction"
-                                                        placeholder="Enter detailed instructions for the agent (e.g., 'You are a code reviewer. Analyze code for bugs, security issues, and best practices.')"
-                                                        rows={4}
-                                                        value={newAgentInstruction}
-                                                        onChange={(e) => setNewAgentInstruction(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <div className="flex justify-end gap-2">
-                                        <Button
-                                            onClick={handleCreateAgent}
-                                            disabled={isCreatingAgent}
-                                        >
-                                            {isCreatingAgent ? (
-                                                <>
-                                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                                    Creating Agent...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Plus className="w-4 h-4 mr-2" />
-                                                    Create Agent
-                                                </>
-                                            )}
-                                        </Button>
-                                        <Button onClick={() => onOpenChange(false)} variant="outline">
-                                            Cancel
-                                        </Button>
-                                    </div>
                                 </div>
                             </TabsContent>
 

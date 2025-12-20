@@ -71,13 +71,20 @@ export async function GET(request) {
                 const baseUrl = process.env.GITLAB_URL || 'https://gitlab.com';
                 const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`;
 
+                console.log('[gitlab/repos] making request to:', apiUrl);
+
                 const response = await fetch(apiUrl, {
                     headers: {
                         'Authorization': `Bearer ${candidate.token}`
                     }
                 });
+
+                console.log('[gitlab/repos] response status:', response.status, response.statusText);
+
                 if (!response.ok) {
-                    throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
+                    const errorText = await response.text();
+                    console.log('[gitlab/repos] error response:', errorText);
+                    throw new Error(`GitLab API error: ${response.status} ${response.statusText} - ${errorText}`);
                 }
 
                 const projects = await response.json();

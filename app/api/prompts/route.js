@@ -26,6 +26,7 @@ export async function GET(request) {
             if (grouped[prompt.agent]) {
                 grouped[prompt.agent].push({
                     id: prompt.id,
+                    title: prompt.title,
                     text: prompt.text,
                 });
             }

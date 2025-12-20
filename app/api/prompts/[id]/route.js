@@ -31,16 +31,15 @@ export async function PUT(request, { params }) {
         await uploadTextToS3(existingPrompt.s3Key, text);
 
         // Update the prompt in the database
-        const prompt = await prisma.prompt.updateMany({
-            where: { id, userId },
+        const prompt = await prisma.prompt.update({
+            where: {
+                id,
+                userId // Ensure user can only update their own prompts
+            },
             data: { title: title || "Untitled", text },
         });
 
-        if (prompt.count === 0) {
-            return NextResponse.json({ error: 'Prompt not found' }, { status: 404 });
-        }
-
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, prompt });
     } catch (error) {
         console.error('Error updating prompt:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

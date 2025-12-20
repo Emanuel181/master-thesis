@@ -132,18 +132,24 @@ export function PromptsProvider({ children }) {
 
     const editPrompt = async (agent, promptId, promptData) => {
         try {
+            console.log('Editing prompt:', { agent, promptId, promptData });
             const response = await fetch(`/api/prompts/${promptId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: promptData.title, text: promptData.text })
             });
+            console.log('Edit response status:', response.status);
             if (response.ok) {
+                const result = await response.json();
+                console.log('Edit result:', result);
                 setPrompts(prev => ({
                     ...prev,
                     [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, title: promptData.title, text: promptData.text } : p)
                 }));
                 return { success: true };
             } else {
+                const error = await response.text();
+                console.log('Edit error:', error);
                 return { success: false, error: 'Failed to edit prompt' };
             }
         } catch (err) {

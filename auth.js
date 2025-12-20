@@ -150,3 +150,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
 
 })
+
+
+export { auth as middleware }

@@ -302,9 +302,9 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const handleSelectGitlabRepo = async (repo) => {
         setIsImporting(true);
         try {
-            const structure = await apiFetchRepoTree(repo.path_with_namespace.split('/')[0], repo.name, 'gitlab');
+            const structure = await apiFetchRepoTree(repo.full_name.split('/')[0], repo.name, 'gitlab');
             setProjectStructure(structure);
-            setCurrentRepo({ owner: repo.path_with_namespace.split('/')[0], repo: repo.name, provider: 'gitlab' });
+            setCurrentRepo({ owner: repo.full_name.split('/')[0], repo: repo.name, provider: 'gitlab' });
             setViewMode('project');
             setIsImportDialogOpen(false);
             toast.success("Project switched successfully!");

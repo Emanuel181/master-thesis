@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/dashboard/sidebar/app-sidebar"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -22,7 +22,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomizationDialog } from "@/components/customization-dialog"
 import { useSettings } from "@/contexts/settingsContext"
 import { useSession } from "next-auth/react"
-import { FeedbackDialog } from "@/components/feedback-dialog"
+import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog"
 import { toast } from "sonner";
 
 export default function ProfilePage() {

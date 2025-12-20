@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/sidebar"
 import {NavUser} from "./nav-user";
 import {useSession} from "next-auth/react";
-import { useProject } from "@/contexts/projectContext";
 
 const data = {
     team: {
@@ -37,7 +36,6 @@ const data = {
 
 export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
     const { data: session, status } = useSession()
-    const { currentRepo } = useProject();
     console.log("Session:", session, "Status:", status)
 
     const navMain = [
