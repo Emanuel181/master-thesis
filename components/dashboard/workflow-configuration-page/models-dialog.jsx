@@ -16,9 +16,10 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Plus } from "lucide-react"
 import { AIWorkflowVisualization } from "./ai-workflow-visualization"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUseCases } from "@/contexts/useCasesContext"
@@ -108,13 +109,20 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     const handleRefreshModels = async () => {
         setIsRefreshingModels(true);
         try {
-            // Simulate API call to refresh models
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            // Simulate model refresh
-            _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
-            toast.success("Models refreshed successfully!");
+            const response = await fetch('/api/bedrock');
+            if (response.ok) {
+                const data = await response.json();
+                _setModels(data.models.map(model => model.name));
+                toast.success("Models refreshed successfully!");
+            } else {
+                const errorData = await response.json();
+                console.error('Error refreshing models:', errorData.error);
+                toast.error(`AWS Bedrock Error: ${errorData.error}`);
+                throw new Error(errorData.error);
+            }
         } catch (error) {
-            toast.error("Failed to refresh models");
+            console.error('Error refreshing models:', error);
+            toast.error("Failed to refresh models from AWS Bedrock");
         } finally {
             setIsRefreshingModels(false);
         }
@@ -162,6 +170,82 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         }
     };
 
+    // Fetch models from AWS Bedrock on component mount
+    React.useEffect(() => {
+        const fetchAgents = async () => {
+            try {
+                const response = await fetch('/api/bedrock/agents');
+                if (response.ok) {
+                    const data = await response.json();
+                    _setModels(data.agents.map(agent => agent.name));
+                } else {
+                    const errorData = await response.json();
+                    console.error('Failed to fetch agents:', errorData.error);
+                    toast.error(`AWS Bedrock Error: ${errorData.error}`);
+                    // Fallback to some default models
+                    _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
+                }
+            } catch (error) {
+                console.error('Error fetching agents:', error);
+                toast.error("Failed to connect to AWS Bedrock. Using fallback models.");
+                // Fallback to some default models
+                _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
+            }
+        };
+
+        fetchAgents();
+    }, []);
+
+    const [selectedAgentDetails, setSelectedAgentDetails] = React.useState(null);
+    const [isLoadingAgentDetails, setIsLoadingAgentDetails] = React.useState(false);
+    const [newAgentName, setNewAgentName] = React.useState("");
+    const [newAgentFoundationModel, setNewAgentFoundationModel] = React.useState("");
+    const [newAgentDescription, setNewAgentDescription] = React.useState("");
+    const [newAgentInstruction, setNewAgentInstruction] = React.useState("");
+    const [isCreatingAgent, setIsCreatingAgent] = React.useState(false);
+    const [selectedSystemPrompts, setSelectedSystemPrompts] = React.useState({
+        reviewer: "",
+        implementation: "",
+        tester: "",
+        report: "",
+    });
+
+    const handleCreateAgent = async () => {
+        setIsCreatingAgent(true);
+        try {
+            const response = await fetch('/api/bedrock/agents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: newAgentName,
+                    model: newAgentFoundationModel,
+                    description: newAgentDescription,
+                    instruction: newAgentInstruction,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                toast.success(`Agent "${data.name}" created successfully!`);
+                // Reset form states
+                setNewAgentName("");
+                setNewAgentFoundationModel("");
+                setNewAgentDescription("");
+                setNewAgentInstruction("");
+                // Optionally, refresh the agent list or perform other actions
+            } else {
+                const errorData = await response.json();
+                toast.error(`Error creating agent: ${errorData.error}`);
+            }
+        } catch (error) {
+            toast.error("Failed to create agent. Please try again later.");
+        } finally {
+            setIsCreatingAgent(false);
+        }
+    };
+
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange}>
             <DrawerContent>
@@ -174,9 +258,10 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                     </DrawerHeader>
                     <div className="p-4">
                         <Tabs defaultValue="workflow" className="w-full">
-                            <TabsList className="grid w-full grid-cols-4 mb-4">
+                            <TabsList className="grid w-full grid-cols-5 mb-4">
                                 <TabsTrigger value="workflow">Workflow Visualization</TabsTrigger>
                                 <TabsTrigger value="models">Agents Configuration</TabsTrigger>
+                                <TabsTrigger value="create">Create Agent</TabsTrigger>
                                 <TabsTrigger value="prompts">Prompts Configuration</TabsTrigger>
                                 <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
                             </TabsList>
@@ -244,19 +329,43 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             <ScanSearch className="w-6 h-6 text-blue-500" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="reviewer-model" className="sr-only">Reviewer Agent</Label>
-                                                <Select id="reviewer-model" value={reviewerModel} onValueChange={setReviewerModel}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a model" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {models.map((model) => (
-                                                            <SelectItem key={`reviewer-${model}`} value={model}>{model}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-xs text-muted-foreground mt-1">
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label htmlFor="reviewer-model" className="text-xs font-medium mb-1 block">Model</Label>
+                                                        <Select id="reviewer-model" value={reviewerModel} onValueChange={setReviewerModel}>
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select model" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {models.map((model) => (
+                                                                    <SelectItem key={`reviewer-${model}`} value={model}>{model}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="reviewer-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Select
+                                                            id="reviewer-system-prompt"
+                                                            value={selectedSystemPrompts.reviewer}
+                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, reviewer: value }))}
+                                                        >
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select prompt" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">No prompt</SelectItem>
+                                                                {(prompts.reviewer || []).map((prompt) => (
+                                                                    <SelectItem key={`reviewer-prompt-${prompt.id}`} value={prompt.id}>
+                                                                        {prompt.title || "Untitled"}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
                                                     Analyzes code quality, security, and best practices
                                                 </p>
                                             </div>
@@ -268,19 +377,43 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             <Wrench className="w-6 h-6 text-green-500" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="implementation-model" className="sr-only">Implementation Agent</Label>
-                                                <Select id="implementation-model" value={implementationModel} onValueChange={setImplementationModel}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a model" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {models.map((model) => (
-                                                            <SelectItem key={`implementation-${model}`} value={model}>{model}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-xs text-muted-foreground mt-1">
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label htmlFor="implementation-model" className="text-xs font-medium mb-1 block">Model</Label>
+                                                        <Select id="implementation-model" value={implementationModel} onValueChange={setImplementationModel}>
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select model" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {models.map((model) => (
+                                                                    <SelectItem key={`implementation-${model}`} value={model}>{model}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="implementation-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Select
+                                                            id="implementation-system-prompt"
+                                                            value={selectedSystemPrompts.implementation}
+                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, implementation: value }))}
+                                                        >
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select prompt" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">No prompt</SelectItem>
+                                                                {(prompts.implementation || []).map((prompt) => (
+                                                                    <SelectItem key={`implementation-prompt-${prompt.id}`} value={prompt.id}>
+                                                                        {prompt.title || "Untitled"}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
                                                     Implements code changes and improvements
                                                 </p>
                                             </div>
@@ -292,19 +425,43 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             <BugPlay  className="w-6 h-6 text-orange-500" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="tester-model" className="sr-only">Tester Agent</Label>
-                                                <Select id="tester-model" value={testerModel} onValueChange={setTesterModel}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a model" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {models.map((model) => (
-                                                            <SelectItem key={`tester-${model}`} value={model}>{model}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-xs text-muted-foreground mt-1">
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label htmlFor="tester-model" className="text-xs font-medium mb-1 block">Model</Label>
+                                                        <Select id="tester-model" value={testerModel} onValueChange={setTesterModel}>
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select model" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {models.map((model) => (
+                                                                    <SelectItem key={`tester-${model}`} value={model}>{model}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="tester-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Select
+                                                            id="tester-system-prompt"
+                                                            value={selectedSystemPrompts.tester}
+                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, tester: value }))}
+                                                        >
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select prompt" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">No prompt</SelectItem>
+                                                                {(prompts.tester || []).map((prompt) => (
+                                                                    <SelectItem key={`tester-prompt-${prompt.id}`} value={prompt.id}>
+                                                                        {prompt.title || "Untitled"}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
                                                     Tests functionality, edge cases, and performance
                                                 </p>
                                             </div>
@@ -316,19 +473,43 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             <FileText className="w-6 h-6 text-purple-500" />
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="report-model" className="sr-only">Report Agent</Label>
-                                                <Select id="report-model" value={reportModel} onValueChange={setReportModel}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a model" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {models.map((model) => (
-                                                            <SelectItem key={`report-${model}`} value={model}>{model}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-xs text-muted-foreground mt-1">
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label htmlFor="report-model" className="text-xs font-medium mb-1 block">Model</Label>
+                                                        <Select id="report-model" value={reportModel} onValueChange={setReportModel}>
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select model" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {models.map((model) => (
+                                                                    <SelectItem key={`report-${model}`} value={model}>{model}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="report-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Select
+                                                            id="report-system-prompt"
+                                                            value={selectedSystemPrompts.report}
+                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, report: value }))}
+                                                        >
+                                                            <SelectTrigger className="h-8">
+                                                                <SelectValue placeholder="Select prompt" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">No prompt</SelectItem>
+                                                                {(prompts.report || []).map((prompt) => (
+                                                                    <SelectItem key={`report-prompt-${prompt.id}`} value={prompt.id}>
+                                                                        {prompt.title || "Untitled"}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
                                                     Generates comprehensive reports and documentation
                                                 </p>
                                             </div>
@@ -345,6 +526,94 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     <Button onClick={() => onOpenChange(false)} variant="outline">
                                         Cancel
                                     </Button>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="create">
+                                <div className="space-y-4">
+                                    <div className="text-sm text-muted-foreground mb-4">
+                                        Create a new AWS Bedrock AI agent with custom instructions and model selection.
+                                    </div>
+
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg font-medium flex items-center gap-2">
+                                                <Plus className="w-5 h-5" />
+                                                New AWS Bedrock Agent
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <Label htmlFor="agent-name">Agent Name *</Label>
+                                                        <Input
+                                                            id="agent-name"
+                                                            placeholder="Enter agent name (e.g., CodeReviewer, BugTester)"
+                                                            value={newAgentName}
+                                                            onChange={(e) => setNewAgentName(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="agent-foundation-model">Foundation Model *</Label>
+                                                        <Select value={newAgentFoundationModel} onValueChange={setNewAgentFoundationModel}>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select AI model" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="anthropic.claude-3-sonnet-20240229-v1:0">Claude 3 Sonnet</SelectItem>
+                                                                <SelectItem value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku</SelectItem>
+                                                                <SelectItem value="meta.llama2-13b-chat-v1">Llama 2 13B</SelectItem>
+                                                                <SelectItem value="amazon.titan-text-lite-v1">Titan Text Lite</SelectItem>
+                                                                <SelectItem value="amazon.titan-text-express-v1">Titan Text Express</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="agent-description">Description</Label>
+                                                    <Input
+                                                        id="agent-description"
+                                                        placeholder="Brief description of the agent's role"
+                                                        value={newAgentDescription}
+                                                        onChange={(e) => setNewAgentDescription(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="agent-instruction">Instructions *</Label>
+                                                    <Textarea
+                                                        id="agent-instruction"
+                                                        placeholder="Enter detailed instructions for the agent (e.g., 'You are a code reviewer. Analyze code for bugs, security issues, and best practices.')"
+                                                        rows={4}
+                                                        value={newAgentInstruction}
+                                                        onChange={(e) => setNewAgentInstruction(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            onClick={handleCreateAgent}
+                                            disabled={isCreatingAgent}
+                                        >
+                                            {isCreatingAgent ? (
+                                                <>
+                                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                                    Creating Agent...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Create Agent
+                                                </>
+                                            )}
+                                        </Button>
+                                        <Button onClick={() => onOpenChange(false)} variant="outline">
+                                            Cancel
+                                        </Button>
+                                    </div>
                                 </div>
                             </TabsContent>
 
