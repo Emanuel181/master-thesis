@@ -387,199 +387,101 @@ export function HomePage() {
     // UI
     // ---------------------------
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 pr-0 pl-0">
             <div className="grid grid-cols-2 gap-4 h-full">
-                <div className="flex flex-col gap-4">
-                    {/* GitHub Card */}
-                    <Card className="flex-1">
-                        <CardHeader>
+                {/* GitHub Card */}
+                <Card className="flex-1">
+                    <CardHeader>
+                        {isGithubConnected && (
+                            <div className="flex items-center gap-1 mb-2">
+                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-sm text-green-600">Connected</span>
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <Github className="h-5 w-5" />
+                                GitHub Repositories
+                            </CardTitle>
                             {isGithubConnected && (
-                                <div className="flex items-center gap-1 mb-2">
-                                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-sm text-green-600">Connected</span>
-                                </div>
-                            )}
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Github className="h-5 w-5" />
-                                    GitHub Repositories
-                                </CardTitle>
-                                {isGithubConnected && (
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleRefreshRepos}
-                                            disabled={isRefreshingRepos}
-                                            title="Refresh repositories"
-                                        >
-                                            {isRefreshingRepos ? (
-                                                <RefreshCw className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <RefreshCw className="h-4 w-4" />
-                                            )}
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleDisconnectGitHub}
-                                            title="Disconnect from GitHub"
-                                        >
-                                            Disconnect
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        </CardHeader>
-
-                        <CardContent className="space-y-4">
-                            {status === "loading" ? (
-                                <p className="text-sm text-muted-foreground">Loading...</p>
-                            ) : !isGithubConnected ? (
-                                <div className="space-y-4 p-3 border rounded-md bg-muted/20">
-                                    <p className="text-sm text-muted-foreground">
-                                        Connect to GitHub to import repositories.
-                                    </p>
-
-                                    <Button onClick={() => { signIn("github"); }}>
-                                        <Github className="h-4 w-4 mr-2" />
-                                        Connect GitHub
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleRefreshRepos}
+                                        disabled={isRefreshingRepos}
+                                        title="Refresh repositories"
+                                    >
+                                        {isRefreshingRepos ? (
+                                            <RefreshCw className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDisconnectGitHub}
+                                        title="Disconnect from GitHub"
+                                    >
+                                        Disconnect
                                     </Button>
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        Select a repository to import for analysis.
-                                    </p>
+                            )}
+                        </div>
+                    </CardHeader>
 
-                                    {isLoadingRepos ? (
-                                        <p className="text-sm text-muted-foreground">Loading repositories...</p>
-                                    ) : repos.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No repositories found.</p>
-                                    ) : (
-                                        <ScrollArea className="h-48">
-                                            <div className="space-y-2">
-                                                {repos.map((repo) => (
-                                                    <div
-                                                        key={repo.id}
-                                                        className="flex items-center justify-between p-3 border rounded-lg"
-                                                    >
-                                                        <div className="flex-1">
-                                                            <p className="font-medium">{repo.full_name}</p>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                {repo.description || "No description"}
-                                                            </p>
-                                                        </div>
+                    <CardContent className="space-y-4">
+                        {status === "loading" ? (
+                            <p className="text-sm text-muted-foreground">Loading...</p>
+                        ) : !isGithubConnected ? (
+                            <div className="space-y-4 p-3 border rounded-md bg-muted/20">
+                                <p className="text-sm text-muted-foreground">
+                                    Connect to GitHub to import repositories.
+                                </p>
 
-                                                        <Button size="sm" onClick={() => handleImportRepo(repo)}>
-                                                            Import
-                                                        </Button>
+                                <Button onClick={() => { signIn("github", { callbackUrl: "/" }); }}>
+                                    <Github className="h-4 w-4 mr-2" />
+                                    Connect GitHub
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Select a repository to import for analysis.
+                                </p>
+
+                                {isLoadingRepos ? (
+                                    <p className="text-sm text-muted-foreground">Loading repositories...</p>
+                                ) : repos.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No repositories found.</p>
+                                ) : (
+                                    <ScrollArea className="h-48">
+                                        <div className="space-y-2">
+                                            {repos.map((repo) => (
+                                                <div
+                                                    key={repo.id}
+                                                    className="flex items-center justify-between p-3 border rounded-lg"
+                                                >
+                                                    <div className="flex-1">
+                                                        <p className="font-medium">{repo.full_name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {repo.description || "No description"}
+                                                        </p>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </ScrollArea>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
 
-                    {/* GitLab Card */}
-                    <Card className="flex-1">
-                        <CardHeader>
-                            {isGitlabConnected && (
-                                <div className="flex items-center gap-1 mb-2">
-                                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-sm text-green-600">Connected</span>
-                                </div>
-                            )}
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2">
-                                    <GitlabIcon className="h-5 w-5" />
-                                    GitLab Repositories
-                                </CardTitle>
-                                {isGitlabConnected && (
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleRefreshGitlabRepos}
-                                            disabled={isRefreshingGitlabRepos}
-                                            title="Refresh repositories"
-                                        >
-                                            {isRefreshingGitlabRepos ? (
-                                                <RefreshCw className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <RefreshCw className="h-4 w-4" />
-                                            )}
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleDisconnectGitlab}
-                                            title="Disconnect from GitLab"
-                                        >
-                                            Disconnect
-                                        </Button>
-                                    </div>
+                                                    <Button size="sm" onClick={() => handleImportRepo(repo)}>
+                                                        Import
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
                                 )}
                             </div>
-                        </CardHeader>
-
-                        <CardContent className="space-y-4">
-                            {status === "loading" ? (
-                                <p className="text-sm text-muted-foreground">Loading...</p>
-                            ) : status === "unauthenticated" ? (
-                                <p className="text-sm text-muted-foreground">Please sign in to connect GitLab.</p>
-                            ) : !isGitlabConnected ? (
-                                <div className="space-y-4 p-3 border rounded-md bg-muted/20">
-                                    <p className="text-sm text-muted-foreground">
-                                        Connect to GitLab to import repositories.
-                                    </p>
-
-                                    <Button onClick={() => { signIn("gitlab", { callbackUrl: "/" }); }}>
-                                        <GitlabIcon className="h-4 w-4 mr-2" />
-                                        Connect GitLab
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        Select a repository to import for analysis.
-                                    </p>
-
-                                    {isLoadingGitlabRepos ? (
-                                        <p className="text-sm text-muted-foreground">Loading repositories...</p>
-                                    ) : gitlabRepos.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No repositories found.</p>
-                                    ) : (
-                                        <ScrollArea className="h-48">
-                                            <div className="space-y-2">
-                                                {gitlabRepos.map((repo) => (
-                                                    <div
-                                                        key={repo.id}
-                                                        className="flex items-center justify-between p-3 border rounded-lg"
-                                                    >
-                                                        <div className="flex-1">
-                                                            <p className="font-medium">{repo.full_name}</p>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                {repo.description || "No description"}
-                                                            </p>
-                                                        </div>
-
-                                                        <Button size="sm" onClick={() => handleImportRepo(repo)}>
-                                                            Import
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </ScrollArea>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 {/* Prompts Card */}
                 <Card className="h-full">
@@ -809,6 +711,102 @@ export function HomePage() {
                                 </TabsContent>
                             ))}
                         </Tabs>
+                    </CardContent>
+                </Card>
+
+                {/* GitLab Card */}
+                <Card className="flex-1">
+                    <CardHeader>
+                        {isGitlabConnected && (
+                            <div className="flex items-center gap-1 mb-2">
+                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-sm text-green-600">Connected</span>
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <GitlabIcon className="h-5 w-5" />
+                                GitLab Repositories
+                            </CardTitle>
+                            {isGitlabConnected && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleRefreshGitlabRepos}
+                                        disabled={isRefreshingGitlabRepos}
+                                        title="Refresh repositories"
+                                    >
+                                        {isRefreshingGitlabRepos ? (
+                                            <RefreshCw className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDisconnectGitlab}
+                                        title="Disconnect from GitLab"
+                                    >
+                                        Disconnect
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                        {status === "loading" ? (
+                            <p className="text-sm text-muted-foreground">Loading...</p>
+                        ) : status === "unauthenticated" ? (
+                            <p className="text-sm text-muted-foreground">Please sign in to connect GitLab.</p>
+                        ) : !isGitlabConnected ? (
+                            <div className="space-y-4 p-3 border rounded-md bg-muted/20">
+                                <p className="text-sm text-muted-foreground">
+                                    Connect to GitLab to import repositories.
+                                </p>
+
+                                <Button onClick={() => { signIn("gitlab", { callbackUrl: "/" }); }}>
+                                    <GitlabIcon className="h-4 w-4 mr-2" />
+                                    Connect GitLab
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Select a repository to import for analysis.
+                                </p>
+
+                                {isLoadingGitlabRepos ? (
+                                    <p className="text-sm text-muted-foreground">Loading repositories...</p>
+                                ) : gitlabRepos.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No repositories found.</p>
+                                ) : (
+                                    <ScrollArea className="h-48">
+                                        <div className="space-y-2">
+                                            {gitlabRepos.map((repo) => (
+                                                <div
+                                                    key={repo.id}
+                                                    className="flex items-center justify-between p-3 border rounded-lg"
+                                                >
+                                                    <div className="flex-1">
+                                                        <p className="font-medium">{repo.full_name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {repo.description || "No description"}
+                                                        </p>
+                                                    </div>
+
+                                                    <Button size="sm" onClick={() => handleImportRepo(repo)}>
+                                                        Import
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                )}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

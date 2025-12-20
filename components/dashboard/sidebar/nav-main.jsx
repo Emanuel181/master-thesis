@@ -16,6 +16,7 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,
+    useSidebar,
 } from "@/components/ui/sidebar"
 import {
     Tooltip,
@@ -30,6 +31,8 @@ export function NavMain({ items, onNavigate, isCodeLocked = false }) {
         const IconComponent = icon;
         return <IconComponent />;
     };
+
+    const { state } = useSidebar();
 
     return (
         <TooltipProvider>
@@ -82,11 +85,11 @@ export function NavMain({ items, onNavigate, isCodeLocked = false }) {
                                 {item.title === "Workflow configuration" && !isCodeLocked && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-sidebar-accent opacity-70 hover:opacity-100 transition-opacity">
+                                            <button className={`absolute ${state === "collapsed" ? "-right-1 top-0" : "right-2 top-1/2 -translate-y-1/2"} p-1 rounded-md hover:bg-sidebar-accent opacity-70 hover:opacity-100 transition-opacity`}>
                                                 <Info className="h-3 w-3" />
                                             </button>
                                         </TooltipTrigger>
-                                        <TooltipContent side="right" align="center">
+                                        <TooltipContent side={state === "collapsed" ? "top" : "right"} align="center">
                                             <p>Workflow configuration is only available after locking your code</p>
                                         </TooltipContent>
                                     </Tooltip>
