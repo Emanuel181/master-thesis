@@ -24,6 +24,7 @@ export default function ProjectTree({
                                         onDragStateChange,
                                         minWidth = 180,
                                         maxWidth = 640,
+                                        additionalButtons = null
                                     }) {
     const [isDragging, setIsDragging] = useState(false);
     const [treeData, setTreeData] = useState([]);
@@ -148,6 +149,7 @@ export default function ProjectTree({
                             <button onClick={handleCollapseAll} className="p-1 hover:bg-accent rounded-md" title="Collapse All">
                                 <FolderClosed className="h-3.5 w-3.5" />
                             </button>
+                            {additionalButtons}
                         </div>
                     </>
                 )}

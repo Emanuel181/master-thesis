@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Play, Clipboard, Wand2, RefreshCw, Lock, Unlock, Download, Check, AlertTriangle, FileCode2, FolderOpen } from "lucide-react";
+import { Play, Clipboard, Wand2, RefreshCw, Lock, Unlock, Download, Check, AlertTriangle, FileCode2, FolderOpen, X } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { formatCode } from "@/lib/code-formatter";
 import { useSettings, editorThemes, editorFonts, editorFontSizes, syntaxColorPresets } from "@/contexts/settingsContext";
@@ -18,11 +18,90 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { fetchRepoTree as apiFetchRepoTree, fetchFileContent as apiFetchFileContent } from '../../../lib/github-api';
 import ProjectTree from './project-tree';
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner"
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+// ---------- CONFIG ----------
+const BASE_ICON_URL = "https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons";
+
+// "Extension" mapped to "Filename in Repo"
+const EXTENSION_ALIASES = {
+    js: "javascript",
+    jsx: "react",
+    ts: "typescript",
+    tsx: "react_ts",
+    mjs: "javascript",
+    cjs: "javascript",
+    vue: "vue",
+    svelte: "svelte",
+    angular: "angular",
+    css: "css",
+    scss: "sass",
+    sass: "sass",
+    less: "less",
+    styl: "stylus",
+    py: "python",
+    rb: "ruby",
+    rs: "rust",
+    go: "go",
+    java: "java",
+    php: "php",
+    cs: "csharp",
+    cpp: "cpp",
+    c: "c",
+    h: "c",
+    hpp: "cpp",
+    json: "json",
+    xml: "xml",
+    yaml: "yaml",
+    yml: "yaml",
+    toml: "yaml",
+    env: "tune",
+    lock: "lock",
+    md: "markdown",
+    mdx: "markdown",
+    txt: "document",
+    pdf: "pdf",
+    zip: "zip",
+    rar: "zip",
+    "7z": "zip",
+    tar: "zip",
+    gz: "zip",
+    png: "image",
+    jpg: "image",
+    jpeg: "image",
+    svg: "svg",
+    ico: "image",
+    sh: "console",
+    bash: "console",
+    zsh: "console",
+    bat: "console",
+    cmd: "console",
+    exe: "exe",
+};
+
+const getFileUrl = (name) => {
+    const lowerName = name.toLowerCase();
+    if (lowerName === "package.json") return `${BASE_ICON_URL}/nodejs.svg`;
+    if (lowerName === "favicon.ico") return `${BASE_ICON_URL}/favicon.svg`;
+    if (lowerName === ".gitignore") return `${BASE_ICON_URL}/git.svg`;
+    if (lowerName === "readme.md") return `${BASE_ICON_URL}/readme.svg`;
+    if (lowerName === "dockerfile") return `${BASE_ICON_URL}/docker.svg`;
+    if (lowerName === "license") return `${BASE_ICON_URL}/license.svg`;
+    if (lowerName === "jenkinsfile") return `${BASE_ICON_URL}/jenkins.svg`;
+
+    const parts = lowerName.split(".");
+    const ext = parts[parts.length - 1];
+    const alias = EXTENSION_ALIASES[ext];
+    if (alias) {
+        return `${BASE_ICON_URL}/${alias}.svg`;
+    }
+    return `${BASE_ICON_URL}/file.svg`;
+};
 
 export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLocked, onLockChange }) {
     // --- Configuration State ---
@@ -37,7 +116,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const [isTreeResizing, setIsTreeResizing] = useState(false);
 
     // --- Contexts ---
-    const { settings, mounted: settingsMounted } = useSettings();
+    const { settings } = useSettings();
     const { useCases, refresh: refreshUseCases } = useUseCases();
     const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo } = useProject();
     const { data: session } = useSession();
@@ -45,7 +124,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     // --- Import State ---
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [isImporting, setIsImporting] = useState(false);
     const [repos, setRepos] = useState([]);
     const [gitlabRepos, setGitlabRepos] = useState([]);
     const [isLoadingRepos, setIsLoadingRepos] = useState(false);
@@ -56,6 +134,11 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     // --- GitLab Connection State ---
     const [isGitlabConnected, setIsGitlabConnected] = useState(false);
+
+    // --- Tab State ---
+    const [openTabs, setOpenTabs] = useState([]);
+    const [activeTabId, setActiveTabId] = useState(null);
+    const [dragOverIndex, setDragOverIndex] = useState(null);
 
     // --- Detection State ---
     const [detectedLanguage, setDetectedLanguage] = useState("javascript");
@@ -225,11 +308,18 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     };
 
     const handleFormat = async () => {
-        if (!hasCode || isPlaceholder) return;
+        const currentCode = activeTab ? activeTab.content : code;
+        if (!currentCode || currentCode.trim().length === 0) return;
         setIsFormatting(true);
         try {
-            const formattedCode = await formatCode(code, language.prism);
-            if (formattedCode) setCode(formattedCode);
+            const formattedCode = await formatCode(currentCode, language.prism);
+            if (formattedCode) {
+                if (activeTab) {
+                    setOpenTabs(prev => prev.map(t => t.id === activeTab.id ? { ...t, content: formattedCode } : t));
+                } else {
+                    setCode(formattedCode);
+                }
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -265,7 +355,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     const handleImport = async () => {
         if (!searchTerm.trim() || !session) return;
-        setIsImporting(true);
         try {
             const [owner, repo] = searchTerm.split('/');
             if (!owner || !repo) throw new Error("Invalid format");
@@ -278,13 +367,10 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             toast.success("Project switched successfully!");
         } catch (error) {
             toast.error("Failed to switch project: " + error.message);
-        } finally {
-            setIsImporting(false);
         }
     };
 
     const handleSelectRepo = async (repo) => {
-        setIsImporting(true);
         try {
             const structure = await apiFetchRepoTree(repo.owner.login, repo.name);
             setProjectStructure(structure);
@@ -294,13 +380,10 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             toast.success("Project switched successfully!");
         } catch (error) {
             toast.error("Failed to switch project: " + error.message);
-        } finally {
-            setIsImporting(false);
         }
     };
 
     const handleSelectGitlabRepo = async (repo) => {
-        setIsImporting(true);
         try {
             const structure = await apiFetchRepoTree(repo.full_name.split('/')[0], repo.name, 'gitlab');
             setProjectStructure(structure);
@@ -310,8 +393,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             toast.success("Project switched successfully!");
         } catch (error) {
             toast.error("Failed to switch project: " + error.message);
-        } finally {
-            setIsImporting(false);
         }
     };
 
@@ -338,30 +419,62 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     };
 
     const onFileClick = async (node) => {
+        const tabId = node.path;
+        const existingTab = openTabs.find(tab => tab.id === tabId);
+        if (existingTab) {
+            setActiveTabId(existingTab.id);
+            return;
+        }
         if (loadingFilePath === node.path) return;
         setLoadingFilePath(node.path);
         try {
             const fileWithContent = await apiFetchFileContent(currentRepo.owner, currentRepo.repo, node.path, currentRepo.provider);
-            setSelectedFile(fileWithContent);
-            setCode(fileWithContent.content);
-            setIsPlaceholder(false);
-
-            // Trigger detection immediately
-            const lang = detectLanguageFromContent(fileWithContent.name, fileWithContent.content);
-            if (lang) {
-                setDetectedLanguage(lang);
-                const match = supportedLanguages.find(s => s.prism === lang);
-                const isSupported = Boolean(match);
-                setIsLanguageSupported(isSupported);
-                if (isSupported && match) setLanguage(match);
-            }
+            const lang = detectLanguageFromContent(fileWithContent.name, fileWithContent.content) || 'javascript';
+            const newTab = {
+                id: tabId,
+                name: node.name,
+                path: node.path,
+                content: fileWithContent.content,
+                language: lang
+            };
+            setOpenTabs(prev => {
+                const newTabs = [...prev, newTab];
+                const unique = newTabs.filter((tab, index, self) => self.findIndex(t => t.id === tab.id) === index);
+                return unique;
+            });
+            setActiveTabId(newTab.id);
             setViewMode('project');
         } catch (err) { console.error(err); }
         finally { setLoadingFilePath(null); }
     };
 
-    let editorValue = selectedFile?.content || (isPlaceholder ? placeholderText : code);
-    if (viewMode === 'project' && selectedFile?.content) {
+    const activeTab = openTabs.find(t => t.id === activeTabId);
+
+    const closeTab = (tabId) => {
+        const remaining = openTabs.filter(t => t.id !== tabId);
+        setOpenTabs(remaining);
+        if (activeTabId === tabId) {
+            if (remaining.length > 0) {
+                setActiveTabId(remaining[remaining.length - 1].id);
+            } else {
+                setActiveTabId(null);
+                setCode(''); // Clear the code when closing the last tab
+            }
+        }
+    };
+
+    // Effect for active tab language
+    useEffect(() => {
+        if (activeTab) {
+            setDetectedLanguage(activeTab.language);
+            const match = supportedLanguages.find(s => s.prism === activeTab.language);
+            setIsLanguageSupported(Boolean(match));
+            if (match) setLanguage(match);
+        }
+    }, [activeTab]);
+
+    let editorValue = activeTab ? activeTab.content : (selectedFile?.content || (isPlaceholder ? placeholderText : code));
+    if (viewMode === 'project' && selectedFile?.content && !activeTab) {
         editorValue = selectedFile.content;
     }
 
@@ -464,7 +577,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                     size="sm"
                                     onClick={() => onLockChange(!isLocked)}
                                     className={isLocked ? "bg-red-500 hover:bg-red-600 text-white" : ""}
-                                    disabled={!hasCode}
                                 >
                                     {isLocked ? <Lock className="h-3.5 w-3.5 mr-2" /> : <Unlock className="h-3.5 w-3.5 mr-2" />}
                                     {isLocked ? "Locked" : "Lock Code"}
@@ -509,7 +621,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                 <div className="flex items-center gap-3">
                                     <span className="text-sm font-medium text-muted-foreground">Use Case</span>
                                     <div className="flex items-center gap-2">
-                                        <Select value={codeType} onValueChange={setCodeType} disabled={!hasCode || isPlaceholder}>
+                                        <Select value={codeType} onValueChange={setCodeType} disabled={isPlaceholder || isLocked}>
                                             <SelectTrigger className="w-[180px] h-9">
                                                 <SelectValue placeholder="Select type..." />
                                             </SelectTrigger>
@@ -536,7 +648,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={handleFormat}
-                                                    disabled={!hasCode || isPlaceholder || isFormatting || isLocked || !isLanguageSupported}
+                                                    disabled={isPlaceholder || isFormatting || isLocked || !isLanguageSupported}
                                                 >
                                                     <Wand2 className="mr-2 h-4 w-4" /> Format
                                                 </Button>
@@ -551,7 +663,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                     variant="outline"
                                     size="sm"
                                     onClick={handleCopy}
-                                    disabled={!hasCode || isPlaceholder || isCopied}
+                                    disabled={isPlaceholder || isCopied}
                                     className="transition-all duration-200"
                                 >
                                     {isCopied ? (
@@ -563,7 +675,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                 </Button>
                                 <Button
                                     size="sm"
-                                    onClick={() => onStart(code, language, codeType)}
+                                    onClick={() => onStart(activeTab ? activeTab.content : code, language, codeType)}
                                     // Gating Logic: Must have code, must be locked, must be supported
                                     disabled={!hasCode || isPlaceholder || !isLocked || !isLanguageSupported}
                                     className={(!isLocked || !isLanguageSupported) ? "opacity-70" : ""}
@@ -576,61 +688,110 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                     </CardHeader>
 
                     {/* Content Body: Flexbox Layout for Smooth Dragging */}
-                    <CardContent className="flex-1 p-0 flex flex-row overflow-hidden relative">
-                        {viewMode === 'project' && projectStructure && (
-                            <ProjectTree
-                                structure={projectStructure}
-                                onFileClick={onFileClick}
-                                width={treeWidth}
-                                onWidthChange={setTreeWidth}
-                                collapsed={treeCollapsed}
-                                setCollapsed={setTreeCollapsed}
-                                onDragStateChange={setIsTreeResizing}
-                                minWidth={180}
-                                maxWidth={700}
-                            />
+                    <CardContent className="flex-1 p-0 flex flex-col overflow-hidden relative">
+                        {openTabs.length > 0 && (
+                            <ScrollArea orientation="horizontal" className="w-full border-b">
+                                <div className="w-max">
+                                    <Tabs value={activeTabId} onValueChange={setActiveTabId}>
+                                        <TabsList className="h-9 p-1 bg-transparent flex">
+                                            {openTabs.map((tab, index) => (
+                                                <TabsTrigger
+                                                    key={`tab-${tab.id}-${index}`}
+                                                    value={tab.id}
+                                                    className={`relative px-3 py-1 text-sm flex items-center gap-1 cursor-move ${dragOverIndex === index ? 'ring-2 ring-blue-500 bg-muted' : ''}`}
+                                                    draggable="true"
+                                                    onDragStart={(e) => e.dataTransfer.setData('text/plain', index.toString())}
+                                                    onDragOver={(e) => {
+                                                        e.preventDefault();
+                                                        setDragOverIndex(index);
+                                                    }}
+                                                    onDragLeave={() => setDragOverIndex(null)}
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                                                        if (draggedIndex === index) return;
+                                                        const newTabs = [...openTabs];
+                                                        const [dragged] = newTabs.splice(draggedIndex, 1);
+                                                        newTabs.splice(index, 0, dragged);
+                                                        setOpenTabs(newTabs);
+                                                        setDragOverIndex(null);
+                                                    }}
+                                                >
+                                                    <img src={getFileUrl(tab.name)} alt="" className="w-4 h-4 flex-shrink-0" />
+                                                    <span className="truncate max-w-[100px]">{tab.name}</span>
+                                                    <span onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }} className="cursor-pointer hover:bg-muted rounded p-0.5 ml-1 flex-shrink-0">
+                                                        <X className="h-3 w-3" />
+                                                    </span>
+                                                </TabsTrigger>
+                                            ))}
+                                        </TabsList>
+                                    </Tabs>
+                                </div>
+                            </ScrollArea>
                         )}
+                        <div className="flex flex-1 overflow-hidden">
+                            {viewMode === 'project' && projectStructure && (
+                                <ProjectTree
+                                    structure={projectStructure}
+                                    onFileClick={onFileClick}
+                                    width={treeWidth}
+                                    onWidthChange={setTreeWidth}
+                                    collapsed={treeCollapsed}
+                                    setCollapsed={setTreeCollapsed}
+                                    onDragStateChange={setIsTreeResizing}
+                                    minWidth={180}
+                                    maxWidth={700}
+                                    additionalButtons={openTabs.length > 0 ? (
+                                        <button onClick={() => { setOpenTabs([]); setActiveTabId(null); }} className="p-1 hover:bg-accent rounded-md" title="Close All Tabs">
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    ) : null}
+                                />
+                            )}
 
-                        <div className={`flex-1 min-w-0 h-full relative bg-background ${isTreeResizing ? 'pointer-events-none select-none' : ''}`}>
-                            <Editor
-                                key={`${language.prism}-${themeKey}`}
-                                language={language.prism}
-                                value={editorValue}
-                                onChange={(val) => {
-                                    if (!isPlaceholder && val !== undefined) setCode(val);
-                                }}
-                                theme={`custom-${themeKey}`}
-                                options={{
-                                    fontFamily: font.family,
-                                    fontSize: fontSize,
-                                    fontLigatures: ligatures && font.ligatures,
-                                    lineHeight: Math.round(fontSize * 1.6),
-                                    wordWrap: 'on',
-                                    minimap: { enabled: minimap },
-                                    scrollbar: { vertical: 'auto', horizontal: 'auto' },
-                                    smoothScrolling: true,
-                                    automaticLayout: true,
-                                    readOnly: isLocked,
-                                    padding: { top: 16, bottom: 16 },
-                                    formatOnPaste: false,
-                                    formatOnType: false,
-                                }}
-                                onMount={(editor, monaco) => {
-                                    monacoRef.current = monaco;
-                                    editorRef.current = editor;
-                                    const monacoTheme = buildMonacoTheme(theme);
-                                    monaco.editor.defineTheme(`custom-${themeKey}`, monacoTheme);
-                                    monaco.editor.setTheme(`custom-${themeKey}`);
-                                    editor.onDidChangeModelContent(() => {
-                                        const current = editor.getValue();
-                                        const placeholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
-                                        if (isPlaceholder && current !== placeholder) {
-                                            setIsPlaceholder(false);
-                                            setCode(current);
-                                        }
-                                    });
-                                }}
-                            />
+                            <div className={`flex-1 min-w-0 h-full relative bg-background ${isTreeResizing ? 'pointer-events-none select-none' : ''}`}>
+                                <Editor
+                                    key={`${language.prism}-${themeKey}`}
+                                    language={language.prism}
+                                    value={editorValue}
+                                    onChange={(val) => {
+                                        if (activeTab) {
+                                            setOpenTabs(prev => prev.map(t => t.id === activeTab.id ? { ...t, content: val } : t));
+                                        } else if (!isPlaceholder && val !== undefined) setCode(val);
+                                    }}
+                                    theme={`custom-${themeKey}`}
+                                    options={{
+                                        fontFamily: font.family,
+                                        fontSize: fontSize,
+                                        fontLigatures: ligatures && font.ligatures,
+                                        lineHeight: Math.round(fontSize * 1.6),
+                                        wordWrap: 'on',
+                                        minimap: { enabled: minimap },
+                                        scrollbar: { vertical: 'auto', horizontal: 'auto' },
+                                        smoothScrolling: true,
+                                        automaticLayout: true,
+                                        readOnly: isLocked,
+                                        padding: { top: 16, bottom: 16 },
+                                        formatOnPaste: false,
+                                        formatOnType: false,
+                                    }}
+                                    onMount={(editor, monaco) => {
+                                        monacoRef.current = monaco;
+                                        editorRef.current = editor;
+                                        const monacoTheme = buildMonacoTheme(theme);
+                                        monaco.editor.defineTheme(`custom-${themeKey}`, monacoTheme);
+                                        monaco.editor.setTheme(`custom-${themeKey}`);
+                                        editor.onDidChangeModelContent(() => {
+                                            const current = editor.getValue();
+                                            const placeholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
+                                            if (isPlaceholder && current !== placeholder) {
+                                                setIsPlaceholder(false);
+                                                setCode(current);
+                                            }
+                                        });
+                                    }}
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
