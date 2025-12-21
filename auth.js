@@ -48,8 +48,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         Gitlab({
             clientId: process.env.GITLAB_CLIENT_ID,
             clientSecret: process.env.GITLAB_CLIENT_SECRET,
-            // Use GITLAB_URL for self-hosted, defaults to gitlab.com
-            issuer: process.env.GITLAB_URL || "https://gitlab.com",
+            // Use GITLAB_BASE_URL for self-hosted, defaults to gitlab.com
+            baseUrl: process.env.GITLAB_BASE_URL || "https://gitlab.com",
             authorization: {
                 params: {
                     scope: "api",

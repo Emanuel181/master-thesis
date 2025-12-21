@@ -68,7 +68,7 @@ export async function GET(request) {
             try {
                 console.log('[gitlab/repos] trying token from', candidate.source, 'tokenMask:', maskToken(candidate.token));
 
-                const baseUrl = process.env.GITLAB_URL || 'https://gitlab.com';
+                const baseUrl = process.env.GITLAB_BASE_URL || 'https://gitlab.com';
                 const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`;
 
                 console.log('[gitlab/repos] making request to:', apiUrl);
