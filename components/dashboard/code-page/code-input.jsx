@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Play, Clipboard, Wand2, RefreshCw, Lock, Unlock, Download, Check, AlertTriangle, FileCode2, FolderOpen, X } from "lucide-react";
+import { Play, Clipboard, Wand2, RefreshCw, Lock, Unlock, Check, FileCode2, FolderOpen, X } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { formatCode } from "@/lib/code-formatter";
 import { useSettings, editorThemes, editorFonts, editorFontSizes, syntaxColorPresets } from "@/contexts/settingsContext";
@@ -119,7 +119,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const { settings } = useSettings();
     const { useCases, refresh: refreshUseCases } = useUseCases();
     const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo } = useProject();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
 
     // --- Import State ---
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -142,11 +142,10 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     // --- Detection State ---
     const [detectedLanguage, setDetectedLanguage] = useState("javascript");
-    const [isLanguageSupported, setIsLanguageSupported] = useState(true);
 
-    const supportedLanguages = [
+    // Languages shown in the dropdown selector (main programming languages that are fully supported)
+    const displayLanguages = [
         { name: "JavaScript", prism: "javascript" },
-        { name: "TypeScript", prism: "typescript" },
         { name: "Python", prism: "python" },
         { name: "Java", prism: "java" },
         { name: "C#", prism: "csharp" },
@@ -154,8 +153,26 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         { name: "C++", prism: "cpp" },
         { name: "PHP", prism: "php" },
         { name: "Go", prism: "go" },
-        { name: "Rust", prism: "rust" },
     ];
+
+    // All languages that can be displayed and formatted (includes JSON, etc.)
+    const supportedLanguages = [
+        ...displayLanguages,
+        { name: "JSON", prism: "json" },
+    ];
+
+    // Languages that can be formatted by the backend (must match format-code API)
+    const formattableLanguages = [
+        'javascript', 'python', 'java', 'csharp', 'c', 'cpp', 'php', 'go', 'json'
+    ];
+
+    // Languages that can be reviewed by the AI agent (excludes config files like JSON, MJS modules)
+    const reviewableLanguages = [
+        'javascript', 'python', 'java', 'csharp', 'c', 'cpp', 'php', 'go'
+    ];
+
+    // File extensions that are view-only (can format/copy but not review)
+    const viewOnlyExtensions = ['json', 'mjs', 'cjs'];
 
     const codeTypes = useCases.map(uc => ({ value: uc.id, label: uc.title }));
 
@@ -175,39 +192,137 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
 
-    // --- Load GitHub state from localStorage ---
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const savedConnected = localStorage.getItem("isGithubConnected");
-        if (savedConnected === "true") setIsGithubConnected(true);
-    }, []);
+    const refreshLinkedProviders = useCallback(async () => {
+        if (!session) return;
+        try {
+            const res = await fetch('/api/providers/linked', { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) return;
+            const linked = new Set(data.providers || []);
+            const githubLinked = linked.has('github');
+            const gitlabLinked = linked.has('gitlab');
+            setIsGithubConnected(githubLinked);
+            setIsGitlabConnected(gitlabLinked);
+            if (!githubLinked) setRepos([]);
+            if (!gitlabLinked) setGitlabRepos([]);
+        } catch (err) {
+            console.error('Error refreshing linked providers:', err);
+        }
+    }, [session]);
 
-    // --- Load GitLab state from localStorage ---
     useEffect(() => {
-        if (typeof window === "undefined") return;
-        const savedConnected = localStorage.getItem("isGitlabConnected");
-        if (savedConnected === "true") setIsGitlabConnected(true);
-    }, []);
+        if (status !== 'authenticated') return;
+        refreshLinkedProviders();
+    }, [status, refreshLinkedProviders]);
+
+    useEffect(() => {
+        if (status !== 'authenticated') return;
+        const interval = setInterval(() => {
+            refreshLinkedProviders();
+        }, 30000); // Reduced from 5s to 30s for better performance
+        return () => clearInterval(interval);
+    }, [status, refreshLinkedProviders]);
 
     // --- Helper: Detect Language ---
     const detectLanguageFromContent = useCallback((filename, content) => {
-        const ext = filename ? filename.split('.').pop()?.toLowerCase() : null;
+        if (!filename) return null;
 
-        // 1. Check Extension
-        const mapping = {
-            js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
-            py: 'python', java: 'java', php: 'php', go: 'go', c: 'c', cpp: 'cpp',
-            cs: 'csharp', rs: 'rust', html: 'html', css: 'css', json: 'json'
+        const ext = filename.split('.').pop()?.toLowerCase();
+        if (!ext) return null;
+
+        // Comprehensive extension to language mapping
+        const extensionMap = {
+            // JavaScript variants (all map to javascript)
+            'js': 'javascript',
+            'jsx': 'javascript',
+            'mjs': 'javascript',
+            'cjs': 'javascript',
+            'es6': 'javascript',
+            'ts': 'javascript',
+            'tsx': 'javascript',
+            'mts': 'javascript',
+            'cts': 'javascript',
+
+            // Python
+            'py': 'python',
+            'pyw': 'python',
+            'pyi': 'python',
+
+            // Java
+            'java': 'java',
+
+            // C#
+            'cs': 'csharp',
+            'csx': 'csharp',
+
+            // C
+            'c': 'c',
+            'h': 'c',
+
+            // C++
+            'cpp': 'cpp',
+            'cc': 'cpp',
+            'cxx': 'cpp',
+            'hpp': 'cpp',
+            'hxx': 'cpp',
+            'hh': 'cpp',
+
+            // PHP
+            'php': 'php',
+            'phtml': 'php',
+            'php3': 'php',
+            'php4': 'php',
+            'php5': 'php',
+            'php7': 'php',
+            'phps': 'php',
+
+            // Go
+            'go': 'go',
+
+            // JSON
+            'json': 'json',
+            'jsonc': 'json',
+            'json5': 'json',
+
+            // Other (unsupported but detectable)
+            'rs': 'rust',
+            'rb': 'ruby',
+            'swift': 'swift',
+            'kt': 'kotlin',
+            'kts': 'kotlin',
+            'scala': 'scala',
+            'html': 'html',
+            'htm': 'html',
+            'css': 'css',
+            'scss': 'scss',
+            'sass': 'sass',
+            'less': 'less',
+            'xml': 'xml',
+            'yaml': 'yaml',
+            'yml': 'yaml',
+            'md': 'markdown',
+            'mdx': 'markdown',
+            'sql': 'sql',
+            'sh': 'shell',
+            'bash': 'shell',
+            'zsh': 'shell',
+            'ps1': 'powershell',
         };
-        if (ext && mapping[ext]) return mapping[ext];
 
-        // 2. Check Content (Shebangs or keywords)
+        if (extensionMap[ext]) {
+            return extensionMap[ext];
+        }
+
+        // Fallback: Check content for language hints
         if (content) {
             if (/^#!\/.+\bpython/.test(content)) return 'python';
             if (/^#!\/.+\bnode/.test(content)) return 'javascript';
             if (content.includes('public static void main')) return 'java';
-            if (content.includes('import React')) return 'javascript';
+            if (content.includes('import React') || content.includes('from "react"') || content.includes("from 'react'")) return 'javascript';
             if (content.includes('def ') && content.includes(':')) return 'python';
+            if (content.includes('package main') && content.includes('func ')) return 'go';
+            if (content.includes('<?php')) return 'php';
+            if (content.includes('using System;') || content.includes('namespace ')) return 'csharp';
         }
 
         return null;
@@ -312,7 +427,9 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         if (!currentCode || currentCode.trim().length === 0) return;
         setIsFormatting(true);
         try {
-            const formattedCode = await formatCode(currentCode, language.prism);
+            // Use the detected language from the active tab if available, otherwise use the language state
+            const formatLanguage = activeTab?.language || language.prism;
+            const formattedCode = await formatCode(currentCode, formatLanguage);
             if (formattedCode) {
                 if (activeTab) {
                     setOpenTabs(prev => prev.map(t => t.id === activeTab.id ? { ...t, content: formattedCode } : t));
@@ -346,12 +463,12 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     };
 
     useEffect(() => {
-        if (isImportDialogOpen && session && repos.length === 0) loadRepos();
-    }, [isImportDialogOpen, session, repos.length]);
+        if (isImportDialogOpen && session && isGithubConnected && repos.length === 0) loadRepos();
+    }, [isImportDialogOpen, session, isGithubConnected, repos.length]);
 
     useEffect(() => {
-        if (isImportDialogOpen && session && gitlabRepos.length === 0) loadGitlabRepos();
-    }, [isImportDialogOpen, session, gitlabRepos.length]);
+        if (isImportDialogOpen && session && isGitlabConnected && gitlabRepos.length === 0) loadGitlabRepos();
+    }, [isImportDialogOpen, session, isGitlabConnected, gitlabRepos.length]);
 
     const handleImport = async () => {
         if (!searchTerm.trim() || !session) return;
@@ -403,8 +520,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             console.error('Error disconnecting GitHub:', err);
         }
         setIsGithubConnected(false);
-        localStorage.setItem("isGithubConnected", "false");
         toast.success("Disconnected from GitHub!");
+        await refreshLinkedProviders();
     };
 
     const handleDisconnectGitlab = async () => {
@@ -414,8 +531,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             console.error('Error disconnecting GitLab:', err);
         }
         setIsGitlabConnected(false);
-        localStorage.setItem("isGitlabConnected", "false");
         toast.success("Disconnected from GitLab!");
+        await refreshLinkedProviders();
     };
 
     const onFileClick = async (node) => {
@@ -429,7 +546,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         setLoadingFilePath(node.path);
         try {
             const fileWithContent = await apiFetchFileContent(currentRepo.owner, currentRepo.repo, node.path, currentRepo.provider);
-            const lang = detectLanguageFromContent(fileWithContent.name, fileWithContent.content) || 'javascript';
+            // Use node.name for detection to ensure we have the full filename with extension
+            const lang = detectLanguageFromContent(node.name, fileWithContent.content) || 'javascript';
             const newTab = {
                 id: tabId,
                 name: node.name,
@@ -459,6 +577,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             } else {
                 setActiveTabId(null);
                 setCode(''); // Clear the code when closing the last tab
+                setSelectedFile(null); // Clear the selected file
             }
         }
     };
@@ -466,10 +585,24 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     // Effect for active tab language
     useEffect(() => {
         if (activeTab) {
-            setDetectedLanguage(activeTab.language);
-            const match = supportedLanguages.find(s => s.prism === activeTab.language);
-            setIsLanguageSupported(Boolean(match));
-            if (match) setLanguage(match);
+            const tabLanguage = activeTab.language;
+            setDetectedLanguage(tabLanguage);
+
+            // Find language match in supported languages
+            const match = supportedLanguages.find(s => s.prism === tabLanguage);
+
+            // Check if file extension is view-only (these are always formattable)
+            const ext = activeTab.name?.split('.').pop()?.toLowerCase() || '';
+            const isViewOnlyFile = viewOnlyExtensions.includes(ext);
+
+
+            // Set the language for formatting - for view-only files, create a language object if no match
+            if (match) {
+                setLanguage(match);
+            } else if (isViewOnlyFile && tabLanguage) {
+                // For view-only files without a match in displayLanguages, still set a language for formatting
+                setLanguage({ name: tabLanguage.charAt(0).toUpperCase() + tabLanguage.slice(1), prism: tabLanguage });
+            }
         }
     }, [activeTab]);
 
@@ -478,41 +611,66 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         editorValue = selectedFile.content;
     }
 
+    // Get the current language - prioritize activeTab.language for immediate updates
+    const currentLanguage = activeTab?.language || detectedLanguage || language.prism || null;
+
     // Determine current display language name
-    const isSupported = supportedLanguages.some(s => s.prism === detectedLanguage);
-    const displayLanguage = detectedLanguage
-        ? (isSupported ? (supportedLanguages.find(s => s.prism === detectedLanguage)?.name || detectedLanguage) : "Not supported")
-        : "Unallowed";
+    const getDisplayLanguageName = () => {
+        if (!currentLanguage) return "Unknown";
+
+        // Check if it's in the supported languages list
+        const match = supportedLanguages.find(s => s.prism === currentLanguage);
+        if (match) {
+            return match.name; // e.g., "JavaScript", "Python", "JSON"
+        }
+
+        // Language detected but not in supported list - show as Unsupported
+        return "Unsupported";
+    };
+    const displayLanguage = getDisplayLanguageName();
+
+    // Check if current file is view-only (can format/copy but not review)
+    const currentFileName = activeTab?.name || selectedFile?.name || '';
+    const currentFileExtension = currentFileName.split('.').pop()?.toLowerCase() || '';
+    const isViewOnly = viewOnlyExtensions.includes(currentFileExtension);
+    const isReviewable = !isViewOnly && reviewableLanguages.includes(currentLanguage);
+
+    // Check if current language can be formatted
+    const isFormattable = formattableLanguages.includes(currentLanguage);
 
     const hasContent = activeTab || (selectedFile && selectedFile.content) || hasCode;
+
+    // Check if a project has been imported
+    const hasImportedProject = Boolean(currentRepo);
 
     return (
         <div className="flex flex-col h-full w-full gap-2">
 
-            {/* Top Toolbar */}
-            <div className="flex justify-between items-center w-full">
-                <div className="flex items-center gap-2">
-                    {currentRepo && (
-                        <>
-                            <Label htmlFor="view-mode-switch">Project View</Label>
-                            <Switch
-                                id="view-mode-switch"
-                                checked={viewMode === 'file'}
-                                onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
-                            />
-                            <Label htmlFor="view-mode-switch">One File View</Label>
-                        </>
-                    )}
-                </div>
+            {/* Top Toolbar - Only show when project is imported */}
+            {hasImportedProject && (
+                <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center gap-2">
+                        {currentRepo && (
+                            <>
+                                <Label htmlFor="view-mode-switch">Project View</Label>
+                                <Switch
+                                    id="view-mode-switch"
+                                    checked={viewMode === 'file'}
+                                    onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
+                                />
+                                <Label htmlFor="view-mode-switch">One File View</Label>
+                            </>
+                        )}
+                    </div>
 
-                {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
-                    <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <FolderOpen className="mr-2 h-4 w-4" /> Switch project
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
+                    {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
+                        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <FolderOpen className="mr-2 h-4 w-4" /> Switch project
+                                </Button>
+                            </DialogTrigger>
+                        <DialogContent className="max-w-lg">
                             <DialogHeader><DialogTitle>Switch Project</DialogTitle></DialogHeader>
                             <div className="space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -521,49 +679,101 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                 </div>
                                 {isGithubConnected && (
                                     <div className="space-y-2">
-                                        <Label>GitHub Projects</Label>
-                                        <div className="max-h-32 overflow-y-auto border rounded p-2">
-                                            {isLoadingRepos ? <p className="text-sm p-2">Loading...</p> : repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
-                                                <div key={r.id} onClick={() => handleSelectRepo(r)} className="p-2 hover:bg-muted cursor-pointer flex justify-between text-sm">
-                                                    <span>{r.name}</span>
-                                                    <span className="text-muted-foreground">{r.private ? 'Private' : 'Public'}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <Label className="flex items-center gap-2">
+                                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                                            GitHub Projects
+                                        </Label>
+                                        <ScrollArea className="h-40 border rounded-md">
+                                            <div className="p-2">
+                                                {isLoadingRepos ? (
+                                                    <div className="flex items-center justify-center py-4">
+                                                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                                        <span className="text-sm text-muted-foreground">Loading...</span>
+                                                    </div>
+                                                ) : repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                                                    <p className="text-sm text-muted-foreground text-center py-4">No projects found</p>
+                                                ) : (
+                                                    repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
+                                                        <div
+                                                            key={r.id}
+                                                            onClick={() => handleSelectRepo(r)}
+                                                            className="p-2 hover:bg-accent rounded-md cursor-pointer flex justify-between text-sm transition-colors"
+                                                        >
+                                                            <span className="font-medium">{r.name}</span>
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full ${r.private ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                                                                {r.private ? 'Private' : 'Public'}
+                                                            </span>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </ScrollArea>
                                     </div>
                                 )}
                                 {isGitlabConnected && (
                                     <div className="space-y-2">
-                                        <Label>GitLab Projects</Label>
-                                        <div className="max-h-32 overflow-y-auto border rounded p-2">
-                                            {isLoadingRepos ? <p className="text-sm p-2">Loading...</p> : gitlabRepos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
-                                                <div key={r.id} onClick={() => handleSelectGitlabRepo(r)} className="p-2 hover:bg-muted cursor-pointer flex justify-between text-sm">
-                                                    <span>{r.name}</span>
-                                                    <span className="text-muted-foreground">{r.visibility === 'private' ? 'Private' : 'Public'}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <Label className="flex items-center gap-2">
+                                            <svg className="h-4 w-4" viewBox="0 0 380 380" fill="currentColor"><path d="M282.83,170.73l-.27-.69-26.14-68.22a6.81,6.81,0,0,0-2.69-3.24,7,7,0,0,0-8,.43,7,7,0,0,0-2.32,3.52l-17.65,54H154.29l-17.65-54A6.86,6.86,0,0,0,134.32,99a7,7,0,0,0-8-.43,6.87,6.87,0,0,0-2.69,3.24L97.44,170l-.26.69a48.54,48.54,0,0,0,16.1,56.1l.09.07.24.17,39.82,29.82,19.7,14.91,12,9.06a8.07,8.07,0,0,0,9.76,0l12-9.06,19.7-14.91,40.06-30,.1-.08A48.56,48.56,0,0,0,282.83,170.73Z" fill="#E24329"/><path d="M282.83,170.73l-.27-.69a88.3,88.3,0,0,0-35.15,15.8L190,229.25c19.55,14.79,36.57,27.64,36.57,27.64l40.06-30,.1-.08A48.56,48.56,0,0,0,282.83,170.73Z" fill="#FC6D26"/><path d="M153.43,256.89l19.7,14.91,12,9.06a8.07,8.07,0,0,0,9.76,0l12-9.06,19.7-14.91S209.55,244,190,229.25C170.45,244,153.43,256.89,153.43,256.89Z" fill="#FCA326"/><path d="M132.58,185.84A88.19,88.19,0,0,0,97.44,170l-.26.69a48.54,48.54,0,0,0,16.1,56.1l.09.07.24.17,39.82,29.82s17-12.85,36.57-27.64Z" fill="#FC6D26"/></svg>
+                                            GitLab Projects
+                                        </Label>
+                                        <ScrollArea className="h-40 border rounded-md">
+                                            <div className="p-2">
+                                                {isLoadingRepos ? (
+                                                    <div className="flex items-center justify-center py-4">
+                                                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                                        <span className="text-sm text-muted-foreground">Loading...</span>
+                                                    </div>
+                                                ) : gitlabRepos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                                                    <p className="text-sm text-muted-foreground text-center py-4">No projects found</p>
+                                                ) : (
+                                                    gitlabRepos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
+                                                        <div
+                                                            key={r.id}
+                                                            onClick={() => handleSelectGitlabRepo(r)}
+                                                            className="p-2 hover:bg-accent rounded-md cursor-pointer flex justify-between text-sm transition-colors"
+                                                        >
+                                                            <span className="font-medium">{r.name}</span>
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full ${r.visibility === 'private' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                                                                {r.visibility === 'private' ? 'Private' : 'Public'}
+                                                            </span>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </ScrollArea>
                                     </div>
                                 )}
                                 {!isGithubConnected && !isGitlabConnected && (
-                                    <div className="space-y-2">
-                                        <Button onClick={() => signIn('github')}>Connect GitHub</Button>
-                                        <Button onClick={() => signIn('gitlab')}>Connect GitLab</Button>
+                                    <div className="flex flex-col gap-2 p-4 border rounded-md bg-muted/20">
+                                        <p className="text-sm text-muted-foreground text-center mb-2">Connect a provider to access your projects</p>
+                                        <Button onClick={() => signIn('github')} variant="outline" className="w-full">
+                                            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                                            Connect GitHub
+                                        </Button>
+                                        <Button onClick={() => signIn('gitlab')} variant="outline" className="w-full">
+                                            <svg className="h-4 w-4 mr-2" viewBox="0 0 380 380" fill="currentColor"><path d="M282.83,170.73l-.27-.69-26.14-68.22a6.81,6.81,0,0,0-2.69-3.24,7,7,0,0,0-8,.43,7,7,0,0,0-2.32,3.52l-17.65,54H154.29l-17.65-54A6.86,6.86,0,0,0,134.32,99a7,7,0,0,0-8-.43,6.87,6.87,0,0,0-2.69,3.24L97.44,170l-.26.69a48.54,48.54,0,0,0,16.1,56.1l.09.07.24.17,39.82,29.82,19.7,14.91,12,9.06a8.07,8.07,0,0,0,9.76,0l12-9.06,19.7-14.91,40.06-30,.1-.08A48.56,48.56,0,0,0,282.83,170.73Z" fill="#E24329"/></svg>
+                                            Connect GitLab
+                                        </Button>
                                     </div>
                                 )}
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 pt-2 border-t">
                                     {isGithubConnected && (
-                                        <Button variant="outline" onClick={handleDisconnectGitHub}>Disconnect GitHub</Button>
+                                        <Button variant="ghost" size="sm" onClick={handleDisconnectGitHub} className="text-muted-foreground hover:text-destructive">
+                                            Disconnect GitHub
+                                        </Button>
                                     )}
                                     {isGitlabConnected && (
-                                        <Button variant="outline" onClick={handleDisconnectGitlab}>Disconnect GitLab</Button>
+                                        <Button variant="ghost" size="sm" onClick={handleDisconnectGitlab} className="text-muted-foreground hover:text-destructive">
+                                            Disconnect GitLab
+                                        </Button>
                                     )}
                                 </div>
                             </div>
                         </DialogContent>
                     </Dialog>
                 )}
-            </div>
+                </div>
+            )}
 
             {/* Main Content */}
             <div className="flex-1 min-h-0 w-full">
@@ -571,25 +781,31 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                     <CardHeader className="pt-4 pb-4 px-6 shrink-0 border-b bg-card">
                         <div className="flex items-center justify-between gap-4">
 
-                            {/* Left: Lock Control */}
+                            {/* Left: Title and Lock Control (only show lock when not placeholder and reviewable) */}
                             <div className="flex items-center gap-3">
                                 <CardTitle className="text-lg">Code Editor</CardTitle>
-                                <Button
-                                    variant={isLocked ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => onLockChange(!isLocked)}
-                                    className={isLocked ? "bg-red-500 hover:bg-red-600 text-white" : ""}
-                                    disabled={!hasContent}
-                                >
-                                    {isLocked ? <Lock className="h-3.5 w-3.5 mr-2" /> : <Unlock className="h-3.5 w-3.5 mr-2" />}
-                                    {isLocked ? "Locked" : "Lock Code"}
-                                </Button>
+                                {!isPlaceholder && hasContent && !isViewOnly && (
+                                    <Button
+                                        variant={isLocked ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => onLockChange(!isLocked)}
+                                        className={isLocked ? "bg-red-500 hover:bg-red-600 text-white" : ""}
+                                    >
+                                        {isLocked ? <Lock className="h-3.5 w-3.5 mr-2" /> : <Unlock className="h-3.5 w-3.5 mr-2" />}
+                                        {isLocked ? "Locked" : "Lock Code"}
+                                    </Button>
+                                )}
+                                {!isPlaceholder && hasContent && isViewOnly && (
+                                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                                        View Only
+                                    </span>
+                                )}
                             </div>
 
-                            {/* Middle: Language & Config */}
-                            <div className="flex items-center gap-6">
-                                {/* Language Selector with Status Indicator */}
-                                {hasContent && (
+                            {/* Middle: Language & Config (only show when not placeholder) */}
+                            {!isPlaceholder && hasContent && (
+                                <div className="flex items-center gap-6">
+                                    {/* Language Selector with Status Indicator */}
                                     <div className="flex items-center gap-3">
                                         <span className="text-sm font-medium text-muted-foreground">Language</span>
                                         <div className="flex flex-col">
@@ -605,7 +821,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    {supportedLanguages.map((lang) => (
+                                                    {displayLanguages.map((lang) => (
                                                         <DropdownMenuItem key={lang.name} onClick={() => {
                                                             setLanguage(lang);
                                                             setDetectedLanguage(lang.prism);
@@ -618,77 +834,83 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                             </DropdownMenu>
                                         </div>
                                     </div>
-                                )}
 
-                                <div className="h-6 w-px bg-border"></div>
+                                    <div className="h-6 w-px bg-border"></div>
 
-                                {/* Use Case */}
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-muted-foreground">Use Case</span>
-                                    <div className="flex items-center gap-2">
-                                        <Select value={codeType} onValueChange={setCodeType} disabled={isPlaceholder || isLocked || !hasContent}>
-                                            <SelectTrigger className="w-[180px] h-9">
-                                                <SelectValue placeholder="Select type..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {codeTypes.map((type) => (
-                                                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Button variant="ghost" size="icon" onClick={async () => { setIsRefreshing(true); try { await refreshUseCases(); } finally { setIsRefreshing(false); } }} disabled={isRefreshing || !hasContent}>
-                                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                        </Button>
+                                    {/* Use Case - only show for reviewable files */}
+                                    {!isViewOnly && (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-medium text-muted-foreground">Use Case</span>
+                                        <div className="flex items-center gap-2">
+                                            <Select value={codeType} onValueChange={setCodeType} disabled={isLocked}>
+                                                <SelectTrigger className="w-[180px] h-9">
+                                                    <SelectValue placeholder="Select type..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {codeTypes.map((type) => (
+                                                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <Button variant="ghost" size="icon" onClick={async () => { setIsRefreshing(true); try { await refreshUseCases(); } finally { setIsRefreshing(false); } }} disabled={isRefreshing}>
+                                                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Right: Actions */}
-                            <div className="flex items-center gap-2">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={handleFormat}
-                                                    disabled={isPlaceholder || isFormatting || isLocked || !isLanguageSupported || !hasContent}
-                                                >
-                                                    <Wand2 className="mr-2 h-4 w-4" /> Format
-                                                </Button>
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            {!isLanguageSupported ? "Formatting is not supported for this programming language" : "Format Code"}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleCopy}
-                                    disabled={isPlaceholder || isCopied || !hasContent}
-                                    className="transition-all duration-200"
-                                >
-                                    {isCopied ? (
-                                        <Check className="mr-2 h-4 w-4 text-green-500 animate-in zoom-in duration-300" />
-                                    ) : (
-                                        <Clipboard className="mr-2 h-4 w-4" />
                                     )}
-                                    {isCopied ? "Copied" : "Copy"}
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    onClick={() => onStart(activeTab ? activeTab.content : code, language, codeType)}
-                                    // Gating Logic: Must have code, must be locked, must be supported
-                                    disabled={!hasCode || isPlaceholder || !isLocked || !isLanguageSupported}
-                                    className={(!isLocked || !isLanguageSupported) ? "opacity-70" : ""}
-                                    title={!isLocked ? "Lock code to start review" : (!isLanguageSupported ? "Language not supported" : "Start Review")}
-                                >
-                                    <Play className="mr-2 h-4 w-4" /> Start Review
-                                </Button>
-                            </div>
+                                </div>
+                            )}
+
+                            {/* Right: Actions (only show when not placeholder) */}
+                            {!isPlaceholder && hasContent && (
+                                <div className="flex items-center gap-2">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleFormat}
+                                                        disabled={isFormatting || (!isViewOnly && isLocked) || !isFormattable}
+                                                    >
+                                                        <Wand2 className="mr-2 h-4 w-4" /> Format
+                                                    </Button>
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                {!isFormattable ? "Formatting is not supported for this programming language" : "Format Code"}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCopy}
+                                        disabled={isCopied}
+                                        className="transition-all duration-200"
+                                    >
+                                        {isCopied ? (
+                                            <Check className="mr-2 h-4 w-4 text-green-500 animate-in zoom-in duration-300" />
+                                        ) : (
+                                            <Clipboard className="mr-2 h-4 w-4" />
+                                        )}
+                                        {isCopied ? "Copied" : "Copy"}
+                                    </Button>
+                                    {/* Start Review - only show for reviewable files */}
+                                    {!isViewOnly && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => onStart(activeTab ? activeTab.content : code, language, codeType)}
+                                        disabled={!hasCode || !isLocked || !isReviewable}
+                                        className={(!isLocked || !isReviewable) ? "opacity-70" : ""}
+                                        title={!isLocked ? "Lock code to start review" : (!isReviewable ? "Language not supported for review" : "Start Review")}
+                                    >
+                                        <Play className="mr-2 h-4 w-4" /> Start Review
+                                    </Button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </CardHeader>
 
@@ -747,7 +969,16 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                     minWidth={180}
                                     maxWidth={700}
                                     additionalButtons={openTabs.length > 0 ? (
-                                        <button onClick={() => { setOpenTabs([]); setActiveTabId(null); }} className="p-1 hover:bg-accent rounded-md" title="Close All Tabs">
+                                        <button
+                                            onClick={() => {
+                                                setOpenTabs([]);
+                                                setActiveTabId(null);
+                                                setCode(''); // Clear code area
+                                                setSelectedFile(null); // Clear selected file
+                                            }}
+                                            className="p-1 hover:bg-accent rounded-md"
+                                            title="Close All Tabs"
+                                        >
                                             <X className="h-3.5 w-3.5" />
                                         </button>
                                     ) : null}
@@ -788,8 +1019,18 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                         monaco.editor.setTheme(`custom-${themeKey}`);
                                         editor.onDidChangeModelContent(() => {
                                             const current = editor.getValue();
-                                            const placeholder = `${commentPrefixFor(language.prism)}${BASE_PLACEHOLDER}`;
-                                            if (isPlaceholder && current !== placeholder) {
+                                            // Check all possible placeholder formats
+                                            const placeholders = [
+                                                `// ${BASE_PLACEHOLDER}`,
+                                                `# ${BASE_PLACEHOLDER}`,
+                                                BASE_PLACEHOLDER,
+                                                ''
+                                            ];
+                                            const isCurrentPlaceholder = placeholders.includes(current.trim()) || current.trim() === '';
+
+                                            if (isCurrentPlaceholder) {
+                                                setIsPlaceholder(true);
+                                            } else {
                                                 setIsPlaceholder(false);
                                                 setCode(current);
                                             }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 
 // WASM formatters
 import initClang, { format as formatClang } from '@wasm-fmt/clang-format';
@@ -12,6 +13,15 @@ import * as PluginPHP from '@prettier/plugin-php';
 
 export async function POST(request) {
     try {
+        // Auth check
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const { code, language } = await request.json();
 
         if (!code || typeof code !== 'string') {

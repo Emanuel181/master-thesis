@@ -15,6 +15,7 @@ export async function GET(request) {
     const repo = searchParams.get('repo');
     const path = searchParams.get('path');
     const ref = searchParams.get('ref') || 'HEAD';
+    const decode = searchParams.get('decode');
 
     if (!owner || !repo || !path) {
         return NextResponse.json({ error: 'Missing owner, repo, or path' }, { status: 400 });
@@ -73,6 +74,15 @@ export async function GET(request) {
             });
 
             console.log('[github/contents] fetched content', `usedTokenFrom: ${candidate.source}`);
+            if (decode === '1' && data && !Array.isArray(data) && data.encoding === 'base64' && typeof data.content === 'string') {
+                const cleaned = data.content.replace(/[\r\n]+/g, '');
+                const decoded = Buffer.from(cleaned, 'base64').toString('utf-8');
+                return NextResponse.json({
+                    ...data,
+                    content: decoded,
+                    encoding: 'utf-8',
+                });
+            }
             return NextResponse.json(data);
         } catch (err) {
             console.error('[github/contents] Octokit error with', candidate.source, 'token:', err.message || err);

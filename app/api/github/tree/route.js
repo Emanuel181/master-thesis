@@ -9,11 +9,42 @@ function maskToken(token) {
     return `${token.slice(0, 4)}...${token.slice(-4)}`;
 }
 
+function buildHierarchyTree(items, repo) {
+    const root = {
+        name: repo,
+        path: '',
+        type: 'folder',
+        children: [],
+    };
+
+    const pathMap = { '': root };
+    for (const item of items) {
+        if (!item?.path) continue;
+        const parts = item.path.split('/');
+        const parentPath = parts.slice(0, -1).join('/') || '';
+        const parent = pathMap[parentPath];
+        if (!parent) continue;
+
+        const node = {
+            name: parts[parts.length - 1],
+            path: item.path,
+            type: item.type === 'tree' ? 'folder' : 'file',
+            children: item.type === 'tree' ? [] : undefined,
+        };
+
+        parent.children.push(node);
+        if (item.type === 'tree') pathMap[item.path] = node;
+    }
+
+    return root;
+}
+
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const owner = searchParams.get('owner');
     const repo = searchParams.get('repo');
     const ref = searchParams.get('ref') || 'HEAD';
+    const shape = searchParams.get('shape');
 
     if (!owner || !repo) {
         return NextResponse.json({ error: 'Missing owner or repo' }, { status: 400 });
@@ -100,6 +131,9 @@ export async function GET(request) {
             });
 
             console.log('[github/tree] fetched tree with', treeData.tree.length, 'items', `usedTokenFrom: ${candidate.source}`);
+            if (shape === 'hierarchy') {
+                return NextResponse.json({ root: buildHierarchyTree(treeData.tree, repo) });
+            }
             return NextResponse.json({ tree: treeData.tree });
         } catch (err) {
             console.error('[github/tree] Octokit error with', candidate.source, 'token:', err.message || err);

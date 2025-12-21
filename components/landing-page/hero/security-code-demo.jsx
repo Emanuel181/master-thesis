@@ -212,45 +212,46 @@ export const SecurityCodeDemo = () => {
     const VULNERABLE_ROW_TOP_OFFSET = 196;
 
     return (
-        <div className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 my-10 lg:my-0">
+        <div className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 my-6 sm:my-10 lg:my-0 px-2 sm:px-0">
             {/* Main Window Container */}
-            <div className="rounded-xl border border-slate-800 bg-[#0f1117] shadow-2xl overflow-hidden ring-4 ring-slate-900/40 relative backdrop-blur-sm h-[680px] flex flex-col">
+            <div className="rounded-xl border border-slate-800 bg-[#0f1117] shadow-2xl overflow-hidden ring-2 sm:ring-4 ring-slate-900/40 relative backdrop-blur-sm h-[450px] sm:h-[550px] md:h-[680px] flex flex-col">
 
                 {/* 1. Header / Window Chrome */}
-                <div className="flex items-center justify-between px-4 h-12 border-b border-slate-800 bg-[#0f1117]">
-                    <div className="flex items-center gap-20">
+                <div className="flex items-center justify-between px-2 sm:px-4 h-10 sm:h-12 border-b border-slate-800 bg-[#0f1117]">
+                    <div className="flex items-center gap-4 sm:gap-20">
                         {/* Traffic Lights */}
-                        <div className="flex space-x-2 group">
-                            <div className="w-3 h-3 rounded-full bg-red-500/20 group-hover:bg-red-500 border border-red-500/30 transition-colors flex items-center justify-center"><X size={6} className="text-red-900 opacity-0 group-hover:opacity-100"/></div>
-                            <div className="w-3 h-3 rounded-full bg-amber-500/20 group-hover:bg-amber-500 border border-amber-500/30 transition-colors flex items-center justify-center"><Minus size={6} className="text-amber-900 opacity-0 group-hover:opacity-100"/></div>
-                            <div className="w-3 h-3 rounded-full bg-emerald-500/20 group-hover:bg-emerald-500 border border-emerald-500/30 transition-colors flex items-center justify-center"><Square size={6} className="text-emerald-900 opacity-0 group-hover:opacity-100 fill-current"/></div>
+                        <div className="flex space-x-1.5 sm:space-x-2 group">
+                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/20 group-hover:bg-red-500 border border-red-500/30 transition-colors flex items-center justify-center"><X size={6} className="text-red-900 opacity-0 group-hover:opacity-100"/></div>
+                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500/20 group-hover:bg-amber-500 border border-amber-500/30 transition-colors flex items-center justify-center"><Minus size={6} className="text-amber-900 opacity-0 group-hover:opacity-100"/></div>
+                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500/20 group-hover:bg-emerald-500 border border-emerald-500/30 transition-colors flex items-center justify-center"><Square size={6} className="text-emerald-900 opacity-0 group-hover:opacity-100 fill-current"/></div>
                         </div>
                         {/* Tab */}
-                        <div className="relative h-12 flex items-center">
-                            <div className="px-6 h-full flex items-center gap-2 bg-[#161a23] border-t-2 border-blue-500 text-slate-200 text-xs font-medium min-w-[180px]">
-                                <FileCode size={13} className="text-blue-400" />
-                                <span>auth_service.ts</span>
-                                <div className="ml-auto opacity-0 group-hover:opacity-100 text-slate-500 hover:text-slate-300"><X size={12}/></div>
+                        <div className="relative h-10 sm:h-12 flex items-center">
+                            <div className="px-3 sm:px-6 h-full flex items-center gap-1.5 sm:gap-2 bg-[#161a23] border-t-2 border-blue-500 text-slate-200 text-[10px] sm:text-xs font-medium min-w-[120px] sm:min-w-[180px]">
+                                <FileCode size={11} className="text-blue-400 sm:hidden" />
+                                <FileCode size={13} className="text-blue-400 hidden sm:block" />
+                                <span className="truncate">auth_service.ts</span>
+                                <div className="ml-auto opacity-0 group-hover:opacity-100 text-slate-500 hover:text-slate-300 hidden sm:block"><X size={12}/></div>
                             </div>
                         </div>
                     </div>
-                    {getStatusBadge()}
+                    <div className="scale-75 sm:scale-100 origin-right">{getStatusBadge()}</div>
                 </div>
 
                 {/* 2. Editor Area */}
-                <div className="relative flex-1 font-mono text-[13px] overflow-hidden bg-[#0f1117] flex">
+                <div className="relative flex-1 font-mono text-[10px] sm:text-[11px] md:text-[13px] overflow-hidden bg-[#0f1117] flex">
 
                     {/* Gutter / Line Numbers */}
-                    <div className="w-16 flex flex-col items-end gap-0 pr-4 pt-6 text-slate-600 border-r border-slate-800/50 bg-[#0f1117] z-10 shrink-0">
+                    <div className="w-8 sm:w-12 md:w-16 flex flex-col items-end gap-0 pr-2 sm:pr-3 md:pr-4 pt-3 sm:pt-4 md:pt-6 text-slate-600 border-r border-slate-800/50 bg-[#0f1117] z-10 shrink-0 text-[9px] sm:text-[10px] md:text-xs">
                         {Array.from({ length: 19 }).map((_, i) => (
-                            <div key={i} className="leading-[28px] h-[28px]">
+                            <div key={i} className="leading-[20px] sm:leading-[24px] md:leading-[28px] h-[20px] sm:h-[24px] md:h-[28px]">
                                 {i + 1}
                             </div>
                         ))}
                     </div>
 
                     {/* Code Canvas */}
-                    <div className="relative flex-1 pt-6 pl-6">
+                    <div className="relative flex-1 pt-3 sm:pt-4 md:pt-6 pl-2 sm:pl-4 md:pl-6 overflow-x-auto">
 
                         {/* Floating Notification (Dynamic Island Style) */}
                         <AnimatePresence>
@@ -291,7 +292,7 @@ export const SecurityCodeDemo = () => {
                         </AnimatePresence>
 
                         {/* Code Text */}
-                        <div className="whitespace-pre-wrap relative z-10 leading-[28px]">
+                        <div className="whitespace-pre-wrap relative z-10 leading-[20px] sm:leading-[24px] md:leading-[28px] pr-2">
                             <AnimatePresence mode='wait'>
                                 <motion.div
                                     key={step >= 4 ? 'patched' : 'vulnerable'}

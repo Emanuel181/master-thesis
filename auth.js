@@ -9,7 +9,8 @@ import prisma from "@/lib/prisma";
 
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-
+    debug: true,
+    trustHost: true,
     adapter: PrismaAdapter(prisma),
 
     session: {
@@ -46,10 +47,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }),
 
         Gitlab({
-            clientId: process.env.GITLAB_CLIENT_ID,
-            clientSecret: process.env.GITLAB_CLIENT_SECRET,
-            // Use GITLAB_BASE_URL for self-hosted, defaults to gitlab.com
-            baseUrl: process.env.GITLAB_BASE_URL || "https://gitlab.com",
+            clientId: process.env.AUTH_GITLAB_ID,
+            clientSecret: process.env.AUTH_GITLAB_SECRET,
+            issuer: "https://gitlab.com",
             authorization: {
                 params: {
                     scope: "api",
@@ -150,6 +150,3 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
 
 })
-
-
-export { auth as middleware }

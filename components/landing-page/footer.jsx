@@ -6,18 +6,18 @@ import { Input } from "@/components/ui/input";
 export function Footer() {
     return (
         <footer className="border-t border-border bg-card text-muted-foreground">
-            <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-20">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 lg:gap-8">
 
                     {/* Brand Column */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-1">
                         <div className="flex items-center gap-2">
                             <div className="bg-foreground p-1 rounded-md">
-                                <Shield className="w-5 h-5 text-background fill-background" />
+                                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-background fill-background" />
                             </div>
-                            <span className="font-bold text-foreground text-lg">SecureRAG</span>
+                            <span className="font-bold text-foreground text-base sm:text-lg">SecureRAG</span>
                         </div>
-                        <p className="text-sm leading-relaxed max-w-xs">
+                        <p className="text-xs sm:text-sm leading-relaxed max-w-xs">
                             An agentic system for the remediation of source code vulnerabilities using retrieval-augmented generation.
                             Built for security teams who demand precision.
                         </p>
@@ -78,9 +78,9 @@ export function Footer() {
                     </div>
 
                     {/* Newsletter Column */}
-                    <div>
-                        <h4 className="font-semibold text-foreground mb-4">Subscribe to newsletter</h4>
-                        <div className="flex gap-2 mb-4">
+                    <div className="col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-1">
+                        <h4 className="font-semibold text-foreground mb-3 sm:mb-4 text-sm sm:text-base">Subscribe to newsletter</h4>
+                        <div className="flex gap-2 mb-3 sm:mb-4">
                             <Input
                                 type="email"
                                 placeholder="Your email..."
@@ -98,7 +98,7 @@ export function Footer() {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="border-t border-border mt-16 pt-8 text-center text-sm text-muted-foreground">
+                <div className="border-t border-border mt-8 sm:mt-12 lg:mt-16 pt-6 sm:pt-8 text-center text-xs sm:text-sm text-muted-foreground">
                     <p>© 2025 SecureRAG System. Made with <span className="text-muted-foreground">♥</span> for better code security.</p>
                 </div>
             </div>

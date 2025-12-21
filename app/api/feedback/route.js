@@ -1,7 +1,14 @@
 import { google } from 'googleapis';
+import { auth } from '@/auth';
 
 export async function POST(request) {
     try {
+        // Auth check
+        const session = await auth();
+        if (!session?.user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+        }
+
         const { feedback } = await request.json();
 
         if (!feedback || feedback.trim() === '') {
@@ -9,16 +16,17 @@ export async function POST(request) {
         }
 
         // Google Sheets API setup
-        const auth = new google.auth.GoogleAuth({
+        const authGoogle = new google.auth.GoogleAuth({
             credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}'),
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
 
-        const sheets = google.sheets({ version: 'v4', auth });
+        const sheets = google.sheets({ version: 'v4', auth: authGoogle });
         const spreadsheetId = '1b8xBOC5VRwxsqM93utVF1HcqY97XmGbC8aCYqv1JRuE';
-        const range = 'A:B';
+        const range = 'A:C';
 
-        const values = [[new Date().toISOString(), feedback.trim()]];
+        // Include user email in feedback submission
+        const values = [[new Date().toISOString(), session.user.email || 'anonymous', feedback.trim()]];
 
         await sheets.spreadsheets.values.append({
             spreadsheetId,

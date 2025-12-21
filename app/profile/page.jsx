@@ -188,7 +188,7 @@ export default function ProfilePage() {
                     </div>
                 </header>
                 <div className="flex-1 overflow-auto relative">
-                    <div className={`container mx-auto space-y-6 px-4 py-10 ${
+                    <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 ${
                         settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
                     }`}>
 

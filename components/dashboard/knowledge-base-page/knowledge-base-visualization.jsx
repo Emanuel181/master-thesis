@@ -107,17 +107,21 @@ export default function KnowledgeBaseVisualization() {
             const transformedUseCases = data.useCases.map(uc => ({
                 id: uc.id,
                 name: uc.title,
-                description: uc.content,
+                description: uc.shortDescription || uc.shortContent || uc.content, // Display truncated
+                fullDescription: uc.fullContent || uc.content, // Keep full for "Show More"
+                shortDescription: uc.shortDescription, // Word-based truncation
                 icon: uc.icon,
+                pdfCount: uc.pdfCount,
+                formattedTotalSize: uc.formattedTotalSize,
             }));
 
-            // Build documents map from PDFs
+            // Build documents map from PDFs - use backend-formatted size
             const docsMap = {};
             data.useCases.forEach(uc => {
                 docsMap[uc.id] = uc.pdfs.map(pdf => ({
                     id: pdf.id,
                     name: pdf.title,
-                    size: formatFileSize(pdf.size),
+                    size: pdf.formattedSize || formatFileSize(pdf.size), // Prefer backend-formatted
                     sizeBytes: pdf.size,
                     type: "pdf",
                     url: pdf.url,

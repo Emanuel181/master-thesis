@@ -8,6 +8,12 @@ function maskToken(token) {
     return `${token.slice(0, 4)}...${token.slice(-4)}`;
 }
 
+function truncateDescription(description, maxLength = 50) {
+    if (!description) return null;
+    if (description.length <= maxLength) return description;
+    return description.slice(0, maxLength) + '...';
+}
+
 export async function GET(request) {
     const start = Date.now();
     try {
@@ -69,25 +75,43 @@ export async function GET(request) {
                 console.log('[gitlab/repos] trying token from', candidate.source, 'tokenMask:', maskToken(candidate.token));
 
                 const baseUrl = process.env.GITLAB_BASE_URL || 'https://gitlab.com';
-                const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`;
+                const perPage = 100;
+                let page = 1;
+                const projects = [];
 
-                console.log('[gitlab/repos] making request to:', apiUrl);
+                while (true) {
+                    const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`;
+                    console.log('[gitlab/repos] making request to:', apiUrl);
 
-                const response = await fetch(apiUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${candidate.token}`
+                    const response = await fetch(apiUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${candidate.token}`
+                        }
+                    });
+
+                    console.log('[gitlab/repos] response status:', response.status, response.statusText);
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.log('[gitlab/repos] error response:', errorText);
+                        throw new Error(`GitLab API error: ${response.status} ${response.statusText} - ${errorText}`);
                     }
-                });
 
-                console.log('[gitlab/repos] response status:', response.status, response.statusText);
+                    const batch = await response.json();
+                    if (Array.isArray(batch) && batch.length > 0) {
+                        projects.push(...batch);
+                    }
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.log('[gitlab/repos] error response:', errorText);
-                    throw new Error(`GitLab API error: ${response.status} ${response.statusText} - ${errorText}`);
+                    const nextPage = response.headers.get('x-next-page');
+                    if (nextPage) {
+                        page = Number(nextPage);
+                        if (!Number.isFinite(page) || page <= 0) break;
+                        continue;
+                    }
+
+                    if (!Array.isArray(batch) || batch.length < perPage) break;
+                    page += 1;
                 }
-
-                const projects = await response.json();
 
                 // Map GitLab projects to GitHub-like repo format
                 const repos = projects.map(project => ({
@@ -95,6 +119,7 @@ export async function GET(request) {
                     name: project.name,
                     full_name: project.path_with_namespace,
                     description: project.description,
+                    shortDescription: truncateDescription(project.description, 50),
                     html_url: project.web_url,
                     private: project.visibility === 'private',
                     fork: project.forked_from_project ? true : false,

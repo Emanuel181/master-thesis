@@ -9,6 +9,12 @@ function maskToken(token) {
     return `${token.slice(0, 4)}...${token.slice(-4)}`;
 }
 
+function truncateDescription(description, maxLength = 50) {
+    if (!description) return null;
+    if (description.length <= maxLength) return description;
+    return description.slice(0, maxLength) + '...';
+}
+
 export async function GET(request) {
     const start = Date.now();
     try {
@@ -74,8 +80,14 @@ export async function GET(request) {
                     per_page: 100,
                 });
 
+                // Transform repos to include shortDescription
+                const transformedRepos = repos.map(repo => ({
+                    ...repo,
+                    shortDescription: truncateDescription(repo.description, 50),
+                }));
+
                 console.log('[github/repos] fetched repos count:', Array.isArray(repos) ? repos.length : 0, `in ${Date.now() - start}ms`, 'usedTokenFrom:', candidate.source);
-                return NextResponse.json(repos);
+                return NextResponse.json(transformedRepos);
             } catch (err) {
                 console.error('[github/repos] Octokit error with', candidate.source, 'token:', err.message || err);
                 lastError = err;

@@ -130,6 +130,45 @@ export function PromptsProvider({ children }) {
         }
     };
 
+    const bulkDeletePrompts = async (promptIds) => {
+        const ids = Array.from(new Set((promptIds || []).filter(Boolean)));
+        if (ids.length === 0) return { success: true, deletedIds: [], missingIds: [], s3Failed: [] };
+
+        try {
+            const response = await fetch('/api/prompts/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            });
+
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data) {
+                return { success: false, error: data?.error || 'Failed to delete prompts' };
+            }
+
+            const deleted = new Set(data.deletedIds || []);
+            setPrompts(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(agent => {
+                    next[agent] = (next[agent] || []).filter(p => !deleted.has(p.id));
+                });
+                return next;
+            });
+            setSelectedPrompts(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(agent => {
+                    next[agent] = (next[agent] || []).filter(id => !deleted.has(id));
+                });
+                return next;
+            });
+
+            return data;
+        } catch (err) {
+            console.error('Error bulk deleting prompts:', err);
+            return { success: false, error: 'Error bulk deleting prompts' };
+        }
+    };
+
     const editPrompt = async (agent, promptId, promptData) => {
         try {
             console.log('Editing prompt:', { agent, promptId, promptData });
@@ -168,6 +207,7 @@ export function PromptsProvider({ children }) {
         addPrompt,
         savePrompts,
         deletePrompt,
+        bulkDeletePrompts,
         editPrompt,
         setSelectedPrompts,
         refresh: fetchPrompts,

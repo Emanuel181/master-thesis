@@ -6,18 +6,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
     return (
-        <div className="grid min-h-svh lg:grid-cols-2">
+        <div className="grid min-h-svh grid-cols-1 lg:grid-cols-2">
             {/* Left Side: Login Form */}
-            <div className="flex flex-col gap-4 p-6 md:p-10">
+            <div className="flex flex-col gap-4 p-4 sm:p-6 md:p-10">
                 <div className="flex justify-between items-center">
-                    <a href="/" className="flex items-center gap-2 font-medium text-2xl">
-                        <img src="https://amz-s3-pdfs-gp.s3.us-east-1.amazonaws.com/logo/logo.png" alt="Logo" className="w-10 h-10 invert dark:invert-0" />
+                    <a href="/" className="flex items-center gap-2 font-medium text-xl sm:text-2xl">
+                        <img src="https://amz-s3-pdfs-gp.s3.us-east-1.amazonaws.com/logo/logo.png" alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 invert dark:invert-0" />
                         VulnIQ
                     </a>
                     <ThemeToggle />
                 </div>
-                <div className="flex flex-1 items-center justify-center">
-                    <div className="w-full max-w-xs">
+                <div className="flex flex-1 items-center justify-center py-8 sm:py-0">
+                    <div className="w-full max-w-xs sm:max-w-sm px-2 sm:px-0">
                         <LoginForm />
                     </div>
                 </div>

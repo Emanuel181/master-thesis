@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import TreeView from './tree-view';
 import { ChevronLeft, ChevronRight, FolderOpen, FolderClosed } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 // Helper: Recursively set isOpen state
@@ -161,11 +160,9 @@ export default function ProjectTree({
             {/* Tree Content */}
             <div className="flex-1 overflow-hidden">
                 {!collapsed ? (
-                    <ScrollArea className="h-full w-full">
-                        <div className="p-2">
-                            <TreeView ref={controlsRef} data={treeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
-                        </div>
-                    </ScrollArea>
+                    <div className="h-full w-full p-2">
+                        <TreeView ref={controlsRef} data={treeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
+                    </div>
                 ) : (
                     <div className="pt-4 flex justify-center cursor-pointer h-full hover:bg-muted/50" onClick={() => setCollapsed(false)}>
                         <span className="writing-mode-vertical text-xs text-muted-foreground font-medium tracking-widest uppercase" style={{ writingMode: 'vertical-rl' }}>PROJECT</span>

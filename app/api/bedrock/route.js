@@ -1,5 +1,6 @@
 import { BedrockClient, ListFoundationModelsCommand } from "@aws-sdk/client-bedrock";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 const bedrockClient = new BedrockClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -7,6 +8,15 @@ const bedrockClient = new BedrockClient({
 
 export async function GET() {
     try {
+        // Auth check
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const command = new ListFoundationModelsCommand({});
         const response = await bedrockClient.send(command);
 

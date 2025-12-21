@@ -124,16 +124,16 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="px-4 sm:px-6">
                 <div className="space-y-1">
-                    <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>Update your personal details and profile information.</CardDescription>
+                    <CardTitle className="text-lg sm:text-xl">Personal Information</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Update your personal details and profile information.</CardDescription>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-4 sm:space-y-6 pt-4 sm:pt-6 px-4 sm:px-6">
                 {/* ID matches the Button form attribute in ProfileHeader */}
-                <form id="profile-form" onSubmit={handleSave} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <form id="profile-form" onSubmit={handleSave} className="space-y-4 sm:space-y-6">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
                             <Input

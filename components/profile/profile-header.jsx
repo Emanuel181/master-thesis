@@ -27,14 +27,14 @@ export default function ProfileHeader({
 
     return (
         <Card>
-            <CardContent className="p-6">
-                <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
+            <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col items-center sm:items-start gap-4 sm:gap-6 md:flex-row md:items-center">
 
                     {/* Avatar Section */}
-                    <div className="relative">
-                        <Avatar className="h-24 w-24 border-2 border-background shadow-sm">
+                    <div className="relative flex-shrink-0">
+                        <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-background shadow-sm">
                             <AvatarImage src={user?.image || ""} alt="Profile" />
-                            <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
+                            <AvatarFallback className="text-xl sm:text-2xl">{initials}</AvatarFallback>
                         </Avatar>
                         {/* Show camera only when editing */}
                         {isEditing && (
@@ -60,27 +60,27 @@ export default function ProfileHeader({
                     </div>
 
                     {/* User Info */}
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-center sm:text-left w-full">
                         <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                            <h1 className="text-2xl font-bold">{user?.name || "User"}</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold">{user?.name || "User"}</h1>
                         </div>
-                        <p className="text-muted-foreground">{user?.title || ""}</p>
-                        <div className="text-muted-foreground flex flex-wrap gap-4 text-sm">
+                        <p className="text-muted-foreground text-sm sm:text-base">{user?.title || ""}</p>
+                        <div className="text-muted-foreground flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm">
                             {user?.email && (
                                 <div className="flex items-center gap-1">
-                                    <Mail className="size-4" />
-                                    {user.email}
+                                    <Mail className="size-3 sm:size-4 flex-shrink-0" />
+                                    <span className="truncate max-w-[150px] sm:max-w-none">{user.email}</span>
                                 </div>
                             )}
                             {user?.location && (
                                 <div className="flex items-center gap-1">
-                                    <MapPin className="size-4" />
+                                    <MapPin className="size-3 sm:size-4 flex-shrink-0" />
                                     {user.location}
                                 </div>
                             )}
                             {user?.joinedDate && (
                                 <div className="flex items-center gap-1">
-                                    <Calendar className="size-4" />
+                                    <Calendar className="size-3 sm:size-4 flex-shrink-0" />
                                     Joined {user.joinedDate}
                                 </div>
                             )}
@@ -88,13 +88,14 @@ export default function ProfileHeader({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end flex-shrink-0">
                         {isEditing ? (
-                            <>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                                 <Button
                                     variant="outline"
                                     onClick={onCancel}
                                     disabled={isSaving}
+                                    className="w-full sm:w-auto"
                                 >
                                     <X className="mr-2 h-4 w-4" />
                                     Cancel
@@ -107,6 +108,7 @@ export default function ProfileHeader({
                                     type="submit"
                                     form="profile-form"
                                     disabled={isSaving}
+                                    className="w-full sm:w-auto"
                                 >
                                     {isSaving ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -115,9 +117,9 @@ export default function ProfileHeader({
                                     )}
                                     {isSaving ? 'Saving...' : 'Save Changes'}
                                 </Button>
-                            </>
+                            </div>
                         ) : (
-                            <Button onClick={onEdit}>
+                            <Button onClick={onEdit} className="w-full sm:w-auto">
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit Profile
                             </Button>

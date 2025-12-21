@@ -29,16 +29,50 @@ import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
 import { HomePage } from "@/components/home/home-page";
 
+// Helper to load saved code state
+const loadSavedCodeState = () => {
+    if (typeof window === 'undefined') return { code: '', codeType: '', isLocked: false };
+    try {
+        const saved = localStorage.getItem('vulniq_code_state');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            return {
+                code: parsed.code || '',
+                codeType: parsed.codeType || '',
+                isLocked: parsed.isLocked || false
+            };
+        }
+    } catch (err) {
+        console.error("Error loading code state:", err);
+    }
+    return { code: '', codeType: '', isLocked: false };
+};
+
 export default function Page() {
     const { settings, mounted } = useSettings()
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     const [activeComponent, setActiveComponent] = useState("Home")
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
-    const [initialCode, setInitialCode] = useState("");
-    const [codeType, setCodeType] = useState("");
+    const [initialCode, setInitialCode] = useState(() => loadSavedCodeState().code);
+    const [codeType, setCodeType] = useState(() => loadSavedCodeState().codeType);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    const [isCodeLocked, setIsCodeLocked] = useState(false);
+    const [isCodeLocked, setIsCodeLocked] = useState(() => loadSavedCodeState().isLocked);
+
+    // Save code to localStorage when it changes
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const state = {
+                code: initialCode,
+                codeType: codeType,
+                isLocked: isCodeLocked,
+            };
+            localStorage.setItem('vulniq_code_state', JSON.stringify(state));
+        } catch (err) {
+            console.error("Error saving code state to localStorage:", err);
+        }
+    }, [initialCode, codeType, isCodeLocked]);
 
     // Sidebar state based on sidebarMode setting
     const [sidebarOpen, setSidebarOpen] = useState(settings.sidebarMode !== 'icon')
@@ -127,37 +161,37 @@ export default function Page() {
             >
                 <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
                 <SidebarInset className="flex flex-col overflow-hidden">
-                    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                        <div className="flex items-center justify-between w-full gap-2 px-4">
-                            <div className="flex items-center gap-2">
-                                <SidebarTrigger className="-ml-1" />
+                    <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                        <div className="flex items-center justify-between w-full gap-2 px-2 sm:px-4">
+                            <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                                <SidebarTrigger className="-ml-1 flex-shrink-0" />
                                 <Separator
                                     orientation="vertical"
-                                    className="mr-2 data-[orientation=vertical]:h-4"
+                                    className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4"
                                 />
-                                <Breadcrumb>
-                                    <BreadcrumbList>
+                                <Breadcrumb className="min-w-0">
+                                    <BreadcrumbList className="flex-nowrap">
                                         {breadcrumbs.map((crumb, index) => (
                                             <React.Fragment key={index}>
-                                                <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
-                                                    <BreadcrumbLink href={crumb.href}>
+                                                <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
+                                                    <BreadcrumbLink href={crumb.href} className="truncate max-w-[100px] sm:max-w-none">
                                                         {crumb.label}
                                                     </BreadcrumbLink>
                                                 </BreadcrumbItem>
-                                                {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                                                {index < breadcrumbs.length - 1 && <BreadcrumbSeparator className="hidden sm:block" />}
                                             </React.Fragment>
                                         ))}
                                     </BreadcrumbList>
                                 </Breadcrumb>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                 <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
                                 <ThemeToggle />
                             </div>
                         </div>
                     </header>
                     <div className={`flex-1 flex flex-col overflow-hidden w-full ${
-                        settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-4' : 'px-4'
+                        settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-2 sm:px-4' : 'px-2 sm:px-4'
                     }`}>
                         {renderComponent()}
                     </div>

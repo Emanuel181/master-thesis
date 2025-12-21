@@ -1,5 +1,6 @@
 import { BedrockAgentClient, ListAgentsCommand, CreateAgentCommand, GetAgentCommand } from "@aws-sdk/client-bedrock-agent";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 const bedrockAgentClient = new BedrockAgentClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -8,6 +9,15 @@ const bedrockAgentClient = new BedrockAgentClient({
 // GET - List all agents
 export async function GET() {
     try {
+        // Auth check
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const command = new ListAgentsCommand({});
         const response = await bedrockAgentClient.send(command);
 
@@ -62,6 +72,15 @@ export async function GET() {
 // POST - Create a new agent
 export async function POST(request) {
     try {
+        // Auth check
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
         const { name, description, instruction, foundationModel, actionGroups = [] } = body;
 

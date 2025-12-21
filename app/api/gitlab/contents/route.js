@@ -8,6 +8,7 @@ export async function GET(request) {
     const repo = searchParams.get('repo');
     const path = searchParams.get('path');
     const ref = searchParams.get('ref') || 'main'; // GitLab defaults to default branch if not specified, but usually main/master
+    const decode = searchParams.get('decode');
 
     if (!owner || !repo || !path) {
         return NextResponse.json({ error: 'Missing owner, repo, or path' }, { status: 400 });
@@ -49,7 +50,7 @@ export async function GET(request) {
         return NextResponse.json({ error: 'GitLab account not linked' }, { status: 401 });
     }
 
-    const baseUrl = process.env.GITLAB_URL || 'https://gitlab.com';
+    const baseUrl = process.env.GITLAB_BASE_URL || 'https://gitlab.com';
     const projectPath = encodeURIComponent(`${owner}/${repo}`);
     const filePath = encodeURIComponent(path);
 
@@ -105,6 +106,15 @@ export async function GET(request) {
             }
 
             const data = await response.json();
+            if (decode === '1' && data && data.encoding === 'base64' && typeof data.content === 'string') {
+                const cleaned = data.content.replace(/[\r\n]+/g, '');
+                const decoded = Buffer.from(cleaned, 'base64').toString('utf-8');
+                return NextResponse.json({
+                    ...data,
+                    content: decoded,
+                    encoding: 'utf-8',
+                });
+            }
             return NextResponse.json(data);
 
         } catch (error) {
