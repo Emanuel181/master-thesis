@@ -1,115 +1,204 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 
 const navItems = [
-    { name: "Home", link: "#hero" },
     { name: "Features", link: "#features" },
-    { name: "How It Works", link: "#timeline" },
+    { name: "How It Works", link: "#how-it-works" },
     { name: "Models", link: "#models" },
     { name: "About", link: "#about" },
 ];
 
 export const FloatingNavbar = () => {
-    // FIXED: Removed <number | null>
     const [hoveredIndex, setHoveredIndex] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [visible, setVisible] = useState(true);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    const { scrollY, scrollYProgress } = useScroll();
+
+    // Subtle progress indicator
+    const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+    useMotionValueEvent(scrollY, "change", (latest) => {
+        const previous = scrollY.getPrevious();
+
+        if (latest < previous || latest < 100) {
+            setVisible(true);
+        } else if (latest > 100 && latest > previous) {
+            setVisible(false);
+        }
+
+        setIsScrolled(latest > 50);
+    });
 
     return (
         <>
-            <div className="fixed top-4 sm:top-6 inset-x-0 z-[100] flex justify-center px-2 sm:px-4 pointer-events-none">
-                <nav
-                    className="pointer-events-auto flex items-center justify-between gap-2 sm:gap-4 bg-card/80 backdrop-blur-md border border-border/10 hover:border-primary/20 pl-3 sm:pl-4 pr-2 py-2 rounded-full shadow-2xl w-full max-w-5xl transition-colors"
+            {/* Progress bar - brand accent */}
+            <motion.div
+                className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#1fb6cf] to-transparent z-[110] origin-left"
+                style={{ scaleX }}
+            />
+
+            <motion.div
+                className="fixed top-6 inset-x-0 z-[100] flex justify-center px-4 pointer-events-none"
+                initial={{ y: -100, opacity: 0 }}
+                animate={{
+                    y: visible ? 0 : -100,
+                    opacity: visible ? 1 : 0
+                }}
+                transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 20
+                }}
+            >
+                <motion.nav
+                    className={`pointer-events-auto flex items-center justify-between gap-4 border px-5 py-3 rounded-full w-full max-w-4xl transition-all duration-300 ${
+                        isScrolled 
+                            ? 'bg-background/95 backdrop-blur-md border-border shadow-lg' 
+                            : 'bg-background/60 backdrop-blur-sm border-border/50'
+                    }`}
+                    layout
                 >
 
                 {/* LEFT: Logo */}
-                <a href="/" className="flex items-center gap-2 font-medium">
-                    <Image src="https://amz-s3-pdfs-gp.s3.us-east-1.amazonaws.com/logo/logo.png" alt="VulnIQ Logo" className="h-6 w-6 rounded-lg invert dark:invert-0" width={24} height={24} />
-                    <span className="font-bold text-card-foreground tracking-tight hidden sm:block">
-            VulnIQ
-          </span>
-                </a>
+                <motion.a
+                    href="/"
+                    className="flex items-center gap-2.5 font-medium group"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                >
+                    <img src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-7 w-7 rounded-lg" width={28} height={28} />
+                    <span className="font-semibold text-foreground tracking-tight hidden sm:block text-sm">
+                        VulnIQ
+                    </span>
+                </motion.a>
 
-                {/* CENTER: Navigation Links (Hidden on mobile) */}
+                {/* CENTER: Navigation Links */}
                 <div className="hidden md:flex items-center gap-1">
                     {navItems.map((item, idx) => (
-                        <Button
+                        <motion.div
                             key={item.name}
-                            asChild
-                            variant="ghost"
-                            size="sm"
-                            className="relative px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group flex items-center gap-1"
-                            onMouseEnter={() => setHoveredIndex(idx)}
-                            onMouseLeave={() => setHoveredIndex(null)}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + idx * 0.05 }}
                         >
-                            <a href={item.link}>
+                            <a
+                                href={item.link}
+                                className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                onMouseEnter={() => setHoveredIndex(idx)}
+                                onMouseLeave={() => setHoveredIndex(null)}
+                            >
                                 <span className="relative z-10">{item.name}</span>
 
-
-                                {/* Hover Background Pill */}
-                                {hoveredIndex === idx && (
-                                    <motion.span
-                                        layoutId="nav-hover"
-                                        className="absolute inset-0 bg-accent/10 rounded-full"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
-                                )}
+                                <AnimatePresence>
+                                    {hoveredIndex === idx && (
+                                        <motion.span
+                                            layoutId="nav-hover"
+                                            className="absolute inset-0 bg-muted/50 rounded-full"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                                        />
+                                    )}
+                                </AnimatePresence>
                             </a>
-                        </Button>
+                        </motion.div>
                     ))}
                 </div>
 
                 {/* RIGHT: Actions */}
-                <div className="flex items-center gap-1 sm:gap-2 pl-2 sm:pl-4">
+                <div className="flex items-center gap-3">
                     <ThemeToggle />
-                    <Button asChild variant="default" size="sm" className="rounded-full text-xs sm:text-sm px-3 sm:px-4">
-                        <a href="/login">Get started</a>
+                    <Button asChild size="sm" className="rounded-full text-sm px-5 h-9">
+                        <a href="/login" className="flex items-center gap-1.5">
+                            <span>Get started</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </a>
                     </Button>
                     {/* Mobile menu button */}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="md:hidden rounded-full p-2"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                    </Button>
+                    <motion.div whileTap={{ scale: 0.9 }}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="md:hidden rounded-full p-2 h-9 w-9"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        >
+                            <AnimatePresence mode="wait">
+                                {mobileMenuOpen ? (
+                                    <motion.div
+                                        key="close"
+                                        initial={{ rotate: -90, opacity: 0 }}
+                                        animate={{ rotate: 0, opacity: 1 }}
+                                        exit={{ rotate: 90, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <X className="h-5 w-5" />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="menu"
+                                        initial={{ rotate: 90, opacity: 0 }}
+                                        animate={{ rotate: 0, opacity: 1 }}
+                                        exit={{ rotate: -90, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <Menu className="h-5 w-5" />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </Button>
+                    </motion.div>
                 </div>
 
-            </nav>
-        </div>
+            </motion.nav>
+        </motion.div>
 
         {/* Mobile Menu Dropdown */}
         <AnimatePresence>
             {mobileMenuOpen && (
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     className="fixed top-20 inset-x-0 z-[99] flex justify-center px-4 md:hidden"
                 >
-                    <div className="bg-card/95 backdrop-blur-md border border-border/20 rounded-2xl shadow-2xl w-full max-w-sm p-4">
-                        <div className="flex flex-col gap-2">
-                            {navItems.map((item) => (
-                                <a
+                    <div className="bg-card/95 backdrop-blur-xl border border-border/30 rounded-2xl shadow-2xl w-full max-w-sm p-3 overflow-hidden">
+                        <div className="flex flex-col gap-1">
+                            {navItems.map((item, idx) => (
+                                <motion.a
                                     key={item.name}
                                     href={item.link}
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className="px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-lg transition-colors"
+                                    className="px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all flex items-center justify-between"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    whileHover={{ x: 4 }}
+                                    whileTap={{ scale: 0.98 }}
                                 >
                                     {item.name}
-                                </a>
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                                </motion.a>
                             ))}
                         </div>
+                        <motion.div
+                            className="border-t border-border/30 mt-2 pt-3"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <Button asChild className="w-full rounded-xl" size="sm">
+                                <a href="/login">Get started free</a>
+                            </Button>
+                        </motion.div>
                     </div>
                 </motion.div>
             )}

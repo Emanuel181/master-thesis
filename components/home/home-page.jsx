@@ -19,6 +19,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Plus, Edit, Trash2, Github, Eye, RefreshCw, FolderX, FolderOpen, Loader2, CheckCircle2, GitBranch } from "lucide-react"
 import { GitlabIcon } from "@/components/icons/gitlab"
 import { toast } from "sonner"
@@ -666,50 +676,44 @@ export function HomePage() {
                                                 </Button>
                                             </DialogTrigger>
 
-                                            <DialogContent className="max-w-lg border-border/50">
-                                                <DialogHeader className="pb-4 border-b border-border/30">
-                                                    <DialogTitle className="text-base font-semibold tracking-tight">New Prompt</DialogTitle>
-                                                    <DialogDescription className="text-xs text-muted-foreground/70">
+                                            <DialogContent className="sm:max-w-lg">
+                                                <DialogHeader>
+                                                    <DialogTitle>New Prompt</DialogTitle>
+                                                    <DialogDescription>
                                                         Create a prompt for the {agent} agent
                                                     </DialogDescription>
                                                 </DialogHeader>
 
-                                                <div className="space-y-4 py-4">
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs font-medium text-foreground/80">Title</Label>
+                                                <div className="grid gap-4 py-4">
+                                                    <div className="grid gap-2">
+                                                        <Label htmlFor="title">Title</Label>
                                                         <Input
+                                                            id="title"
                                                             value={newTitle}
                                                             onChange={(e) => setNewTitle(e.target.value)}
                                                             placeholder="Enter prompt title..."
-                                                            className="h-9 text-sm border-border/50 focus:border-primary/50"
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs font-medium text-foreground/80">Prompt Content</Label>
+                                                    <div className="grid gap-2">
+                                                        <Label htmlFor="prompt-content">Prompt Content</Label>
                                                         <Textarea
+                                                            id="prompt-content"
                                                             placeholder="Enter your prompt here..."
                                                             value={newPrompt}
                                                             onChange={(e) => setNewPrompt(e.target.value)}
                                                             rows={6}
-                                                            className="text-sm resize-none border-border/50 focus:border-primary/50"
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <DialogFooter className="pt-4 border-t border-border/30">
+                                                <DialogFooter>
                                                     <Button
                                                         variant="outline"
-                                                        size="sm"
-                                                        className="h-8"
                                                         onClick={() => setIsDialogOpen(false)}
                                                     >
                                                         Cancel
                                                     </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-8"
-                                                        onClick={handleAddPrompt}
-                                                    >
+                                                    <Button onClick={handleAddPrompt}>
                                                         Create Prompt
                                                     </Button>
                                                 </DialogFooter>
@@ -1004,39 +1008,35 @@ export function HomePage() {
 
             {/* Full Text Dialog */}
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
-                <DialogContent className="max-w-2xl max-h-[80vh] border-border/50">
-                    <DialogHeader className="pb-4 border-b border-border/30">
-                        <DialogTitle className="text-base font-semibold tracking-tight">
+                <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+                    <DialogHeader>
+                        <DialogTitle>
                             {viewFullTextPrompt?.title || "Untitled Prompt"}
                         </DialogTitle>
-                        <DialogDescription className="text-xs text-muted-foreground/70">
+                        <DialogDescription>
                             Full prompt content
                         </DialogDescription>
                     </DialogHeader>
                     {viewFullTextPrompt && (
                         <div className="py-4">
-                            <div className="rounded-lg bg-muted/30 border border-border/30 p-4">
-                                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed max-h-80 overflow-y-auto text-foreground/80">
+                            <ScrollArea className="h-80 rounded-md border p-4">
+                                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
                                     {viewFullTextPrompt.text}
                                 </pre>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground/50 mt-3 text-right">
+                            </ScrollArea>
+                            <p className="text-xs text-muted-foreground mt-2 text-right">
                                 {viewFullTextPrompt.text.length} characters
                             </p>
                         </div>
                     )}
-                    <DialogFooter className="pt-4 border-t border-border/30">
+                    <DialogFooter>
                         <Button
                             variant="outline"
-                            size="sm"
-                            className="h-8"
                             onClick={() => setViewFullTextPrompt(null)}
                         >
                             Close
                         </Button>
                         <Button
-                            size="sm"
-                            className="h-8"
                             onClick={() => {
                                 if (viewFullTextPrompt) {
                                     openEditDialog(currentAgent, viewFullTextPrompt)
@@ -1044,7 +1044,7 @@ export function HomePage() {
                                 }
                             }}
                         >
-                            <Edit className="h-3 w-3 mr-1.5" />
+                            <Edit className="h-4 w-4 mr-2" />
                             Edit
                         </Button>
                     </DialogFooter>
@@ -1056,46 +1056,44 @@ export function HomePage() {
                 setEditDialogOpen(open)
                 if (!open) setEditingPromptData(null)
             }}>
-                <DialogContent className="max-w-lg border-border/50">
-                    <DialogHeader className="pb-4 border-b border-border/30">
-                        <DialogTitle className="text-base font-semibold tracking-tight">Edit Prompt</DialogTitle>
-                        <DialogDescription className="text-xs text-muted-foreground/70">
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Edit Prompt</DialogTitle>
+                        <DialogDescription>
                             Modify the prompt for the {editingPromptData?.agent} agent
                         </DialogDescription>
                     </DialogHeader>
 
                     {editingPromptData && (
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-foreground/80">Title</Label>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-title">Title</Label>
                                 <Input
+                                    id="edit-title"
                                     value={editingPromptData.title}
                                     onChange={(e) => setEditingPromptData(prev => ({ ...prev, title: e.target.value }))}
                                     placeholder="Enter prompt title..."
-                                    className="h-9 text-sm border-border/50 focus:border-primary/50"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-foreground/80">Prompt Content</Label>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-content">Prompt Content</Label>
                                 <Textarea
+                                    id="edit-content"
                                     value={editingPromptData.text}
                                     onChange={(e) => setEditingPromptData(prev => ({ ...prev, text: e.target.value }))}
                                     placeholder="Enter your prompt here..."
                                     rows={6}
-                                    className="text-sm resize-none border-border/50 focus:border-primary/50"
                                 />
-                                <p className="text-[10px] text-muted-foreground/50 text-right">
+                                <p className="text-xs text-muted-foreground text-right">
                                     {editingPromptData.text?.length || 0} characters
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    <DialogFooter className="pt-4 border-t border-border/30">
+                    <DialogFooter>
                         <Button
                             variant="outline"
-                            size="sm"
-                            className="h-8"
                             onClick={() => {
                                 setEditDialogOpen(false)
                                 setEditingPromptData(null)
@@ -1104,8 +1102,6 @@ export function HomePage() {
                             Cancel
                         </Button>
                         <Button
-                            size="sm"
-                            className="h-8"
                             onClick={() => {
                                 if (editingPromptData) {
                                     handleEditPrompt(
@@ -1123,40 +1119,31 @@ export function HomePage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
-                <DialogContent className="max-w-sm border-border/50">
-                    <DialogHeader className="pb-4">
-                        <div className="mx-auto w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+            {/* Delete Confirmation AlertDialog */}
+            <AlertDialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
+                <AlertDialogContent className="max-w-sm">
+                    <AlertDialogHeader>
+                        <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-3">
                             <Trash2 className="h-5 w-5 text-destructive" />
                         </div>
-                        <DialogTitle className="text-center text-base">Confirm Deletion</DialogTitle>
-                        <DialogDescription className="text-center text-xs text-muted-foreground/70">
-                            {deleteDialog?.type === 'single' && "This prompt will be permanently deleted."}
-                            {deleteDialog?.type === 'selected' && `${deleteDialog.count || 0} prompt(s) will be permanently deleted.`}
-                            {deleteDialog?.type === 'category' && `All prompts from "${deleteDialog.agent}" will be permanently deleted.`}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="flex gap-2 sm:gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 h-9"
-                            onClick={() => setDeleteDialog(null)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            className="flex-1 h-9"
+                        <AlertDialogTitle className="text-center">Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                            {deleteDialog?.type === 'single' && "This prompt will be permanently deleted. This action cannot be undone."}
+                            {deleteDialog?.type === 'selected' && `${deleteDialog.count || selectedPrompts.size} prompt(s) will be permanently deleted. This action cannot be undone.`}
+                            {deleteDialog?.type === 'category' && `All prompts from "${deleteDialog.agent}" will be permanently deleted. This action cannot be undone.`}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
                             onClick={confirmDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             Delete
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Import Progress Dialog */}
             <Dialog open={importingRepo !== null} onOpenChange={() => {}}>

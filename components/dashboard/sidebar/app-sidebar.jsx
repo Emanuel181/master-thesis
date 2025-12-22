@@ -29,7 +29,7 @@ import {useSession} from "next-auth/react";
 const data = {
     team: {
             name: "VulnIQ",
-            logo: "https://amz-s3-pdfs-gp.s3.us-east-1.amazonaws.com/logo/logo.png",
+            logo: "/web-app-manifest-512x512.png",
             plan: "Agentic",
         },
 }

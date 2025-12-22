@@ -1,63 +1,48 @@
 "use client";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { GoCopilot } from "react-icons/go";
-import { Card, CardContent } from "@/components/ui/card";
 
 export function ModelSelector() {
-    return (
-        <Card className={undefined}>
-            <CardContent className="h-[15rem] md:h-[20rem] rounded-xl z-40 bg-neutral-300 dark:bg-neutral-900/70 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]">
-                <Skeleton />
-            </CardContent>
-        </Card>
-    );
-}
+    const models = [
+        { name: "Claude", Logo: ClaudeLogo },
+        { name: "GPT-4", Logo: OpenAILogo },
+        { name: "Gemini", Logo: GeminiLogo },
+        { name: "Llama", Logo: LlamaLogo },
+        { name: "Mistral", Logo: MistralLogo },
+        { name: "Copilot", Logo: CopilotLogo },
+    ];
 
-const Skeleton = () => {
     return (
-        <div className="p-8 overflow-hidden h-full relative flex items-center justify-center">
-            <div className="flex flex-row shrink-0 justify-center items-center gap-2">
-                <Container className="h-8 w-8 circle-1">
-                    <ClaudeLogo className="h-4 w-4 " />
-                </Container>
-                <Container className="h-12 w-12 circle-2">
-                    <GoCopilot className="h-6 w-6 dark:text-neutral-50" />
-                </Container>
-                <Container className="h-12 w-12 circle-4">
-                    <MetaIconOutline className="h-6 w-6 " />
-                </Container>
-                <Container className="circle-3">
-                    <OpenAILogo className="h-8 w-8 dark:text-neutral-50" />
-                </Container>
-                <Container className="h-8 w-8 circle-5">
-                    <GeminiLogo className="h-4 w-4 " />
-                </Container>
-                <Container className="h-10 w-10 circle-6">
-                    <MistralLogo className="h-5 w-5 " />
-                </Container>
-                <Container className="h-12 w-12 circle-7">
-                    <LlamaLogo className="h-6 w-6 dark:text-neutral-50" />
-                </Container>
+        <div className="p-8 md:p-12 bg-white dark:bg-[#0e2736]/50">
+            <div className="grid grid-cols-3 gap-4 md:gap-6">
+                {models.map((model, i) => (
+                    <motion.div
+                        key={model.name}
+                        className="flex flex-col items-center gap-3 p-4 rounded-xl bg-[#e6f4f7]/30 dark:bg-[#0a1c27]/50 border border-[#0e2736]/10 dark:border-[#1fb6cf]/20 hover:border-[#1fb6cf]/40 hover:bg-[#1fb6cf]/10 transition-all duration-300 cursor-pointer group"
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.05, duration: 0.3 }}
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white dark:bg-[#0a1c27] border border-[#0e2736]/10 dark:border-[#1fb6cf]/20 flex items-center justify-center group-hover:border-[#1fb6cf]/30 group-hover:shadow-lg group-hover:shadow-[#1fb6cf]/10 transition-all duration-300">
+                            <model.Logo className="h-6 w-6 md:h-7 md:w-7" />
+                        </div>
+                        <span className="text-xs md:text-sm font-medium text-[#0e2736]/70 dark:text-[#e6f4f7]/70 group-hover:text-[#0e2736] dark:group-hover:text-[#e6f4f7] transition-colors">
+                            {model.name}
+                        </span>
+                    </motion.div>
+                ))}
             </div>
         </div>
     );
-};
+}
 
-const Container = ({ className, children }) => {
-    return (
-        <div
-            className={cn(
-                `h-16 w-16 rounded-full flex items-center justify-center bg-neutral-50/1
-    shadow-[0px_0px_8px_0px_rgba(100,116,139,0.25)_inset,0px_32px_24px_-16px_rgba(0,0,0,0.40)]
-    `,
-                className
-            )}
-        >
-            {children}
-        </div>
-    );
-};
+const CopilotLogo = ({ className }) => (
+    <GoCopilot className={`${className} text-[#0e2736] dark:text-[#e6f4f7]`} />
+);
 
 export const ClaudeLogo = ({ className }) => {
     return (
@@ -131,78 +116,6 @@ export const GeminiLogo = ({ className }) => {
                     />
                 </radialGradient>
             </defs>
-        </svg>
-    );
-};
-
-export const MetaIconOutline = ({ className }) => {
-    return (
-        <svg
-            id="Layer_1"
-            data-name="Layer 1"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 287.56 191"
-            className={className}
-        >
-            <defs>
-                <linearGradient
-                    id="linear-gradient"
-                    x1="62.34"
-                    y1="101.45"
-                    x2="260.34"
-                    y2="91.45"
-                    gradientTransform="matrix(1, 0, 0, -1, 0, 192)"
-                    gradientUnits="userSpaceOnUse"
-                >
-                    <stop offset="0%" stopColor="#6EE7B7" />
-                    <stop offset="100%" stopColor="#3B82F6" />
-                </linearGradient>
-            </defs>
-            <path
-                d="M143.78,0A143.78,143.78,0,1,0,287.56,143.78,143.78,143.78,0,0,0,143.78,0ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="url(#linear-gradient)"
-            />
-            <path
-                d="M143.78,15A128.78,128.78,0,1,0,272.56,143.78,128.78,128.78,0,0,0,143.78,15ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="#1f1f1e"
-                opacity="0.1"
-            />
-            <path
-                d="M143.78,30A113.78,113.78,0,1,0,257.56,143.78,113.78,113.78,0,0,0,143.78,30ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="url(#linear-gradient)"
-            />
-            <path
-                d="M143.78,45A98.78,98.78,0,1,0,242.56,143.78,98.78,98.78,0,0,0,143.78,45ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="#1f1f1e"
-                opacity="0.1"
-            />
-            <path
-                d="M143.78,60A83.78,83.78,0,1,0,227.56,143.78,83.78,83.78,0,0,0,143.78,60ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="url(#linear-gradient)"
-            />
-            <path
-                d="M143.78,75A68.78,68.78,0,1,0,212.56,143.78,68.78,68.78,0,0,0,143.78,75ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="#1f1f1e"
-                opacity="0.1"
-            />
-            <path
-                d="M143.78,90A53.78,53.78,0,1,0,197.56,143.78,53.78,53.78,0,0,0,143.78,90ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="url(#linear-gradient)"
-            />
-            <path
-                d="M143.78,105A38.78,38.78,0,1,0,182.56,143.78,38.78,38.78,0,0,0,143.78,105ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="#1f1f1e"
-                opacity="0.1"
-            />
-            <path
-                d="M143.78,120A23.78,23.78,0,1,0,167.56,143.78,23.78,23.78,0,0,0,143.78,120ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="url(#linear-gradient)"
-            />
-            <path
-                d="M143.78,135A8.78,8.78,0,1,0,152.56,143.78,8.78,8.78,0,0,0,143.78,135ZM143.78,271.56A127.78,127.78,0,1,1,271.56,143.78,127.78,127.78,0,0,1,143.78,271.56Z"
-                fill="#1f1f1e"
-                opacity="0.1"
-            />
         </svg>
     );
 };

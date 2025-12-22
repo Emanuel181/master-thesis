@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Tree } from "react-arborist";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Search,
     ChevronsDown,
@@ -275,8 +276,8 @@ const TreeView = forwardRef(function TreeView({
                 </div>
             </div>
 
-            {/* TREE with Custom Scrollbar Styling */}
-            <div className="flex-1 min-h-0 relative">
+            {/* TREE with ScrollArea */}
+            <ScrollArea className="flex-1 min-h-0">
                 <Tree
                     data={filtered}
                     width="100%"
@@ -287,7 +288,7 @@ const TreeView = forwardRef(function TreeView({
                     padding={4}
                     indent={20}
                     ref={instance => { treeRef.current = instance; }}
-                    className="h-full w-full [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
+                    className="h-full w-full"
                     onSelect={(nodes) => {
                         const node = nodes[0];
                         if (node) {
@@ -367,7 +368,7 @@ const TreeView = forwardRef(function TreeView({
                         );
                     }}
                 </Tree>
-            </div>
+            </ScrollArea>
         </div>
     );
 });

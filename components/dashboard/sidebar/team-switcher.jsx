@@ -26,9 +26,7 @@ export function TeamSwitcher({
                     onClick={() => router.push("/")}
                     className="cursor-pointer"
                 >
-                    <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                        <Image src={team.logo} width={16} height={16} alt="" className="size-4" />
-                    </div>
+                    <Image src={team.logo} width={32} height={32} alt="" className="size-8 rounded-lg" />
                     <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-medium">{team.name}</span>
                         <span className="truncate text-xs">{team.plan}</span>

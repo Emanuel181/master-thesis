@@ -1,0 +1,144 @@
+"use client"
+
+import React from 'react';
+import { signIn } from 'next-auth/react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FolderOpen, RefreshCw } from "lucide-react";
+
+/**
+ * Import Dialog for switching projects from GitHub/GitLab
+ */
+export function ImportDialog({
+    isOpen,
+    onOpenChange,
+    searchTerm,
+    setSearchTerm,
+    repos,
+    gitlabRepos,
+    isLoadingRepos,
+    isGithubConnected,
+    isGitlabConnected,
+    onSelectRepo,
+    onSelectGitlabRepo,
+    onDisconnectGitHub,
+    onDisconnectGitlab,
+}) {
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <FolderOpen className="mr-2 h-4 w-4" /> Switch project
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Switch Project</DialogTitle></DialogHeader>
+                <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <Label>Search Projects</Label>
+                        <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search projects..." />
+                    </div>
+
+                    {isGithubConnected && (
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                                GitHub Projects
+                            </Label>
+                            <ScrollArea className="h-40 border rounded-md">
+                                <div className="p-2">
+                                    {isLoadingRepos ? (
+                                        <div className="flex items-center justify-center py-4">
+                                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                            <span className="text-sm text-muted-foreground">Loading...</span>
+                                        </div>
+                                    ) : repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                                        <p className="text-sm text-muted-foreground text-center py-4">No projects found</p>
+                                    ) : (
+                                        repos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
+                                            <div
+                                                key={r.id}
+                                                onClick={() => onSelectRepo(r)}
+                                                className="p-2 hover:bg-accent rounded-md cursor-pointer flex justify-between text-sm transition-colors"
+                                            >
+                                                <span className="font-medium">{r.name}</span>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full ${r.private ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                                                    {r.private ? 'Private' : 'Public'}
+                                                </span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    )}
+
+                    {isGitlabConnected && (
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <svg className="h-4 w-4" viewBox="0 0 380 380" fill="currentColor"><path d="M282.83,170.73l-.27-.69-26.14-68.22a6.81,6.81,0,0,0-2.69-3.24,7,7,0,0,0-8,.43,7,7,0,0,0-2.32,3.52l-17.65,54H154.29l-17.65-54A6.86,6.86,0,0,0,134.32,99a7,7,0,0,0-8-.43,6.87,6.87,0,0,0-2.69,3.24L97.44,170l-.26.69a48.54,48.54,0,0,0,16.1,56.1l.09.07.24.17,39.82,29.82,19.7,14.91,12,9.06a8.07,8.07,0,0,0,9.76,0l12-9.06,19.7-14.91,40.06-30,.1-.08A48.56,48.56,0,0,0,282.83,170.73Z" fill="#E24329"/><path d="M282.83,170.73l-.27-.69a88.3,88.3,0,0,0-35.15,15.8L190,229.25c19.55,14.79,36.57,27.64,36.57,27.64l40.06-30,.1-.08A48.56,48.56,0,0,0,282.83,170.73Z" fill="#FC6D26"/><path d="M153.43,256.89l19.7,14.91,12,9.06a8.07,8.07,0,0,0,9.76,0l12-9.06,19.7-14.91S209.55,244,190,229.25C170.45,244,153.43,256.89,153.43,256.89Z" fill="#FCA326"/><path d="M132.58,185.84A88.19,88.19,0,0,0,97.44,170l-.26.69a48.54,48.54,0,0,0,16.1,56.1l.09.07.24.17,39.82,29.82s17-12.85,36.57-27.64Z" fill="#FC6D26"/></svg>
+                                GitLab Projects
+                            </Label>
+                            <ScrollArea className="h-40 border rounded-md">
+                                <div className="p-2">
+                                    {isLoadingRepos ? (
+                                        <div className="flex items-center justify-center py-4">
+                                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                            <span className="text-sm text-muted-foreground">Loading...</span>
+                                        </div>
+                                    ) : gitlabRepos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                                        <p className="text-sm text-muted-foreground text-center py-4">No projects found</p>
+                                    ) : (
+                                        gitlabRepos.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase())).map(r => (
+                                            <div
+                                                key={r.id}
+                                                onClick={() => onSelectGitlabRepo(r)}
+                                                className="p-2 hover:bg-accent rounded-md cursor-pointer flex justify-between text-sm transition-colors"
+                                            >
+                                                <span className="font-medium">{r.name}</span>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full ${r.visibility === 'private' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                                                    {r.visibility === 'private' ? 'Private' : 'Public'}
+                                                </span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    )}
+
+                    {!isGithubConnected && !isGitlabConnected && (
+                        <div className="flex flex-col gap-2 p-4 border rounded-md bg-muted/20">
+                            <p className="text-sm text-muted-foreground text-center mb-2">Connect a provider to access your projects</p>
+                            <Button onClick={() => signIn('github')} variant="outline" className="w-full">
+                                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                                Connect GitHub
+                            </Button>
+                            <Button onClick={() => signIn('gitlab')} variant="outline" className="w-full">
+                                <svg className="h-4 w-4 mr-2" viewBox="0 0 380 380" fill="currentColor"><path d="M282.83,170.73l-.27-.69-26.14-68.22a6.81,6.81,0,0,0-2.69-3.24,7,7,0,0,0-8,.43,7,7,0,0,0-2.32,3.52l-17.65,54H154.29l-17.65-54A6.86,6.86,0,0,0,134.32,99a7,7,0,0,0-8-.43,6.87,6.87,0,0,0-2.69,3.24L97.44,170l-.26.69a48.54,48.54,0,0,0,16.1,56.1l.09.07.24.17,39.82,29.82,19.7,14.91,12,9.06a8.07,8.07,0,0,0,9.76,0l12-9.06,19.7-14.91,40.06-30,.1-.08A48.56,48.56,0,0,0,282.83,170.73Z" fill="#E24329"/></svg>
+                                Connect GitLab
+                            </Button>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2 border-t">
+                        {isGithubConnected && (
+                            <Button variant="ghost" size="sm" onClick={onDisconnectGitHub} className="text-muted-foreground hover:text-destructive">
+                                Disconnect GitHub
+                            </Button>
+                        )}
+                        {isGitlabConnected && (
+                            <Button variant="ghost" size="sm" onClick={onDisconnectGitlab} className="text-muted-foreground hover:text-destructive">
+                                Disconnect GitLab
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+

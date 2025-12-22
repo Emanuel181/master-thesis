@@ -174,7 +174,14 @@ export default function Page() {
                                         {breadcrumbs.map((crumb, index) => (
                                             <React.Fragment key={index}>
                                                 <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
-                                                    <BreadcrumbLink href={crumb.href} className="truncate max-w-[100px] sm:max-w-none">
+                                                    <BreadcrumbLink 
+                                                        href="#" 
+                                                        className="truncate max-w-[100px] sm:max-w-none cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleNavigation({ title: crumb.label });
+                                                        }}
+                                                    >
                                                         {crumb.label}
                                                     </BreadcrumbLink>
                                                 </BreadcrumbItem>
