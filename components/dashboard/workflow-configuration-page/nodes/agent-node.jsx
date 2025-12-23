@@ -42,23 +42,25 @@ export function AgentNode({ data }) {
             {/* Input from Previous Agent (Left) */}
             <Handle type="target" position={Position.Left} id="flow-in" className="!bg-border !w-3 !h-3" />
 
-            {/* Input from Knowledge Base (Top - Offset Left) */}
-            <Handle
-                type="target"
-                position={Position.Top}
-                id="kb-in"
-                className="!bg-cyan-500 !w-3 !h-3"
-                style={{ left: '25%' }}
-                title="Knowledge Base Context"
-            />
+            {/* Input from Knowledge Base (Top - Offset Left) - Only for Reviewer */}
+            {data.id === "reviewer" && (
+                <Handle
+                    type="target"
+                    position={Position.Top}
+                    id="kb-in"
+                    className="!bg-cyan-500 !w-3 !h-3"
+                    style={{ left: '25%' }}
+                    title="Knowledge Base Context"
+                />
+            )}
 
-            {/* Input from Prompt (Top - Offset Right to avoid collision) */}
+            {/* Input from Prompt (Top - Center for non-reviewer, Offset Right for reviewer) */}
             <Handle
                 type="target"
                 position={Position.Top}
                 id="prompt-in"
                 className="!bg-indigo-500 !w-3 !h-3"
-                style={{ left: '75%' }}
+                style={{ left: data.id === "reviewer" ? '75%' : '50%' }}
                 title="Prompt Instructions"
             />
 

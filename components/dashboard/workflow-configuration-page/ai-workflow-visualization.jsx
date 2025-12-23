@@ -97,15 +97,15 @@ export function AIWorkflowVisualization({
     }), [isDarkMode]);
 
     const GRID_START_X = 30;
-    const COL_WIDTH = 350;
+    const COL_WIDTH = 380;
     const ROW_1_Y = 0;
-    const ROW_2_Y = 350;
+    const ROW_2_Y = 380;
 
     // Default positions for all nodes
     const defaultPositions = React.useMemo(() => ({
         knowledgeBase: { x: GRID_START_X, y: ROW_1_Y },
         userCode: { x: GRID_START_X, y: ROW_2_Y + 40 },
-        reviewerPrompt: { x: GRID_START_X + COL_WIDTH + 100, y: ROW_1_Y },
+        reviewerPrompt: { x: GRID_START_X + COL_WIDTH, y: ROW_1_Y },
         reviewer: { x: GRID_START_X + COL_WIDTH, y: ROW_2_Y },
         implementationPrompt: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_1_Y },
         implementation: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_2_Y },
