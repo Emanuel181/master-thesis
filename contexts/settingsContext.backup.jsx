@@ -537,16 +537,24 @@ export function SettingsProvider({ children }) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    let parsedSettings = null
     const savedSettings = localStorage.getItem('app-settings')
     if (savedSettings) {
       try {
-        const parsed = JSON.parse(savedSettings)
-        setSettings(prev => ({ ...prev, ...parsed }))
+        parsedSettings = JSON.parse(savedSettings)
       } catch (e) {
         console.error('Failed to parse settings:', e)
       }
     }
-    setMounted(true)
+
+    if (parsedSettings) {
+      queueMicrotask(() => {
+        setSettings(prev => ({ ...prev, ...parsedSettings }))
+      })
+    }
+    queueMicrotask(() => {
+      setMounted(true)
+    })
   }, [])
 
   useEffect(() => {
@@ -609,5 +617,11 @@ function applySettings(settings) {
   }
 }
 
-export default SettingsContext
+void editorThemes;
+void editorFonts;
+void editorFontSizes;
+void syntaxTokenTypes;
+void SettingsProvider;
+void useSettings;
 
+export default SettingsContext

@@ -61,6 +61,8 @@ function DashboardContent({ settings, mounted }) {
     const [isCodeLocked, setIsCodeLocked] = useState(() => loadSavedCodeState().isLocked);
 
     // Clear code state when project is cleared
+    // This intentionally responds to projectClearCounter changes from context
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional: responding to external clear signal */
     useEffect(() => {
         if (projectClearCounter > 0) {
             setInitialCode('');
@@ -68,6 +70,7 @@ function DashboardContent({ settings, mounted }) {
             setIsCodeLocked(false);
         }
     }, [projectClearCounter]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Save code to localStorage when it changes
     useEffect(() => {
@@ -88,13 +91,16 @@ function DashboardContent({ settings, mounted }) {
     const [sidebarOpen, setSidebarOpen] = useState(settings.sidebarMode !== 'icon')
 
     // Update sidebar state when sidebarMode setting changes
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional: sync sidebar state with settings */
     useEffect(() => {
         if (mounted) {
             setSidebarOpen(settings.sidebarMode !== 'icon')
         }
     }, [settings.sidebarMode, mounted])
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Handle navigation from URL params
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional: sync state with URL params */
     useEffect(() => {
         const active = searchParams.get('active')
         const workflow = searchParams.get('workflow')
@@ -114,6 +120,7 @@ function DashboardContent({ settings, mounted }) {
             setIsModelsDialogOpen(true)
         }
     }, [searchParams])
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const handleNavigation = (item) => {
         if (item.title === "Workflow configuration") {
@@ -170,22 +177,22 @@ function DashboardContent({ settings, mounted }) {
         >
             <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
             <SidebarInset className="flex flex-col overflow-hidden">
-                <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                    <div className={`flex items-center justify-between w-full gap-2 px-2 sm:px-4 ${activeComponent === "Home" ? "pr-4 sm:pr-7" : ""}`}>
-                        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                            <SidebarTrigger className="-ml-1 flex-shrink-0" />
+                <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
+                    <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>
+                        <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+                            <SidebarTrigger className="-ml-1 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9" />
                             <Separator
                                 orientation="vertical"
-                                className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4"
+                                className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4 hidden xs:block"
                             />
-                            <Breadcrumb className="min-w-0">
+                            <Breadcrumb className="min-w-0 hidden xs:block">
                                 <BreadcrumbList className="flex-nowrap">
                                     {breadcrumbs.map((crumb, index) => (
                                         <React.Fragment key={index}>
                                             <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
                                                 <BreadcrumbLink
                                                     href="#"
-                                                    className="truncate max-w-[100px] sm:max-w-none cursor-pointer"
+                                                    className="truncate max-w-[80px] sm:max-w-[100px] md:max-w-none cursor-pointer text-xs sm:text-sm"
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         handleNavigation({ title: crumb.label });
@@ -199,6 +206,10 @@ function DashboardContent({ settings, mounted }) {
                                     ))}
                                 </BreadcrumbList>
                             </Breadcrumb>
+                            {/* Mobile breadcrumb - just show current page */}
+                            <span className="xs:hidden text-sm font-medium truncate">
+                                {breadcrumbs[breadcrumbs.length - 1]?.label}
+                            </span>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                             <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
@@ -207,7 +218,7 @@ function DashboardContent({ settings, mounted }) {
                     </div>
                 </header>
                 <div className={`flex-1 flex flex-col overflow-hidden w-full ${
-                    settings.contentLayout === 'centered' && activeComponent !== 'Home' ? 'mx-auto max-w-5xl px-2 sm:px-4' : 'px-2 sm:px-4'
+                    settings.contentLayout === 'centered' && activeComponent !== 'Home' ? 'mx-auto max-w-5xl px-2 sm:px-3 md:px-4' : 'px-2 sm:px-3 md:px-4'
                 }`}>
                     {renderComponent()}
                 </div>

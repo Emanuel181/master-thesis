@@ -366,6 +366,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             setDetectedLanguage(null);
             setIsLanguageSupported(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- backup file, language.prism and supportedLanguages handled in component scope
     }, [code, isPlaceholder, selectedFile, detectLanguageFromContent]);
 
 
@@ -621,6 +622,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                 setLanguage({ name: tabLanguage.charAt(0).toUpperCase() + tabLanguage.slice(1), prism: tabLanguage });
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- backup file, arrays are stable in scope
     }, [activeTab]);
 
     let editorValue = activeTab ? activeTab.content : (selectedFile?.content || (isPlaceholder ? placeholderText : code));
@@ -961,6 +963,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                                         setDragOverIndex(null);
                                                     }}
                                                 >
+                                                    {/* eslint-disable-next-line @next/next/no-img-element -- dynamic icon URL from API */}
                                                     <img src={getFileUrl(tab.name)} alt="" className="w-4 h-4 flex-shrink-0" />
                                                     <span className="truncate max-w-[100px]">{tab.name}</span>
                                                     <span onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }} className="cursor-pointer hover:bg-muted rounded p-0.5 ml-1 flex-shrink-0">

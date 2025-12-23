@@ -38,6 +38,7 @@ export function EditorTabs({
                                 onDragLeave={onDragLeave}
                                 onDrop={(e) => onDrop(e, index)}
                             >
+                                {/* eslint-disable-next-line @next/next/no-img-element -- dynamic icon URL from API */}
                                 <img src={getFileIconUrl(tab.name)} alt="" className="w-4 h-4 flex-shrink-0" />
                                 <span className="truncate max-w-[100px]">{tab.name}</span>
                                 <span

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring, useTransform } from "framer-motion";
+import Image from "next/image";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronRight } from "lucide-react";
 
 const navItems = [
     { name: "Features", link: "#features" },
@@ -73,7 +74,7 @@ export const FloatingNavbar = () => {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                 >
-                    <img src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-7 w-7 rounded-lg" width={28} height={28} />
+                    <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-7 w-7 rounded-lg" width={28} height={28} />
                     <span className="font-semibold text-foreground tracking-tight hidden sm:block text-sm">
                         VulnIQ
                     </span>
@@ -114,12 +115,13 @@ export const FloatingNavbar = () => {
                 </div>
 
                 {/* RIGHT: Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
-                    <Button asChild size="sm" className="rounded-full text-sm px-5 h-9">
-                        <a href="/login" className="flex items-center gap-1.5">
-                            <span>Get started</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
+                    <Button asChild size="sm" className="rounded-full text-xs sm:text-sm px-3 sm:px-5 h-8 sm:h-9">
+                        <a href="/login" className="flex items-center gap-1 sm:gap-1.5">
+                            <span className="hidden xs:inline">Get started</span>
+                            <span className="xs:hidden">Start</span>
+                            <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </a>
                     </Button>
                     {/* Mobile menu button */}
@@ -127,7 +129,7 @@ export const FloatingNavbar = () => {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="md:hidden rounded-full p-2 h-9 w-9"
+                            className="md:hidden rounded-full p-2 h-8 w-8 sm:h-9 sm:w-9"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         >
                             <AnimatePresence mode="wait">

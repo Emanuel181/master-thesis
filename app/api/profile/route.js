@@ -3,45 +3,82 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
+import { securityHeaders, getClientIp, isSameOrigin, readJsonBody } from "@/lib/api-security";
+
+// Normalize and validate human-entered text fields.
+// - Removes NUL and most control chars
+// - Rejects angle brackets to reduce persistent XSS risk if a future UI renders HTML
+//   (defense-in-depth; output encoding is still required in UI).
+const normalizeText = (value, { allowNewlines = false } = {}) => {
+  if (typeof value !== 'string') return value;
+  const removedControls = allowNewlines
+    ? value.replace(/[\0\x08\x09\x1a\x0b\x0c]/g, '')
+    : value.replace(/[\0-\x1F\x7F]/g, ' ');
+  return removedControls.trim();
+};
+
+const zText = (label, max, { allowNewlines = false } = {}) =>
+  z
+    .string()
+    .max(max, `${label} must be less than ${max} characters`)
+    .transform((v) => normalizeText(v, { allowNewlines }))
+    .refine((v) => !/[<>]/.test(v), { message: `${label} must not contain '<' or '>'` });
 
 // Input validation schema for profile updates
+const phoneRegex = /^\+?[0-9\s\-()]+$/;
+
 const updateProfileSchema = z.object({
-  firstName: z.string().max(100, 'First name must be less than 100 characters').nullable().optional(),
-  lastName: z.string().max(100, 'Last name must be less than 100 characters').nullable().optional(),
-  phone: z.string().max(20, 'Phone number must be less than 20 characters').nullable().optional(),
-  jobTitle: z.string().max(100, 'Job title must be less than 100 characters').nullable().optional(),
-  company: z.string().max(100, 'Company name must be less than 100 characters').nullable().optional(),
-  bio: z.string().max(1000, 'Bio must be less than 1000 characters').nullable().optional(),
-  location: z.string().max(100, 'Location must be less than 100 characters').nullable().optional(),
-  image: z.string().url('Image must be a valid URL').max(2048, 'Image URL must be less than 2048 characters').nullable().optional(),
-});
+  firstName: zText('First name', 100).nullable().optional(),
+  lastName: zText('Last name', 100).nullable().optional(),
+  phone: z
+    .string()
+    .max(20, 'Phone number must be less than 20 characters')
+    .transform((v) => normalizeText(v))
+    .refine((v) => phoneRegex.test(v), { message: 'Invalid phone number format' })
+    .nullable()
+    .optional(),
+  jobTitle: zText('Job title', 100).nullable().optional(),
+  company: zText('Company name', 100).nullable().optional(),
+  bio: zText('Bio', 1000, { allowNewlines: true }).nullable().optional(),
+  location: zText('Location', 100).nullable().optional(),
+  // Enforce HTTPS to prevent mixed content; do not server-fetch this URL without allowlisting.
+  image: z
+    .string()
+    .url('Image must be a valid URL')
+    .startsWith('https://', 'Image URL must use HTTPS')
+    .max(2048, 'Image URL must be less than 2048 characters')
+    .nullable()
+    .optional(),
+}).strict();
 
 export async function GET(request) {
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: 401 }
+        { status: 401, headers: securityHeaders }
       );
     }
 
     // Rate limiting - 60 requests per minute for profile reads
+    const clientIp = getClientIp(request);
     const rl = rateLimit({
-      key: `profile:get:${session.user.id}`,
+      key: `profile:get:${session.user.id}:${clientIp}`,
       limit: 60,
       windowMs: 60 * 1000
     });
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429 }
+        { status: 429, headers: securityHeaders }
       );
     }
 
+    // Use ID for lookup (Immutable & Secure)
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
       select: {
         id: true,
         name: true,
@@ -62,19 +99,18 @@ export async function GET(request) {
     if (!user) {
       return NextResponse.json(
         { error: "User not found" },
-        { status: 404 }
+        { status: 404, headers: securityHeaders }
       );
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user }, { headers: securityHeaders });
   } catch (error) {
-    // Only log detailed errors in development to prevent information leakage
     if (process.env.NODE_ENV === 'development') {
       console.error("Error fetching profile:", error);
     }
     return NextResponse.json(
       { error: "Failed to fetch profile" },
-      { status: 500 }
+      { status: 500, headers: securityHeaders }
     );
   }
 }
@@ -83,45 +119,67 @@ export async function PUT(request) {
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: 401 }
+        { status: 401, headers: securityHeaders }
       );
     }
 
-    // Rate limiting - 20 profile updates per hour
+    if (!isSameOrigin(request)) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403, headers: securityHeaders }
+      );
+    }
+
+    const clientIp = getClientIp(request);
     const rl = rateLimit({
-      key: `profile:put:${session.user.id}`,
+      key: `profile:put:${session.user.id}:${clientIp}`,
       limit: 20,
       windowMs: 60 * 60 * 1000
     });
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429 }
+        { status: 429, headers: securityHeaders }
       );
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
+      select: { id: true },
     });
 
     if (!user) {
       return NextResponse.json(
         { error: "User not found" },
-        { status: 404 }
+        { status: 404, headers: securityHeaders }
       );
     }
 
-    const body = await request.json();
-
-    // Validate input with Zod
-    const validationResult = updateProfileSchema.safeParse(body);
-    if (!validationResult.success) {
+    const parsed = await readJsonBody(request);
+    if (!parsed.ok) {
       return NextResponse.json(
-        { error: "Validation failed", details: validationResult.error.errors },
-        { status: 400 }
+        { error: "Invalid JSON body" },
+        { status: 400, headers: securityHeaders }
+      );
+    }
+
+    const validationResult = updateProfileSchema.safeParse(parsed.body);
+    if (!validationResult.success) {
+      // Return a minimal field->message map to avoid leaking internal structures
+      const fields = {};
+      for (const issue of validationResult.error.issues) {
+        const key = issue.path?.[0];
+        if (typeof key === 'string' && !fields[key]) {
+          fields[key] = issue.message;
+        }
+      }
+
+      return NextResponse.json(
+        { error: "Validation failed", fields },
+        { status: 400, headers: securityHeaders }
       );
     }
 
@@ -139,7 +197,7 @@ export async function PUT(request) {
     if (image !== undefined) updateData.image = image || null;
 
     const updatedUser = await prisma.user.update({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
       data: updateData,
       select: {
         id: true,
@@ -158,15 +216,14 @@ export async function PUT(request) {
       },
     });
 
-    return NextResponse.json({ user: updatedUser });
+    return NextResponse.json({ user: updatedUser }, { headers: securityHeaders });
   } catch (error) {
-    // Only log detailed errors in development to prevent information leakage
     if (process.env.NODE_ENV === 'development') {
       console.error("Error updating profile:", error);
     }
     return NextResponse.json(
       { error: "Failed to update profile" },
-      { status: 500 }
+      { status: 500, headers: securityHeaders }
     );
   }
 }

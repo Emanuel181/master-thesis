@@ -95,6 +95,7 @@ export function DataTable({
         pageSize: 10,
     })
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table API is designed this way
     const table = useReactTable({
         data,
         columns,
@@ -172,7 +173,7 @@ export function DataTable({
                         </TableBody>
                     </Table>
                 </div>
-                <div className="flex items-center justify-end px-4">
+                <div className="flex items-center justify-end px-4 pb-4">
                     <div className="flex w-full items-center gap-8 lg:w-fit">
                         <div className="hidden items-center gap-2 lg:flex">
                             <Label htmlFor="rows-per-page" className="text-sm font-medium">

@@ -49,6 +49,7 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
+    DragOverlay,
 } from '@dnd-kit/core'
 import {
     arrayMove,
@@ -72,26 +73,27 @@ function SortablePromptItem({ prompt, agent, selectedPrompts, setSelectedPrompts
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
+        transition: transition || 'transform 200ms ease',
+        opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 1000 : 'auto',
+        scale: isDragging ? 1.02 : 1,
     };
 
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className={`group border border-border/50 rounded-lg p-2.5 hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm transition-all duration-200 cursor-pointer ${isDragging ? 'shadow-lg bg-background border-primary/50' : ''}`}
+            className={`group border border-border/50 rounded-lg p-2.5 hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm transition-colors duration-200 cursor-pointer ${isDragging ? 'shadow-xl bg-background border-primary/50 ring-2 ring-primary/20' : ''}`}
         >
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div
                         {...attributes}
                         {...listeners}
-                        className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-accent rounded touch-none"
+                        className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-accent/50 rounded-md touch-none select-none"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground/60" />
                     </div>
                     <Checkbox
                         className="h-3.5 w-3.5 rounded-sm border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
@@ -247,8 +249,18 @@ export function HomePage() {
     })
     const PROMPTS_PER_PAGE = 5
 
-    // prevents React 18 dev-mode double-fetch
-    const fetchOnceRef = useRef(false)
+    // Pagination state for repositories
+    const [githubRepoPage, setGithubRepoPage] = useState(1)
+    const [gitlabRepoPage, setGitlabRepoPage] = useState(1)
+    const REPOS_PER_PAGE = 4
+
+    // Active dragging prompt for DragOverlay
+    const [activeId, setActiveId] = useState(null)
+    const [activeDragAgent, setActiveDragAgent] = useState(null)
+
+    // prevents React 18 dev-mode double-fetch - separate refs for each provider
+    const githubFetchOnceRef = useRef(false)
+    const gitlabFetchOnceRef = useRef(false)
 
     // ---------------------------
     // DnD Kit sensors for prompt reordering
@@ -256,7 +268,7 @@ export function HomePage() {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8,
+                distance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -264,8 +276,16 @@ export function HomePage() {
         })
     );
 
+    const handleDragStart = (event, agent) => {
+        setActiveId(event.active.id);
+        setActiveDragAgent(agent);
+    };
+
     const handleDragEnd = async (event, agent) => {
         const { active, over } = event;
+
+        setActiveId(null);
+        setActiveDragAgent(null);
 
         if (over && active.id !== over.id) {
             const oldIndex = prompts[agent].findIndex(p => p.id === active.id);
@@ -313,9 +333,10 @@ export function HomePage() {
     // Fetch repos only once
     // ---------------------------
     const fetchRepos = async (allowRefresh = false) => {
-        if (!allowRefresh && fetchOnceRef.current) return
-        if (allowRefresh) fetchOnceRef.current = false // Allow refresh
+        if (!allowRefresh && githubFetchOnceRef.current) return
+        if (allowRefresh) githubFetchOnceRef.current = false // Allow refresh
 
+        githubFetchOnceRef.current = true // Mark as fetching/fetched
         setIsLoadingRepos(true)
         try {
             const response = await fetch(`/api/github/repos`)
@@ -335,9 +356,11 @@ export function HomePage() {
                 } else {
                     console.log(`Failed to fetch github repositories`)
                 }
+                githubFetchOnceRef.current = false // Reset on failure to allow retry
             }
         } catch (err) {
             console.error("Error fetching repos:", err)
+            githubFetchOnceRef.current = false // Reset on error to allow retry
         } finally {
             setIsLoadingRepos(false)
         }
@@ -347,9 +370,10 @@ export function HomePage() {
     // Fetch GitLab repos
     // ---------------------------
     const fetchGitlabRepos = async (allowRefresh = false) => {
-        if (!allowRefresh && fetchOnceRef.current) return
-        if (allowRefresh) fetchOnceRef.current = false // Allow refresh
+        if (!allowRefresh && gitlabFetchOnceRef.current) return
+        if (allowRefresh) gitlabFetchOnceRef.current = false // Allow refresh
 
+        gitlabFetchOnceRef.current = true // Mark as fetching/fetched
         setIsLoadingGitlabRepos(true)
         try {
             const response = await fetch(`/api/gitlab/repos`)
@@ -369,9 +393,11 @@ export function HomePage() {
                 } else {
                     console.log(`Failed to fetch gitlab repositories`)
                 }
+                gitlabFetchOnceRef.current = false // Reset on failure to allow retry
             }
         } catch (err) {
             console.error("Error fetching gitlab repos:", err)
+            gitlabFetchOnceRef.current = false // Reset on error to allow retry
         } finally {
             setIsLoadingGitlabRepos(false)
         }
@@ -468,7 +494,7 @@ export function HomePage() {
                 }
             })()
         }
-    }, [status, session?.user?.id, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
+    }, [status, session, session?.user?.id, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
 
     useEffect(() => {
         if (status !== 'authenticated') return
@@ -719,34 +745,59 @@ export function HomePage() {
         );
     });
 
+    // Paginated repos
+    const githubTotalPages = Math.ceil(filteredGithubRepos.length / REPOS_PER_PAGE);
+    const paginatedGithubRepos = filteredGithubRepos.slice(
+        (githubRepoPage - 1) * REPOS_PER_PAGE,
+        githubRepoPage * REPOS_PER_PAGE
+    );
+
+    const gitlabTotalPages = Math.ceil(filteredGitlabRepos.length / REPOS_PER_PAGE);
+    const paginatedGitlabRepos = filteredGitlabRepos.slice(
+        (gitlabRepoPage - 1) * REPOS_PER_PAGE,
+        gitlabRepoPage * REPOS_PER_PAGE
+    );
+
+    // Reset page when search changes
+    /* eslint-disable react-hooks/exhaustive-deps -- intentional: only reset on search term change */
+    useEffect(() => {
+        setGithubRepoPage(1);
+    }, [githubSearchTerm]);
+
+    useEffect(() => {
+        setGitlabRepoPage(1);
+    }, [gitlabSearchTerm]);
+    /* eslint-enable react-hooks/exhaustive-deps */
+
     // ---------------------------
     // UI
     // ---------------------------
     return (
-        <div className="flex flex-1 flex-col gap-2 p-2 sm:p-3 pt-0 overflow-hidden h-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 h-full min-h-0">
+        <ScrollArea className="flex-1 h-full">
+            <div className="flex flex-col gap-2 p-2 sm:p-3 pt-0 pb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 auto-rows-min">
                 {/* Left Column - GitHub & GitLab */}
-                <div className="flex flex-col gap-2 sm:gap-3 min-h-0">
+                <div className="flex flex-col gap-2 sm:gap-3 min-h-0 order-2 lg:order-1">
                 {/* GitHub Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md flex-1">
-                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
+                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px]">
+                    <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         {isGithubConnected && (
                             <div className="flex items-center gap-1 mb-1">
                                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs text-green-600">Connected</span>
+                                <span className="text-[10px] sm:text-xs text-green-600">Connected</span>
                             </div>
                         )}
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                                <Github className="h-4 w-4" />
-                                GitHub Repositories
+                        <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
+                                <Github className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                                <span className="truncate">GitHub Repositories</span>
                             </CardTitle>
                             {isGithubConnected && (
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 flex-shrink-0">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-7 px-2"
+                                        className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                         onClick={handleRefreshRepos}
                                         disabled={isRefreshingRepos}
                                         title="Refresh repositories"
@@ -760,24 +811,25 @@ export function HomePage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-7 px-2 text-xs"
+                                        className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs"
                                         onClick={handleDisconnectGitHub}
                                         title="Disconnect from GitHub"
                                     >
-                                        Disconnect
+                                        <span className="hidden xs:inline">Disconnect</span>
+                                        <span className="xs:hidden">×</span>
                                     </Button>
                                 </div>
                             )}
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-3 sm:px-4">
+                    <CardContent className="flex-1 min-h-0 overflow-hidden pt-2 pb-6 px-2.5 sm:px-4">
                         {status === "loading" ? (
-                            <p className="text-xs text-muted-foreground">Loading...</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Loading...</p>
                         ) : !isGithubConnected ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                                <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mb-4 border border-border/50">
-                                    <Github className="h-7 w-7 text-muted-foreground/60" />
+                            <div className="h-full flex flex-col items-center justify-center text-center p-3 sm:p-4">
+                                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-muted/30 flex items-center justify-center mb-3 sm:mb-4 border border-border/50">
+                                    <Github className="h-5 w-5 sm:h-7 sm:w-7 text-muted-foreground/60" />
                                 </div>
                                 <h3 className="text-sm font-medium mb-1">Connect GitHub</h3>
                                 <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
@@ -827,24 +879,21 @@ export function HomePage() {
                                             <Search className="h-5 w-5 text-muted-foreground/50" />
                                         </div>
                                         <h3 className="text-sm font-medium mb-1">No Results</h3>
-                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories match "{githubSearchTerm}"</p>
+                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories match &quot;{githubSearchTerm}&quot;</p>
                                     </div>
                                 ) : (
-                                    <ScrollArea className="flex-1 min-h-0">
-                                        <div className="space-y-1.5 pr-2">
-                                            {filteredGithubRepos.map((repo, index) => {
+                                    <div className="flex flex-col flex-1 min-h-0">
+                                        <div className="space-y-1.5 flex-1">
+                                            {paginatedGithubRepos.map((repo, index) => {
                                                 const isImporting = importingRepo?.repo?.id === repo.id;
                                                 return (
                                                 <div
                                                     key={repo.id}
-                                                    className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 animate-fadeIn ${
+                                                    className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 ${
                                                         isImporting 
                                                             ? 'bg-primary/5 border-primary/30 shadow-sm' 
                                                             : 'hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm'
                                                     }`}
-                                                    style={{
-                                                        animationDelay: `${index * 50}ms`,
-                                                    }}
                                                 >
                                                     <div className="flex-1 min-w-0 overflow-hidden">
                                                         <p className="font-medium text-xs sm:text-sm truncate text-foreground/90">{repo.full_name}</p>
@@ -871,7 +920,36 @@ export function HomePage() {
                                                 </div>
                                             )})}
                                         </div>
-                                    </ScrollArea>
+                                        {/* Pagination - Always visible */}
+                                        <div className="flex items-center justify-between pt-3 mt-3 pb-1 border-t border-border/50">
+                                            <span className="text-xs text-muted-foreground">
+                                                {filteredGithubRepos.length} repos
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setGithubRepoPage(p => Math.max(1, p - 1))}
+                                                    disabled={githubRepoPage === 1}
+                                                >
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                </Button>
+                                                <span className="text-xs text-muted-foreground min-w-[45px] text-center font-medium">
+                                                    {githubRepoPage}/{githubTotalPages || 1}
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setGithubRepoPage(p => Math.min(githubTotalPages, p + 1))}
+                                                    disabled={githubRepoPage >= githubTotalPages}
+                                                >
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -879,25 +957,25 @@ export function HomePage() {
                 </Card>
 
                 {/* GitLab Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md flex-1">
-                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
+                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px]">
+                    <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         {isGitlabConnected && (
                             <div className="flex items-center gap-1 mb-1">
                                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs text-green-600">Connected</span>
+                                <span className="text-[10px] sm:text-xs text-green-600">Connected</span>
                             </div>
                         )}
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                                <GitlabIcon className="h-4 w-4" />
-                                GitLab Repositories
+                        <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
+                                <GitlabIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                                <span className="truncate">GitLab Repositories</span>
                             </CardTitle>
                             {isGitlabConnected && (
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 flex-shrink-0">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-7 px-2"
+                                        className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                         onClick={handleRefreshGitlabRepos}
                                         disabled={isRefreshingGitlabRepos}
                                         title="Refresh repositories"
@@ -911,22 +989,23 @@ export function HomePage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-7 px-2 text-xs"
+                                        className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs"
                                         onClick={handleDisconnectGitlab}
                                         title="Disconnect from GitLab"
                                     >
-                                        Disconnect
+                                        <span className="hidden xs:inline">Disconnect</span>
+                                        <span className="xs:hidden">×</span>
                                     </Button>
                                 </div>
                             )}
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-3 sm:px-4">
+                    <CardContent className="flex-1 min-h-0 overflow-hidden pt-2 pb-6 px-2.5 sm:px-4">
                         {status === "loading" ? (
-                            <p className="text-xs text-muted-foreground">Loading...</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Loading...</p>
                         ) : status === "unauthenticated" ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                            <div className="h-full flex flex-col items-center justify-center text-center p-3 sm:p-4">
                                 <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mb-4 border border-border/50">
                                     <GitlabIcon className="h-7 w-7 text-muted-foreground/60" />
                                 </div>
@@ -988,24 +1067,21 @@ export function HomePage() {
                                             <Search className="h-5 w-5 text-muted-foreground/50" />
                                         </div>
                                         <h3 className="text-sm font-medium mb-1">No Results</h3>
-                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories match "{gitlabSearchTerm}"</p>
+                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories match &quot;{gitlabSearchTerm}&quot;</p>
                                     </div>
                                 ) : (
-                                    <ScrollArea className="flex-1 min-h-0">
-                                        <div className="space-y-1.5 pr-2">
-                                            {filteredGitlabRepos.map((repo, index) => {
+                                    <div className="flex flex-col flex-1 min-h-0">
+                                        <div className="space-y-1.5 flex-1">
+                                            {paginatedGitlabRepos.map((repo, index) => {
                                                 const isImporting = importingRepo?.repo?.id === repo.id;
                                                 return (
                                                 <div
                                                     key={repo.id}
-                                                    className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 animate-fadeIn ${
+                                                    className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 ${
                                                         isImporting 
                                                             ? 'bg-primary/5 border-primary/30 shadow-sm' 
                                                             : 'hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm'
                                                     }`}
-                                                    style={{
-                                                        animationDelay: `${index * 50}ms`,
-                                                    }}
                                                 >
                                                     <div className="flex-1 min-w-0 overflow-hidden">
                                                         <p className="font-medium text-xs sm:text-sm truncate text-foreground/90">{repo.full_name}</p>
@@ -1032,7 +1108,36 @@ export function HomePage() {
                                                 </div>
                                             )})}
                                         </div>
-                                    </ScrollArea>
+                                        {/* Pagination - Always visible */}
+                                        <div className="flex items-center justify-between pt-3 mt-3 pb-1 border-t border-border/50">
+                                            <span className="text-xs text-muted-foreground">
+                                                {filteredGitlabRepos.length} repos
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setGitlabRepoPage(p => Math.max(1, p - 1))}
+                                                    disabled={gitlabRepoPage === 1}
+                                                >
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                </Button>
+                                                <span className="text-xs text-muted-foreground min-w-[45px] text-center font-medium">
+                                                    {gitlabRepoPage}/{gitlabTotalPages || 1}
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setGitlabRepoPage(p => Math.min(gitlabTotalPages, p + 1))}
+                                                    disabled={gitlabRepoPage >= gitlabTotalPages}
+                                                >
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -1041,17 +1146,17 @@ export function HomePage() {
                 </div>
 
                 {/* Right Column - Prompts & Current Project */}
-                <div className="flex flex-col gap-2 sm:gap-3 min-h-0">
+                <div className="flex flex-col gap-2 sm:gap-3 min-h-0 order-1 lg:order-2">
                 {/* Prompts Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md flex-[2]">
-                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm sm:text-base">AI Agent Prompts</CardTitle>
-                            <div className="flex gap-1">
+                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md flex-1 min-h-0">
+                    <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
+                        <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="text-xs sm:text-sm md:text-base truncate">AI Agent Prompts</CardTitle>
+                            <div className="flex gap-1 flex-shrink-0">
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-7 px-2"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={handleRefreshPrompts}
                                     disabled={isRefreshingPrompts}
                                     title="Refresh prompts"
@@ -1066,22 +1171,23 @@ export function HomePage() {
                                     <Button
                                         variant="destructive"
                                         size="sm"
-                                        className="h-7 px-2 text-xs"
+                                        className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs"
                                         onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
                                     >
-                                        Delete ({selectedPrompts.size})
+                                        <span className="hidden xs:inline">Delete ({selectedPrompts.size})</span>
+                                        <span className="xs:hidden">×{selectedPrompts.size}</span>
                                     </Button>
                                 )}
                             </div>
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-3 sm:px-4">
+                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-2.5 sm:px-4">
                         <Tabs value={currentAgent} onValueChange={setCurrentAgent} className="h-full flex flex-col">
-                            <TabsList className="grid w-full grid-cols-4 h-8 flex-shrink-0">
+                            <TabsList className="grid w-full grid-cols-4 h-7 sm:h-8 flex-shrink-0">
                                 {agents.map((agent) => (
-                                    <TabsTrigger key={agent} value={agent} className="capitalize text-[10px] sm:text-xs px-1">
-                                        {agent}
+                                    <TabsTrigger key={agent} value={agent} className="capitalize text-[9px] sm:text-[10px] md:text-xs px-0.5 sm:px-1 truncate">
+                                        <span className="truncate">{agent}</span>
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
@@ -1164,68 +1270,91 @@ export function HomePage() {
                                             const paginatedPrompts = prompts[agent].slice(startIndex, endIndex);
 
                                             return (
-                                                <>
-                                                    <DndContext
-                                                        sensors={sensors}
-                                                        collisionDetection={closestCenter}
-                                                        onDragEnd={(event) => handleDragEnd(event, agent)}
+                                                <DndContext
+                                                    sensors={sensors}
+                                                    collisionDetection={closestCenter}
+                                                    onDragStart={(event) => handleDragStart(event, agent)}
+                                                    onDragEnd={(event) => handleDragEnd(event, agent)}
+                                                >
+                                                    <SortableContext
+                                                        items={paginatedPrompts.map(p => p.id)}
+                                                        strategy={verticalListSortingStrategy}
                                                     >
-                                                        <SortableContext
-                                                            items={paginatedPrompts.map(p => p.id)}
-                                                            strategy={verticalListSortingStrategy}
-                                                        >
-                                                            <div className="space-y-1.5 pr-2">
-                                                                {paginatedPrompts.map((prompt, index) => (
-                                                                    <SortablePromptItem
-                                                                        key={prompt.id}
-                                                                        prompt={prompt}
-                                                                        agent={agent}
-                                                                        selectedPrompts={selectedPrompts}
-                                                                        setSelectedPrompts={setSelectedPrompts}
-                                                                        truncateText={truncateText}
-                                                                        setViewFullTextPrompt={setViewFullTextPrompt}
-                                                                        openEditDialog={openEditDialog}
-                                                                        setDeleteDialog={setDeleteDialog}
-                                                                        onMoveUp={(promptId) => handleMoveUp(agent, promptId)}
-                                                                        onMoveDown={(promptId) => handleMoveDown(agent, promptId)}
-                                                                        isFirst={startIndex + index === 0}
-                                                                        isLast={startIndex + index === totalPrompts - 1}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </SortableContext>
-                                                    </DndContext>
-
-                                                    {/* Pagination Controls */}
-                                                    {totalPages > 1 && (
-                                                        <div className="flex items-center justify-center gap-2 mt-3 pt-2 border-t">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 w-7 p-0"
-                                                                onClick={() => setPromptPages(prev => ({ ...prev, [agent]: Math.max(1, currentPage - 1) }))}
-                                                                disabled={currentPage === 1}
-                                                            >
-                                                                <ChevronLeft className="h-4 w-4" />
-                                                            </Button>
-                                                            <span className="text-xs text-muted-foreground min-w-[60px] text-center">
-                                                                {currentPage} / {totalPages}
-                                                            </span>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 w-7 p-0"
-                                                                onClick={() => setPromptPages(prev => ({ ...prev, [agent]: Math.min(totalPages, currentPage + 1) }))}
-                                                                disabled={currentPage === totalPages}
-                                                            >
-                                                                <ChevronRight className="h-4 w-4" />
-                                                            </Button>
+                                                        <div className="space-y-1.5 pr-2">
+                                                            {paginatedPrompts.map((prompt, index) => (
+                                                                <SortablePromptItem
+                                                                    key={prompt.id}
+                                                                    prompt={prompt}
+                                                                    agent={agent}
+                                                                    selectedPrompts={selectedPrompts}
+                                                                    setSelectedPrompts={setSelectedPrompts}
+                                                                    truncateText={truncateText}
+                                                                    setViewFullTextPrompt={setViewFullTextPrompt}
+                                                                    openEditDialog={openEditDialog}
+                                                                    setDeleteDialog={setDeleteDialog}
+                                                                    onMoveUp={(promptId) => handleMoveUp(agent, promptId)}
+                                                                    onMoveDown={(promptId) => handleMoveDown(agent, promptId)}
+                                                                    isFirst={startIndex + index === 0}
+                                                                    isLast={startIndex + index === totalPrompts - 1}
+                                                                />
+                                                            ))}
                                                         </div>
-                                                    )}
-                                                </>
+                                                    </SortableContext>
+                                                    <DragOverlay>
+                                                        {activeId && activeDragAgent === agent ? (
+                                                            <div className="border border-primary/50 rounded-lg p-2.5 bg-background shadow-xl ring-2 ring-primary/20">
+                                                                <div className="flex items-center gap-2">
+                                                                    <GripVertical className="h-4 w-4 text-muted-foreground/60" />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h4 className="font-medium text-xs truncate text-foreground/90">
+                                                                            {prompts[agent]?.find(p => p.id === activeId)?.title || "Untitled"}
+                                                                        </h4>
+                                                                        <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
+                                                                            {truncateText(prompts[agent]?.find(p => p.id === activeId)?.text || "", 35)}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+                                                    </DragOverlay>
+                                                </DndContext>
                                             );
                                         })()}
                                     </ScrollArea>
+
+                                    {/* Pagination Controls - Always rendered outside ScrollArea to maintain consistent height */}
+                                    {(() => {
+                                        const totalPrompts = prompts[agent]?.length || 0;
+                                        const totalPages = Math.ceil(totalPrompts / PROMPTS_PER_PAGE);
+                                        const currentPage = promptPages[agent] || 1;
+                                        const showPagination = totalPages > 1;
+
+                                        return (
+                                            <div className={`flex items-center justify-center gap-2 mt-3 pt-2 border-t flex-shrink-0 ${showPagination ? '' : 'invisible'}`}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setPromptPages(prev => ({ ...prev, [agent]: Math.max(1, currentPage - 1) }))}
+                                                    disabled={currentPage === 1}
+                                                >
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                </Button>
+                                                <span className="text-xs text-muted-foreground min-w-[60px] text-center">
+                                                    {currentPage} / {totalPages || 1}
+                                                </span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setPromptPages(prev => ({ ...prev, [agent]: Math.min(totalPages, currentPage + 1) }))}
+                                                    disabled={currentPage === totalPages}
+                                                >
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        );
+                                    })()}
                                 </TabsContent>
                             ))}
                         </Tabs>
@@ -1233,98 +1362,99 @@ export function HomePage() {
                 </Card>
 
                 {/* Current Project Card - Now in right column under Prompts */}
-                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md">
-                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
+                <Card className="flex flex-col transition-shadow hover:shadow-md shrink-0">
+                    <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                                <FolderOpen className="h-4 w-4" />
-                                Current Project
+                            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
+                                <FolderOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                                <span className="truncate">Current Project</span>
                             </CardTitle>
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-3 sm:px-4">
+                    <CardContent className="pt-2 pb-2 px-2.5 sm:px-4">
                         {currentRepo ? (
-                            <div className="h-full flex flex-col">
-                                <div className="flex-1">
-                                    <div className="p-3 border rounded-lg bg-muted/20 mb-3 transition-colors hover:bg-muted/30">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {currentRepo.provider === 'gitlab' ? (
-                                                <GitlabIcon className="h-4 w-4" />
-                                            ) : (
-                                                <Github className="h-4 w-4" />
-                                            )}
-                                            <span className="text-xs font-medium uppercase text-muted-foreground">
-                                                {currentRepo.provider || 'github'}
-                                            </span>
-                                        </div>
-                                        <p className="font-medium text-sm">{currentRepo.owner}/{currentRepo.repo}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Currently loaded project</p>
+                            <div className="flex flex-col gap-2">
+                                <div className="p-2.5 border rounded-lg bg-muted/20 transition-colors hover:bg-muted/30">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        {currentRepo.provider === 'gitlab' ? (
+                                            <GitlabIcon className="h-4 w-4" />
+                                        ) : (
+                                            <Github className="h-4 w-4" />
+                                        )}
+                                        <span className="text-xs font-medium uppercase text-muted-foreground">
+                                            {currentRepo.provider || 'github'}
+                                        </span>
                                     </div>
+                                    <p className="font-medium text-sm">{currentRepo.owner}/{currentRepo.repo}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">Currently loaded project</p>
+                                </div>
 
+                                <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="w-full h-8 transition-colors"
+                                        className="flex-1 h-8 transition-colors"
                                         onClick={() => router.push("/dashboard?active=Code%20input")}
                                     >
                                         <FolderOpen className="h-3 w-3 mr-2" />
                                         Open in Editor
                                     </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        className="flex-1 h-8"
+                                        onClick={handleUnloadProject}
+                                    >
+                                        <FolderX className="h-3 w-3 mr-2" />
+                                        Unload
+                                    </Button>
                                 </div>
-
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="w-full h-8 mt-3"
-                                    onClick={handleUnloadProject}
-                                >
-                                    <FolderX className="h-3 w-3 mr-2" />
-                                    Unload Project
-                                </Button>
                             </div>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center py-6 text-center">
-                                <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3 border border-border/50">
-                                    <FolderX className="h-6 w-6 text-muted-foreground/60" />
+                            <div className="flex flex-col items-center justify-center py-2 text-center">
+                                <div className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center mb-1.5 border border-border/50">
+                                    <FolderX className="h-4 w-4 text-muted-foreground/60" />
                                 </div>
-                                <h3 className="text-sm font-medium mb-1">No Project Loaded</h3>
-                                <p className="text-xs text-muted-foreground max-w-[180px]">Import a repository from GitHub or GitLab to get started</p>
+                                <h3 className="text-xs font-medium mb-0.5">No Project Loaded</h3>
+                                <p className="text-[10px] text-muted-foreground max-w-[180px]">Import a repository from GitHub or GitLab to get started</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
                 </div>
             </div>
+            </div>
 
 
             {/* Full Text Dialog */}
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
-                <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+                <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] p-4 sm:p-6">
                     <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="text-base sm:text-lg">
                             {viewFullTextPrompt?.title || "Untitled Prompt"}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-xs sm:text-sm">
                             Full prompt content
                         </DialogDescription>
                     </DialogHeader>
                     {viewFullTextPrompt && (
-                        <div className="py-4">
-                            <ScrollArea className="h-80 rounded-md border p-4">
-                                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
+                        <div className="py-2 sm:py-4">
+                            <ScrollArea className="h-60 sm:h-80 rounded-md border p-3 sm:p-4">
+                                <pre className="whitespace-pre-wrap text-xs sm:text-sm font-mono leading-relaxed">
                                     {viewFullTextPrompt.text}
                                 </pre>
                             </ScrollArea>
-                            <p className="text-xs text-muted-foreground mt-2 text-right">
+                            <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-right">
                                 {viewFullTextPrompt.text.length} characters
                             </p>
                         </div>
                     )}
-                    <DialogFooter>
+                    <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                         <Button
                             variant="outline"
                             onClick={() => setViewFullTextPrompt(null)}
+                            className="w-full sm:w-auto order-2 sm:order-1"
                         >
                             Close
                         </Button>
@@ -1335,6 +1465,7 @@ export function HomePage() {
                                     setViewFullTextPrompt(null)
                                 }
                             }}
+                            className="w-full sm:w-auto order-1 sm:order-2"
                         >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
@@ -1348,48 +1479,51 @@ export function HomePage() {
                 setEditDialogOpen(open)
                 if (!open) setEditingPromptData(null)
             }}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                     <DialogHeader>
-                        <DialogTitle>Edit Prompt</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-base sm:text-lg">Edit Prompt</DialogTitle>
+                        <DialogDescription className="text-xs sm:text-sm">
                             Modify the prompt for the {editingPromptData?.agent} agent
                         </DialogDescription>
                     </DialogHeader>
 
                     {editingPromptData && (
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-title">Title</Label>
+                        <div className="grid gap-3 sm:gap-4 py-2 sm:py-4">
+                            <div className="grid gap-1.5 sm:gap-2">
+                                <Label htmlFor="edit-title" className="text-xs sm:text-sm">Title</Label>
                                 <Input
                                     id="edit-title"
                                     value={editingPromptData.title}
                                     onChange={(e) => setEditingPromptData(prev => ({ ...prev, title: e.target.value }))}
                                     placeholder="Enter prompt title..."
+                                    className="h-9 sm:h-10 text-sm"
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-content">Prompt Content</Label>
+                            <div className="grid gap-1.5 sm:gap-2">
+                                <Label htmlFor="edit-content" className="text-xs sm:text-sm">Prompt Content</Label>
                                 <Textarea
                                     id="edit-content"
                                     value={editingPromptData.text}
                                     onChange={(e) => setEditingPromptData(prev => ({ ...prev, text: e.target.value }))}
                                     placeholder="Enter your prompt here..."
-                                    rows={6}
+                                    rows={5}
+                                    className="text-sm min-h-[120px] sm:min-h-[150px]"
                                 />
-                                <p className="text-xs text-muted-foreground text-right">
+                                <p className="text-[10px] sm:text-xs text-muted-foreground text-right">
                                     {editingPromptData.text?.length || 0} characters
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    <DialogFooter>
+                    <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                         <Button
                             variant="outline"
                             onClick={() => {
                                 setEditDialogOpen(false)
                                 setEditingPromptData(null)
                             }}
+                            className="w-full sm:w-auto order-2 sm:order-1"
                         >
                             Cancel
                         </Button>
@@ -1413,23 +1547,23 @@ export function HomePage() {
 
             {/* Delete Confirmation AlertDialog */}
             <AlertDialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
-                <AlertDialogContent className="max-w-sm">
+                <AlertDialogContent className="w-[90vw] max-w-sm p-4 sm:p-6">
                     <AlertDialogHeader>
-                        <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-3">
-                            <Trash2 className="h-5 w-5 text-destructive" />
+                        <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2 sm:mb-3">
+                            <Trash2 className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
                         </div>
-                        <AlertDialogTitle className="text-center">Confirm Deletion</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center">
+                        <AlertDialogTitle className="text-center text-base sm:text-lg">Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-xs sm:text-sm">
                             {deleteDialog?.type === 'single' && "This prompt will be permanently deleted. This action cannot be undone."}
                             {deleteDialog?.type === 'selected' && `${deleteDialog.count || selectedPrompts.size} prompt(s) will be permanently deleted. This action cannot be undone.`}
                             {deleteDialog?.type === 'category' && `All prompts from "${deleteDialog.agent}" will be permanently deleted. This action cannot be undone.`}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                        <AlertDialogCancel className="w-full sm:w-auto order-2 sm:order-1 mt-0">Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto order-1 sm:order-2"
                         >
                             Delete
                         </AlertDialogAction>
@@ -1439,36 +1573,36 @@ export function HomePage() {
 
             {/* Import Progress Dialog */}
             <Dialog open={importingRepo !== null} onOpenChange={() => {}}>
-                <DialogContent className="sm:max-w-md" showCloseButton={false}>
+                <DialogContent className="w-[90vw] max-w-md p-4 sm:p-6" showCloseButton={false}>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+                        <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                             {importingRepo?.progress === 100 ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                             ) : (
-                                <GitBranch className="h-5 w-5 text-primary" />
+                                <GitBranch className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             )}
-                            Importing Repository
+                            <span className="truncate">Importing Repository</span>
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-xs sm:text-sm truncate">
                             {importingRepo?.repo?.full_name}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
                         {/* Progress bar */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{importingRepo?.status}</span>
-                                <span className="font-medium">{importingRepo?.progress}%</span>
+                        <div className="space-y-1.5 sm:space-y-2">
+                            <div className="flex justify-between text-xs sm:text-sm">
+                                <span className="text-muted-foreground truncate">{importingRepo?.status}</span>
+                                <span className="font-medium flex-shrink-0">{importingRepo?.progress}%</span>
                             </div>
                             <Progress
                                 value={importingRepo?.progress || 0}
-                                className="h-2 transition-all duration-300"
+                                className="h-1.5 sm:h-2 transition-all duration-300"
                             />
                         </div>
 
                         {/* Steps indicator */}
-                        <div className="space-y-2">
+                        <div className="space-y-1.5 sm:space-y-2">
                             {[
                                 { threshold: 15, label: 'Connecting to repository' },
                                 { threshold: 30, label: 'Fetching structure' },
@@ -1514,6 +1648,6 @@ export function HomePage() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+        </ScrollArea>
     )
 }

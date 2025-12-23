@@ -144,6 +144,7 @@ const SmartFileIcon = ({ name, isDir, isOpen }) => {
 
         return (
             <>
+                {/* eslint-disable-next-line @next/next/no-img-element -- dynamic icon URL from API */}
                 <img
                     src={closedSrc}
                     alt={name}
@@ -152,6 +153,7 @@ const SmartFileIcon = ({ name, isDir, isOpen }) => {
                     style={{ display: isOpen ? "none" : "block" }}
                     onError={handleFolderError}
                 />
+                {/* eslint-disable-next-line @next/next/no-img-element -- dynamic icon URL from API */}
                 <img
                     src={openSrc}
                     alt={name}
@@ -165,6 +167,7 @@ const SmartFileIcon = ({ name, isDir, isOpen }) => {
     }
 
     return (
+        // eslint-disable-next-line @next/next/no-img-element -- dynamic icon URL from API
         <img
             src={getFileUrl(name)}
             alt={name}

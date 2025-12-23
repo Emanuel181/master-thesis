@@ -190,7 +190,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
             setDetectedLanguage(null);
             setIsLanguageSupported(false);
         }
-    }, [code, isPlaceholder, selectedFile, language.prism]);
+    }, [code, isPlaceholder, selectedFile, language.prism, setLanguage]);
 
     // Effect for active tab language
     useEffect(() => {
@@ -212,7 +212,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                 setLanguage({ name: tabLanguage.charAt(0).toUpperCase() + tabLanguage.slice(1), prism: tabLanguage });
             }
         }
-    }, [activeTab]);
+    }, [activeTab, setLanguage]);
 
     // --- Actions ---
     const handleCopy = useCallback(() => {
@@ -278,25 +278,26 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const hasImportedProject = Boolean(currentRepo);
 
     return (
-        <div className="flex flex-col h-full w-full gap-2">
+        <div className="flex flex-col h-full w-full gap-1.5 sm:gap-2">
             {/* Top Toolbar - Only show when project is imported */}
             {hasImportedProject && (
-                <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 w-full">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                         {currentRepo && (
                             <>
-                                <Label htmlFor="view-mode-switch">Project View</Label>
+                                <Label htmlFor="view-mode-switch" className="text-xs sm:text-sm whitespace-nowrap">Project</Label>
                                 <Switch
                                     id="view-mode-switch"
                                     checked={viewMode === 'file'}
                                     onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
+                                    className="h-4 w-7 sm:h-5 sm:w-9"
                                 />
-                                <Label htmlFor="view-mode-switch">One File View</Label>
+                                <Label htmlFor="view-mode-switch" className="text-xs sm:text-sm whitespace-nowrap">File</Label>
                             </>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                         {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
                             <ImportDialog
                                 isOpen={isImportDialogOpen}
@@ -318,10 +319,11 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                             variant="outline"
                             size="sm"
                             onClick={handleUnloadProject}
-                            className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="gap-1.5 sm:gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
                         >
-                            <FolderX className="h-4 w-4" />
-                            Unload Project
+                            <FolderX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden xs:inline">Unload Project</span>
+                            <span className="xs:hidden">Unload</span>
                         </Button>
                     </div>
                 </div>

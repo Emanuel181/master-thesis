@@ -1,6 +1,6 @@
 "use client";
 import { animate, motion } from "motion/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { GoCopilot } from "react-icons/go";
 
@@ -15,50 +15,38 @@ export default function CardDemo() {
 }
 
 const Skeleton = () => {
-  const scale = [1, 1.1, 1];
-  const transform = ["translateY(0px)", "translateY(-4px)", "translateY(0px)"];
-  const sequence = [
-    [
-      ".circle-1",
-      {
-        scale,
-        transform,
-      },
-      { duration: 0.8 },
-    ],
-    [
-      ".circle-2",
-      {
-        scale,
-        transform,
-      },
-      { duration: 0.8 },
-    ],
-    [
-      ".circle-3",
-      {
-        scale,
-        transform,
-      },
-      { duration: 0.8 },
-    ],
-    [
-      ".circle-4",
-      {
-        scale,
-        transform,
-      },
-      { duration: 0.8 },
-    ],
-    [
-      ".circle-5",
-      {
-        scale,
-        transform,
-      },
-      { duration: 0.8 },
-    ],
-  ];
+  const sequence = useMemo(() => {
+    const scale = [1, 1.1, 1];
+    const transform = ["translateY(0px)", "translateY(-4px)", "translateY(0px)"];
+
+    return [
+      [
+        ".circle-1",
+        { scale, transform },
+        { duration: 0.8 },
+      ],
+      [
+        ".circle-2",
+        { scale, transform },
+        { duration: 0.8 },
+      ],
+      [
+        ".circle-3",
+        { scale, transform },
+        { duration: 0.8 },
+      ],
+      [
+        ".circle-4",
+        { scale, transform },
+        { duration: 0.8 },
+      ],
+      [
+        ".circle-5",
+        { scale, transform },
+        { duration: 0.8 },
+      ],
+    ];
+  }, []);
 
   useEffect(() => {
     animate(sequence, {
@@ -66,7 +54,7 @@ const Skeleton = () => {
       repeat: Infinity,
       repeatDelay: 1,
     });
-  }, []);
+  }, [sequence]);
   return (
     <div
       className="p-8 overflow-hidden h-full relative flex items-center justify-center">
@@ -97,35 +85,50 @@ const Skeleton = () => {
   );
 };
 const Sparkles = () => {
-  const randomMove = () => Math.random() * 2 - 1;
-  const randomOpacity = () => Math.random();
-  const random = () => Math.random();
+  // Precompute random values once to keep render pure and results stable.
+  const stars = useMemo(() => {
+    return [...Array(12)].map((_, i) => {
+      const rand = () => Math.random();
+      const randMove = () => rand() * 2 - 1;
+      return {
+        key: `star-${i}`,
+        topPct: rand() * 100,
+        leftPct: rand() * 100,
+        moveTopPx: randMove(),
+        moveLeftPx: randMove(),
+        opacity: rand(),
+        duration: rand() * 2 + 4,
+      };
+    });
+  }, []);
+
   return (
     <div className="absolute inset-0">
-      {[...Array(12)].map((_, i) => (
+      {stars.map((s) => (
         <motion.span
-          key={`star-${i}`}
+          key={s.key}
           animate={{
-            top: `calc(${random() * 100}% + ${randomMove()}px)`,
-            left: `calc(${random() * 100}% + ${randomMove()}px)`,
-            opacity: randomOpacity(),
+            top: `calc(${s.topPct}% + ${s.moveTopPx}px)`,
+            left: `calc(${s.leftPct}% + ${s.moveLeftPx}px)`,
+            opacity: s.opacity,
             scale: [1, 1.2, 0],
           }}
           transition={{
-            duration: random() * 2 + 4,
+            duration: s.duration,
             repeat: Infinity,
             ease: "linear",
           }}
           style={{
             position: "absolute",
-            top: `${random() * 100}%`,
-            left: `${random() * 100}%`,
+            top: `${s.topPct}%`,
+            left: `${s.leftPct}%`,
             width: `2px`,
             height: `2px`,
             borderRadius: "50%",
             zIndex: 1,
           }}
-          className="inline-block bg-black dark:bg-white"></motion.span>
+          className="inline-block bg-black dark:bg-white"
+        />
       ))}
     </div>
   );
@@ -146,32 +149,6 @@ export const Card = ({
   );
 };
 
-export const CardTitle = ({
-  children,
-  className
-}) => {
-  return (
-    <h3
-      className={cn("text-lg font-semibold text-gray-800 dark:text-white py-2", className)}>
-      {children}
-    </h3>
-  );
-};
-
-export const CardDescription = ({
-  children,
-  className
-}) => {
-  return (
-    <p
-      className={cn(
-        "text-sm font-normal text-neutral-600 dark:text-neutral-400 max-w-sm",
-        className
-      )}>
-      {children}
-    </p>
-  );
-};
 
 export const CardSkeletonContainer = ({
   className,

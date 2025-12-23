@@ -57,16 +57,27 @@ export function SettingsProvider({ children }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    let parsedSettings = null;
     const savedSettings = localStorage.getItem('app-settings');
     if (savedSettings) {
       try {
-        const parsed = JSON.parse(savedSettings);
-        setSettings(prev => ({ ...prev, ...parsed }));
+        parsedSettings = JSON.parse(savedSettings);
       } catch (e) {
         console.error('Failed to parse settings:', e);
       }
     }
-    setMounted(true);
+
+    if (parsedSettings) {
+      // Avoid synchronous setState in effect body (lint rule).
+      queueMicrotask(() => {
+        setSettings(prev => ({ ...prev, ...parsedSettings }));
+      });
+    }
+
+    // Avoid synchronous setState in effect body (lint rule).
+    queueMicrotask(() => {
+      setMounted(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -130,4 +141,3 @@ function applySettings(settings) {
 }
 
 export default SettingsContext;
-

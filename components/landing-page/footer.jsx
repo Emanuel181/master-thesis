@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
+import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { Github, Linkedin, Mail, FileText } from "lucide-react";
 
@@ -22,7 +23,7 @@ const itemVariants = {
 };
 
 // Social button - premium style
-const SocialButton = ({ icon: Icon, title, href }) => (
+const SocialButton = ({ icon: Icon, href }) => (
     <motion.a
         href={href}
         target="_blank"
@@ -64,7 +65,7 @@ export function Footer() {
                         variants={itemVariants}
                     >
                         <div className="flex items-center gap-2.5">
-                            <img src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 rounded-lg" />
+                            <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 rounded-lg" width={28} height={28} />
                             <span className="font-semibold text-[#0e2736] dark:text-[#e6f4f7] text-base tracking-tight">VulnIQ</span>
                         </div>
                         <p className="text-sm leading-relaxed max-w-sm text-[#0e2736]/70 dark:text-[#e6f4f7]/70">
@@ -72,7 +73,7 @@ export function Footer() {
                         </p>
                         <div className="flex gap-2 pt-2">
                             {socialLinks.map((social) => (
-                                <SocialButton key={social.title} icon={social.icon} title={social.title} href={social.href} />
+                                <SocialButton key={social.title} icon={social.icon} href={social.href} />
                             ))}
                         </div>
                     </motion.div>
@@ -84,7 +85,7 @@ export function Footer() {
                             <p className="font-medium text-[#0e2736] dark:text-[#e6f4f7]">Emanuel Rusu</p>
                             <p>West University of Timișoara</p>
                             <p>Faculty of Mathematics and Computer Science</p>
-                            <p>Master's Degree in Cybersecurity</p>
+                            <p>Master&apos;s Degree in Cybersecurity</p>
                         </div>
                         <motion.a
                             href="#"

@@ -24,14 +24,18 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning className="h-full">
       <head>
         <meta name="apple-mobile-web-app-title" content="VulnIQ" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-x-hidden`}
         suppressHydrationWarning
       >
         <Providers>
           {children}
-          <Toaster />
+          <Toaster position="top-center" richColors closeButton />
         </Providers>
       </body>
     </html>

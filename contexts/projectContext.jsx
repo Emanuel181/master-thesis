@@ -17,6 +17,7 @@ const ProjectContext = createContext({
 const STORAGE_KEY = "vulniq_project_state";
 
 export function ProjectProvider({ children }) {
+    // Initialize with null to avoid hydration mismatch - will load from localStorage in useEffect
     const [projectStructure, setProjectStructureState] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [viewMode, setViewMode] = useState("project");
@@ -24,21 +25,28 @@ export function ProjectProvider({ children }) {
     const [isHydrated, setIsHydrated] = useState(false);
     const [projectClearCounter, setProjectClearCounter] = useState(0);
 
-    // Load from localStorage on mount
+    // Load state from localStorage after hydration (this pattern is intentional to avoid hydration mismatch)
     useEffect(() => {
+        let savedState = null;
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
-                const parsed = JSON.parse(saved);
-                if (parsed.projectStructure) setProjectStructureState(parsed.projectStructure);
-                if (parsed.currentRepo) setCurrentRepoState(parsed.currentRepo);
-                if (parsed.viewMode) setViewMode(parsed.viewMode);
+                savedState = JSON.parse(saved);
             }
         } catch (err) {
             console.error("Error loading project state from localStorage:", err);
         }
+
+        // Batch all state updates together (necessary for hydration)
+        if (savedState) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setProjectStructureState(savedState.projectStructure || null);
+            setCurrentRepoState(savedState.currentRepo || null);
+            setViewMode(savedState.viewMode || "project");
+        }
         setIsHydrated(true);
     }, []);
+
 
     // Save to localStorage when state changes
     useEffect(() => {

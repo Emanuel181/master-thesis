@@ -86,6 +86,7 @@ export default function KnowledgeBaseVisualization() {
     // Fetch use cases from database on mount
     useEffect(() => {
         fetchUseCases();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchUseCases only needed on mount
     }, []);
 
     // Reset document page and selection when use case changes
@@ -503,28 +504,28 @@ export default function KnowledgeBaseVisualization() {
         return (
             <div
                 key={doc.id}
-                className={`group relative flex items-start gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer ${isSelected ? 'bg-accent/10' : ''}`}
+                className={`group relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer ${isSelected ? 'bg-accent/10' : ''}`}
                 onClick={() => openPdfViewer(doc)}
             >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                    <File className="h-6 w-6" />
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                    <File className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
 
-                <div className="flex-1 min-w-0 pt-1">
-                    <p className="text-sm font-medium text-foreground truncate pr-6 hover:text-primary transition-colors" title={doc.name}>
+                <div className="flex-1 min-w-0 pt-0.5 sm:pt-1">
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate pr-6 hover:text-primary transition-colors" title={doc.name}>
                         {doc.name}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PDF</span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">{doc.size}</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground bg-muted px-1 sm:px-1.5 py-0.5 rounded">PDF</span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">•</span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">{doc.size}</span>
                     </div>
                 </div>
 
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                    className="absolute right-1.5 sm:right-2 top-1.5 sm:top-2 h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all disabled:opacity-50"
                     disabled={deletingDocs.has(doc.id)}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -532,18 +533,18 @@ export default function KnowledgeBaseVisualization() {
                     }}
                 >
                     {deletingDocs.has(doc.id) ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                     ) : (
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     )}
                 </Button>
 
-                <div className="absolute left-4 top-4 flex items-center">
+                <div className="absolute left-3 sm:left-4 top-3 sm:top-4 flex items-center">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={(checked) => handleDocSelect(doc.id, checked)}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-5 w-5"
+                        className="h-4 w-4 sm:h-5 sm:w-5"
                         aria-label={`Select document ${doc.name}`}
                     />
                 </div>
@@ -554,31 +555,32 @@ export default function KnowledgeBaseVisualization() {
     return (
         <>
         {/* MAIN CONTAINER */}
-        <div className="grid flex-1 grid-cols-1 gap-4 pt-0 pb-4 pl-0 md:grid-cols-12 md:gap-8 h-[calc(100vh-120px)] overflow-hidden">
+        <div className="flex flex-col md:grid flex-1 gap-4 pt-0 pb-4 pl-0 md:grid-cols-12 md:gap-8 h-auto md:h-[calc(100vh-120px)] overflow-auto md:overflow-hidden">
 
             {/* ---------------------------------------------------------------------------
           COLUMN 1: CATEGORIES
          --------------------------------------------------------------------------- */}
-            <div className="md:col-span-5 flex flex-col h-full min-h-0 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden">
+            <div className="md:col-span-5 flex flex-col min-h-[300px] md:h-full md:min-h-0 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden">
 
                 {/* Header (Fixed) */}
-                <div className="flex items-center justify-between shrink-0 p-4 lg:p-6 pb-2">
-                    <div className="relative w-full mr-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 p-3 sm:p-4 lg:p-6 pb-2">
+                    <div className="relative flex-1">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search categories..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-8 bg-background"
+                            className="w-full pl-8 bg-background h-9 sm:h-10"
                         />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-end">
                         <Button
                             variant="outline"
                             size="icon"
                             onClick={fetchUseCases}
                             title="Refresh use cases"
                             disabled={isLoading}
+                            className="h-9 w-9 sm:h-10 sm:w-10"
                         >
                             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                         </Button>
@@ -652,32 +654,33 @@ export default function KnowledgeBaseVisualization() {
             {/* ---------------------------------------------------------------------------
           COLUMN 2: UPLOAD + DOCUMENTS
          --------------------------------------------------------------------------- */}
-            <div className="md:col-span-7 flex flex-col h-full min-h-0 rounded-xl bg-muted/50 overflow-hidden border border-border/50 shadow-sm relative">
+            <div className="md:col-span-7 flex flex-col min-h-[400px] md:h-full md:min-h-0 rounded-xl bg-muted/50 overflow-hidden border border-border/50 shadow-sm relative">
 
                 {selectedUseCase ? (
                     <>
                         {/* --- SECTION A: UPLOAD (Fixed at Top) --- */}
-                        <div className="shrink-0 p-6 border-b border-border/50 bg-background/50 backdrop-blur-sm z-10">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="shrink-0 p-3 sm:p-4 md:p-6 border-b border-border/50 bg-background/50 backdrop-blur-sm z-10">
+                            <div className="flex items-center justify-between mb-3 sm:mb-4">
                                 <div>
-                                    <h2 className="text-xl font-semibold flex items-center gap-2">
-                                        {selectedCategoryName} <span className="text-muted-foreground font-normal text-sm">/ Upload</span>
+                                    <h2 className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 flex-wrap">
+                                        <span className="truncate max-w-[150px] sm:max-w-none">{selectedCategoryName}</span>
+                                        <span className="text-muted-foreground font-normal text-xs sm:text-sm">/ Upload</span>
                                     </h2>
-                                    <p className="text-sm text-muted-foreground">Add relevant documents to this knowledge base.</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Add relevant documents to this knowledge base.</p>
                                 </div>
                             </div>
 
                             <div
-                                className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input px-6 py-8 transition-colors hover:bg-accent/50 hover:border-accent-foreground/50 bg-background"
+                                className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input px-4 sm:px-6 py-4 sm:py-8 transition-colors hover:bg-accent/50 hover:border-accent-foreground/50 bg-background"
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={handleDrop}
                             >
-                                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                                        <Upload className="h-6 w-6 text-primary" aria-hidden={true} />
+                                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
+                                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10">
+                                        <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-primary" aria-hidden={true} />
                                     </div>
                                     <div>
-                                        <div className="flex text-sm leading-6 text-muted-foreground justify-center sm:justify-start">
+                                        <div className="flex flex-wrap justify-center sm:justify-start text-xs sm:text-sm leading-6 text-muted-foreground">
                                             <label
                                                 htmlFor={`file-upload-${selectedUseCase}`}
                                                 className="relative cursor-pointer font-semibold text-primary hover:underline hover:underline-offset-4"
@@ -696,7 +699,7 @@ export default function KnowledgeBaseVisualization() {
                                             </label>
                                             <p className="pl-1">or drag and drop PDFs</p>
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-1">You can upload multiple files at once • Maximum 10MB per file</p>
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Multiple files • Max 10MB per file</p>
                                     </div>
                                 </div>
 
@@ -713,56 +716,58 @@ export default function KnowledgeBaseVisualization() {
                         </div>
 
                         {/* --- SECTION B: DOCUMENTS LIST (Scrollable Bottom) --- */}
-                        <ScrollArea className="flex-1 h-full bg-muted/30">
-                            <div className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        <ScrollArea className="flex-1 min-h-[200px] bg-muted/30">
+                            <div className="p-3 sm:p-4 md:p-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
+                                    <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                         Attached Documents ({currentDocs.length})
                                     </h3>
 
-                                    {currentDocs.length > 0 && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={selectAllDocs}
-                                            disabled={selectedDocs.size === currentDocs.length}
-                                            className="text-muted-foreground hover:bg-muted"
-                                        >
-                                            Select All
-                                        </Button>
-                                    )}
-
-                                    {/* Bulk actions (hidden if no documents selected) */}
-                                    {selectedDocs.size > 0 && (
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {currentDocs.length > 0 && selectedDocs.size === 0 && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={clearSelection}
-                                                className="text-muted-foreground hover:bg-muted"
+                                                onClick={selectAllDocs}
+                                                disabled={selectedDocs.size === currentDocs.length}
+                                                className="text-muted-foreground hover:bg-muted h-8 text-xs"
                                             >
-                                                Clear Selection
+                                                Select All
                                             </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={handleBulkDelete}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <X className="h-4 w-4" />
-                                                Delete Selected
-                                            </Button>
-                                        </div>
-                                    )}
+                                        )}
+
+                                        {/* Bulk actions (hidden if no documents selected) */}
+                                        {selectedDocs.size > 0 && (
+                                            <>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={clearSelection}
+                                                    className="text-muted-foreground hover:bg-muted h-8 text-xs"
+                                                >
+                                                    Clear
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={handleBulkDelete}
+                                                    className="flex items-center gap-1.5 h-8 text-xs"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                    Delete ({selectedDocs.size})
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {currentDocs.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground opacity-60">
-                                        <FolderOpen className="h-12 w-12 mb-2" />
-                                        <p>No documents found in this category.</p>
+                                    <div className="flex flex-col items-center justify-center h-32 sm:h-40 text-muted-foreground opacity-60">
+                                        <FolderOpen className="h-10 w-10 sm:h-12 sm:w-12 mb-2" />
+                                        <p className="text-xs sm:text-sm">No documents found in this category.</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                                         {currentDocsDisplay}
                                     </div>
                                 )}
@@ -803,12 +808,12 @@ export default function KnowledgeBaseVisualization() {
                         </ScrollArea>
                     </>
                 ) : (
-                    <div className="flex h-full flex-col items-center justify-center text-center p-8">
-                        <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                            <Search className="h-8 w-8 text-muted-foreground" />
+                    <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center p-4 sm:p-8">
+                        <div className="h-12 w-12 sm:h-16 sm:w-16 bg-muted rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                            <Search className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                         </div>
-                        <h3 className="text-lg font-medium">No Category Selected</h3>
-                        <p className="text-muted-foreground mt-2 max-w-sm">Select a category from the left sidebar to view documents and upload new files.</p>
+                        <h3 className="text-base sm:text-lg font-medium">No Category Selected</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2 max-w-sm">Select a category from above to view documents and upload new files.</p>
                     </div>
                 )}
             </div>
@@ -825,18 +830,18 @@ export default function KnowledgeBaseVisualization() {
 
         {/* PDF Name Dialog */}
         <Dialog open={nameDialogOpen} onOpenChange={setNameDialogOpen}>
-            <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
+            <DialogContent className="w-[95vw] max-w-[600px] max-h-[85vh] p-4 sm:p-6">
                 <DialogHeader>
-                    <DialogTitle>Name Your PDF{pendingFiles.length > 1 ? 's' : ''}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-base sm:text-lg">Name Your PDF{pendingFiles.length > 1 ? 's' : ''}</DialogTitle>
+                    <DialogDescription className="text-xs sm:text-sm">
                         {pendingFiles.length === 1
                             ? 'Choose a custom name for this PDF document. The .pdf extension will be added automatically.'
                             : `Customize names for ${pendingFiles.length} PDF documents. The .pdf extension will be added automatically.`
                         }
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="max-h-[400px] pr-4">
-                    <div className="grid gap-4 py-4">
+                <ScrollArea className="max-h-[50vh] sm:max-h-[400px] pr-2 sm:pr-4">
+                    <div className="grid gap-3 sm:gap-4 py-2 sm:py-4">
                         {pendingFiles.map((file, index) => (
                             <div key={index} className="grid gap-2 p-4 rounded-lg border bg-muted/30">
                                 <Label htmlFor={`pdf-name-${index}`}>
