@@ -39,28 +39,42 @@ export function AgentNode({ data }) {
 
     return (
         <>
-            {/* Input from Previous Agent (Left) */}
-            <Handle type="target" position={Position.Left} id="flow-in" className="!bg-border !w-3 !h-3" />
+            {/* Input from Previous Agent (Left) - Not needed for Reviewer (first agent) */}
+            {data.id !== "reviewer" && (
+                <Handle type="target" position={Position.Left} id="flow-in" className="!bg-border !w-3 !h-3" />
+            )}
 
-            {/* Input from Knowledge Base (Top - Offset Left) - Only for Reviewer */}
+            {/* Input from Knowledge Base (Left - Top position) - Only for Reviewer */}
             {data.id === "reviewer" && (
                 <Handle
                     type="target"
-                    position={Position.Top}
+                    position={Position.Left}
                     id="kb-in"
                     className="!bg-cyan-500 !w-3 !h-3"
-                    style={{ left: '25%' }}
+                    style={{ top: '30%' }}
                     title="Knowledge Base Context"
                 />
             )}
 
-            {/* Input from Prompt (Top - Center for non-reviewer, Offset Right for reviewer) */}
+            {/* Input from User Code (Left - Bottom position) - Only for Reviewer */}
+            {data.id === "reviewer" && (
+                <Handle
+                    type="target"
+                    position={Position.Left}
+                    id="flow-in"
+                    className="!bg-border !w-3 !h-3"
+                    style={{ top: '70%' }}
+                    title="Code Input"
+                />
+            )}
+
+            {/* Input from Prompt (Top - Center) */}
             <Handle
                 type="target"
                 position={Position.Top}
                 id="prompt-in"
                 className="!bg-indigo-500 !w-3 !h-3"
-                style={{ left: data.id === "reviewer" ? '75%' : '50%' }}
+                style={{ left: '50%' }}
                 title="Prompt Instructions"
             />
 
@@ -106,8 +120,10 @@ export function AgentNode({ data }) {
                 </CardContent>
             </Card>
 
-            {/* Output to Next Agent (Right) */}
-            <Handle type="source" position={Position.Right} id="flow-out" className="!bg-border !w-3 !h-3" />
+            {/* Output to Next Agent (Right) - Not needed for Report agent (last in chain) */}
+            {data.id !== "report" && (
+                <Handle type="source" position={Position.Right} id="flow-out" className="!bg-border !w-3 !h-3" />
+            )}
         </>
     );
 }

@@ -8,12 +8,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 export const FeedbackDialog = ({ open, onOpenChange }) => {
   const [feedback, setFeedback] = useState("");
+  const textareaRef = useRef(null);
 
   const handleSubmit = async () => {
     try {
@@ -35,9 +36,13 @@ export const FeedbackDialog = ({ open, onOpenChange }) => {
     }
   };
 
+  const handleInput = (e) => {
+    setFeedback(e.currentTarget.textContent || "");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[400px] max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Share your feedback</DialogTitle>
           <DialogDescription>
@@ -46,13 +51,19 @@ export const FeedbackDialog = ({ open, onOpenChange }) => {
         </DialogHeader>
         <div className="space-y-2">
           <Label htmlFor="feedback">Your feedback</Label>
-          <Textarea
-            className="min-h-[120px]"
-            id="feedback"
-            placeholder="Tell what you think..."
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-          />
+          <ScrollArea className="h-[120px] w-full rounded-md border border-input bg-transparent overflow-hidden">
+            <div
+              ref={textareaRef}
+              contentEditable
+              role="textbox"
+              aria-multiline="true"
+              id="feedback"
+              data-placeholder="Tell what you think..."
+              onInput={handleInput}
+              className="min-h-[120px] w-full px-3 py-2 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground break-all"
+              suppressContentEditableWarning
+            />
+          </ScrollArea>
         </div>
         <DialogFooter>
           <Button

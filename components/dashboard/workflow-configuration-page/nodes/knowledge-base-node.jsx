@@ -182,8 +182,8 @@ export function KnowledgeBaseNode({ data }) {
                     </Popover>
                 </CardContent>
             </Card>
-            {/* Output to Prompts/Agents (Right) */}
-            <Handle type="source" position={Position.Right} className="!bg-border !w-3 !h-3" />
+            {/* Output to Reviewer Agent (Bottom) */}
+            <Handle type="source" position={Position.Bottom} className="!bg-cyan-500 !w-3 !h-3" />
         </>
     );
 }

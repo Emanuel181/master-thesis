@@ -77,7 +77,7 @@ export function NavMain({ items, onNavigate, isCodeLocked = false }) {
                                 <SidebarMenuButton
                                     tooltip=""
                                     onClick={() => onNavigate(item)}
-                                    disabled={item.title === "Workflow configuration" && !isCodeLocked}
+                                    {...(item.title === "Workflow configuration" && !isCodeLocked ? { disabled: true } : {})}
                                 >
                                     {renderIcon(item.icon)}
                                     <span>{item.title}</span>

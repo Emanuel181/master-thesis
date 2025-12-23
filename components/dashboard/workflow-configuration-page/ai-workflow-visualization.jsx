@@ -104,7 +104,7 @@ export function AIWorkflowVisualization({
     // Default positions for all nodes
     const defaultPositions = React.useMemo(() => ({
         knowledgeBase: { x: GRID_START_X, y: ROW_1_Y },
-        userCode: { x: GRID_START_X, y: ROW_2_Y + 40 },
+        userCode: { x: GRID_START_X, y: ROW_2_Y + 100 },
         reviewerPrompt: { x: GRID_START_X + COL_WIDTH, y: ROW_1_Y },
         reviewer: { x: GRID_START_X + COL_WIDTH, y: ROW_2_Y },
         implementationPrompt: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_1_Y },
@@ -306,7 +306,7 @@ export function AIWorkflowVisualization({
 
     const initialEdges = React.useMemo(
         () => [
-            // --- 1. Knowledge Base Flow ---
+            // --- 1. Knowledge Base Flow (goes down then right to Reviewer) ---
             {
                 id: "e_kb_reviewer",
                 source: "knowledgeBase",
