@@ -16,7 +16,10 @@ import {
     FileText,
     ZoomIn,
     ZoomOut,
+    RotateCcw,
+    Save,
 } from "lucide-react";
+import { toast } from "sonner";
 import "reactflow/dist/style.css";
 
 // Import extracted nodes and edges
@@ -33,6 +36,9 @@ const nodeTypes = {
 const edgeTypes = {
     animated: AnimatedSVGEdge,
 };
+
+// Local storage key for node positions
+const POSITIONS_STORAGE_KEY = 'workflow-node-positions';
 
 // -------- Main Component --------
 
@@ -54,6 +60,7 @@ export function AIWorkflowVisualization({
     isCodeLocked = false,
 }) {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
+    const [hasPositionChanges, setHasPositionChanges] = React.useState(false);
     const reactFlowInstanceRef = React.useRef(null);
 
     const MIN_ZOOM = 0.5;
@@ -94,13 +101,59 @@ export function AIWorkflowVisualization({
     const ROW_1_Y = 0;
     const ROW_2_Y = 350;
 
+    // Default positions for all nodes
+    const defaultPositions = React.useMemo(() => ({
+        knowledgeBase: { x: GRID_START_X, y: ROW_1_Y },
+        userCode: { x: GRID_START_X, y: ROW_2_Y + 40 },
+        reviewerPrompt: { x: GRID_START_X + COL_WIDTH + 100, y: ROW_1_Y },
+        reviewer: { x: GRID_START_X + COL_WIDTH, y: ROW_2_Y },
+        implementationPrompt: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_1_Y },
+        implementation: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_2_Y },
+        testerPrompt: { x: GRID_START_X + COL_WIDTH * 3, y: ROW_1_Y },
+        tester: { x: GRID_START_X + COL_WIDTH * 3, y: ROW_2_Y },
+        reportPrompt: { x: GRID_START_X + COL_WIDTH * 4, y: ROW_1_Y },
+        report: { x: GRID_START_X + COL_WIDTH * 4, y: ROW_2_Y },
+    }), []);
+
+    // Load saved positions from localStorage
+    const getSavedPositions = React.useCallback(() => {
+        if (typeof window === 'undefined') return null;
+        try {
+            const saved = localStorage.getItem(POSITIONS_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    }, []);
+
+    // Save positions to localStorage
+    const savePositions = React.useCallback((positions) => {
+        if (typeof window === 'undefined') return;
+        try {
+            localStorage.setItem(POSITIONS_STORAGE_KEY, JSON.stringify(positions));
+            toast.success("Layout saved successfully");
+            setHasPositionChanges(false);
+        } catch {
+            toast.error("Failed to save layout");
+        }
+    }, []);
+
+    // Get position for a node (saved or default)
+    const getNodePosition = React.useCallback((nodeId) => {
+        const saved = getSavedPositions();
+        if (saved && saved[nodeId]) {
+            return saved[nodeId];
+        }
+        return defaultPositions[nodeId] || { x: 0, y: 0 };
+    }, [getSavedPositions, defaultPositions]);
+
     const initialNodes = React.useMemo(
         () => [
             // --- Inputs Column (Left Most) ---
             {
                 id: "knowledgeBase",
                 type: "knowledgeBaseNode",
-                position: { x: GRID_START_X, y: ROW_1_Y },
+                position: getNodePosition("knowledgeBase"),
                 data: {
                     label: "Knowledge Base",
                     description: "RAG context source",
@@ -117,7 +170,7 @@ export function AIWorkflowVisualization({
             {
                 id: "userCode",
                 type: "userCodeNode",
-                position: { x: GRID_START_X, y: ROW_2_Y + 40 },
+                position: getNodePosition("userCode"),
                 data: {
                     label: "Your Code",
                     description: "Input code for review",
@@ -128,7 +181,7 @@ export function AIWorkflowVisualization({
             {
                 id: "reviewerPrompt",
                 type: "promptNode",
-                position: { x: GRID_START_X + COL_WIDTH + 100, y: ROW_1_Y },
+                position: getNodePosition("reviewerPrompt"),
                 data: {
                     label: "Reviewer Prompts",
                     description: "Select prompts for reviewer",
@@ -142,7 +195,7 @@ export function AIWorkflowVisualization({
             {
                 id: "reviewer",
                 type: "agentNode",
-                position: { x: GRID_START_X + COL_WIDTH, y: ROW_2_Y },
+                position: getNodePosition("reviewer"),
                 data: {
                     id: "reviewer",
                     label: "Reviewer Agent",
@@ -159,7 +212,7 @@ export function AIWorkflowVisualization({
             {
                 id: "implementationPrompt",
                 type: "promptNode",
-                position: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_1_Y },
+                position: getNodePosition("implementationPrompt"),
                 data: {
                     label: "Implementation Prompts",
                     description: "Select prompts for changes",
@@ -173,7 +226,7 @@ export function AIWorkflowVisualization({
             {
                 id: "implementation",
                 type: "agentNode",
-                position: { x: GRID_START_X + COL_WIDTH * 2, y: ROW_2_Y },
+                position: getNodePosition("implementation"),
                 data: {
                     id: "implementation",
                     label: "Implementation Agent",
@@ -190,7 +243,7 @@ export function AIWorkflowVisualization({
             {
                 id: "testerPrompt",
                 type: "promptNode",
-                position: { x: GRID_START_X + COL_WIDTH * 3, y: ROW_1_Y },
+                position: getNodePosition("testerPrompt"),
                 data: {
                     label: "Tester Prompts",
                     description: "Select prompts for testing",
@@ -204,7 +257,7 @@ export function AIWorkflowVisualization({
             {
                 id: "tester",
                 type: "agentNode",
-                position: { x: GRID_START_X + COL_WIDTH * 3, y: ROW_2_Y },
+                position: getNodePosition("tester"),
                 data: {
                     id: "tester",
                     label: "Tester Agent",
@@ -221,7 +274,7 @@ export function AIWorkflowVisualization({
             {
                 id: "reportPrompt",
                 type: "promptNode",
-                position: { x: GRID_START_X + COL_WIDTH * 4, y: ROW_1_Y },
+                position: getNodePosition("reportPrompt"),
                 data: {
                     label: "Report Prompts",
                     description: "Select prompts for report",
@@ -235,7 +288,7 @@ export function AIWorkflowVisualization({
             {
                 id: "report",
                 type: "agentNode",
-                position: { x: GRID_START_X + COL_WIDTH * 4, y: ROW_2_Y },
+                position: getNodePosition("report"),
                 data: {
                     id: "report",
                     label: "Report Agent",
@@ -248,7 +301,7 @@ export function AIWorkflowVisualization({
                 },
             },
         ],
-        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, prompts, selectedPrompts, onPromptChange, isCodeLocked]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, prompts, selectedPrompts, onPromptChange, isCodeLocked, getNodePosition]
     );
 
     const initialEdges = React.useMemo(
@@ -347,6 +400,39 @@ export function AIWorkflowVisualization({
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+    // Save current node positions
+    const handleSavePositions = React.useCallback(() => {
+        const positions = {};
+        nodes.forEach(node => {
+            positions[node.id] = node.position;
+        });
+        savePositions(positions);
+    }, [nodes, savePositions]);
+
+    // Reset to default positions
+    const handleResetPositions = React.useCallback(() => {
+        setNodes(nds => nds.map(node => ({
+            ...node,
+            position: defaultPositions[node.id] || node.position
+        })));
+        // Clear saved positions
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(POSITIONS_STORAGE_KEY);
+        }
+        setHasPositionChanges(false);
+        toast.success("Layout reset to default");
+    }, [defaultPositions, setNodes]);
+
+    // Track position changes
+    const handleNodesChangeWithTracking = React.useCallback((changes) => {
+        onNodesChange(changes);
+        // Check if any change is a position change
+        const hasPositionChange = changes.some(change => change.type === 'position' && change.dragging === false);
+        if (hasPositionChange) {
+            setHasPositionChanges(true);
+        }
+    }, [onNodesChange]);
+
     React.useEffect(() => {
         setEdges(initialEdges);
     }, [initialEdges, setEdges]);
@@ -384,18 +470,44 @@ export function AIWorkflowVisualization({
                         AI Workflow Configuration
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {/* Zoom controls */}
                         <div className="flex items-center gap-1">
-                            <Button type="button" size="icon" variant="outline" onClick={handleZoomOut} className="h-8 w-8 sm:h-9 sm:w-9">
+                            <Button type="button" size="icon" variant="outline" onClick={handleZoomOut} className="h-8 w-8 sm:h-9 sm:w-9" title="Zoom out">
                                 <ZoomOut className="w-4 h-4" />
                             </Button>
-                            <Button type="button" size="icon" variant="outline" onClick={handleZoomIn} className="h-8 w-8 sm:h-9 sm:w-9">
+                            <Button type="button" size="icon" variant="outline" onClick={handleZoomIn} className="h-8 w-8 sm:h-9 sm:w-9" title="Zoom in">
                                 <ZoomIn className="w-4 h-4" />
                             </Button>
                         </div>
+                        {/* Layout controls */}
+                        <div className="flex items-center gap-1">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant={hasPositionChanges ? "default" : "outline"}
+                                onClick={handleSavePositions}
+                                className="h-8 sm:h-9 text-xs sm:text-sm"
+                                title="Save current layout"
+                            >
+                                <Save className="w-4 h-4 sm:mr-1" />
+                                <span className="hidden sm:inline">Save Layout</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                onClick={handleResetPositions}
+                                className="h-8 w-8 sm:h-9 sm:w-9"
+                                title="Reset to default layout"
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        {/* Config save/cancel */}
                         <div className="flex items-center gap-2 ml-auto sm:ml-0">
                             <Button type="button" onClick={onSave} size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                                 Save
-                                <span className="hidden sm:inline ml-1">Configuration</span>
+                                <span className="hidden sm:inline ml-1">Config</span>
                             </Button>
                             <Button type="button" onClick={onCancel} variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                                 Cancel
@@ -407,7 +519,7 @@ export function AIWorkflowVisualization({
                 {/* Mobile hint */}
                 <div className="sm:hidden px-3 py-2 bg-muted/50 border-b">
                     <p className="text-xs text-muted-foreground text-center">
-                        Pinch to zoom • Drag to pan • Tap nodes to configure
+                        Drag nodes to rearrange • Pinch to zoom • Save layout to persist
                     </p>
                 </div>
 
@@ -416,7 +528,7 @@ export function AIWorkflowVisualization({
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
-                        onNodesChange={onNodesChange}
+                        onNodesChange={handleNodesChangeWithTracking}
                         onEdgesChange={onEdgesChange}
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
