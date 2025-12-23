@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Plus, Loader2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import * as LucideIcons from "lucide-react"
@@ -109,7 +111,7 @@ export function AddCategoryDialog({ onAddCategory }) {
           Add Category
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Add New Category</DialogTitle>
           <DialogDescription>
@@ -129,17 +131,22 @@ export function AddCategoryDialog({ onAddCategory }) {
               placeholder="e.g., Deployment"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="description" className="text-right pt-2">
               Description
             </Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., CI/CD, Docker, and hosting"
-            />
+            <div className="col-span-3">
+              <ScrollArea className="h-40 w-full rounded-md border">
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="min-h-[152px] border-0 focus-visible:ring-0 resize-none break-words"
+                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                  placeholder="Enter a detailed description for this category..."
+                />
+              </ScrollArea>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="icon" className="text-right">

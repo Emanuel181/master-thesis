@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
     Dialog,
@@ -15,15 +15,13 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download } from "lucide-rea
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Configure PDF.js worker - use unpkg with the exact version from react-pdf's pdfjs
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [scale, setScale] = useState(1.0);
-    const [containerWidth, setContainerWidth] = useState(null);
-    const [isViewerFocused, setIsViewerFocused] = useState(false);
     const viewerRef = React.useRef(null);
     const scrollAreaRef = React.useRef(null);
 
@@ -41,13 +39,14 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
         console.error("Error loading PDF:", error);
     }
 
-    // Reset focus when dialog opens/closes
-    React.useEffect(() => {
+    // Reset state when dialog opens/closes
+    useEffect(() => {
         if (open && viewerRef.current) {
             viewerRef.current.focus();
-            setIsViewerFocused(true);
-        } else {
-            setIsViewerFocused(false);
+        }
+        if (!open) {
+            setScale(1.0);
+            setPageNumber(1);
         }
     }, [open]);
 
@@ -59,13 +58,13 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
         setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
     };
 
-    const zoomIn = () => {
+    const zoomIn = useCallback(() => {
         setScale((prev) => Math.min(prev + 0.2, 3.0));
-    };
+    }, []);
 
-    const zoomOut = () => {
+    const zoomOut = useCallback(() => {
         setScale((prev) => Math.max(prev - 0.2, 0.1));
-    };
+    }, []);
 
     // Drag/pan handlers
     const handleMouseDown = (e) => {
@@ -102,47 +101,74 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
         setIsDragging(false);
     };
 
-    // Handle wheel/touchpad zoom
-    const handleWheel = (e) => {
-        // Check if Ctrl key is pressed (or Cmd on Mac) for zoom
-        if (e.ctrlKey || e.metaKey) {
-            // Always prevent default browser zoom when Ctrl/Cmd is pressed in viewer
-            e.preventDefault();
-            e.stopPropagation();
+    // Handle wheel/touchpad zoom - must capture at document level with non-passive listener
+    useEffect(() => {
+        if (!open) return;
 
-            // Determine zoom direction based on wheel delta
-            const delta = e.deltaY;
-            const zoomAmount = 0.1;
+        const handleWheel = (e) => {
+            // Check if Ctrl key is pressed (or Cmd on Mac) - this is how touchpad pinch zoom works
+            if (e.ctrlKey || e.metaKey) {
+                // Check if the event target is within our viewer
+                const viewer = viewerRef.current;
+                if (viewer && (viewer.contains(e.target) || viewer === e.target)) {
+                    // Prevent browser zoom
+                    e.preventDefault();
+                    e.stopPropagation();
 
-            if (delta < 0) {
-                // Scrolling up - zoom in
-                setScale((prev) => Math.min(prev + zoomAmount, 3.0));
-            } else {
-                // Scrolling down - zoom out
-                setScale((prev) => Math.max(prev - zoomAmount, 0.1));
+                    // Determine zoom direction based on wheel delta
+                    const delta = e.deltaY;
+                    const zoomAmount = 0.05; // Smaller amount for smoother touchpad zoom
+
+                    setScale((prev) => {
+                        if (delta < 0) {
+                            // Scrolling up / pinch out - zoom in
+                            return Math.min(prev + zoomAmount, 3.0);
+                        } else {
+                            // Scrolling down / pinch in - zoom out
+                            return Math.max(prev - zoomAmount, 0.1);
+                        }
+                    });
+                }
             }
-        }
-    };
+        };
 
-    // Prevent browser zoom shortcuts when viewer is focused
-    const handleKeyDown = (e) => {
-        // Prevent Ctrl/Cmd + Plus/Minus/0 (browser zoom shortcuts)
-        if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
-            e.preventDefault();
-            if (e.key === '+' || e.key === '=') {
-                zoomIn();
-            } else if (e.key === '-') {
-                zoomOut();
-            } else if (e.key === '0') {
-                setScale(1.0); // Reset to 100%
+        // Add non-passive event listener at document level to capture before browser zoom
+        document.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+
+        return () => {
+            document.removeEventListener('wheel', handleWheel, { capture: true });
+        };
+    }, [open]);
+
+    // Prevent browser zoom shortcuts when dialog is open
+    useEffect(() => {
+        if (!open) return;
+
+        const handleKeyDown = (e) => {
+            // Prevent Ctrl/Cmd + Plus/Minus/0 (browser zoom shortcuts)
+            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+                const viewer = viewerRef.current;
+                if (viewer && (viewer.contains(document.activeElement) || viewer === document.activeElement)) {
+                    e.preventDefault();
+                    if (e.key === '+' || e.key === '=') {
+                        setScale((prev) => Math.min(prev + 0.2, 3.0));
+                    } else if (e.key === '-') {
+                        setScale((prev) => Math.max(prev - 0.2, 0.1));
+                    } else if (e.key === '0') {
+                        setScale(1.0); // Reset to 100%
+                    }
+                }
             }
-        }
-    };
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [open]);
 
     // Calculate PDF width based on container and scale
     const getPdfWidth = () => {
-        // Use a percentage of viewport width, accounting for dialog padding
-        const baseWidth = Math.min(window.innerWidth * 0.85, 1200);
+        // Use a larger percentage of viewport width for wider display
+        const baseWidth = Math.min(window.innerWidth * 0.92, 1600);
         return baseWidth * scale;
     };
 
@@ -160,8 +186,7 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-[95vw] w-[95vw] h-[95vh] flex flex-col p-0"
-                onKeyDown={handleKeyDown}
+                className="max-w-[98vw] w-[98vw] h-[98vh] flex flex-col p-0"
             >
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle className="text-lg font-semibold">
@@ -217,13 +242,10 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
                 <div
                     ref={viewerRef}
                     className={`flex-1 relative overflow-hidden outline-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                    onWheel={handleWheel}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseLeave}
-                    onFocus={() => setIsViewerFocused(true)}
-                    onBlur={() => setIsViewerFocused(false)}
                     tabIndex={0}
                 >
                     <ScrollArea className="h-full w-full" ref={scrollAreaRef}>

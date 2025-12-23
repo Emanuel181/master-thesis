@@ -34,7 +34,7 @@ const updateProfileSchema = z.object({
     .string()
     .max(20, 'Phone number must be less than 20 characters')
     .transform((v) => normalizeText(v))
-    .refine((v) => phoneRegex.test(v), { message: 'Invalid phone number format' })
+    .refine((v) => !v || phoneRegex.test(v), { message: 'Invalid phone number format' })
     .nullable()
     .optional(),
   jobTitle: zText('Job title', 100).nullable().optional(),

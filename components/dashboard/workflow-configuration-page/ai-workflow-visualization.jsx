@@ -10,7 +10,6 @@ import {
 } from "reactflow";
 import { Button } from "@/components/ui/button";
 import {
-    Code,
     ScanSearch,
     Wrench,
     BugPlay,
@@ -90,10 +89,10 @@ export function AIWorkflowVisualization({
         orange: isDarkMode ? "#fb923c" : "#f97316",
     }), [isDarkMode]);
 
-    const GRID_START_X = 50;
-    const COL_WIDTH = 450;
+    const GRID_START_X = 30;
+    const COL_WIDTH = 350;
     const ROW_1_Y = 0;
-    const ROW_2_Y = 400;
+    const ROW_2_Y = 350;
 
     const initialNodes = React.useMemo(
         () => [
@@ -379,25 +378,41 @@ export function AIWorkflowVisualization({
     return (
         <div className="w-full">
             <div className="border rounded-lg bg-background shadow-sm flex flex-col">
-                <div className="flex items-center justify-between px-4 py-3 border-b gap-3">
+                {/* Header - responsive layout */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2 sm:py-3 border-b gap-2 sm:gap-3">
                     <div className="text-sm font-medium text-foreground">
                         AI Workflow Configuration
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 mr-3">
-                            <Button type="button" size="icon" variant="outline" onClick={handleZoomOut}>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-1">
+                            <Button type="button" size="icon" variant="outline" onClick={handleZoomOut} className="h-8 w-8 sm:h-9 sm:w-9">
                                 <ZoomOut className="w-4 h-4" />
                             </Button>
-                            <Button type="button" size="icon" variant="outline" onClick={handleZoomIn}>
+                            <Button type="button" size="icon" variant="outline" onClick={handleZoomIn} className="h-8 w-8 sm:h-9 sm:w-9">
                                 <ZoomIn className="w-4 h-4" />
                             </Button>
                         </div>
-                        <Button type="button" onClick={onSave}>Save Configuration</Button>
-                        <Button type="button" onClick={onCancel} variant="outline">Cancel</Button>
+                        <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                            <Button type="button" onClick={onSave} size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                                Save
+                                <span className="hidden sm:inline ml-1">Configuration</span>
+                            </Button>
+                            <Button type="button" onClick={onCancel} variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                                Cancel
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="h-[800px]">
+                {/* Mobile hint */}
+                <div className="sm:hidden px-3 py-2 bg-muted/50 border-b">
+                    <p className="text-xs text-muted-foreground text-center">
+                        Pinch to zoom • Drag to pan • Tap nodes to configure
+                    </p>
+                </div>
+
+                {/* ReactFlow container - responsive height */}
+                <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px]">
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -406,18 +421,21 @@ export function AIWorkflowVisualization({
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
                         fitView
-                        fitViewOptions={{ padding: 0.2 }}
+                        fitViewOptions={{ padding: 0.1 }}
                         minZoom={MIN_ZOOM}
                         maxZoom={MAX_ZOOM}
-                        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
                         nodesDraggable
                         nodesConnectable={false}
                         elementsSelectable
                         snapToGrid
                         snapGrid={[20, 20]}
                         onInit={(instance) => { reactFlowInstanceRef.current = instance; }}
+                        panOnScroll
+                        panOnDrag
+                        zoomOnPinch
                     >
-                        <Controls className="!bg-card !border-border" />
+                        <Controls className="!bg-card !border-border !left-2 !bottom-2 sm:!left-4 sm:!bottom-4" showInteractive={false} />
                     </ReactFlow>
                 </div>
             </div>

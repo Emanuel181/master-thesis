@@ -26,12 +26,12 @@ export function EditorTabs({
         <ScrollArea orientation="horizontal" className="w-full border-b">
             <div className="w-max">
                 <Tabs value={activeTabId} onValueChange={setActiveTabId}>
-                    <TabsList className="h-9 p-1 bg-transparent flex">
+                    <TabsList className="h-7 sm:h-9 p-0.5 sm:p-1 bg-transparent flex">
                         {openTabs.map((tab, index) => (
                             <TabsTrigger
                                 key={`tab-${tab.id}-${index}`}
                                 value={tab.id}
-                                className={`relative px-3 py-1 text-sm flex items-center gap-1 cursor-move ${dragOverIndex === index ? 'ring-2 ring-blue-500 bg-muted' : ''}`}
+                                className={`relative px-1.5 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-0.5 sm:gap-1 cursor-move ${dragOverIndex === index ? 'ring-2 ring-blue-500 bg-muted' : ''}`}
                                 draggable="true"
                                 onDragStart={(e) => onDragStart(e, index)}
                                 onDragOver={(e) => onDragOver(e, index)}
@@ -39,13 +39,13 @@ export function EditorTabs({
                                 onDrop={(e) => onDrop(e, index)}
                             >
                                 {/* eslint-disable-next-line @next/next/no-img-element -- dynamic icon URL from API */}
-                                <img src={getFileIconUrl(tab.name)} alt="" className="w-4 h-4 flex-shrink-0" />
-                                <span className="truncate max-w-[100px]">{tab.name}</span>
+                                <img src={getFileIconUrl(tab.name)} alt="" className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="truncate max-w-[60px] sm:max-w-[100px]">{tab.name}</span>
                                 <span
                                     onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
-                                    className="cursor-pointer hover:bg-muted rounded p-0.5 ml-1 flex-shrink-0"
+                                    className="cursor-pointer hover:bg-muted rounded p-0.5 ml-0.5 sm:ml-1 flex-shrink-0"
                                 >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 </span>
                             </TabsTrigger>
                         ))}

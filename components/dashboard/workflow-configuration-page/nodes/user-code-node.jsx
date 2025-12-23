@@ -11,15 +11,15 @@ import { Code } from "lucide-react";
 export function UserCodeNode({ data }) {
     return (
         <>
-            <Card className="min-w-[220px] shadow-lg border-2 border-yellow-400 dark:border-yellow-400">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-3 rounded-lg bg-yellow-400">
-                            <Code className="w-7 h-7 text-gray-900" strokeWidth={2.5} />
+            <Card className="w-[180px] sm:w-[220px] shadow-lg border-2 border-yellow-400 dark:border-yellow-400">
+                <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className="p-2 sm:p-3 rounded-lg bg-yellow-400">
+                            <Code className="w-5 h-5 sm:w-7 sm:h-7 text-gray-900" strokeWidth={2.5} />
                         </div>
-                        <div className="font-semibold text-base">{data.label}</div>
+                        <div className="font-semibold text-xs sm:text-base">{data.label}</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
                         {data.description}
                     </div>
                 </CardContent>

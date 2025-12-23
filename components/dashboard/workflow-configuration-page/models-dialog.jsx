@@ -16,7 +16,6 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw } from "lucide-react"
@@ -26,6 +25,7 @@ import { useUseCases } from "@/contexts/useCasesContext"
 import * as LucideIcons from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { usePrompts } from "@/contexts/promptsContext"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
     Dialog,
     DialogContent,
@@ -54,9 +54,6 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         prompts,
         selectedPrompts,
         handlePromptChange,
-        handlePromptTextChange,
-        addPrompt,
-        savePrompts,
     } = usePrompts();
 
     // Auto-select knowledge base when codeType changes
@@ -196,8 +193,6 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         fetchAgents();
     }, []);
 
-    const [selectedAgentDetails, setSelectedAgentDetails] = React.useState(null);
-    const [isLoadingAgentDetails, setIsLoadingAgentDetails] = React.useState(false);
     const [selectedSystemPrompts, setSelectedSystemPrompts] = React.useState({
         reviewer: "",
         implementation: "",
@@ -217,71 +212,89 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                     </DrawerHeader>
                     <div className="p-4">
                         <Tabs defaultValue="workflow" className="w-full">
-                            <TabsList className="grid w-full grid-cols-4 mb-4">
-                                <TabsTrigger value="workflow">Workflow Visualization</TabsTrigger>
-                                <TabsTrigger value="models">Agents Configuration</TabsTrigger>
-                                <TabsTrigger value="prompts">Prompts Configuration</TabsTrigger>
-                                <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
+                                <TabsTrigger value="workflow" className="text-xs sm:text-sm px-2 py-2">
+                                    <span className="hidden sm:inline">Workflow Visualization</span>
+                                    <span className="sm:hidden">Workflow</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="models" className="text-xs sm:text-sm px-2 py-2">
+                                    <span className="hidden sm:inline">Agents Configuration</span>
+                                    <span className="sm:hidden">Agents</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="prompts" className="text-xs sm:text-sm px-2 py-2">
+                                    <span className="hidden sm:inline">Prompts Configuration</span>
+                                    <span className="sm:hidden">Prompts</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="knowledge" className="text-xs sm:text-sm px-2 py-2">
+                                    <span className="hidden sm:inline">Knowledge Base</span>
+                                    <span className="sm:hidden">Knowledge</span>
+                                </TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="workflow" className="space-y-4">
-                                <div className="text-sm text-muted-foreground mb-4">
-                                    Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
-                                </div>
-                                <AIWorkflowVisualization
-                                    models={models}
-                                    agentModels={agentModels}
-                                    onModelChange={handleModelChange}
-                                    knowledgeBases={useCases.map(uc => ({
-                                        id: uc.id,
-                                        name: uc.title,
-                                        description: uc.content,
-                                        icon: uc.icon
-                                    }))}
-                                    selectedKnowledgeBases={selectedKnowledgeBases}
-                                    onKnowledgeBaseChange={toggleKnowledgeBase}
-                                    codeType={codeType}
-                                    onCodeTypeChange={onCodeTypeChange}
-                                    useCases={useCases}
-                                    prompts={prompts}
-                                    selectedPrompts={selectedPrompts}
-                                    selectedSystemPrompts={selectedSystemPrompts}
-                                    onPromptChange={handlePromptChange}
-                                    onSave={() => {
-                                        // Here you would typically save the configuration
-                                        onOpenChange(false);
-                                    }}
-                                    onCancel={() => onOpenChange(false)}
-                                />
+                            <TabsContent value="workflow" className="mt-0">
+                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
+                                    <div className="space-y-4 pr-4">
+                                        <div className="text-sm text-muted-foreground mb-4">
+                                            Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
+                                        </div>
+                                        <AIWorkflowVisualization
+                                            models={models}
+                                            agentModels={agentModels}
+                                            onModelChange={handleModelChange}
+                                            knowledgeBases={useCases.map(uc => ({
+                                                id: uc.id,
+                                                name: uc.title,
+                                                description: uc.content,
+                                                icon: uc.icon
+                                            }))}
+                                            selectedKnowledgeBases={selectedKnowledgeBases}
+                                            onKnowledgeBaseChange={toggleKnowledgeBase}
+                                            codeType={codeType}
+                                            onCodeTypeChange={onCodeTypeChange}
+                                            useCases={useCases}
+                                            prompts={prompts}
+                                            selectedPrompts={selectedPrompts}
+                                            selectedSystemPrompts={selectedSystemPrompts}
+                                            onPromptChange={handlePromptChange}
+                                            onSave={() => {
+                                                // Here you would typically save the configuration
+                                                onOpenChange(false);
+                                            }}
+                                            onCancel={() => onOpenChange(false)}
+                                        />
+                                    </div>
+                                </ScrollArea>
                             </TabsContent>
 
-                            <TabsContent value="models">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-semibold">Agent Configuration</h3>
-                                        <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        title="Refresh available models"
-                                        onClick={handleRefreshModels}
-                                        disabled={isRefreshingModels}
-                                    >
-                                        {isRefreshingModels ? (
-                                            <>
-                                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                Refreshing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <RefreshCw className="h-4 w-4 mr-2" />
-                                                Refresh Models
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                                <div className="grid md:grid-cols-2 gap-6">
+                            <TabsContent value="models" className="mt-0">
+                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
+                                    <div className="pr-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                                            <div>
+                                                <h3 className="text-lg font-semibold">Agent Configuration</h3>
+                                                <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                title="Refresh available models"
+                                                onClick={handleRefreshModels}
+                                                disabled={isRefreshingModels}
+                                            >
+                                                {isRefreshingModels ? (
+                                                    <>
+                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                        <span className="hidden sm:inline">Refreshing...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <RefreshCw className="h-4 w-4 sm:mr-2" />
+                                                        <span className="hidden sm:inline">Refresh Models</span>
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="text-lg font-medium">Reviewer Agent</CardTitle>
@@ -297,8 +310,8 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model) => (
-                                                                    <SelectItem key={`reviewer-${model}`} value={model}>{model}</SelectItem>
+                                                                {models.map((model, idx) => (
+                                                                    <SelectItem key={`reviewer-model-${idx}`} value={model}>{model}</SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
@@ -345,8 +358,8 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model) => (
-                                                                    <SelectItem key={`implementation-${model}`} value={model}>{model}</SelectItem>
+                                                                {models.map((model, idx) => (
+                                                                    <SelectItem key={`implementation-model-${idx}`} value={model}>{model}</SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
@@ -393,8 +406,8 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model) => (
-                                                                    <SelectItem key={`tester-${model}`} value={model}>{model}</SelectItem>
+                                                                {models.map((model, idx) => (
+                                                                    <SelectItem key={`tester-model-${idx}`} value={model}>{model}</SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
@@ -441,8 +454,8 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model) => (
-                                                                    <SelectItem key={`report-${model}`} value={model}>{model}</SelectItem>
+                                                                {models.map((model, idx) => (
+                                                                    <SelectItem key={`report-model-${idx}`} value={model}>{model}</SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
@@ -472,52 +485,55 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                     Generates comprehensive reports and documentation
                                                 </p>
                                             </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                                <div className="flex justify-end gap-2 px-4 mt-4">
-                                    <Button onClick={() => {
-                                        // Here you would typically save the configuration
-                                        onOpenChange(false);
-                                    }}>
-                                        Save Configuration
-                                    </Button>
-                                    <Button onClick={() => onOpenChange(false)} variant="outline">
-                                        Cancel
-                                    </Button>
-                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        </div>
+                                        <div className="flex justify-end gap-2 mt-4">
+                                            <Button onClick={() => {
+                                                // Here you would typically save the configuration
+                                                onOpenChange(false);
+                                            }}>
+                                                Save Configuration
+                                            </Button>
+                                            <Button onClick={() => onOpenChange(false)} variant="outline">
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </ScrollArea>
                             </TabsContent>
 
-                            <TabsContent value="prompts">
-                                <div className="space-y-4">
-                                    <div className="text-sm text-muted-foreground mb-4">
-                                        Configure the prompts used by each AI agent. You can customize the prompts or use the default ones.
-                                    </div>
+                            <TabsContent value="prompts" className="mt-0">
+                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
+                                    <div className="space-y-4 pr-4">
+                                        <div className="text-sm text-muted-foreground mb-4">
+                                            Configure the prompts used by each AI agent. You can customize the prompts or use the default ones.
+                                        </div>
 
-                                    {Object.entries(prompts).map(([agent, agentPrompts]) => (
-                                        <div key={agent} className="pb-4 border-b last:border-b-0">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-lg font-semibold capitalize">{agent} Agent</h4>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleRefreshAgentPrompts(agent)}
-                                                    title={`Refresh ${agent} prompts`}
-                                                    disabled={isRefreshingPrompts[agent]}
-                                                >
-                                                    {isRefreshingPrompts[agent] ? (
-                                                        <>
-                                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                            Refreshing...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <RefreshCw className="h-4 w-4 mr-2" />
-                                                            Refresh Prompts
-                                                        </>
-                                                    )}
-                                                </Button>
-                                            </div>
+                                        {Object.entries(prompts).map(([agent, agentPrompts]) => (
+                                            <div key={agent} className="pb-4 border-b last:border-b-0">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                                                    <h4 className="text-lg font-semibold capitalize">{agent} Agent</h4>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleRefreshAgentPrompts(agent)}
+                                                        title={`Refresh ${agent} prompts`}
+                                                        disabled={isRefreshingPrompts[agent]}
+                                                    >
+                                                        {isRefreshingPrompts[agent] ? (
+                                                            <>
+                                                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                                <span className="hidden sm:inline">Refreshing...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                                                                <span className="hidden sm:inline">Refresh Prompts</span>
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
 
                                             {(!agentPrompts || agentPrompts.length === 0) ? (
                                                 <div className="text-sm text-muted-foreground italic">
@@ -583,10 +599,10 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                     })()}
                                                 </div>
                                             )}
-                                        </div>
-                                    ))}
+                                            </div>
+                                        ))}
 
-                                    <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
+                                        <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
                                         <DialogContent className="max-w-2xl">
                                             <DialogHeader>
                                                 <DialogTitle>{viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
@@ -608,117 +624,120 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                         </DialogContent>
                                     </Dialog>
                                 </div>
+                                </ScrollArea>
                             </TabsContent>
 
-                            <TabsContent value="knowledge">
-                                <div className="space-y-4">
-                                    {!codeType ? (
-                                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                                            <Database className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">Code Type Required</h3>
-                                            <p className="text-sm text-muted-foreground max-w-md">
-                                                Please select a code type in the Code Editor first. The knowledge base selection will be automatically matched to your code type.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="text-sm text-muted-foreground mb-4 flex items-center justify-between">
-                                                <span>Select one or more knowledge bases for RAG (Retrieval-Augmented Generation) to provide context to the AI agents. At least one must be selected.</span>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={handleRefreshUseCases}
-                                                    title="Refresh knowledge bases"
-                                                    disabled={isRefreshingUseCases}
-                                                >
-                                                    {isRefreshingUseCases ? (
-                                                        <>
-                                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                            Refreshing...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <RefreshCw className="h-4 w-4 mr-2" />
-                                                            Refresh
-                                                        </>
-                                                    )}
-                                                </Button>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                {useCases.map((kb) => {
-                                                    const IconComponent = LucideIcons[kb.icon];
-                                                    const isSelected = selectedKnowledgeBases.includes(kb.id);
-
-                                                    return (
-                                                        <Card
-                                                            key={kb.id}
-                                                            className={`cursor-pointer transition-all duration-200 ${
-                                                                isSelected
-                                                                    ? 'border-cyan-500 dark:border-cyan-400 border-2 bg-cyan-50 dark:bg-cyan-950/30'
-                                                                    : 'hover:border-cyan-300 dark:hover:border-cyan-600'
-                                                            }`}
-                                                            onClick={() => toggleKnowledgeBase(kb.id)}
-                                                        >
-                                                            <CardContent className="p-5">
-                                                                <div className="flex items-start gap-4">
-                                                                    <div className={`p-3 rounded-lg ${
-                                                                        isSelected
-                                                                            ? 'bg-cyan-500 dark:bg-cyan-500'
-                                                                            : 'bg-cyan-100 dark:bg-cyan-900/50'
-                                                                    }`}>
-                                                                        <IconComponent className={`w-6 h-6 ${
-                                                                            isSelected
-                                                                                ? 'text-white'
-                                                                                : 'text-cyan-600 dark:text-cyan-400'
-                                                                        }`} />
-                                                                    </div>
-                                                                    <div className="flex-1">
-                                                                        <div className="flex items-center justify-between mb-1">
-                                                                            <h3 className="font-semibold text-base">{kb.title}</h3>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                size="icon"
-                                                                                className="h-6 w-6 ml-2"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleRefreshKnowledgeBase(kb.id, kb.title);
-                                                                                }}
-                                                                                title={`Refresh ${kb.title}`}
-                                                                            >
-                                                                                <RefreshCw className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </div>
-                                                                        <p className="text-sm text-muted-foreground">
-                                                                            {truncateText(kb.content, 100)}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            </CardContent>
-                                                        </Card>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            <div className="flex items-center justify-between mt-6">
-                                                <p className="text-xs text-muted-foreground">
-                                                    {selectedKnowledgeBases.length} knowledge base{selectedKnowledgeBases.length !== 1 ? 's' : ''} selected
+                            <TabsContent value="knowledge" className="mt-0">
+                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
+                                    <div className="space-y-4 pr-4">
+                                        {!codeType ? (
+                                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                                <Database className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                                                <h3 className="text-lg font-semibold mb-2">Code Type Required</h3>
+                                                <p className="text-sm text-muted-foreground max-w-md">
+                                                    Please select a code type in the Code Editor first. The knowledge base selection will be automatically matched to your code type.
                                                 </p>
-                                                <div className="flex gap-2">
-                                                    <Button onClick={() => {
-                                                        // Here you would typically save the configuration
-                                                        onOpenChange(false);
-                                                    }}>
-                                                        Save Configuration
-                                                    </Button>
-                                                    <Button onClick={() => onOpenChange(false)} variant="outline">
-                                                        Cancel
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground mb-4">
+                                                    <span>Select one or more knowledge bases for RAG to provide context to the AI agents.</span>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleRefreshUseCases}
+                                                        title="Refresh knowledge bases"
+                                                        disabled={isRefreshingUseCases}
+                                                        className="shrink-0"
+                                                    >
+                                                        {isRefreshingUseCases ? (
+                                                            <>
+                                                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                                <span className="hidden sm:inline">Refreshing...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                                                                <span className="hidden sm:inline">Refresh</span>
+                                                            </>
+                                                        )}
                                                     </Button>
                                                 </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+
+                                                <div className="space-y-3">
+                                                    {useCases.map((kb) => {
+                                                        const IconComponent = LucideIcons[kb.icon];
+                                                        const isSelected = selectedKnowledgeBases.includes(kb.id);
+
+                                                        return (
+                                                            <Card
+                                                                key={kb.id}
+                                                                className={`cursor-pointer transition-all duration-200 ${
+                                                                    isSelected
+                                                                        ? 'border-cyan-500 dark:border-cyan-400 border-2 bg-cyan-50 dark:bg-cyan-950/30'
+                                                                        : 'hover:border-cyan-300 dark:hover:border-cyan-600'
+                                                                }`}
+                                                                onClick={() => toggleKnowledgeBase(kb.id)}
+                                                            >
+                                                                <CardContent className="p-4 sm:p-5">
+                                                                    <div className="flex items-start gap-3 sm:gap-4">
+                                                                        <div className={`p-2 sm:p-3 rounded-lg shrink-0 ${
+                                                                            isSelected
+                                                                                ? 'bg-cyan-500 dark:bg-cyan-500'
+                                                                                : 'bg-cyan-100 dark:bg-cyan-900/50'
+                                                                        }`}>
+                                                                            <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                                                                                isSelected
+                                                                                    ? 'text-white'
+                                                                                    : 'text-cyan-600 dark:text-cyan-400'
+                                                                            }`} />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center justify-between mb-1">
+                                                                                <h3 className="font-semibold text-sm sm:text-base truncate">{kb.title}</h3>
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6 ml-2 shrink-0"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleRefreshKnowledgeBase(kb.id, kb.title);
+                                                                                    }}
+                                                                                    title={`Refresh ${kb.title}`}
+                                                                                >
+                                                                                    <RefreshCw className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                                                                                {truncateText(kb.content, 100)}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 gap-2">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {selectedKnowledgeBases.length} knowledge base{selectedKnowledgeBases.length !== 1 ? 's' : ''} selected
+                                                    </p>
+                                                    <div className="flex gap-2">
+                                                        <Button onClick={() => {
+                                                            onOpenChange(false);
+                                                        }} size="sm">
+                                                            Save
+                                                        </Button>
+                                                        <Button onClick={() => onOpenChange(false)} variant="outline" size="sm">
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </ScrollArea>
                             </TabsContent>
                         </Tabs>
                     </div>

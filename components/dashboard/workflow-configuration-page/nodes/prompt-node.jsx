@@ -57,30 +57,30 @@ export function PromptNode({ data }) {
                 <Handle type="target" position={Position.Left} className="!bg-cyan-500 !w-3 !h-3" />
             )}
 
-            <Card className={`min-w-[280px] shadow-lg border-2 ${borderColor}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className={`p-3 rounded-lg ${data.iconBg}`}>
-                            <MessageSquare className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 ${borderColor}`}>
+                <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg}`}>
+                            <MessageSquare className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
                         </div>
-                        <div className="flex-1">
-                            <div className="font-semibold text-base">{data.label}</div>
-                            <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                        <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-xs sm:text-base truncate">{data.label}</div>
+                            <div className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-400 font-medium">
                                 {selectedCount} selected
                             </div>
                         </div>
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-6 w-6"
+                            className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                             onClick={handleRefresh}
                             disabled={isRefreshing}
                             title={`Refresh ${data.agent} prompts`}
                         >
-                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </Button>
                     </div>
-                    <div className="text-xs text-muted-foreground mb-3">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
                         {data.description}
                     </div>
 
@@ -88,23 +88,23 @@ export function PromptNode({ data }) {
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
-                                className="w-full h-auto justify-between text-left font-normal p-2"
+                                className="w-full h-auto justify-between text-left font-normal p-1.5 sm:p-2"
                             >
                                 <div className="flex-1 min-w-0">
                                     {selectedCount > 0 ? (
-                                        <span className="text-xs truncate block">
+                                        <span className="text-[10px] sm:text-xs truncate block">
                                             {selectedTexts}
                                         </span>
                                     ) : (
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-[10px] sm:text-xs text-muted-foreground">
                                             Select prompts
                                         </span>
                                     )}
                                 </div>
-                                <ChevronDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
+                                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[320px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                        <PopoverContent className="w-[250px] sm:w-[320px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Prompts for {data.agent}</p>
                             </div>

@@ -155,3 +155,91 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+
+// PATCH - Update PDF (move to folder, update order, rename)
+export async function PATCH(request, { params }) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { folderId, order, title } = body;
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Find the PDF and verify it belongs to a use case owned by the user
+    const pdf = await prisma.pdf.findUnique({
+      where: { id },
+      include: {
+        useCase: true,
+      },
+    });
+
+    if (!pdf || pdf.useCase.userId !== user.id) {
+      return NextResponse.json(
+        { error: "PDF not found" },
+        { status: 404 }
+      );
+    }
+
+    const updateData = {};
+
+    if (title !== undefined) {
+      updateData.title = title;
+    }
+
+    if (order !== undefined) {
+      updateData.order = order;
+    }
+
+    // Handle moving to a folder (null means move to root)
+    if (folderId !== undefined) {
+      if (folderId !== null) {
+        // Verify the folder exists and belongs to the same use case
+        const folder = await prisma.folder.findFirst({
+          where: {
+            id: folderId,
+            useCaseId: pdf.useCaseId,
+          },
+        });
+
+        if (!folder) {
+          return NextResponse.json(
+            { error: "Folder not found" },
+            { status: 404 }
+          );
+        }
+      }
+      updateData.folderId = folderId;
+    }
+
+    const updatedPdf = await prisma.pdf.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ pdf: updatedPdf });
+  } catch (error) {
+    console.error("Error updating PDF:", error);
+    return NextResponse.json(
+      { error: "Failed to update PDF" },
+      { status: 500 }
+    );
+  }
+}

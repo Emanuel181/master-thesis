@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw, Folder, FolderPlus } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { CategoryCard } from "./category-card";
+import { FolderTree } from "./folder-tree";
 
 // Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
 const PdfViewerDialog = dynamic(
@@ -48,6 +50,7 @@ export default function KnowledgeBaseVisualization() {
         uploading: false,
     })
     const fileInputRef = useRef(null)
+    const folderTreeRef = useRef(null)
 
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -64,6 +67,17 @@ export default function KnowledgeBaseVisualization() {
     const [nameDialogOpen, setNameDialogOpen] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]);
     const [customPdfNames, setCustomPdfNames] = useState({});
+
+    // Upload location state: "root" | "existing" | "new"
+    const [uploadLocation, setUploadLocation] = useState("root");
+    const [selectedFolderId, setSelectedFolderId] = useState(null);
+    const [newFolderName, setNewFolderName] = useState("");
+    const [availableFolders, setAvailableFolders] = useState([]);
+
+    // Folder picker state for upload dialog
+    const [folderSearchTerm, setFolderSearchTerm] = useState("");
+    const [folderPage, setFolderPage] = useState(1);
+    const FOLDERS_PER_PAGE = 8;
 
     // Track documents being deleted to prevent duplicate calls
     const [deletingDocs, setDeletingDocs] = useState(new Set());
@@ -171,10 +185,58 @@ export default function KnowledgeBaseVisualization() {
 
     const totalPages = Math.ceil(filteredCategories.length / categoriesPerPage);
 
+    // Filtered folders based on search
+    const filteredFoldersForUpload = useMemo(() => {
+        if (!folderSearchTerm.trim()) return availableFolders;
+        const search = folderSearchTerm.toLowerCase();
+        return availableFolders.filter(folder =>
+            folder.name.toLowerCase().includes(search) ||
+            folder.path.toLowerCase().includes(search)
+        );
+    }, [availableFolders, folderSearchTerm]);
+
+    // Paginated folders for upload dialog
+    const paginatedFoldersForUpload = useMemo(() => {
+        const start = (folderPage - 1) * FOLDERS_PER_PAGE;
+        return filteredFoldersForUpload.slice(start, start + FOLDERS_PER_PAGE);
+    }, [filteredFoldersForUpload, folderPage]);
+
+    // Total pages for folder selection
+    const totalFolderPages = Math.ceil(filteredFoldersForUpload.length / FOLDERS_PER_PAGE);
+
     const validFileTypes = ["application/pdf"]
     const validExtensions = ['.pdf']
 
-    const handleFiles = (files) => {
+    // Fetch folders for upload location selection
+    const fetchFoldersForUpload = async () => {
+        if (!selectedUseCase) return;
+        try {
+            const response = await fetch(`/api/folders?useCaseId=${selectedUseCase}`);
+            if (!response.ok) throw new Error("Failed to fetch folders");
+            const data = await response.json();
+
+            // Flatten the folder tree for the select dropdown
+            const flattenFolders = (folders, depth = 0, parentPath = "") => {
+                let result = [];
+                folders.forEach(folder => {
+                    if (folder.type === "folder") {
+                        const path = parentPath ? `${parentPath} / ${folder.name}` : folder.name;
+                        result.push({ id: folder.id, name: folder.name, path, depth });
+                        if (folder.children) {
+                            result = result.concat(flattenFolders(folder.children.filter(c => c.type === "folder"), depth + 1, path));
+                        }
+                    }
+                });
+                return result;
+            };
+
+            setAvailableFolders(flattenFolders(data.folders || []));
+        } catch (error) {
+            console.error("Error fetching folders:", error);
+        }
+    };
+
+    const handleFiles = async (files) => {
         if (!files || files.length === 0) return;
 
         const validFiles = [];
@@ -196,6 +258,16 @@ export default function KnowledgeBaseVisualization() {
         }
 
         if (validFiles.length > 0) {
+            // Fetch available folders for upload location selection
+            await fetchFoldersForUpload();
+
+            // Reset upload location state
+            setUploadLocation("root");
+            setSelectedFolderId(null);
+            setNewFolderName("");
+            setFolderSearchTerm("");
+            setFolderPage(1);
+
             // Open name dialog to let user customize the PDF names
             setPendingFiles(validFiles);
 
@@ -212,7 +284,44 @@ export default function KnowledgeBaseVisualization() {
     const confirmUpload = async () => {
         if (!pendingFiles || pendingFiles.length === 0) return;
 
+        // Validate new folder name if creating new folder
+        if (uploadLocation === "new" && !newFolderName.trim()) {
+            toast.error("Please enter a folder name");
+            return;
+        }
+
         setNameDialogOpen(false);
+
+        let targetFolderId = null;
+
+        // Create new folder if needed
+        if (uploadLocation === "new") {
+            try {
+                const response = await fetch("/api/folders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: newFolderName.trim(),
+                        useCaseId: selectedUseCase,
+                        parentId: null, // Create at root level
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to create folder");
+                }
+
+                const data = await response.json();
+                targetFolderId = data.folder.id;
+                toast.success(`Folder "${newFolderName}" created`);
+            } catch (error) {
+                console.error("Error creating folder:", error);
+                toast.error("Failed to create folder");
+                return;
+            }
+        } else if (uploadLocation === "existing") {
+            targetFolderId = selectedFolderId;
+        }
 
         // Process files sequentially
         const totalFiles = pendingFiles.length;
@@ -226,6 +335,8 @@ export default function KnowledgeBaseVisualization() {
                 setPendingFiles([]);
                 setCustomPdfNames({});
                 setUploadState({ file: null, progress: 0, uploading: false });
+                // Refresh the folder tree to show new files
+                folderTreeRef.current?.refresh();
                 return;
             }
 
@@ -246,6 +357,7 @@ export default function KnowledgeBaseVisualization() {
                         fileName: finalName,
                         fileSize: file.size,
                         useCaseId: selectedUseCase,
+                        folderId: targetFolderId,
                     }),
                 });
 
@@ -281,6 +393,7 @@ export default function KnowledgeBaseVisualization() {
                         fileName: finalName,
                         fileSize: file.size,
                         useCaseId: selectedUseCase,
+                        folderId: targetFolderId,
                     }),
                 });
 
@@ -407,7 +520,7 @@ export default function KnowledgeBaseVisualization() {
                 throw new Error("Failed to fetch PDF URL");
             }
             const data = await response.json();
-            setSelectedPdf({ url: data.pdf.url, name: doc.name });
+            setSelectedPdf({ url: data.pdf.url, name: doc.name || doc.title });
             setPdfViewerOpen(true);
             toast.info("Opening PDF viewer...", { duration: 2000 });
         } catch (error) {
@@ -715,97 +828,15 @@ export default function KnowledgeBaseVisualization() {
                             </div>
                         </div>
 
-                        {/* --- SECTION B: DOCUMENTS LIST (Scrollable Bottom) --- */}
-                        <ScrollArea className="flex-1 min-h-[200px] bg-muted/30">
-                            <div className="p-3 sm:p-4 md:p-6">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
-                                    <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                                        Attached Documents ({currentDocs.length})
-                                    </h3>
-
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {currentDocs.length > 0 && selectedDocs.size === 0 && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={selectAllDocs}
-                                                disabled={selectedDocs.size === currentDocs.length}
-                                                className="text-muted-foreground hover:bg-muted h-8 text-xs"
-                                            >
-                                                Select All
-                                            </Button>
-                                        )}
-
-                                        {/* Bulk actions (hidden if no documents selected) */}
-                                        {selectedDocs.size > 0 && (
-                                            <>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={clearSelection}
-                                                    className="text-muted-foreground hover:bg-muted h-8 text-xs"
-                                                >
-                                                    Clear
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={handleBulkDelete}
-                                                    className="flex items-center gap-1.5 h-8 text-xs"
-                                                >
-                                                    <X className="h-3.5 w-3.5" />
-                                                    Delete ({selectedDocs.size})
-                                                </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {currentDocs.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-32 sm:h-40 text-muted-foreground opacity-60">
-                                        <FolderOpen className="h-10 w-10 sm:h-12 sm:w-12 mb-2" />
-                                        <p className="text-xs sm:text-sm">No documents found in this category.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                                        {currentDocsDisplay}
-                                    </div>
-                                )}
-
-                                {totalDocPages > 1 && (
-                                    <div className="mt-6">
-                                        <Pagination>
-                                            <PaginationContent>
-                                                <PaginationItem>
-                                                    <PaginationPrevious
-                                                        href="#"
-                                                        onClick={(e) => { e.preventDefault(); setCurrentDocPage(p => Math.max(p - 1, 1)); }}
-                                                        // @ts-ignore
-                                                        disabled={currentDocPage === 1}
-                                                    />
-                                                </PaginationItem>
-                                                <PaginationItem>
-                                                    <span className="text-xs text-muted-foreground px-2">
-                                                        {currentDocPage}/{totalDocPages}
-                                                    </span>
-                                                </PaginationItem>
-                                                <PaginationItem>
-                                                    <PaginationNext
-                                                        href="#"
-                                                        onClick={(e) => { e.preventDefault(); setCurrentDocPage(p => Math.min(p + 1, totalDocPages)); }}
-                                                        // @ts-ignore
-                                                        disabled={currentDocPage === totalDocPages}
-                                                    />
-                                                </PaginationItem>
-                                            </PaginationContent>
-                                        </Pagination>
-                                    </div>
-                                )}
-
-                                {/* Spacer to allow final document card to scroll fully into view */}
-                                <div className="h-96" aria-hidden="true" />
-                            </div>
-                        </ScrollArea>
+                        {/* --- SECTION B: FOLDER TREE (Scrollable Bottom) --- */}
+                        <div className="flex-1 min-h-[200px] bg-muted/30 flex flex-col">
+                            <FolderTree
+                                ref={folderTreeRef}
+                                useCaseId={selectedUseCase}
+                                onFileSelect={openPdfViewer}
+                                onRefresh={fetchUseCases}
+                            />
+                        </div>
                     </>
                 ) : (
                     <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center p-4 sm:p-8">
@@ -830,18 +861,142 @@ export default function KnowledgeBaseVisualization() {
 
         {/* PDF Name Dialog */}
         <Dialog open={nameDialogOpen} onOpenChange={setNameDialogOpen}>
-            <DialogContent className="w-[95vw] max-w-[600px] max-h-[85vh] p-4 sm:p-6">
+            <DialogContent className="w-[95vw] max-w-[650px] max-h-[90vh] p-4 sm:p-6">
                 <DialogHeader>
-                    <DialogTitle className="text-base sm:text-lg">Name Your PDF{pendingFiles.length > 1 ? 's' : ''}</DialogTitle>
+                    <DialogTitle className="text-base sm:text-lg">Upload PDF{pendingFiles.length > 1 ? 's' : ''}</DialogTitle>
                     <DialogDescription className="text-xs sm:text-sm">
-                        {pendingFiles.length === 1
-                            ? 'Choose a custom name for this PDF document. The .pdf extension will be added automatically.'
-                            : `Customize names for ${pendingFiles.length} PDF documents. The .pdf extension will be added automatically.`
-                        }
+                        Choose where to upload and customize the document name{pendingFiles.length > 1 ? 's' : ''}.
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="max-h-[50vh] sm:max-h-[400px] pr-2 sm:pr-4">
-                    <div className="grid gap-3 sm:gap-4 py-2 sm:py-4">
+                <ScrollArea className="max-h-[60vh] sm:max-h-[500px] pr-2 sm:pr-4">
+                    <div className="grid gap-4 py-2 sm:py-4">
+                        {/* Upload Location Selection */}
+                        <div className="p-4 rounded-lg border bg-muted/30">
+                            <Label className="text-sm font-medium mb-3 block">Upload Location</Label>
+                            <RadioGroup
+                                value={uploadLocation}
+                                onValueChange={setUploadLocation}
+                                className="space-y-3"
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <RadioGroupItem value="root" id="location-root" />
+                                    <Label htmlFor="location-root" className="flex items-center gap-2 cursor-pointer">
+                                        <FolderOpen className="h-4 w-4 text-blue-500" />
+                                        <span>Root (Default Location)</span>
+                                    </Label>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <RadioGroupItem value="existing" id="location-existing" />
+                                    <Label htmlFor="location-existing" className="flex items-center gap-2 cursor-pointer">
+                                        <Folder className="h-4 w-4 text-blue-500" />
+                                        <span>Existing Folder</span>
+                                    </Label>
+                                </div>
+                                {uploadLocation === "existing" && (
+                                    <div className="ml-7 space-y-2">
+                                        {/* Search input */}
+                                        <div className="relative">
+                                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Search folders..."
+                                                value={folderSearchTerm}
+                                                onChange={(e) => {
+                                                    setFolderSearchTerm(e.target.value);
+                                                    setFolderPage(1);
+                                                }}
+                                                className="pl-8 h-9"
+                                            />
+                                        </div>
+
+                                        {/* Folder list with scroll area */}
+                                        <ScrollArea className="h-[150px] rounded-md border">
+                                            <div className="p-2 space-y-1">
+                                                {paginatedFoldersForUpload.length > 0 ? (
+                                                    paginatedFoldersForUpload.map(folder => (
+                                                        <div
+                                                            key={folder.id}
+                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
+                                                                selectedFolderId === folder.id 
+                                                                    ? 'bg-primary/10 border border-primary' 
+                                                                    : 'hover:bg-accent'
+                                                            }`}
+                                                            style={{ paddingLeft: `${folder.depth * 12 + 8}px` }}
+                                                            onClick={() => setSelectedFolderId(folder.id)}
+                                                        >
+                                                            <Folder className="h-4 w-4 text-blue-500 shrink-0" />
+                                                            <span className="text-sm truncate">{folder.name}</span>
+                                                        </div>
+                                                    ))
+                                                ) : folderSearchTerm ? (
+                                                    <div className="text-center text-sm text-muted-foreground py-4">
+                                                        No folders matching &quot;{folderSearchTerm}&quot;
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center text-sm text-muted-foreground py-4">
+                                                        No folders available
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </ScrollArea>
+
+                                        {/* Pagination */}
+                                        {totalFolderPages > 1 && (
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-muted-foreground">
+                                                    Page {folderPage} of {totalFolderPages}
+                                                </span>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-7 px-2 text-xs"
+                                                        onClick={() => setFolderPage(p => Math.max(1, p - 1))}
+                                                        disabled={folderPage <= 1}
+                                                    >
+                                                        Prev
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-7 px-2 text-xs"
+                                                        onClick={() => setFolderPage(p => Math.min(totalFolderPages, p + 1))}
+                                                        disabled={folderPage >= totalFolderPages}
+                                                    >
+                                                        Next
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Selected folder display */}
+                                        {selectedFolderId && (
+                                            <div className="text-xs text-muted-foreground">
+                                                Selected: {availableFolders.find(f => f.id === selectedFolderId)?.path || 'Unknown'}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                <div className="flex items-center space-x-3">
+                                    <RadioGroupItem value="new" id="location-new" />
+                                    <Label htmlFor="location-new" className="flex items-center gap-2 cursor-pointer">
+                                        <FolderPlus className="h-4 w-4 text-green-500" />
+                                        <span>Create New Folder</span>
+                                    </Label>
+                                </div>
+                                {uploadLocation === "new" && (
+                                    <div className="ml-7">
+                                        <Input
+                                            value={newFolderName}
+                                            onChange={(e) => setNewFolderName(e.target.value)}
+                                            placeholder="Enter new folder name..."
+                                            className="w-full"
+                                        />
+                                    </div>
+                                )}
+                            </RadioGroup>
+                        </div>
+
+                        {/* Document Names */}
                         {pendingFiles.map((file, index) => (
                             <div key={index} className="grid gap-2 p-4 rounded-lg border bg-muted/30">
                                 <Label htmlFor={`pdf-name-${index}`}>
@@ -874,7 +1029,11 @@ export default function KnowledgeBaseVisualization() {
                     </Button>
                     <Button
                         onClick={confirmUpload}
-                        disabled={Object.values(customPdfNames).some(name => !name?.trim())}
+                        disabled={
+                            Object.values(customPdfNames).some(name => !name?.trim()) ||
+                            (uploadLocation === "existing" && !selectedFolderId) ||
+                            (uploadLocation === "new" && !newFolderName.trim())
+                        }
                     >
                         Upload {pendingFiles.length > 1 ? `${pendingFiles.length} Files` : ''}
                     </Button>

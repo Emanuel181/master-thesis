@@ -26,6 +26,10 @@ const confirmUploadSchema = z.object({
     useCaseId: z.string()
         .min(1, 'useCaseId is required')
         .max(50, 'useCaseId must be less than 50 characters'),
+    folderId: z.string()
+        .max(50, 'folderId must be less than 50 characters')
+        .optional()
+        .nullable(),
 });
 
 // POST - Confirm PDF upload (save to database after successful S3 upload)
@@ -75,7 +79,7 @@ export async function POST(request) {
       );
     }
 
-    const { s3Key, fileName, fileSize, useCaseId } = validationResult.data;
+    const { s3Key, fileName, fileSize, useCaseId, folderId } = validationResult.data;
 
     // SECURITY: Verify the s3Key contains the correct userId to prevent path traversal
     const expectedKeyPrefix = `users/${user.id}/use-cases/`;
@@ -101,6 +105,45 @@ export async function POST(request) {
       );
     }
 
+    // If folderId is provided, verify it exists and belongs to the same use case
+    if (folderId) {
+      const folder = await prisma.folder.findFirst({
+        where: {
+          id: folderId,
+          useCaseId,
+        },
+      });
+
+      if (!folder) {
+        return NextResponse.json(
+          { error: "Folder not found" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Get the max order in the target location
+    const maxOrderResult = await prisma.pdf.aggregate({
+      where: {
+        useCaseId,
+        folderId: folderId || null,
+      },
+      _max: { order: true },
+    });
+
+    const maxFolderOrderResult = await prisma.folder.aggregate({
+      where: {
+        useCaseId,
+        parentId: folderId || null,
+      },
+      _max: { order: true },
+    });
+
+    const newOrder = Math.max(
+      (maxOrderResult._max.order || 0) + 1,
+      (maxFolderOrderResult._max.order || 0) + 1
+    );
+
     // Generate a presigned URL for viewing the PDF
     const url = await getPresignedDownloadUrl(s3Key);
 
@@ -112,6 +155,8 @@ export async function POST(request) {
         size: fileSize,
         s3Key,
         useCaseId,
+        folderId: folderId || null,
+        order: newOrder,
       },
     });
 

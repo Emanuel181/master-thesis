@@ -94,7 +94,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     }, []);
 
     // --- Layout State ---
-    const [treeWidth, setTreeWidth] = useState(280);
+    const [treeWidth, setTreeWidth] = useState(220);
     const [treeCollapsed, setTreeCollapsed] = useState(false);
     const [isTreeResizing, setIsTreeResizing] = useState(false);
 
@@ -364,41 +364,76 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
                     {/* Content Body */}
                     <CardContent className="flex-1 p-0 flex flex-col overflow-hidden relative">
-                        <EditorTabs
-                            openTabs={openTabs}
-                            activeTabId={activeTabId}
-                            setActiveTabId={setActiveTabId}
-                            closeTab={closeTab}
-                            dragOverIndex={dragOverIndex}
-                            onDragStart={handleTabDragStart}
-                            onDragOver={handleTabDragOver}
-                            onDragLeave={handleTabDragLeave}
-                            onDrop={handleTabDrop}
-                        />
+                        {/* Mobile Project Files Button + Editor Tabs Row */}
+                        <div className="flex items-center gap-1 border-b sm:border-b-0">
+                            {/* Mobile: Project Files button */}
+                            <div className="sm:hidden p-1">
+                                {viewMode === 'project' && projectStructure && (
+                                    <ProjectTree
+                                        structure={projectStructure}
+                                        onFileClick={onFileClick}
+                                        width={treeWidth}
+                                        onWidthChange={setTreeWidth}
+                                        collapsed={treeCollapsed}
+                                        setCollapsed={setTreeCollapsed}
+                                        onDragStateChange={setIsTreeResizing}
+                                        minWidth={140}
+                                        maxWidth={700}
+                                        additionalButtons={openTabs.length > 0 ? (
+                                            <button
+                                                onClick={closeAllTabs}
+                                                className="p-1 hover:bg-accent rounded-md"
+                                                title="Close All Tabs"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        ) : null}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Editor Tabs - fills remaining space */}
+                            <div className="flex-1 min-w-0">
+                                <EditorTabs
+                                    openTabs={openTabs}
+                                    activeTabId={activeTabId}
+                                    setActiveTabId={setActiveTabId}
+                                    closeTab={closeTab}
+                                    dragOverIndex={dragOverIndex}
+                                    onDragStart={handleTabDragStart}
+                                    onDragOver={handleTabDragOver}
+                                    onDragLeave={handleTabDragLeave}
+                                    onDrop={handleTabDrop}
+                                />
+                            </div>
+                        </div>
 
                         <div className="flex flex-1 overflow-hidden">
-                            {viewMode === 'project' && projectStructure && (
-                                <ProjectTree
-                                    structure={projectStructure}
-                                    onFileClick={onFileClick}
-                                    width={treeWidth}
-                                    onWidthChange={setTreeWidth}
-                                    collapsed={treeCollapsed}
-                                    setCollapsed={setTreeCollapsed}
-                                    onDragStateChange={setIsTreeResizing}
-                                    minWidth={180}
-                                    maxWidth={700}
-                                    additionalButtons={openTabs.length > 0 ? (
-                                        <button
-                                            onClick={closeAllTabs}
-                                            className="p-1 hover:bg-accent rounded-md"
-                                            title="Close All Tabs"
-                                        >
-                                            <X className="h-3.5 w-3.5" />
-                                        </button>
-                                    ) : null}
-                                />
-                            )}
+                            {/* Desktop: Project Tree sidebar */}
+                            <div className="hidden sm:block">
+                                {viewMode === 'project' && projectStructure && (
+                                    <ProjectTree
+                                        structure={projectStructure}
+                                        onFileClick={onFileClick}
+                                        width={treeWidth}
+                                        onWidthChange={setTreeWidth}
+                                        collapsed={treeCollapsed}
+                                        setCollapsed={setTreeCollapsed}
+                                        onDragStateChange={setIsTreeResizing}
+                                        minWidth={140}
+                                        maxWidth={700}
+                                        additionalButtons={openTabs.length > 0 ? (
+                                            <button
+                                                onClick={closeAllTabs}
+                                                className="p-1 hover:bg-accent rounded-md"
+                                                title="Close All Tabs"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        ) : null}
+                                    />
+                                )}
+                            </div>
 
                             <div className={`flex-1 min-w-0 h-full relative bg-background ${isTreeResizing ? 'pointer-events-none select-none' : ''}`}>
                                 <Editor

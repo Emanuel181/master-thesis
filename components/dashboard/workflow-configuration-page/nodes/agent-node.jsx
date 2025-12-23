@@ -62,41 +62,40 @@ export function AgentNode({ data }) {
                 title="Prompt Instructions"
             />
 
-            <Card className={`min-w-[240px] shadow-lg border-2 ${borderColor}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className={`p-3 rounded-lg ${data.iconBg}`}>
-                            <Icon className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <Card className={`w-[200px] sm:w-[240px] shadow-lg border-2 ${borderColor}`}>
+                <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg}`}>
+                            <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
                         </div>
-                        <div className="flex-1 font-semibold text-base">{data.label}</div>
+                        <div className="flex-1 font-semibold text-xs sm:text-base truncate">{data.label}</div>
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-6 w-6"
+                            className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                             onClick={handleRefresh}
                             disabled={isRefreshing}
                             title={`Refresh ${data.label.toLowerCase()} data`}
                         >
-                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </Button>
                     </div>
-                    <div className="text-xs text-muted-foreground mb-3">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
                         {data.description}
                     </div>
-                    <div className="mb-2">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">AI Model:</div>
-                        <span className="text-xs text-muted-foreground">Select the AI model for this agent</span>
+                    <div className="mb-1 sm:mb-2">
+                        <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-0.5 sm:mb-1">AI Model:</div>
                     </div>
                     <Select
                         value={data.model}
                         onValueChange={(value) => data.onModelChange(data.id, value)}
                     >
-                        <SelectTrigger className="h-8 text-xs">
+                        <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
                             <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent>
-                            {data.models.map((model) => (
-                                <SelectItem key={model} value={model} className="text-xs">
+                            {data.models.map((model, idx) => (
+                                <SelectItem key={`${data.id}-model-${idx}`} value={model} className="text-xs">
                                     {model}
                                 </SelectItem>
                             ))}

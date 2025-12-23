@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DescriptionDialog } from "./description-dialog";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Eye } from "lucide-react";
 
 const MAX_DESC_WORDS = 20;
 
@@ -76,8 +76,9 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete }
                 {isLongDescription && (
                     <div className="show-more-button-container mt-2 self-start">
                         <DescriptionDialog title={useCase.name} description={fullDescription}>
-                            <Button variant="link" size="sm" className="text-primary h-auto p-0">
-                                Show More
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                                <Eye className="h-3 w-3" />
+                                View Full
                             </Button>
                         </DescriptionDialog>
                     </div>
