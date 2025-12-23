@@ -23,7 +23,7 @@ import KnowledgeBaseVisualization from "@/components/dashboard/knowledge-base-pa
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
-import { ProjectProvider } from "@/contexts/projectContext";
+import { ProjectProvider, useProject } from "@/contexts/projectContext";
 
 import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
@@ -48,8 +48,9 @@ const loadSavedCodeState = () => {
     return { code: '', codeType: '', isLocked: false };
 };
 
-export default function Page() {
-    const { settings, mounted } = useSettings()
+// Inner component that can use useProject context
+function DashboardContent({ settings, mounted }) {
+    const { projectClearCounter } = useProject();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     const [activeComponent, setActiveComponent] = useState("Home")
@@ -58,6 +59,15 @@ export default function Page() {
     const [codeType, setCodeType] = useState(() => loadSavedCodeState().codeType);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [isCodeLocked, setIsCodeLocked] = useState(() => loadSavedCodeState().isLocked);
+
+    // Clear code state when project is cleared
+    useEffect(() => {
+        if (projectClearCounter > 0) {
+            setInitialCode('');
+            setCodeType('');
+            setIsCodeLocked(false);
+        }
+    }, [projectClearCounter]);
 
     // Save code to localStorage when it changes
     useEffect(() => {
@@ -153,59 +163,67 @@ export default function Page() {
 
 
     return (
-        <ProjectProvider>
-            <SidebarProvider
-                className="h-screen overflow-hidden"
-                open={sidebarOpen}
-                onOpenChange={setSidebarOpen}
-            >
-                <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
-                <SidebarInset className="flex flex-col overflow-hidden">
-                    <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                        <div className="flex items-center justify-between w-full gap-2 px-2 sm:px-4">
-                            <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                                <SidebarTrigger className="-ml-1 flex-shrink-0" />
-                                <Separator
-                                    orientation="vertical"
-                                    className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4"
-                                />
-                                <Breadcrumb className="min-w-0">
-                                    <BreadcrumbList className="flex-nowrap">
-                                        {breadcrumbs.map((crumb, index) => (
-                                            <React.Fragment key={index}>
-                                                <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
-                                                    <BreadcrumbLink 
-                                                        href="#" 
-                                                        className="truncate max-w-[100px] sm:max-w-none cursor-pointer"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            handleNavigation({ title: crumb.label });
-                                                        }}
-                                                    >
-                                                        {crumb.label}
-                                                    </BreadcrumbLink>
-                                                </BreadcrumbItem>
-                                                {index < breadcrumbs.length - 1 && <BreadcrumbSeparator className="hidden sm:block" />}
-                                            </React.Fragment>
-                                        ))}
-                                    </BreadcrumbList>
-                                </Breadcrumb>
-                            </div>
-                            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                                <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
-                                <ThemeToggle />
-                            </div>
+        <SidebarProvider
+            className="h-screen overflow-hidden"
+            open={sidebarOpen}
+            onOpenChange={setSidebarOpen}
+        >
+            <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
+            <SidebarInset className="flex flex-col overflow-hidden">
+                <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                    <div className={`flex items-center justify-between w-full gap-2 px-2 sm:px-4 ${activeComponent === "Home" ? "pr-4 sm:pr-7" : ""}`}>
+                        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                            <SidebarTrigger className="-ml-1 flex-shrink-0" />
+                            <Separator
+                                orientation="vertical"
+                                className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4"
+                            />
+                            <Breadcrumb className="min-w-0">
+                                <BreadcrumbList className="flex-nowrap">
+                                    {breadcrumbs.map((crumb, index) => (
+                                        <React.Fragment key={index}>
+                                            <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
+                                                <BreadcrumbLink
+                                                    href="#"
+                                                    className="truncate max-w-[100px] sm:max-w-none cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleNavigation({ title: crumb.label });
+                                                    }}
+                                                >
+                                                    {crumb.label}
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            {index < breadcrumbs.length - 1 && <BreadcrumbSeparator className="hidden sm:block" />}
+                                        </React.Fragment>
+                                    ))}
+                                </BreadcrumbList>
+                            </Breadcrumb>
                         </div>
-                    </header>
-                    <div className={`flex-1 flex flex-col overflow-hidden w-full ${
-                        settings.contentLayout === 'centered' ? 'mx-auto max-w-5xl px-2 sm:px-4' : 'px-2 sm:px-4'
-                    }`}>
-                        {renderComponent()}
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                            <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
+                            <ThemeToggle />
+                        </div>
                     </div>
-                </SidebarInset>
-                <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
-                <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
-            </SidebarProvider>
+                </header>
+                <div className={`flex-1 flex flex-col overflow-hidden w-full ${
+                    settings.contentLayout === 'centered' && activeComponent !== 'Home' ? 'mx-auto max-w-5xl px-2 sm:px-4' : 'px-2 sm:px-4'
+                }`}>
+                    {renderComponent()}
+                </div>
+            </SidebarInset>
+            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
+            <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
+        </SidebarProvider>
+    );
+}
+
+export default function Page() {
+    const { settings, mounted } = useSettings();
+
+    return (
+        <ProjectProvider>
+            <DashboardContent settings={settings} mounted={mounted} />
         </ProjectProvider>
-    )
+    );
 }

@@ -1,9 +1,26 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
-import Editor from "@monaco-editor/react";
+import dynamic from "next/dynamic"
+import "@/lib/monaco-config"; // Must be imported before Editor
 import "prismjs/themes/prism.css";
 import "@/app/github-theme.css";
+
+// Dynamic import for Monaco Editor to avoid SSR issues
+const Editor = dynamic(
+    () => import("@monaco-editor/react").then(mod => mod.default),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex items-center justify-center h-full w-full bg-muted/30">
+                <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="text-sm text-muted-foreground">Loading editor...</span>
+                </div>
+            </div>
+        )
+    }
+);
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

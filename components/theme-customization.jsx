@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -511,7 +512,8 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
           {/* Individual Token Colors */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Token colors ({settings.mode} mode):</Label>
-            <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
+            <ScrollArea className="h-[200px] pr-3">
+              <div className="space-y-1.5">
               {syntaxTokenTypes.map(({ key, label }) => {
                 const currentColor = getCurrentSyntaxColors(settings.mode)?.[key] || 'FFFFFF'
                 return (
@@ -573,7 +575,8 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
                   </div>
                 )
               })}
-            </div>
+              </div>
+            </ScrollArea>
           </div>
 
           {/* Syntax Preview */}

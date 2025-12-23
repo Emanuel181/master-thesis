@@ -197,6 +197,47 @@ export function PromptsProvider({ children }) {
         }
     };
 
+    const reorderPrompts = async (agent, orderedIds) => {
+        // Optimistically update local state
+        const previousPrompts = prompts[agent] || [];
+        const reorderedPrompts = orderedIds
+            .map(id => previousPrompts.find(p => p.id === id))
+            .filter(Boolean)
+            .map((p, index) => ({ ...p, order: index }));
+
+        setPrompts(prev => ({
+            ...prev,
+            [agent]: reorderedPrompts
+        }));
+
+        try {
+            const response = await fetch('/api/prompts/reorder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agent, orderedIds })
+            });
+
+            if (!response.ok) {
+                // Revert on failure
+                setPrompts(prev => ({
+                    ...prev,
+                    [agent]: previousPrompts
+                }));
+                return { success: false, error: 'Failed to reorder prompts' };
+            }
+
+            return { success: true };
+        } catch (err) {
+            console.error('Error reordering prompts:', err);
+            // Revert on failure
+            setPrompts(prev => ({
+                ...prev,
+                [agent]: previousPrompts
+            }));
+            return { success: false, error: 'Error reordering prompts' };
+        }
+    };
+
     const value = {
         prompts,
         selectedPrompts,
@@ -209,6 +250,7 @@ export function PromptsProvider({ children }) {
         deletePrompt,
         bulkDeletePrompts,
         editPrompt,
+        reorderPrompts,
         setSelectedPrompts,
         refresh: fetchPrompts,
     };

@@ -16,6 +16,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import ProfileHeader from "@/components/profile/profile-header"
 import ProfileContent from "@/components/profile/profile-content"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -158,7 +159,7 @@ export default function ProfilePage() {
             <AppSidebar onNavigate={handleNavigation} />
             <SidebarInset className="flex flex-col overflow-hidden">
                 <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                    <div className="flex items-center justify-between w-full gap-2 px-4">
+                    <div className="flex items-center justify-between w-full gap-2 px-4 pr-2 sm:pr-4">
                         <div className="flex items-center gap-2">
                             <SidebarTrigger className="-ml-1" />
                             <Separator
@@ -187,10 +188,11 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </header>
-                <div className="flex-1 overflow-auto relative">
-                    <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 ${
-                        settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
-                    }`}>
+                <div className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full">
+                        <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 ${
+                            settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
+                        }`}>
 
                         {/* 3. Pass state and handlers to Header */}
                         <ProfileHeader
@@ -211,6 +213,7 @@ export default function ProfilePage() {
                             onImageUpload={handleImageUpload}
                         />
                     </div>
+                    </ScrollArea>
                 </div>
             </SidebarInset>
             <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />

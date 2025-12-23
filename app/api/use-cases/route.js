@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth"; // ⬅ NEW v5 session API
+import { auth } from "@/auth";
+import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
+
+// Input validation schema
+const createUseCaseSchema = z.object({
+    title: z.string()
+        .min(1, 'Title is required')
+        .max(200, 'Title must be less than 200 characters'),
+    content: z.string()
+        .min(1, 'Content is required')
+        .max(10000, 'Content must be less than 10000 characters'),
+    icon: z.string().max(50).optional(),
+});
 
 // Helper to format file size
 function formatFileSize(bytes) {
@@ -33,6 +46,19 @@ export async function GET() {
 
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Rate limiting - 60 requests per minute
+        const rl = rateLimit({
+            key: `use-cases:get:${session.user.id}`,
+            limit: 60,
+            windowMs: 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
+            );
         }
 
         const user = await prisma.user.findUnique({
@@ -78,10 +104,23 @@ export async function GET() {
 // POST - Create a new use case
 export async function POST(request) {
     try {
-        const session = await auth(); // ⬅ replaces getServerSession
+        const session = await auth();
 
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Rate limiting - 20 use cases per hour
+        const rl = rateLimit({
+            key: `use-cases:create:${session.user.id}`,
+            limit: 20,
+            windowMs: 60 * 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
+            );
         }
 
         const user = await prisma.user.findUnique({
@@ -93,14 +132,17 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { title, content, icon } = body;
 
-        if (!title || !content) {
+        // Validate input with Zod
+        const validationResult = createUseCaseSchema.safeParse(body);
+        if (!validationResult.success) {
             return NextResponse.json(
-                { error: "Title and content are required" },
+                { error: "Validation failed", details: validationResult.error.errors },
                 { status: 400 }
             );
         }
+
+        const { title, content, icon } = validationResult.data;
 
         const useCase = await prisma.knowledgeBaseCategory.create({
             data: {

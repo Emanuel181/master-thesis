@@ -2,6 +2,31 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getPresignedDownloadUrl } from "@/lib/s3";
+import { rateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+
+// Security constants
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
+const MAX_FILENAME_LENGTH = 255;
+const MAX_S3_KEY_LENGTH = 1024;
+
+// Input validation schema
+const confirmUploadSchema = z.object({
+    s3Key: z.string()
+        .min(1, 's3Key is required')
+        .max(MAX_S3_KEY_LENGTH, `s3Key must be less than ${MAX_S3_KEY_LENGTH} characters`)
+        .regex(/^users\/[^\/]+\/use-cases\/[^\/]+\/[^\/]+$/, 'Invalid s3Key format'),
+    fileName: z.string()
+        .min(1, 'fileName is required')
+        .max(MAX_FILENAME_LENGTH, `fileName must be less than ${MAX_FILENAME_LENGTH} characters`),
+    fileSize: z.number()
+        .int()
+        .positive('fileSize must be positive')
+        .max(MAX_FILE_SIZE, `fileSize must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`),
+    useCaseId: z.string()
+        .min(1, 'useCaseId is required')
+        .max(50, 'useCaseId must be less than 50 characters'),
+});
 
 // POST - Confirm PDF upload (save to database after successful S3 upload)
 export async function POST(request) {
@@ -12,6 +37,19 @@ export async function POST(request) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    // Rate limiting - 30 confirmations per hour
+    const rl = rateLimit({
+      key: `pdfs:confirm:${session.user.id}`,
+      limit: 30,
+      windowMs: 60 * 60 * 1000
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+        { status: 429 }
       );
     }
 
@@ -27,12 +65,24 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { s3Key, fileName, fileSize, useCaseId } = body;
 
-    if (!s3Key || !fileName || !fileSize || !useCaseId) {
+    // Validate input with Zod
+    const validationResult = confirmUploadSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "s3Key, fileName, fileSize, and useCaseId are required" },
+        { error: "Validation failed", details: validationResult.error.errors },
         { status: 400 }
+      );
+    }
+
+    const { s3Key, fileName, fileSize, useCaseId } = validationResult.data;
+
+    // SECURITY: Verify the s3Key contains the correct userId to prevent path traversal
+    const expectedKeyPrefix = `users/${user.id}/use-cases/`;
+    if (!s3Key.startsWith(expectedKeyPrefix)) {
+      return NextResponse.json(
+        { error: "Invalid s3Key: access denied" },
+        { status: 403 }
       );
     }
 

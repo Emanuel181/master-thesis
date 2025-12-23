@@ -1,5 +1,15 @@
 import { google } from 'googleapis';
 import { auth } from '@/auth';
+import { rateLimit } from '@/lib/rate-limit';
+import { z } from 'zod';
+
+// Input validation schema - limit feedback length to prevent abuse
+const feedbackSchema = z.object({
+    feedback: z.string()
+        .min(1, 'Feedback is required')
+        .max(5000, 'Feedback must be less than 5000 characters')
+        .transform(val => val.trim())
+});
 
 export async function POST(request) {
     try {
@@ -9,11 +19,31 @@ export async function POST(request) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
         }
 
-        const { feedback } = await request.json();
-
-        if (!feedback || feedback.trim() === '') {
-            return new Response(JSON.stringify({ error: 'Feedback is required' }), { status: 400 });
+        // Rate limiting - 5 feedback submissions per hour
+        const rl = rateLimit({
+            key: `feedback:${session.user.id}`,
+            limit: 5,
+            windowMs: 60 * 60 * 1000 // 1 hour
+        });
+        if (!rl.allowed) {
+            return new Response(JSON.stringify({
+                error: 'Too many feedback submissions. Please try again later.',
+                retryAt: rl.resetAt
+            }), { status: 429 });
         }
+
+        const body = await request.json();
+
+        // Validate input with Zod
+        const validationResult = feedbackSchema.safeParse(body);
+        if (!validationResult.success) {
+            return new Response(JSON.stringify({
+                error: 'Validation failed',
+                details: validationResult.error.errors
+            }), { status: 400 });
+        }
+
+        const { feedback } = validationResult.data;
 
         // Google Sheets API setup
         const authGoogle = new google.auth.GoogleAuth({
@@ -22,11 +52,17 @@ export async function POST(request) {
         });
 
         const sheets = google.sheets({ version: 'v4', auth: authGoogle });
-        const spreadsheetId = '1b8xBOC5VRwxsqM93utVF1HcqY97XmGbC8aCYqv1JRuE';
+        const spreadsheetId = process.env.FEEDBACK_SPREADSHEET_ID;
+
+        if (!spreadsheetId) {
+            console.error('FEEDBACK_SPREADSHEET_ID environment variable is not set');
+            return new Response(JSON.stringify({ error: 'Server configuration error' }), { status: 500 });
+        }
+
         const range = 'A:C';
 
         // Include user email in feedback submission
-        const values = [[new Date().toISOString(), session.user.email || 'anonymous', feedback.trim()]];
+        const values = [[new Date().toISOString(), session.user.email || 'anonymous', feedback]];
 
         await sheets.spreadsheets.values.append({
             spreadsheetId,

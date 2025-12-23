@@ -26,7 +26,7 @@ export default function ProfileHeader({
     };
 
     return (
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
             <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col items-center sm:items-start gap-4 sm:gap-6 md:flex-row md:items-center">
 
@@ -119,7 +119,7 @@ export default function ProfileHeader({
                                 </Button>
                             </div>
                         ) : (
-                            <Button onClick={onEdit} className="w-full sm:w-auto">
+                            <Button onClick={onEdit} className="w-full sm:w-auto transition-all hover:scale-105 hover:shadow-md">
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit Profile
                             </Button>

@@ -113,7 +113,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
 
     if (isLoading) {
         return (
-            <Card>
+            <Card className="transition-shadow hover:shadow-md">
                 <CardContent className="flex items-center justify-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     <span className="ml-2 text-muted-foreground">Loading profile...</span>
@@ -123,7 +123,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
     }
 
     return (
-        <Card>
+        <Card className="transition-shadow hover:shadow-md">
             <CardHeader className="px-4 sm:px-6">
                 <div className="space-y-1">
                     <CardTitle className="text-lg sm:text-xl">Personal Information</CardTitle>

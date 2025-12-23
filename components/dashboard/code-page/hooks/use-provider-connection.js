@@ -210,6 +210,12 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
             setViewMode('project');
             setIsImportDialogOpen(false);
             setSearchTerm("");
+            // Clear any existing code state so the editor starts fresh
+            try {
+                localStorage.removeItem('vulniq_code_state');
+            } catch (err) {
+                console.error("Error clearing code state:", err);
+            }
             toast.success("Project switched successfully!");
         } catch (error) {
             toast.error("Failed to switch project: " + error.message);
@@ -224,6 +230,12 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
             setCurrentRepo({ owner: repo.owner.login, repo: repo.name });
             setViewMode('project');
             setIsImportDialogOpen(false);
+            // Clear any existing code state so the editor starts fresh
+            try {
+                localStorage.removeItem('vulniq_code_state');
+            } catch (err) {
+                console.error("Error clearing code state:", err);
+            }
             toast.success("Project switched successfully!");
         } catch (error) {
             toast.error("Failed to switch project: " + error.message);
@@ -238,6 +250,12 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
             setCurrentRepo({ owner: repo.full_name.split('/')[0], repo: repo.name, provider: 'gitlab' });
             setViewMode('project');
             setIsImportDialogOpen(false);
+            // Clear any existing code state so the editor starts fresh
+            try {
+                localStorage.removeItem('vulniq_code_state');
+            } catch (err) {
+                console.error("Error clearing code state:", err);
+            }
             toast.success("Project switched successfully!");
         } catch (error) {
             toast.error("Failed to switch project: " + error.message);

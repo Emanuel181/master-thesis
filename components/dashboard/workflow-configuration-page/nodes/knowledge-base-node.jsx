@@ -3,6 +3,7 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -140,7 +141,8 @@ export function KnowledgeBaseNode({ data }) {
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Knowledge Bases</p>
                             </div>
-                            <div className="p-2 max-h-[300px] overflow-y-auto">
+                            <ScrollArea className="h-[300px]">
+                                <div className="p-2">
                                 {data.knowledgeBases.map((kb) => {
                                     const IconComponent = LucideIcons[kb.icon];
                                     const isSelected = data.selectedKnowledgeBases?.includes(kb.id);
@@ -175,7 +177,8 @@ export function KnowledgeBaseNode({ data }) {
                                         </div>
                                     );
                                 })}
-                            </div>
+                                </div>
+                            </ScrollArea>
                         </PopoverContent>
                     </Popover>
                 </CardContent>

@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchFileContent as apiFetchFileContent } from '@/lib/github-api';
 import { detectLanguageFromContent } from '../constants/language-config';
+
+const TABS_STORAGE_KEY = 'vulniq_editor_tabs';
 
 /**
  * Custom hook for managing editor tabs
@@ -14,6 +16,40 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
     const [activeTabId, setActiveTabId] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const [loadingFilePath, setLoadingFilePath] = useState(null);
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    // Load tabs from localStorage on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(TABS_STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.openTabs && Array.isArray(parsed.openTabs)) {
+                    setOpenTabs(parsed.openTabs);
+                }
+                if (parsed.activeTabId) {
+                    setActiveTabId(parsed.activeTabId);
+                }
+            }
+        } catch (err) {
+            console.error("Error loading editor tabs from localStorage:", err);
+        }
+        setIsHydrated(true);
+    }, []);
+
+    // Save tabs to localStorage when they change
+    useEffect(() => {
+        if (!isHydrated) return;
+        try {
+            const state = {
+                openTabs,
+                activeTabId,
+            };
+            localStorage.setItem(TABS_STORAGE_KEY, JSON.stringify(state));
+        } catch (err) {
+            console.error("Error saving editor tabs to localStorage:", err);
+        }
+    }, [openTabs, activeTabId, isHydrated]);
 
     // Get active tab
     const activeTab = openTabs.find(t => t.id === activeTabId);
@@ -73,6 +109,12 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
         setActiveTabId(null);
         setCode(''); // Clear code area
         setSelectedFile(null); // Clear selected file
+        // Clear tabs from localStorage
+        try {
+            localStorage.removeItem(TABS_STORAGE_KEY);
+        } catch (err) {
+            console.error("Error clearing tabs from localStorage:", err);
+        }
     }, [setCode, setSelectedFile]);
 
     // Update tab content

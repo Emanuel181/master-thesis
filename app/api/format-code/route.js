@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 // WASM formatters
 import initClang, { format as formatClang } from '@wasm-fmt/clang-format';
@@ -19,6 +20,19 @@ export async function POST(request) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Rate limiting - 100 requests per minute
+        const rl = rateLimit({
+            key: `format-code:${session.user.id}`,
+            limit: 100,
+            windowMs: 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
             );
         }
 

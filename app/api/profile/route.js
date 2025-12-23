@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+
+// Input validation schema for profile updates
+const updateProfileSchema = z.object({
+  firstName: z.string().max(100, 'First name must be less than 100 characters').nullable().optional(),
+  lastName: z.string().max(100, 'Last name must be less than 100 characters').nullable().optional(),
+  phone: z.string().max(20, 'Phone number must be less than 20 characters').nullable().optional(),
+  jobTitle: z.string().max(100, 'Job title must be less than 100 characters').nullable().optional(),
+  company: z.string().max(100, 'Company name must be less than 100 characters').nullable().optional(),
+  bio: z.string().max(1000, 'Bio must be less than 1000 characters').nullable().optional(),
+  location: z.string().max(100, 'Location must be less than 100 characters').nullable().optional(),
+  image: z.string().url('Image must be a valid URL').max(2048, 'Image URL must be less than 2048 characters').nullable().optional(),
+});
 
 export async function GET(request) {
   try {
@@ -10,6 +24,19 @@ export async function GET(request) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    // Rate limiting - 60 requests per minute for profile reads
+    const rl = rateLimit({
+      key: `profile:get:${session.user.id}`,
+      limit: 60,
+      windowMs: 60 * 1000
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+        { status: 429 }
       );
     }
 
@@ -60,6 +87,19 @@ export async function PUT(request) {
       );
     }
 
+    // Rate limiting - 20 profile updates per hour
+    const rl = rateLimit({
+      key: `profile:put:${session.user.id}`,
+      limit: 20,
+      windowMs: 60 * 60 * 1000
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+        { status: 429 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -72,66 +112,17 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const {
-      firstName,
-      lastName,
-      phone,
-      jobTitle,
-      company,
-      bio,
-      location,
-      image,
-    } = body;
 
-    // Validate input
-    if (firstName && firstName.length > 100) {
+    // Validate input with Zod
+    const validationResult = updateProfileSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "First name must be less than 100 characters" },
+        { error: "Validation failed", details: validationResult.error.errors },
         { status: 400 }
       );
     }
 
-    if (lastName && lastName.length > 100) {
-      return NextResponse.json(
-        { error: "Last name must be less than 100 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (phone && phone.length > 20) {
-      return NextResponse.json(
-        { error: "Phone number must be less than 20 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (jobTitle && jobTitle.length > 100) {
-      return NextResponse.json(
-        { error: "Job title must be less than 100 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (company && company.length > 100) {
-      return NextResponse.json(
-        { error: "Company name must be less than 100 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (bio && bio.length > 1000) {
-      return NextResponse.json(
-        { error: "Bio must be less than 1000 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (location && location.length > 100) {
-      return NextResponse.json(
-        { error: "Location must be less than 100 characters" },
-        { status: 400 }
-      );
-    }
+    const { firstName, lastName, phone, jobTitle, company, bio, location, image } = validationResult.data;
 
     // Build update data object with only provided fields
     const updateData = {};

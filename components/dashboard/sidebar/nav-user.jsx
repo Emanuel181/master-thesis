@@ -29,6 +29,24 @@ import {
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
+// Clear all app state from localStorage on logout
+const clearAllAppState = () => {
+    try {
+        localStorage.removeItem('vulniq_project_state');
+        localStorage.removeItem('vulniq_code_state');
+        localStorage.removeItem('vulniq_editor_tabs');
+        localStorage.removeItem('vulniq_editor_language');
+        localStorage.removeItem('app-settings');
+    } catch (err) {
+        console.error("Error clearing app state on logout:", err);
+    }
+};
+
+const handleLogout = () => {
+    clearAllAppState();
+    signOut({ callbackUrl: "/login" });
+};
+
 export function NavUser({
                             user,
                         }){
@@ -85,7 +103,7 @@ export function NavUser({
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+                        <DropdownMenuItem onClick={handleLogout}>
                             <IconLogout />
                             Log out
                         </DropdownMenuItem>

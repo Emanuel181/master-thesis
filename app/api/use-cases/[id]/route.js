@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteFromS3 } from "@/lib/s3";
 import { auth } from "@/auth";
+import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
+
+// Input validation schema for updates
+const updateUseCaseSchema = z.object({
+    title: z.string()
+        .min(1, 'Title is required')
+        .max(200, 'Title must be less than 200 characters')
+        .optional(),
+    content: z.string()
+        .max(10000, 'Content must be less than 10000 characters')
+        .optional(),
+    icon: z.string().max(50).optional(),
+});
 
 // GET - Fetch a single use case
 export async function GET(request, { params }) {
@@ -96,7 +110,17 @@ export async function PUT(request, { params }) {
     }
 
     const body = await request.json();
-    const { title, content, icon } = body;
+
+    // Validate input with Zod
+    const validationResult = updateUseCaseSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validationResult.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { title, content, icon } = validationResult.data;
 
     const updatedUseCase = await prisma.knowledgeBaseCategory.update({
       where: { id },

@@ -10,6 +10,8 @@ const ProjectContext = createContext({
     currentRepo: null,
     setCurrentRepo: () => {},
     clearProject: () => {},
+    clearCodeState: () => {},
+    projectClearCounter: 0,
 });
 
 const STORAGE_KEY = "vulniq_project_state";
@@ -20,6 +22,7 @@ export function ProjectProvider({ children }) {
     const [viewMode, setViewMode] = useState("project");
     const [currentRepo, setCurrentRepoState] = useState(null);
     const [isHydrated, setIsHydrated] = useState(false);
+    const [projectClearCounter, setProjectClearCounter] = useState(0);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -67,10 +70,32 @@ export function ProjectProvider({ children }) {
         setCurrentRepoState(null);
         setSelectedFile(null);
         setViewMode("project");
+        setProjectClearCounter(prev => prev + 1); // Notify listeners that project was cleared
         try {
             localStorage.removeItem(STORAGE_KEY);
+            // Also clear code state when project is unloaded
+            localStorage.removeItem('vulniq_code_state');
+            // Clear editor tabs
+            localStorage.removeItem('vulniq_editor_tabs');
+            // Clear language selection
+            localStorage.removeItem('vulniq_editor_language');
         } catch (err) {
             console.error("Error clearing project state from localStorage:", err);
+        }
+    };
+
+    // Clear code state only (used when importing a new project)
+    const clearCodeState = () => {
+        setSelectedFile(null);
+        setProjectClearCounter(prev => prev + 1); // Notify listeners to clear code state
+        try {
+            localStorage.removeItem('vulniq_code_state');
+            // Clear editor tabs
+            localStorage.removeItem('vulniq_editor_tabs');
+            // Clear language selection
+            localStorage.removeItem('vulniq_editor_language');
+        } catch (err) {
+            console.error("Error clearing code state from localStorage:", err);
         }
     };
 
@@ -86,6 +111,8 @@ export function ProjectProvider({ children }) {
                 currentRepo,
                 setCurrentRepo,
                 clearProject,
+                clearCodeState,
+                projectClearCounter,
             }}
         >
             {children}

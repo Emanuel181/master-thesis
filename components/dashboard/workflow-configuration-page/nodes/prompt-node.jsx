@@ -3,6 +3,7 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Popover,
     PopoverContent,
@@ -107,7 +108,8 @@ export function PromptNode({ data }) {
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Prompts for {data.agent}</p>
                             </div>
-                            <div className="p-2 max-h-[300px] overflow-y-auto">
+                            <ScrollArea className="h-[300px]">
+                                <div className="p-2">
                                 {data.prompts.map((prompt) => {
                                     const isSelected = data.selectedPrompts?.includes(prompt.id);
 
@@ -136,7 +138,8 @@ export function PromptNode({ data }) {
                                         </div>
                                     );
                                 })}
-                            </div>
+                                </div>
+                            </ScrollArea>
                         </PopoverContent>
                     </Popover>
                 </CardContent>

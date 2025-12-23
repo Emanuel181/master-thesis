@@ -1,6 +1,7 @@
 import { BedrockAgentClient, ListAgentsCommand, CreateAgentCommand, GetAgentCommand } from "@aws-sdk/client-bedrock-agent";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 const bedrockAgentClient = new BedrockAgentClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -15,6 +16,19 @@ export async function GET() {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Rate limiting - 30 requests per minute
+        const rl = rateLimit({
+            key: `bedrock:agents:${session.user.id}`,
+            limit: 30,
+            windowMs: 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
             );
         }
 
@@ -78,6 +92,19 @@ export async function POST(request) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Rate limiting - 10 agent creations per hour
+        const rl = rateLimit({
+            key: `bedrock:agents:create:${session.user.id}`,
+            limit: 10,
+            windowMs: 60 * 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
             );
         }
 

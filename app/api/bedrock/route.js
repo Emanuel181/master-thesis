@@ -1,6 +1,7 @@
 import { BedrockClient, ListFoundationModelsCommand } from "@aws-sdk/client-bedrock";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 const bedrockClient = new BedrockClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -14,6 +15,19 @@ export async function GET() {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Rate limiting - 30 requests per minute
+        const rl = rateLimit({
+            key: `bedrock:models:${session.user.id}`,
+            limit: 30,
+            windowMs: 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
             );
         }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Extension to language mapping
 const EXTENSION_LANGUAGE_MAP = {
@@ -117,6 +118,19 @@ export async function POST(request) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Rate limiting - 100 requests per minute
+        const rl = rateLimit({
+            key: `detect-language:${session.user.id}`,
+            limit: 100,
+            windowMs: 60 * 1000
+        });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+                { status: 429 }
             );
         }
 

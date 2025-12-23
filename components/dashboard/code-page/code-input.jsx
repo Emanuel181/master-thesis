@@ -1,13 +1,32 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
-import Editor from "@monaco-editor/react";
+import dynamic from "next/dynamic"
+import "@/lib/monaco-config"; // Must be imported before Editor
 import "prismjs/themes/prism.css";
 import "@/app/github-theme.css";
+
+// Dynamic import for Monaco Editor to avoid SSR issues
+const Editor = dynamic(
+    () => import("@monaco-editor/react").then(mod => mod.default),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex items-center justify-center h-full w-full bg-muted/30">
+                <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="text-sm text-muted-foreground">Loading editor...</span>
+                </div>
+            </div>
+        )
+    }
+);
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { X } from "lucide-react";
+import { X, FolderX } from "lucide-react";
+import { toast } from "sonner";
 import { formatCode } from "@/lib/code-formatter";
 import { useUseCases } from "@/contexts/useCasesContext";
 import { useProject } from "@/contexts/projectContext";
@@ -38,12 +57,41 @@ import {
     EditorHeader,
 } from './components';
 
+const LANGUAGE_STORAGE_KEY = 'vulniq_editor_language';
+
+// Helper to load saved language state
+const loadSavedLanguage = () => {
+    if (typeof window === 'undefined') return { name: "JavaScript", prism: "javascript" };
+    try {
+        const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.name && parsed.prism) {
+                return parsed;
+            }
+        }
+    } catch (err) {
+        console.error("Error loading language from localStorage:", err);
+    }
+    return { name: "JavaScript", prism: "javascript" };
+};
+
 export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLocked, onLockChange }) {
     // --- Configuration State ---
-    const [language, setLanguage] = useState({ name: "JavaScript", prism: "javascript" });
+    const [language, setLanguageState] = useState(() => loadSavedLanguage());
     const [isFormatting, setIsFormatting] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+
+    // Wrapper to persist language changes
+    const setLanguage = useCallback((lang) => {
+        setLanguageState(lang);
+        try {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, JSON.stringify(lang));
+        } catch (err) {
+            console.error("Error saving language to localStorage:", err);
+        }
+    }, []);
 
     // --- Layout State ---
     const [treeWidth, setTreeWidth] = useState(280);
@@ -197,6 +245,14 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         }
     }, [activeTab, code, language.prism, setCode, updateTabContent]);
 
+    // --- Unload Project Handler ---
+    const handleUnloadProject = useCallback(() => {
+        closeAllTabs();
+        setCode('');
+        clearProject();
+        toast.success("Project unloaded successfully!");
+    }, [closeAllTabs, setCode, clearProject]);
+
     // --- Computed Values ---
     let editorValue = activeTab ? activeTab.content : (selectedFile?.content || (isPlaceholder ? placeholderText : code));
     if (viewMode === 'project' && selectedFile?.content && !activeTab) {
@@ -240,23 +296,34 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         )}
                     </div>
 
-                    {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
-                        <ImportDialog
-                            isOpen={isImportDialogOpen}
-                            onOpenChange={setIsImportDialogOpen}
-                            searchTerm={searchTerm}
-                            setSearchTerm={setSearchTerm}
-                            repos={repos}
-                            gitlabRepos={gitlabRepos}
-                            isLoadingRepos={isLoadingRepos}
-                            isGithubConnected={isGithubConnected}
-                            isGitlabConnected={isGitlabConnected}
-                            onSelectRepo={handleSelectRepo}
-                            onSelectGitlabRepo={handleSelectGitlabRepo}
-                            onDisconnectGitHub={handleDisconnectGitHub}
-                            onDisconnectGitlab={handleDisconnectGitlab}
-                        />
-                    )}
+                    <div className="flex items-center gap-2">
+                        {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
+                            <ImportDialog
+                                isOpen={isImportDialogOpen}
+                                onOpenChange={setIsImportDialogOpen}
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
+                                repos={repos}
+                                gitlabRepos={gitlabRepos}
+                                isLoadingRepos={isLoadingRepos}
+                                isGithubConnected={isGithubConnected}
+                                isGitlabConnected={isGitlabConnected}
+                                onSelectRepo={handleSelectRepo}
+                                onSelectGitlabRepo={handleSelectGitlabRepo}
+                                onDisconnectGitHub={handleDisconnectGitHub}
+                                onDisconnectGitlab={handleDisconnectGitlab}
+                            />
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleUnloadProject}
+                            className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                            <FolderX className="h-4 w-4" />
+                            Unload Project
+                        </Button>
+                    </div>
                 </div>
             )}
 

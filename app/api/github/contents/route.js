@@ -2,12 +2,7 @@ import { auth } from '@/auth';
 import { Octokit } from '@octokit/rest';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-
-function maskToken(token) {
-    if (!token) return null;
-    if (token.length <= 10) return token.replace(/.(?=.{4})/g, '*');
-    return `${token.slice(0, 4)}...${token.slice(-4)}`;
-}
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
@@ -24,6 +19,19 @@ export async function GET(request) {
     const session = await auth();
     if (!session) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limiting - 120 requests per minute
+    const rl = rateLimit({
+        key: `github:contents:${session.user?.id}`,
+        limit: 120,
+        windowMs: 60 * 1000
+    });
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+            { status: 429 }
+        );
     }
 
     // Get the user from database
@@ -58,13 +66,12 @@ export async function GET(request) {
     }
 
     if (tokenCandidates.length === 0) {
-        return NextResponse.json({ error: 'GitHub account not linked', debug: { hasAccount: !!githubAccount, accessTokenMask: maskToken(githubAccount?.access_token) } }, { status: 401 });
+        return NextResponse.json({ error: 'GitHub account not linked' }, { status: 401 });
     }
 
     let lastError = null;
     for (const candidate of tokenCandidates) {
         try {
-            console.log('[github/contents] trying token from', candidate.source, 'tokenMask:', maskToken(candidate.token));
             const octokit = new Octokit({ auth: candidate.token });
             const { data } = await octokit.repos.getContent({
                 owner,
@@ -73,7 +80,6 @@ export async function GET(request) {
                 ref,
             });
 
-            console.log('[github/contents] fetched content', `usedTokenFrom: ${candidate.source}`);
             if (decode === '1' && data && !Array.isArray(data) && data.encoding === 'base64' && typeof data.content === 'string') {
                 const cleaned = data.content.replace(/[\r\n]+/g, '');
                 const decoded = Buffer.from(cleaned, 'base64').toString('utf-8');
@@ -85,22 +91,21 @@ export async function GET(request) {
             }
             return NextResponse.json(data);
         } catch (err) {
-            console.error('[github/contents] Octokit error with', candidate.source, 'token:', err.message || err);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('[github/contents] Octokit error:', err.message || err);
+            }
             lastError = err;
             // if 401, try next candidate
             const statusCode = err.status || err.statusCode || (err.response && err.response.status) || 500;
             if (statusCode === 401 || statusCode === 403) {
-                console.warn('[github/contents] token from', candidate.source, 'was rejected (status', statusCode, '), trying next if available');
                 continue;
             }
             // for other errors, return immediately
-            const message = err.message || 'Octokit request failed';
-            return NextResponse.json({ error: 'Failed to fetch file content', debug: { message, statusCode, tokenMask: maskToken(candidate.token) } }, { status: statusCode });
+            return NextResponse.json({ error: 'Failed to fetch file content' }, { status: statusCode });
         }
     }
 
     // if we got here, all candidates failed (likely 401)
     const statusCode = (lastError && (lastError.status || lastError.statusCode || (lastError.response && lastError.response.status))) || 401;
-    const message = lastError?.message || 'All token attempts failed';
-    return NextResponse.json({ error: 'Failed to fetch file content', debug: { message, statusCode, tokenMask: maskToken(tokenCandidates[0].token) } }, { status: statusCode });
+    return NextResponse.json({ error: 'Failed to fetch file content' }, { status: statusCode });
 }

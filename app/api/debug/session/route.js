@@ -8,6 +8,11 @@ function maskToken(token) {
 }
 
 export async function GET() {
+  // SECURITY: Only allow debug endpoint in development
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   try {
     const session = await auth()
     if (!session) return NextResponse.json({ session: null })

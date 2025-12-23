@@ -92,6 +92,7 @@ model Prompt {
   title     String   @default("Untitled")
   text      String
   s3Key     String
+  order     Int      @default(0)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

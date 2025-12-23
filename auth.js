@@ -9,7 +9,7 @@ import prisma from "@/lib/prisma";
 
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-    debug: true,
+    debug: process.env.NODE_ENV === 'development', // Only enable debug in development
     trustHost: true,
     adapter: PrismaAdapter(prisma),
 
@@ -27,23 +27,30 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientSecret: process.env.AUTH_GITHUB_SECRET,
             authorization: {
                 params: {
+                    // SECURITY NOTE: 'repo' scope grants write access to repositories.
+                    // If your app only needs to READ repositories, use "read:user user:email public_repo"
+                    // Current scope includes 'repo' for private repository access.
+                    // Consider using 'public_repo' if only public repos are needed.
                     scope: "read:user user:email repo",
                 },
             },
-            allowDangerousEmailAccountLinking: true,
+            // WARNING: allowDangerousEmailAccountLinking removed for security
+            // Consider implementing proper email verification flow instead
         }),
 
         Google({
             clientId: process.env.AUTH_GOOGLE_ID,
             clientSecret: process.env.AUTH_GOOGLE_SECRET,
-            allowDangerousEmailAccountLinking: true,
+            // SECURITY: allowDangerousEmailAccountLinking disabled to prevent account takeover attacks
+            // If users need to link accounts with the same email, implement proper email verification
         }),
 
         MicrosoftEntraID({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
             clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
             issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
-            allowDangerousEmailAccountLinking: true,
+            // SECURITY: allowDangerousEmailAccountLinking disabled to prevent account takeover attacks
+            // If users need to link accounts with the same email, implement proper email verification
         }),
 
         Gitlab({
@@ -52,10 +59,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             issuer: "https://gitlab.com",
             authorization: {
                 params: {
+                    // SECURITY NOTE: Using "api" scope for full API access.
+                    // To use more restrictive scopes like "read_user read_repository read_api",
+                    // you must enable those scopes in your GitLab Application settings:
+                    // GitLab > User Settings > Applications > [Your App] > Scopes
+                    // Required scopes for read-only: read_user (for profile), read_api, read_repository
                     scope: "api",
                 },
             },
-            allowDangerousEmailAccountLinking: true,
+            // WARNING: allowDangerousEmailAccountLinking removed for security
         }),
     ],
 
@@ -131,7 +143,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (profile) {
                 token.picture = profile.picture || profile.avatar_url || profile.image;
             }
-            console.log('jwt callback', { hasAccount: !!account, provider: token.provider, tokenKeys: Object.keys(token), hasAccessToken: !!token.accessToken });
+            // SECURITY: Only log non-sensitive info in development
+            if (process.env.NODE_ENV === 'development') {
+                console.log('jwt callback', { hasAccount: !!account, provider: token.provider });
+            }
             return token;
         },
         async session({ session, token }) {
@@ -143,7 +158,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (token.picture) {
                 session.user.image = token.picture;
             }
-            console.log('session callback', { provider: session.provider, hasTokenAccessToken: !!token.accessToken, sessionKeys: Object.keys(session), hasSessionAccessToken: !!session.accessToken });
+            // Only log in development to avoid leaking sensitive info
+            if (process.env.NODE_ENV === 'development') {
+                console.log('session callback', { provider: session.provider });
+            }
             return session;
         }
     }

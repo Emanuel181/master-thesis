@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteFromS3, getPresignedDownloadUrl } from "@/lib/s3";
 import { auth } from "@/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 // GET - Get a fresh presigned URL for viewing a PDF
 export async function GET(request, { params }) {
@@ -12,6 +13,19 @@ export async function GET(request, { params }) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    // Rate limiting - 100 requests per minute for PDF downloads
+    const rl = rateLimit({
+      key: `pdfs:get:${session.user.id}`,
+      limit: 100,
+      windowMs: 60 * 1000
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+        { status: 429 }
       );
     }
 
@@ -70,6 +84,19 @@ export async function DELETE(request, { params }) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    // Rate limiting - 30 deletes per hour
+    const rl = rateLimit({
+      key: `pdfs:delete:${session.user.id}`,
+      limit: 30,
+      windowMs: 60 * 60 * 1000
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+        { status: 429 }
       );
     }
 

@@ -39,7 +39,15 @@ async function proxy(req) {
         return NextResponse.redirect(new URL("/dashboard", nextUrl.origin))
     }
 
-    return NextResponse.next()
+    const response = NextResponse.next()
+
+    // SECURITY: Add cache-control headers for API routes to prevent caching of sensitive data
+    if (nextUrl.pathname.startsWith('/api/')) {
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+        response.headers.set('Pragma', 'no-cache')
+    }
+
+    return response
 }
 
 // Export as both default and named export
@@ -51,12 +59,11 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except:
-         * - api (API routes)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.png (favicon file)
-         * - public folder files
+         * - public folder files (images, etc.)
          */
-        "/((?!api|_next/static|_next/image|favicon.png|.*\\..*|_next).*)",
+        "/((?!_next/static|_next/image|favicon.png|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
     ],
 }

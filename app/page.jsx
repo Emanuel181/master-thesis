@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-mo
 import { useRef } from 'react';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Components
 import { SecurityCodeDemo } from '@/components/landing-page/hero/security-code-demo';
@@ -46,21 +47,23 @@ const itemVariants = {
 // MAIN PAGE COMPONENT
 // ============================================================================
 export default function LandingPage() {
+    const scrollContainerRef = useRef(null);
     const heroRef = useRef(null);
-    const { scrollYProgress } = useScroll();
+    const { scrollYProgress } = useScroll({ container: scrollContainerRef });
     const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
     const heroOpacity = useTransform(smoothProgress, [0, 0.12], [1, 0]);
     const heroY = useTransform(smoothProgress, [0, 0.12], [0, -40]);
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[#1fb6cf]/20 flex flex-col overflow-x-hidden relative">
+        <ScrollArea className="h-screen" viewportRef={scrollContainerRef}>
+            <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[#1fb6cf]/20 flex flex-col overflow-x-hidden relative">
 
-            {/* Background effects */}
-            <div className="fixed inset-0 mesh-gradient pointer-events-none" />
-            <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
+                {/* Background effects */}
+                <div className="fixed inset-0 mesh-gradient pointer-events-none" />
+                <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
 
-            <FloatingNavbar />
+                <FloatingNavbar />
 
             {/* ===================== HERO ===================== */}
             <motion.section
@@ -293,6 +296,7 @@ export default function LandingPage() {
 
             {/* ===================== FOOTER ===================== */}
             <Footer />
-        </div>
+            </div>
+        </ScrollArea>
     );
 }

@@ -29,7 +29,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Edit, Trash2, Github, Eye, RefreshCw, FolderX, FolderOpen, Loader2, CheckCircle2, GitBranch } from "lucide-react"
+import { Plus, Edit, Trash2, Github, Eye, RefreshCw, FolderX, FolderOpen, Loader2, CheckCircle2, GitBranch, GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search } from "lucide-react"
 import { GitlabIcon } from "@/components/icons/gitlab"
 import { toast } from "sonner"
 import { useSession, signIn } from "next-auth/react"
@@ -42,6 +42,148 @@ import { fetchRepoTree } from "@/lib/github-api"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// Sortable Prompt Item Component
+function SortablePromptItem({ prompt, agent, selectedPrompts, setSelectedPrompts, truncateText, setViewFullTextPrompt, openEditDialog, setDeleteDialog, onMoveUp, onMoveDown, isFirst, isLast }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: prompt.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 'auto',
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`group border border-border/50 rounded-lg p-2.5 hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm transition-all duration-200 cursor-pointer ${isDragging ? 'shadow-lg bg-background border-primary/50' : ''}`}
+        >
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 hover:bg-accent rounded touch-none"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    </div>
+                    <Checkbox
+                        className="h-3.5 w-3.5 rounded-sm border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
+                        onCheckedChange={(checked) => {
+                            setSelectedPrompts(prev => {
+                                const newSet = new Set(prev);
+                                if (checked) {
+                                    newSet.add(`${agent}-${prompt.id}`);
+                                } else {
+                                    newSet.delete(`${agent}-${prompt.id}`);
+                                }
+                                return newSet;
+                            });
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="flex-1 min-w-0" onClick={() => setViewFullTextPrompt(prompt)}>
+                        <h4 className="font-medium text-xs truncate text-foreground/90">{prompt.title || "Untitled"}</h4>
+                        <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">{truncateText(prompt.text, 35)}</p>
+                    </div>
+                </div>
+                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
+                    {!isFirst && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 hover:bg-accent"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onMoveUp(prompt.id)
+                            }}
+                            title="Move up"
+                        >
+                            <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                    )}
+                    {!isLast && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 hover:bg-accent"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onMoveDown(prompt.id)
+                            }}
+                            title="Move down"
+                        >
+                            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                    )}
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 hover:bg-accent"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setViewFullTextPrompt(prompt)
+                        }}
+                        title="View"
+                    >
+                        <Eye className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 hover:bg-accent"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            openEditDialog(agent, prompt)
+                        }}
+                        title="Edit"
+                    >
+                        <Edit className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteDialog({ type: 'single', agent, id: prompt.id })
+                        }}
+                        title="Delete"
+                    >
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 const agents = ["reviewer", "implementation", "tester", "report"]
 
@@ -56,6 +198,7 @@ export function HomePage() {
         editPrompt: editPromptContext,
         deletePrompt: deletePromptContext,
         bulkDeletePrompts,
+        reorderPrompts,
         refresh: refreshPrompts,
     } = usePrompts()
 
@@ -68,6 +211,7 @@ export function HomePage() {
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
     const [isGithubConnected, setIsGithubConnected] = useState(false)
     const [isRefreshingRepos, setIsRefreshingRepos] = useState(false)
+    const [githubSearchTerm, setGithubSearchTerm] = useState("")
 
     const [isRefreshingPrompts, setIsRefreshingPrompts] = useState(false)
 
@@ -76,6 +220,7 @@ export function HomePage() {
     const [isLoadingGitlabRepos, setIsLoadingGitlabRepos] = useState(false)
     const [isGitlabConnected, setIsGitlabConnected] = useState(false)
     const [isRefreshingGitlabRepos, setIsRefreshingGitlabRepos] = useState(false)
+    const [gitlabSearchTerm, setGitlabSearchTerm] = useState("")
 
     // Import progress state
     const [importingRepo, setImportingRepo] = useState(null) // { repo, progress, status }
@@ -93,8 +238,76 @@ export function HomePage() {
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [editingPromptData, setEditingPromptData] = useState(null) // { agent, id, title, text }
 
+    // Pagination state for prompts (per agent)
+    const [promptPages, setPromptPages] = useState({
+        reviewer: 1,
+        implementation: 1,
+        tester: 1,
+        report: 1,
+    })
+    const PROMPTS_PER_PAGE = 5
+
     // prevents React 18 dev-mode double-fetch
     const fetchOnceRef = useRef(false)
+
+    // ---------------------------
+    // DnD Kit sensors for prompt reordering
+    // ---------------------------
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = async (event, agent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = prompts[agent].findIndex(p => p.id === active.id);
+            const newIndex = prompts[agent].findIndex(p => p.id === over.id);
+
+            const newOrder = arrayMove(prompts[agent], oldIndex, newIndex);
+            const orderedIds = newOrder.map(p => p.id);
+
+            const result = await reorderPrompts(agent, orderedIds);
+            if (!result.success) {
+                toast.error("Failed to reorder prompts");
+            }
+        }
+    };
+
+    const handleMoveUp = async (agent, promptId) => {
+        const currentPrompts = prompts[agent] || [];
+        const currentIndex = currentPrompts.findIndex(p => p.id === promptId);
+        if (currentIndex <= 0) return; // Already at top
+
+        const newOrder = arrayMove(currentPrompts, currentIndex, currentIndex - 1);
+        const orderedIds = newOrder.map(p => p.id);
+
+        const result = await reorderPrompts(agent, orderedIds);
+        if (!result.success) {
+            toast.error("Failed to move prompt up");
+        }
+    };
+
+    const handleMoveDown = async (agent, promptId) => {
+        const currentPrompts = prompts[agent] || [];
+        const currentIndex = currentPrompts.findIndex(p => p.id === promptId);
+        if (currentIndex < 0 || currentIndex === currentPrompts.length - 1) return; // Already at bottom
+
+        const newOrder = arrayMove(currentPrompts, currentIndex, currentIndex + 1);
+        const orderedIds = newOrder.map(p => p.id);
+
+        const result = await reorderPrompts(agent, orderedIds);
+        if (!result.success) {
+            toast.error("Failed to move prompt down");
+        }
+    };
 
     // ---------------------------
     // Fetch repos only once
@@ -429,6 +642,12 @@ export function HomePage() {
             setProjectStructure(structure)
             setCurrentRepo({ owner, repo: repoName, provider: repo.provider })
             setViewMode("project")
+            // Clear any existing code state so the editor starts fresh
+            try {
+                localStorage.removeItem('vulniq_code_state')
+            } catch (err) {
+                console.error("Error clearing code state:", err)
+            }
             setImportingRepo(prev => ({
                 ...prev,
                 progress: 90,
@@ -480,13 +699,36 @@ export function HomePage() {
     };
 
     // ---------------------------
+    // Filtered repos for search
+    // ---------------------------
+    const filteredGithubRepos = repos.filter(repo => {
+        if (!githubSearchTerm.trim()) return true;
+        const searchLower = githubSearchTerm.toLowerCase();
+        return (
+            repo.full_name?.toLowerCase().includes(searchLower) ||
+            repo.shortDescription?.toLowerCase().includes(searchLower)
+        );
+    });
+
+    const filteredGitlabRepos = gitlabRepos.filter(repo => {
+        if (!gitlabSearchTerm.trim()) return true;
+        const searchLower = gitlabSearchTerm.toLowerCase();
+        return (
+            repo.full_name?.toLowerCase().includes(searchLower) ||
+            repo.shortDescription?.toLowerCase().includes(searchLower)
+        );
+    });
+
+    // ---------------------------
     // UI
     // ---------------------------
     return (
         <div className="flex flex-1 flex-col gap-2 p-2 sm:p-3 pt-0 overflow-hidden h-full">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 h-full min-h-0">
+                {/* Left Column - GitHub & GitLab */}
+                <div className="flex flex-col gap-2 sm:gap-3 min-h-0">
                 {/* GitHub Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden">
+                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md flex-1">
                     <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
                         {isGithubConnected && (
                             <div className="flex items-center gap-1 mb-1">
@@ -533,21 +775,31 @@ export function HomePage() {
                         {status === "loading" ? (
                             <p className="text-xs text-muted-foreground">Loading...</p>
                         ) : !isGithubConnected ? (
-                            <div className="space-y-2 p-2 border rounded-md bg-muted/20">
-                                <p className="text-xs text-muted-foreground">
-                                    Connect to GitHub to import repositories.
+                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                                <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mb-4 border border-border/50">
+                                    <Github className="h-7 w-7 text-muted-foreground/60" />
+                                </div>
+                                <h3 className="text-sm font-medium mb-1">Connect GitHub</h3>
+                                <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
+                                    Import your repositories for security analysis
                                 </p>
-
-                                <Button onClick={() => { signIn("github", { callbackUrl: "/dashboard" }); }}>
-                                    <Github className="h-4 w-4 mr-2" />
+                                <Button onClick={() => { signIn("github", { callbackUrl: "/dashboard" }); }} className="gap-2">
+                                    <Github className="h-4 w-4" />
                                     Connect GitHub
                                 </Button>
                             </div>
                         ) : (
                             <div className="h-full flex flex-col min-h-0">
-                                <p className="text-xs text-muted-foreground mb-2 flex-shrink-0">
-                                    Select a repository to import for analysis.
-                                </p>
+                                {/* Search input */}
+                                <div className="relative mb-2 flex-shrink-0">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+                                    <Input
+                                        placeholder="Search repositories..."
+                                        value={githubSearchTerm}
+                                        onChange={(e) => setGithubSearchTerm(e.target.value)}
+                                        className="h-8 pl-8 text-xs"
+                                    />
+                                </div>
 
                                 {isLoadingRepos ? (
                                     <div className="flex flex-col gap-2">
@@ -562,24 +814,33 @@ export function HomePage() {
                                         ))}
                                     </div>
                                 ) : repos.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                                        <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-2">
-                                            <Github className="h-4 w-4 text-muted-foreground/50" />
+                                    <div className="h-full flex flex-col items-center justify-center py-8 text-center">
+                                        <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3 border border-border/50">
+                                            <Github className="h-5 w-5 text-muted-foreground/50" />
                                         </div>
-                                        <p className="text-xs text-muted-foreground">No repositories found</p>
+                                        <h3 className="text-sm font-medium mb-1">No Repositories</h3>
+                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories found in your GitHub account</p>
+                                    </div>
+                                ) : filteredGithubRepos.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center py-8 text-center">
+                                        <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3 border border-border/50">
+                                            <Search className="h-5 w-5 text-muted-foreground/50" />
+                                        </div>
+                                        <h3 className="text-sm font-medium mb-1">No Results</h3>
+                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories match "{githubSearchTerm}"</p>
                                     </div>
                                 ) : (
                                     <ScrollArea className="flex-1 min-h-0">
                                         <div className="space-y-1.5 pr-2">
-                                            {repos.map((repo, index) => {
+                                            {filteredGithubRepos.map((repo, index) => {
                                                 const isImporting = importingRepo?.repo?.id === repo.id;
                                                 return (
                                                 <div
                                                     key={repo.id}
                                                     className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 animate-fadeIn ${
                                                         isImporting 
-                                                            ? 'bg-primary/5 border-primary/30' 
-                                                            : 'hover:bg-accent/5 hover:border-border'
+                                                            ? 'bg-primary/5 border-primary/30 shadow-sm' 
+                                                            : 'hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm'
                                                     }`}
                                                     style={{
                                                         animationDelay: `${index * 50}ms`,
@@ -617,8 +878,172 @@ export function HomePage() {
                     </CardContent>
                 </Card>
 
+                {/* GitLab Card */}
+                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md flex-1">
+                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
+                        {isGitlabConnected && (
+                            <div className="flex items-center gap-1 mb-1">
+                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs text-green-600">Connected</span>
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                                <GitlabIcon className="h-4 w-4" />
+                                GitLab Repositories
+                            </CardTitle>
+                            {isGitlabConnected && (
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={handleRefreshGitlabRepos}
+                                        disabled={isRefreshingGitlabRepos}
+                                        title="Refresh repositories"
+                                    >
+                                        {isRefreshingGitlabRepos ? (
+                                            <RefreshCw className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="h-3 w-3" />
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs"
+                                        onClick={handleDisconnectGitlab}
+                                        title="Disconnect from GitLab"
+                                    >
+                                        Disconnect
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-3 sm:px-4">
+                        {status === "loading" ? (
+                            <p className="text-xs text-muted-foreground">Loading...</p>
+                        ) : status === "unauthenticated" ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                                <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mb-4 border border-border/50">
+                                    <GitlabIcon className="h-7 w-7 text-muted-foreground/60" />
+                                </div>
+                                <h3 className="text-sm font-medium mb-1">Sign In Required</h3>
+                                <p className="text-xs text-muted-foreground max-w-[200px]">
+                                    Please sign in to connect GitLab
+                                </p>
+                            </div>
+                        ) : !isGitlabConnected ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                                <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mb-4 border border-border/50">
+                                    <GitlabIcon className="h-7 w-7 text-muted-foreground/60" />
+                                </div>
+                                <h3 className="text-sm font-medium mb-1">Connect GitLab</h3>
+                                <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
+                                    Import your repositories for security analysis
+                                </p>
+                                <Button onClick={() => { signIn("gitlab", { callbackUrl: "/dashboard" }); }} className="gap-2">
+                                    <GitlabIcon className="h-4 w-4" />
+                                    Connect GitLab
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="h-full flex flex-col min-h-0">
+                                {/* Search input */}
+                                <div className="relative mb-2 flex-shrink-0">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+                                    <Input
+                                        placeholder="Search repositories..."
+                                        value={gitlabSearchTerm}
+                                        onChange={(e) => setGitlabSearchTerm(e.target.value)}
+                                        className="h-8 pl-8 text-xs"
+                                    />
+                                </div>
+
+                                {isLoadingGitlabRepos ? (
+                                    <div className="flex flex-col gap-2">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="flex items-center justify-between gap-2 p-2 border rounded-lg animate-pulse">
+                                                <div className="flex-1 min-w-0 space-y-2">
+                                                    <div className="h-3 bg-muted rounded w-3/4"></div>
+                                                    <div className="h-2 bg-muted/60 rounded w-1/2"></div>
+                                                </div>
+                                                <div className="h-7 w-14 bg-muted rounded"></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : gitlabRepos.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center py-8 text-center">
+                                        <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3 border border-border/50">
+                                            <GitlabIcon className="h-5 w-5 text-muted-foreground/50" />
+                                        </div>
+                                        <h3 className="text-sm font-medium mb-1">No Repositories</h3>
+                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories found in your GitLab account</p>
+                                    </div>
+                                ) : filteredGitlabRepos.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center py-8 text-center">
+                                        <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3 border border-border/50">
+                                            <Search className="h-5 w-5 text-muted-foreground/50" />
+                                        </div>
+                                        <h3 className="text-sm font-medium mb-1">No Results</h3>
+                                        <p className="text-xs text-muted-foreground max-w-[180px]">No repositories match "{gitlabSearchTerm}"</p>
+                                    </div>
+                                ) : (
+                                    <ScrollArea className="flex-1 min-h-0">
+                                        <div className="space-y-1.5 pr-2">
+                                            {filteredGitlabRepos.map((repo, index) => {
+                                                const isImporting = importingRepo?.repo?.id === repo.id;
+                                                return (
+                                                <div
+                                                    key={repo.id}
+                                                    className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 animate-fadeIn ${
+                                                        isImporting 
+                                                            ? 'bg-primary/5 border-primary/30 shadow-sm' 
+                                                            : 'hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm'
+                                                    }`}
+                                                    style={{
+                                                        animationDelay: `${index * 50}ms`,
+                                                    }}
+                                                >
+                                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                                        <p className="font-medium text-xs sm:text-sm truncate text-foreground/90">{repo.full_name}</p>
+                                                        <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
+                                                            {repo.shortDescription || "No description"}
+                                                        </p>
+                                                    </div>
+
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 px-3 text-xs flex-shrink-0 ml-1 min-w-[70px]"
+                                                        onClick={() => handleImportRepo(repo)}
+                                                        disabled={importingRepo !== null}
+                                                    >
+                                                        {isImporting ? (
+                                                            <>
+                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                {importingRepo.progress}%
+                                                            </>
+                                                        ) : (
+                                                            'Import'
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            )})}
+                                        </div>
+                                    </ScrollArea>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                </div>
+
+                {/* Right Column - Prompts & Current Project */}
+                <div className="flex flex-col gap-2 sm:gap-3 min-h-0">
                 {/* Prompts Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden">
+                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md flex-[2]">
                     <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-sm sm:text-base">AI Agent Prompts</CardTitle>
@@ -730,77 +1155,76 @@ export function HomePage() {
                                                 <p className="text-xs text-muted-foreground">No prompts yet</p>
                                                 <p className="text-[10px] text-muted-foreground/60">Click &ldquo;Add&rdquo; to create one</p>
                                             </div>
-                                        ) : (
-                                            <div className="space-y-1.5 pr-2">
-                                                {prompts[agent].map((prompt, index) => (
-                                                    <div
-                                                        key={prompt.id}
-                                                        className="group border border-border/50 rounded-lg p-2.5 hover:bg-accent/5 hover:border-border transition-all duration-200 cursor-pointer"
-                                                        style={{ animationDelay: `${index * 50}ms` }}
+                                        ) : (() => {
+                                            const totalPrompts = prompts[agent].length;
+                                            const totalPages = Math.ceil(totalPrompts / PROMPTS_PER_PAGE);
+                                            const currentPage = promptPages[agent] || 1;
+                                            const startIndex = (currentPage - 1) * PROMPTS_PER_PAGE;
+                                            const endIndex = startIndex + PROMPTS_PER_PAGE;
+                                            const paginatedPrompts = prompts[agent].slice(startIndex, endIndex);
+
+                                            return (
+                                                <>
+                                                    <DndContext
+                                                        sensors={sensors}
+                                                        collisionDetection={closestCenter}
+                                                        onDragEnd={(event) => handleDragEnd(event, agent)}
                                                     >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                                                <Checkbox
-                                                                    className="h-3.5 w-3.5 rounded-sm border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                                                    checked={selectedPrompts.has(`${agent}-${prompt.id}`)}
-                                                                    onCheckedChange={(checked) => {
-                                                                        setSelectedPrompts(prev => {
-                                                                            const newSet = new Set(prev);
-                                                                            if (checked) {
-                                                                                newSet.add(`${agent}-${prompt.id}`);
-                                                                            } else {
-                                                                                newSet.delete(`${agent}-${prompt.id}`);
-                                                                            }
-                                                                            return newSet;
-                                                                        });
-                                                                    }}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                />
-                                                                <div className="flex-1 min-w-0" onClick={() => setViewFullTextPrompt(prompt)}>
-                                                                    <h4 className="font-medium text-xs truncate text-foreground/90">{prompt.title || "Untitled"}</h4>
-                                                                    <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">{truncateText(prompt.text, 35)}</p>
-                                                                </div>
+                                                        <SortableContext
+                                                            items={paginatedPrompts.map(p => p.id)}
+                                                            strategy={verticalListSortingStrategy}
+                                                        >
+                                                            <div className="space-y-1.5 pr-2">
+                                                                {paginatedPrompts.map((prompt, index) => (
+                                                                    <SortablePromptItem
+                                                                        key={prompt.id}
+                                                                        prompt={prompt}
+                                                                        agent={agent}
+                                                                        selectedPrompts={selectedPrompts}
+                                                                        setSelectedPrompts={setSelectedPrompts}
+                                                                        truncateText={truncateText}
+                                                                        setViewFullTextPrompt={setViewFullTextPrompt}
+                                                                        openEditDialog={openEditDialog}
+                                                                        setDeleteDialog={setDeleteDialog}
+                                                                        onMoveUp={(promptId) => handleMoveUp(agent, promptId)}
+                                                                        onMoveDown={(promptId) => handleMoveDown(agent, promptId)}
+                                                                        isFirst={startIndex + index === 0}
+                                                                        isLast={startIndex + index === totalPrompts - 1}
+                                                                    />
+                                                                ))}
                                                             </div>
-                                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    className="h-6 w-6 p-0 hover:bg-accent"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        setViewFullTextPrompt(prompt)
-                                                                    }}
-                                                                >
-                                                                    <Eye className="h-3 w-3 text-muted-foreground" />
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    className="h-6 w-6 p-0 hover:bg-accent"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        openEditDialog(agent, prompt)
-                                                                    }}
-                                                                >
-                                                                    <Edit className="h-3 w-3 text-muted-foreground" />
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        setDeleteDialog({ type: 'single', agent, id: prompt.id })
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="h-3 w-3" />
-                                                                </Button>
-                                                            </div>
+                                                        </SortableContext>
+                                                    </DndContext>
+
+                                                    {/* Pagination Controls */}
+                                                    {totalPages > 1 && (
+                                                        <div className="flex items-center justify-center gap-2 mt-3 pt-2 border-t">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 w-7 p-0"
+                                                                onClick={() => setPromptPages(prev => ({ ...prev, [agent]: Math.max(1, currentPage - 1) }))}
+                                                                disabled={currentPage === 1}
+                                                            >
+                                                                <ChevronLeft className="h-4 w-4" />
+                                                            </Button>
+                                                            <span className="text-xs text-muted-foreground min-w-[60px] text-center">
+                                                                {currentPage} / {totalPages}
+                                                            </span>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 w-7 p-0"
+                                                                onClick={() => setPromptPages(prev => ({ ...prev, [agent]: Math.min(totalPages, currentPage + 1) }))}
+                                                                disabled={currentPage === totalPages}
+                                                            >
+                                                                <ChevronRight className="h-4 w-4" />
+                                                            </Button>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </ScrollArea>
                                 </TabsContent>
                             ))}
@@ -808,142 +1232,8 @@ export function HomePage() {
                     </CardContent>
                 </Card>
 
-                {/* GitLab Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden">
-                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
-                        {isGitlabConnected && (
-                            <div className="flex items-center gap-1 mb-1">
-                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs text-green-600">Connected</span>
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                                <GitlabIcon className="h-4 w-4" />
-                                GitLab Repositories
-                            </CardTitle>
-                            {isGitlabConnected && (
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={handleRefreshGitlabRepos}
-                                        disabled={isRefreshingGitlabRepos}
-                                        title="Refresh repositories"
-                                    >
-                                        {isRefreshingGitlabRepos ? (
-                                            <RefreshCw className="h-3 w-3 animate-spin" />
-                                        ) : (
-                                            <RefreshCw className="h-3 w-3" />
-                                        )}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 px-2 text-xs"
-                                        onClick={handleDisconnectGitlab}
-                                        title="Disconnect from GitLab"
-                                    >
-                                        Disconnect
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </CardHeader>
-
-                    <CardContent className="flex-1 min-h-0 overflow-hidden py-2 px-3 sm:px-4">
-                        {status === "loading" ? (
-                            <p className="text-xs text-muted-foreground">Loading...</p>
-                        ) : status === "unauthenticated" ? (
-                            <p className="text-xs text-muted-foreground">Please sign in to connect GitLab.</p>
-                        ) : !isGitlabConnected ? (
-                            <div className="space-y-2 p-2 border rounded-md bg-muted/20">
-                                <p className="text-xs text-muted-foreground">
-                                    Connect to GitLab to import repositories.
-                                </p>
-
-                                <Button size="sm" className="h-8" onClick={() => { signIn("gitlab", { callbackUrl: "/dashboard" }); }}>
-                                    <GitlabIcon className="h-3 w-3 mr-2" />
-                                    Connect GitLab
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="h-full flex flex-col min-h-0">
-                                <p className="text-xs text-muted-foreground mb-2 flex-shrink-0">
-                                    Select a repository to import for analysis.
-                                </p>
-
-                                {isLoadingGitlabRepos ? (
-                                    <div className="flex flex-col gap-2">
-                                        {[1, 2, 3].map((i) => (
-                                            <div key={i} className="flex items-center justify-between gap-2 p-2 border rounded-lg animate-pulse">
-                                                <div className="flex-1 min-w-0 space-y-2">
-                                                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                                                    <div className="h-2 bg-muted/60 rounded w-1/2"></div>
-                                                </div>
-                                                <div className="h-7 w-14 bg-muted rounded"></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : gitlabRepos.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                                        <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-2">
-                                            <GitlabIcon className="h-4 w-4 text-muted-foreground/50" />
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">No repositories found</p>
-                                    </div>
-                                ) : (
-                                    <ScrollArea className="flex-1 min-h-0">
-                                        <div className="space-y-1.5 pr-2">
-                                            {gitlabRepos.map((repo, index) => {
-                                                const isImporting = importingRepo?.repo?.id === repo.id;
-                                                return (
-                                                <div
-                                                    key={repo.id}
-                                                    className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 animate-fadeIn ${
-                                                        isImporting 
-                                                            ? 'bg-primary/5 border-primary/30' 
-                                                            : 'hover:bg-accent/5 hover:border-border'
-                                                    }`}
-                                                    style={{
-                                                        animationDelay: `${index * 50}ms`,
-                                                    }}
-                                                >
-                                                    <div className="flex-1 min-w-0 overflow-hidden">
-                                                        <p className="font-medium text-xs sm:text-sm truncate text-foreground/90">{repo.full_name}</p>
-                                                        <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
-                                                            {repo.shortDescription || "No description"}
-                                                        </p>
-                                                    </div>
-
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-7 px-3 text-xs flex-shrink-0 ml-1 min-w-[70px]"
-                                                        onClick={() => handleImportRepo(repo)}
-                                                        disabled={importingRepo !== null}
-                                                    >
-                                                        {isImporting ? (
-                                                            <>
-                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                                                {importingRepo.progress}%
-                                                            </>
-                                                        ) : (
-                                                            'Import'
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            )})}
-                                        </div>
-                                    </ScrollArea>
-                                )}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Current Project Card */}
-                <Card className="flex flex-col min-h-0 overflow-hidden">
+                {/* Current Project Card - Now in right column under Prompts */}
+                <Card className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-md">
                     <CardHeader className="py-2 px-3 sm:py-3 sm:px-4 flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
@@ -957,7 +1247,7 @@ export function HomePage() {
                         {currentRepo ? (
                             <div className="h-full flex flex-col">
                                 <div className="flex-1">
-                                    <div className="p-3 border rounded-lg bg-muted/20 mb-3">
+                                    <div className="p-3 border rounded-lg bg-muted/20 mb-3 transition-colors hover:bg-muted/30">
                                         <div className="flex items-center gap-2 mb-2">
                                             {currentRepo.provider === 'gitlab' ? (
                                                 <GitlabIcon className="h-4 w-4" />
@@ -975,7 +1265,7 @@ export function HomePage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="w-full h-8"
+                                        className="w-full h-8 transition-colors"
                                         onClick={() => router.push("/dashboard?active=Code%20input")}
                                     >
                                         <FolderOpen className="h-3 w-3 mr-2" />
@@ -994,17 +1284,19 @@ export function HomePage() {
                                 </Button>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-8 text-center h-full">
-                                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
-                                    <FolderX className="h-5 w-5 text-muted-foreground/50" />
+                            <div className="h-full flex flex-col items-center justify-center py-6 text-center">
+                                <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3 border border-border/50">
+                                    <FolderX className="h-6 w-6 text-muted-foreground/60" />
                                 </div>
-                                <p className="text-xs text-muted-foreground">No project loaded</p>
-                                <p className="text-[10px] text-muted-foreground/60">Import a repository to get started</p>
+                                <h3 className="text-sm font-medium mb-1">No Project Loaded</h3>
+                                <p className="text-xs text-muted-foreground max-w-[180px]">Import a repository from GitHub or GitLab to get started</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
+                </div>
             </div>
+
 
             {/* Full Text Dialog */}
             <Dialog open={!!viewFullTextPrompt} onOpenChange={() => setViewFullTextPrompt(null)}>
