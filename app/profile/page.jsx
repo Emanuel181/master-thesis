@@ -145,8 +145,11 @@ export default function ProfilePage() {
             // Refresh the page to update the session and UI
             window.location.reload();
         } catch (error) {
-            console.error('Image upload error:', error);
-            toast.error(error.message || 'Failed to upload image');
+            // Only log detailed errors in development to prevent information leakage
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Image upload error:', error);
+            }
+            toast.error('Failed to upload image. Please try again.');
         }
     };
 

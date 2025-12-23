@@ -2,9 +2,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+
+/**
+ * Sanitizes user input to prevent potential security issues.
+ * Removes null bytes and trims whitespace.
+ * @param {string} value - The input value to sanitize
+ * @returns {string} - Sanitized string
+ */
+const sanitizeInput = (value) => {
+    if (typeof value !== 'string') return '';
+    // Remove null bytes and control characters (except newlines for bio)
+    return value.replace(/[\0\x08\x09\x1a]/g, '').trim();
+};
+
+/**
+ * Maps API error messages to user-friendly messages.
+ * Prevents leaking internal error details to users.
+ * @param {string} errorMessage - The original error message
+ * @returns {string} - Safe user-friendly message
+ */
+const getSafeErrorMessage = (errorMessage) => {
+    const errorMap = {
+        'Unauthorized': 'Please log in to continue.',
+        'User not found': 'Profile not found. Please try again.',
+        'Rate limit exceeded': 'Too many requests. Please wait a moment.',
+        'Validation failed': 'Please check your input and try again.',
+    };
+
+    // Check if the error message contains any known error
+    for (const [key, safeMessage] of Object.entries(errorMap)) {
+        if (errorMessage?.includes(key)) {
+            return safeMessage;
+        }
+    }
+
+    return 'An error occurred. Please try again.';
+};
 
 export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavingState, onCancel, onImageUpload }) {
     const [profile, setProfile] = useState({
@@ -20,17 +56,71 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
     });
     const [isLoading, setIsLoading] = useState(true);
 
+    // Track if component is mounted to prevent state updates after unmount
+    const isMountedRef = useRef(true);
+    // Track the current fetch operation to handle race conditions
+    const fetchIdRef = useRef(0);
+
+    // Memoized fetch function to prevent race conditions
+    const fetchProfile = useCallback(async (fetchId) => {
+        try {
+            const response = await fetch('/api/profile');
+
+            // Check if this fetch is still relevant and component is mounted
+            if (!isMountedRef.current || fetchId !== fetchIdRef.current) {
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch profile');
+            }
+
+            const data = await response.json();
+
+            // Double-check mount status before state update
+            if (isMountedRef.current && fetchId === fetchIdRef.current) {
+                setProfile({
+                    firstName: data.user.firstName || '',
+                    lastName: data.user.lastName || '',
+                    email: data.user.email || '',
+                    phone: data.user.phone || '',
+                    jobTitle: data.user.jobTitle || '',
+                    company: data.user.company || '',
+                    bio: data.user.bio || '',
+                    location: data.user.location || '',
+                });
+            }
+        } catch (error) {
+            // Only log errors in development to prevent information leakage
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching profile:', error);
+            }
+        } finally {
+            if (isMountedRef.current && fetchId === fetchIdRef.current) {
+                setIsLoading(false);
+            }
+        }
+    }, []);
+
     // Fetch profile data on component mount
     useEffect(() => {
-        fetchProfile();
-    }, []);
+        isMountedRef.current = true;
+        const currentFetchId = ++fetchIdRef.current;
+        setIsLoading(true);
+        fetchProfile(currentFetchId);
+
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, [fetchProfile]);
 
     // When edit mode is cancelled (isEditing turns false externally), revert data to what is in DB
     useEffect(() => {
-        if (!isEditing) {
-            fetchProfile();
+        if (!isEditing && isMountedRef.current) {
+            const currentFetchId = ++fetchIdRef.current;
+            fetchProfile(currentFetchId);
         }
-    }, [isEditing]);
+    }, [isEditing, fetchProfile]);
 
     // Connect the onImageUpload prop to our handler
     useEffect(() => {
@@ -39,34 +129,13 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
         }
     }, [onImageUpload]);
 
-    const fetchProfile = async () => {
-        try {
-            // Only show full loading spinner on initial load, not on cancel revert
-            if (!profile.email) setIsLoading(true);
-
-            const response = await fetch('/api/profile');
-            if (!response.ok) throw new Error('Failed to fetch profile');
-            const data = await response.json();
-
-            setProfile({
-                firstName: data.user.firstName || '',
-                lastName: data.user.lastName || '',
-                email: data.user.email || '',
-                phone: data.user.phone || '',
-                jobTitle: data.user.jobTitle || '',
-                company: data.user.company || '',
-                bio: data.user.bio || '',
-                location: data.user.location || '',
-            });
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const handleInputChange = (field, value) => {
-        setProfile(prev => ({ ...prev, [field]: value }));
+        // Sanitize input to prevent security issues
+        // For bio, preserve newlines but sanitize other control characters
+        const sanitizedValue = field === 'bio'
+            ? (typeof value === 'string' ? value.replace(/[\0\x08\x09\x1a]/g, '') : '')
+            : sanitizeInput(value);
+        setProfile(prev => ({ ...prev, [field]: sanitizedValue }));
     };
 
 
@@ -77,10 +146,21 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
         if (onUpdateSavingState) onUpdateSavingState(true);
 
         try {
+            // Sanitize all profile data before sending
+            const sanitizedProfile = {
+                firstName: sanitizeInput(profile.firstName),
+                lastName: sanitizeInput(profile.lastName),
+                phone: sanitizeInput(profile.phone),
+                jobTitle: sanitizeInput(profile.jobTitle),
+                company: sanitizeInput(profile.company),
+                bio: typeof profile.bio === 'string' ? profile.bio.replace(/[\0\x08\x09\x1a]/g, '').trim() : '',
+                location: sanitizeInput(profile.location),
+            };
+
             const response = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profile),
+                body: JSON.stringify(sanitizedProfile),
             });
 
             if (!response.ok) {
@@ -90,13 +170,19 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
 
             const data = await response.json();
 
-            // Update local state with confirmed data
-            setProfile(prev => ({
-                ...prev,
-                firstName: data.user.firstName || prev.firstName,
-                lastName: data.user.lastName || prev.lastName,
-                // ... update other fields as needed
-            }));
+            // Update local state with confirmed data from server
+            if (isMountedRef.current) {
+                setProfile(prev => ({
+                    ...prev,
+                    firstName: data.user.firstName || prev.firstName,
+                    lastName: data.user.lastName || prev.lastName,
+                    phone: data.user.phone || prev.phone,
+                    jobTitle: data.user.jobTitle || prev.jobTitle,
+                    company: data.user.company || prev.company,
+                    bio: data.user.bio || prev.bio,
+                    location: data.user.location || prev.location,
+                }));
+            }
 
             toast.success('Profile updated successfully!');
 
@@ -104,8 +190,12 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
             if (onSaveSuccess) onSaveSuccess();
 
         } catch (error) {
-            console.error('Error updating profile:', error);
-            toast.error(error.message || 'Failed to update profile');
+            // Only log errors in development to prevent information leakage
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error updating profile:', error);
+            }
+            // Display safe, user-friendly error message
+            toast.error(getSafeErrorMessage(error.message));
             // Stop spinner on error
             if (onUpdateSavingState) onUpdateSavingState(false);
         }

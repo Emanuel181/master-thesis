@@ -68,7 +68,10 @@ export async function GET(request) {
 
     return NextResponse.json({ user });
   } catch (error) {
-    console.error("Error fetching profile:", error);
+    // Only log detailed errors in development to prevent information leakage
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error fetching profile:", error);
+    }
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }
@@ -157,7 +160,10 @@ export async function PUT(request) {
 
     return NextResponse.json({ user: updatedUser });
   } catch (error) {
-    console.error("Error updating profile:", error);
+    // Only log detailed errors in development to prevent information leakage
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error updating profile:", error);
+    }
     return NextResponse.json(
       { error: "Failed to update profile" },
       { status: 500 }
