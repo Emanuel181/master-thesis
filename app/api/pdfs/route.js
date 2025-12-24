@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getPresignedUploadUrl, generateS3Key } from "@/lib/s3";
 import { rateLimit } from "@/lib/rate-limit";
+import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
+import { z } from "zod";
 
 // Security constants
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
@@ -10,15 +12,32 @@ const ALLOWED_EXTENSIONS = ['.pdf'];
 const ALLOWED_MIME_TYPE = 'application/pdf';
 const MAX_FILENAME_LENGTH = 255;
 
+const uploadSchema = z.object({
+    fileName: z.string().min(1).max(MAX_FILENAME_LENGTH),
+    fileSize: z.number().finite().positive().max(MAX_FILE_SIZE),
+    useCaseId: z.string().min(1).max(50),
+}).strict();
+
 // POST - Generate presigned URL for PDF upload
 export async function POST(request) {
+    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    const headers = { ...securityHeaders, 'x-request-id': requestId };
+
     try {
         const session = await auth();
 
-        if (!session?.user?.email) {
+        if (!session?.user?.id) {
             return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
+                { error: "Unauthorized", requestId },
+                { status: 401, headers }
+            );
+        }
+
+        // CSRF protection for state-changing operations
+        if (!isSameOrigin(request)) {
+            return NextResponse.json(
+                { error: 'Forbidden', requestId },
+                { status: 403, headers }
             );
         }
 
@@ -30,58 +49,44 @@ export async function POST(request) {
         });
         if (!rl.allowed) {
             return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+                { status: 429, headers }
             );
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { id: session.user.id },
         });
 
         if (!user) {
             return NextResponse.json(
-                { error: "User not found" },
-                { status: 404 }
+                { error: "User not found", requestId },
+                { status: 404, headers }
             );
         }
 
-        const body = await request.json();
-        const { fileName, fileSize, useCaseId } = body;
-
-        if (!fileName || !fileSize || !useCaseId) {
-            return NextResponse.json(
-                { error: "fileName, fileSize, and useCaseId are required" },
-                { status: 400 }
-            );
+        const parsed = await readJsonBody(request);
+        if (!parsed.ok) {
+            return NextResponse.json({ error: 'Invalid JSON body', requestId }, { status: 400, headers });
         }
 
-        // SECURITY: Validate filename length
-        if (typeof fileName !== 'string' || fileName.length > MAX_FILENAME_LENGTH) {
-            return NextResponse.json(
-                { error: `Filename must be less than ${MAX_FILENAME_LENGTH} characters` },
-                { status: 400 }
-            );
+        const validation = uploadSchema.safeParse(parsed.body);
+        if (!validation.success) {
+            return NextResponse.json({ error: 'Validation failed', requestId }, { status: 400, headers });
         }
 
-        // SECURITY: Validate file extension
+        const { fileName, fileSize, useCaseId } = validation.data;
+
+        // Validate file extension
         const fileExtension = fileName.toLowerCase().slice(fileName.lastIndexOf('.'));
         if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
             return NextResponse.json(
-                { error: "Only PDF files are allowed" },
-                { status: 400 }
+                { error: "Only PDF files are allowed", requestId },
+                { status: 400, headers }
             );
         }
 
-        // SECURITY: Validate file size
-        if (typeof fileSize !== 'number' || fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
-            return NextResponse.json(
-                { error: `File size must be between 1 byte and ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
-                { status: 400 }
-            );
-        }
-
-        // SECURITY: Sanitize filename to prevent path traversal
+        // Sanitize filename to prevent path traversal
         const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
 
         // Verify the use case belongs to the user
@@ -94,23 +99,20 @@ export async function POST(request) {
 
         if (!useCase) {
             return NextResponse.json(
-                { error: "Use case not found" },
-                { status: 404 }
+                { error: "Use case not found", requestId },
+                { status: 404, headers }
             );
         }
 
-        // Generate S3 key with sanitized filename
         const s3Key = generateS3Key(user.id, useCaseId, sanitizedFileName);
-
-        // Generate presigned upload URL with content-type restriction
         const uploadUrl = await getPresignedUploadUrl(s3Key, ALLOWED_MIME_TYPE);
 
-        return NextResponse.json({ uploadUrl, s3Key }, { status: 200 });
+        return NextResponse.json({ uploadUrl, s3Key, requestId }, { status: 200, headers });
     } catch (error) {
         console.error("Error generating presigned URL:", error);
         return NextResponse.json(
-            { error: "Failed to generate upload URL" },
-            { status: 500 }
+            { error: "Failed to generate upload URL", requestId },
+            { status: 500, headers }
         );
     }
 }

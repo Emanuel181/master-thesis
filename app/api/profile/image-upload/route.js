@@ -6,6 +6,30 @@ import { securityHeaders, getClientIp, isSameOrigin, readJsonBody, validateS3Key
 
 // Security constants
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_FILENAME_LENGTH = 255;
+
+function sanitizeFileName(fileName) {
+  if (typeof fileName !== 'string') return 'image';
+  const trimmed = fileName.trim().slice(0, MAX_FILENAME_LENGTH);
+  // keep alnum + dot + dash + underscore
+  return trimmed.replace(/[^a-zA-Z0-9._-]/g, '_') || 'image';
+}
+
+function pickExtension(contentType) {
+  switch (contentType) {
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/png':
+      return 'png';
+    case 'image/gif':
+      return 'gif';
+    case 'image/webp':
+      return 'webp';
+    default:
+      return 'bin';
+  }
+}
 
 export async function POST(request) {
   try {
@@ -46,11 +70,11 @@ export async function POST(request) {
       );
     }
 
-    const { s3Key, contentType } = parsed.body ?? {};
+    const { contentType, fileName, fileSize } = parsed.body ?? {};
 
-    if (!s3Key || !contentType) {
+    if (!contentType) {
       return NextResponse.json(
-        { error: "s3Key and contentType are required" },
+        { error: "contentType is required" },
         { status: 400, headers: securityHeaders }
       );
     }
@@ -61,6 +85,22 @@ export async function POST(request) {
         { status: 400, headers: securityHeaders }
       );
     }
+
+    if (fileSize !== undefined) {
+      const n = Number(fileSize);
+      if (!Number.isFinite(n) || n <= 0 || n > MAX_IMAGE_SIZE_BYTES) {
+        return NextResponse.json(
+          { error: `Image size must be between 1 byte and ${MAX_IMAGE_SIZE_BYTES} bytes` },
+          { status: 400, headers: securityHeaders }
+        );
+      }
+    }
+
+    // Server-minted, user-scoped key (client doesn't get to pick paths)
+    const safeName = sanitizeFileName(fileName);
+    const ext = pickExtension(contentType);
+    const timestamp = Date.now();
+    const s3Key = `users/${session.user.id}/profile-images/${timestamp}-${safeName}.${ext}`;
 
     const expectedPrefix = `users/${session.user.id}/`;
     const s3KeyValidation = validateS3Key(s3Key, { requiredPrefix: expectedPrefix, maxLen: 500 });
@@ -74,7 +114,7 @@ export async function POST(request) {
 
     const uploadUrl = await getPresignedUploadUrl(s3Key, contentType, 3600);
 
-    return NextResponse.json({ uploadUrl }, { headers: securityHeaders });
+    return NextResponse.json({ uploadUrl, s3Key }, { headers: securityHeaders });
   } catch (error) {
     console.error("Error generating upload URL:", error);
     return NextResponse.json(

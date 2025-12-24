@@ -292,6 +292,7 @@ const TreeView = forwardRef(function TreeView({
                     indent={20}
                     ref={instance => { treeRef.current = instance; }}
                     className="h-full w-full"
+                    dndRootElement={null}
                     onSelect={(nodes) => {
                         const node = nodes[0];
                         if (node) {

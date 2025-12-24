@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { auth } from '@/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
+import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
 
 // Input validation schema - limit feedback length to prevent abuse
 const feedbackSchema = z.object({
@@ -11,12 +12,33 @@ const feedbackSchema = z.object({
         .transform(val => val.trim())
 });
 
+function formatZodErrors(zodError) {
+    const fieldErrors = {};
+    for (const issue of zodError.issues || []) {
+        const key = issue.path?.[0] ? String(issue.path[0]) : 'form';
+        if (!fieldErrors[key]) fieldErrors[key] = [];
+        fieldErrors[key].push(issue.message);
+    }
+    return fieldErrors;
+}
+
 export async function POST(request) {
     try {
         // Auth check
         const session = await auth();
-        if (!session?.user) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+        if (!session?.user?.id) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
+        }
+
+        // CSRF protection for state-changing operations
+        if (!isSameOrigin(request)) {
+            return new Response(JSON.stringify({ error: 'Forbidden' }), {
+                status: 403,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
         }
 
         // Rate limiting - 5 feedback submissions per hour
@@ -29,36 +51,70 @@ export async function POST(request) {
             return new Response(JSON.stringify({
                 error: 'Too many feedback submissions. Please try again later.',
                 retryAt: rl.resetAt
-            }), { status: 429 });
+            }), {
+                status: 429,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
         }
 
-        const body = await request.json();
+        const parsed = await readJsonBody(request);
+        if (!parsed.ok) {
+            return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
+        }
 
         // Validate input with Zod
-        const validationResult = feedbackSchema.safeParse(body);
+        const validationResult = feedbackSchema.safeParse(parsed.body);
         if (!validationResult.success) {
             return new Response(JSON.stringify({
                 error: 'Validation failed',
-                details: validationResult.error.errors
-            }), { status: 400 });
+                fieldErrors: formatZodErrors(validationResult.error)
+            }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
         }
 
         const { feedback } = validationResult.data;
 
+        const spreadsheetId = process.env.FEEDBACK_SPREADSHEET_ID;
+        if (!spreadsheetId) {
+            console.error('[feedback] FEEDBACK_SPREADSHEET_ID is not set');
+            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
+        }
+
+        const rawCreds = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+        if (!rawCreds) {
+            console.error('[feedback] GOOGLE_SERVICE_ACCOUNT_KEY is not set');
+            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
+        }
+
+        let credentials;
+        try {
+            credentials = JSON.parse(rawCreds);
+        } catch {
+            console.error('[feedback] GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON');
+            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+            });
+        }
+
         // Google Sheets API setup
         const authGoogle = new google.auth.GoogleAuth({
-            credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}'),
+            credentials,
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
 
         const sheets = google.sheets({ version: 'v4', auth: authGoogle });
-        const spreadsheetId = process.env.FEEDBACK_SPREADSHEET_ID;
-
-        if (!spreadsheetId) {
-            console.error('FEEDBACK_SPREADSHEET_ID environment variable is not set');
-            return new Response(JSON.stringify({ error: 'Server configuration error' }), { status: 500 });
-        }
-
         const range = 'A:C';
 
         // Include user email in feedback submission
@@ -71,9 +127,15 @@ export async function POST(request) {
             resource: { values },
         });
 
-        return new Response(JSON.stringify({ message: 'Feedback submitted successfully' }), { status: 200 });
+        return new Response(JSON.stringify({ message: 'Feedback submitted successfully' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', ...securityHeaders }
+        });
     } catch (error) {
-        console.error('Error submitting feedback:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
+        console.error('[feedback] Error submitting feedback:', error);
+        return new Response(JSON.stringify({ error: 'Internal server error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...securityHeaders }
+        });
     }
 }

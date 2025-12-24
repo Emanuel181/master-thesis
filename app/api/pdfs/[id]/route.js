@@ -3,16 +3,29 @@ import prisma from "@/lib/prisma";
 import { deleteFromS3, getPresignedDownloadUrl } from "@/lib/s3";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
+import { z } from "zod";
+
+// CUID validation pattern (starts with 'c', 25 chars, lowercase alphanumeric)
+const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid ID format');
+
+const patchSchema = z.object({
+  folderId: z.union([cuidSchema, z.null()]).optional(),
+  order: z.number().int().min(0).max(100000).optional(),
+  title: z.string().min(1).max(255).optional(),
+}).strict();
 
 // GET - Get a fresh presigned URL for viewing a PDF
 export async function GET(request, { params }) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const headers = { ...securityHeaders, 'x-request-id': requestId };
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Unauthorized", requestId },
+        { status: 401, headers }
       );
     }
 
@@ -24,21 +37,21 @@ export async function GET(request, { params }) {
     });
     if (!rl.allowed) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429 }
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+        { status: 429, headers }
       );
     }
 
     const { id } = await params;
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
+        { error: "User not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -52,8 +65,8 @@ export async function GET(request, { params }) {
 
     if (!pdf || pdf.useCase.userId !== user.id) {
       return NextResponse.json(
-        { error: "PDF not found" },
-        { status: 404 }
+        { error: "PDF not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -63,28 +76,36 @@ export async function GET(request, { params }) {
     return NextResponse.json({
       pdf: {
         ...pdf,
-        url, // Return fresh URL
+        url,
       },
-    });
+      requestId,
+    }, { headers });
   } catch (error) {
     console.error("Error fetching PDF:", error);
     return NextResponse.json(
-      { error: "Failed to fetch PDF" },
-      { status: 500 }
+      { error: "Failed to fetch PDF", requestId },
+      { status: 500, headers }
     );
   }
 }
 
 // DELETE - Delete a PDF from S3 and database
 export async function DELETE(request, { params }) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const headers = { ...securityHeaders, 'x-request-id': requestId };
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Unauthorized", requestId },
+        { status: 401, headers }
       );
+    }
+
+    // CSRF protection for state-changing operations
+    if (!isSameOrigin(request)) {
+      return NextResponse.json({ error: 'Forbidden', requestId }, { status: 403, headers });
     }
 
     // Rate limiting - 30 deletes per hour
@@ -95,21 +116,21 @@ export async function DELETE(request, { params }) {
     });
     if (!rl.allowed) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429 }
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+        { status: 429, headers }
       );
     }
 
     const { id } = await params;
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
+        { error: "User not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -121,15 +142,15 @@ export async function DELETE(request, { params }) {
       },
     });
 
-    // If PDF doesn't exist or doesn't belong to user, return success (idempotent)
+    // If PDF doesn't exist, return success (idempotent)
     if (!pdf) {
-      return NextResponse.json({ message: "PDF already deleted" });
+      return NextResponse.json({ message: "PDF already deleted", requestId }, { headers });
     }
 
     if (pdf.useCase.userId !== user.id) {
       return NextResponse.json(
-        { error: "PDF not found" },
-        { status: 404 }
+        { error: "PDF not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -146,40 +167,69 @@ export async function DELETE(request, { params }) {
       where: { id },
     });
 
-    return NextResponse.json({ message: "PDF deleted successfully" });
+    return NextResponse.json({ message: "PDF deleted successfully", requestId }, { headers });
   } catch (error) {
     console.error("Error deleting PDF:", error);
     return NextResponse.json(
-      { error: "Failed to delete PDF" },
-      { status: 500 }
+      { error: "Failed to delete PDF", requestId },
+      { status: 500, headers }
     );
   }
 }
 
 // PATCH - Update PDF (move to folder, update order, rename)
 export async function PATCH(request, { params }) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const headers = { ...securityHeaders, 'x-request-id': requestId };
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Unauthorized", requestId },
+        { status: 401, headers }
+      );
+    }
+
+    // CSRF protection for state-changing operations
+    if (!isSameOrigin(request)) {
+      return NextResponse.json({ error: 'Forbidden', requestId }, { status: 403, headers });
+    }
+
+    // Rate limiting - 120 updates per minute
+    const rl = rateLimit({
+      key: `pdfs:patch:${session.user.id}`,
+      limit: 120,
+      windowMs: 60 * 1000
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+        { status: 429, headers }
       );
     }
 
     const { id } = await params;
-    const body = await request.json();
-    const { folderId, order, title } = body;
+    const parsed = await readJsonBody(request);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: 'Invalid JSON body', requestId }, { status: 400, headers });
+    }
+
+    const validation = patchSchema.safeParse(parsed.body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Validation failed', requestId }, { status: 400, headers });
+    }
+
+    const { folderId, order, title } = validation.data;
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
+        { error: "User not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -193,8 +243,8 @@ export async function PATCH(request, { params }) {
 
     if (!pdf || pdf.useCase.userId !== user.id) {
       return NextResponse.json(
-        { error: "PDF not found" },
-        { status: 404 }
+        { error: "PDF not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -221,8 +271,8 @@ export async function PATCH(request, { params }) {
 
         if (!folder) {
           return NextResponse.json(
-            { error: "Folder not found" },
-            { status: 404 }
+            { error: "Folder not found", requestId },
+            { status: 404, headers }
           );
         }
       }
@@ -234,12 +284,12 @@ export async function PATCH(request, { params }) {
       data: updateData,
     });
 
-    return NextResponse.json({ pdf: updatedPdf });
+    return NextResponse.json({ pdf: updatedPdf, requestId }, { headers });
   } catch (error) {
     console.error("Error updating PDF:", error);
     return NextResponse.json(
-      { error: "Failed to update PDF" },
-      { status: 500 }
+      { error: "Failed to update PDF", requestId },
+      { status: 500, headers }
     );
   }
 }

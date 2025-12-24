@@ -3,15 +3,26 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
+import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
 
-// Input validation schema
+// Normalize text to prevent XSS - defense-in-depth
+const normalizeText = (value) => {
+    if (typeof value !== 'string') return value;
+    // Remove control characters except newlines/tabs
+    return value.replace(/[\0\x08\x1a\x0b\x0c]/g, '').trim();
+};
+
+// Input validation schema with XSS protection
 const createUseCaseSchema = z.object({
     title: z.string()
         .min(1, 'Title is required')
-        .max(200, 'Title must be less than 200 characters'),
+        .max(200, 'Title must be less than 200 characters')
+        .transform(normalizeText)
+        .refine(v => !/[<>]/.test(v), { message: 'Title must not contain < or >' }),
     content: z.string()
         .min(1, 'Content is required')
-        .max(10000, 'Content must be less than 10000 characters'),
+        .max(10000, 'Content must be less than 10000 characters')
+        .transform(normalizeText),
     icon: z.string().max(50).optional(),
 });
 
@@ -44,8 +55,8 @@ export async function GET() {
     try {
         const session = await auth(); // ⬅ replaces getServerSession
 
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
         }
 
         // Rate limiting - 60 requests per minute
@@ -57,12 +68,12 @@ export async function GET() {
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { status: 429, headers: securityHeaders }
             );
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { id: session.user.id },
             include: {
                 useCases: {
                     include: { pdfs: true },
@@ -73,7 +84,7 @@ export async function GET() {
 
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return NextResponse.json({ error: "User not found" }, { status: 404, headers: securityHeaders });
         }
 
         // Transform the response to include formatted data
@@ -91,12 +102,12 @@ export async function GET() {
             formattedTotalSize: formatFileSize(uc.pdfs.reduce((sum, pdf) => sum + (pdf.size || 0), 0)),
         }));
 
-        return NextResponse.json({ useCases: transformedUseCases });
+        return NextResponse.json({ useCases: transformedUseCases }, { headers: securityHeaders });
     } catch (error) {
         console.error("Error fetching use cases:", error);
         return NextResponse.json(
             { error: "Failed to fetch use cases" },
-            { status: 500 }
+            { status: 500, headers: securityHeaders }
         );
     }
 }
@@ -106,8 +117,16 @@ export async function POST(request) {
     try {
         const session = await auth();
 
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
+        }
+
+        // CSRF protection for state-changing operations
+        if (!isSameOrigin(request)) {
+            return NextResponse.json(
+                { error: 'Forbidden' },
+                { status: 403, headers: securityHeaders }
+            );
         }
 
         // Rate limiting - 20 use cases per hour
@@ -119,26 +138,29 @@ export async function POST(request) {
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { status: 429, headers: securityHeaders }
             );
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { id: session.user.id },
         });
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return NextResponse.json({ error: "User not found" }, { status: 404, headers: securityHeaders });
         }
 
-        const body = await request.json();
+        const parsed = await readJsonBody(request);
+        if (!parsed.ok) {
+            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
+        }
 
         // Validate input with Zod
-        const validationResult = createUseCaseSchema.safeParse(body);
+        const validationResult = createUseCaseSchema.safeParse(parsed.body);
         if (!validationResult.success) {
             return NextResponse.json(
-                { error: "Validation failed", details: validationResult.error.errors },
-                { status: 400 }
+                { error: "Validation failed" },
+                { status: 400, headers: securityHeaders }
             );
         }
 
@@ -153,12 +175,12 @@ export async function POST(request) {
             },
         });
 
-        return NextResponse.json({ useCase }, { status: 201 });
+        return NextResponse.json({ useCase }, { status: 201, headers: securityHeaders });
     } catch (error) {
         console.error("Error creating use case:", error);
         return NextResponse.json(
             { error: "Failed to create use case" },
-            { status: 500 }
+            { status: 500, headers: securityHeaders }
         );
     }
 }

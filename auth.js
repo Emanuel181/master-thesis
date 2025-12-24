@@ -64,7 +64,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     // you must enable those scopes in your GitLab Application settings:
                     // GitLab > User Settings > Applications > [Your App] > Scopes
                     // Required scopes for read-only: read_user (for profile), read_api, read_repository
-                    scope: "api",
+                    scope: "read_user read_repository read_api",
                 },
             },
             // WARNING: allowDangerousEmailAccountLinking removed for security
@@ -150,7 +150,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             return token;
         },
         async session({ session, token }) {
-            session.accessToken = token.accessToken;
+            // SECURITY: Do NOT expose OAuth access tokens to the browser.
+            // Use server-side stored account tokens in API routes instead.
             session.provider = token.provider; // Pass provider to session
             // prefer stored userId (from jwt) falling back to token.sub
             session.user.id = token.userId ?? token.sub;

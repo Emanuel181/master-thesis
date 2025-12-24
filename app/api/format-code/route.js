@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { rateLimit } from '@/lib/rate-limit';
+import { securityHeaders } from '@/lib/api-security';
 
 // WASM formatters
 import initClang, { format as formatClang } from '@wasm-fmt/clang-format';
@@ -19,7 +20,7 @@ export async function POST(request) {
         if (!session?.user) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
-                { status: 401 }
+                { status: 401, headers: securityHeaders }
             );
         }
 
@@ -32,7 +33,7 @@ export async function POST(request) {
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { status: 429, headers: securityHeaders }
             );
         }
 
@@ -41,14 +42,23 @@ export async function POST(request) {
         if (!code || typeof code !== 'string') {
             return NextResponse.json(
                 { error: 'Code is required and must be a string.' },
-                { status: 400 }
+                { status: 400, headers: securityHeaders }
+            );
+        }
+
+        // SECURITY: Limit code size to prevent DoS attacks
+        const MAX_CODE_SIZE = 500 * 1024; // 500KB max
+        if (code.length > MAX_CODE_SIZE) {
+            return NextResponse.json(
+                { error: `Code exceeds maximum size of ${MAX_CODE_SIZE / 1024}KB` },
+                { status: 400, headers: securityHeaders }
             );
         }
 
         if (!language || typeof language !== 'string') {
             return NextResponse.json(
                 { error: 'Language is required and must be a string.' },
-                { status: 400 }
+                { status: 400, headers: securityHeaders }
             );
         }
 
@@ -133,41 +143,37 @@ export async function POST(request) {
             if (!parser) {
                 return NextResponse.json(
                     { error: `Language '${language}' is not supported.` },
-                    { status: 400 }
+                    { status: 400, headers: securityHeaders }
                 );
             }
 
             let plugins = [];
             if (lang === 'java') {
                 plugins = [PluginJava];
-                console.log('[API] Using Java plugin:', !!PluginJava, 'parser:', parser);
             }
             if (lang === 'php') plugins = [PluginPHP];
 
-            try {
-                formattedCode = await prettier.format(code, {
-                    parser,
-                    plugins,
-                    tabWidth: lang === 'java' || lang === 'php' ? 4 : 2,
-                    printWidth: 80,
-                    trailingComma: 'es5',
-                });
-            } catch (prettierError) {
-                console.error('[API] Prettier error for', lang, ':', prettierError.message);
-                throw prettierError;
-            }
+            formattedCode = await prettier.format(code, {
+                parser,
+                plugins,
+                tabWidth: lang === 'java' || lang === 'php' ? 4 : 2,
+                printWidth: 80,
+                trailingComma: 'es5',
+            });
         }
 
-        return NextResponse.json({ success: true, formattedCode, language });
+        return NextResponse.json({ success: true, formattedCode, language }, { headers: securityHeaders });
     } catch (error) {
-        console.error('Formatting Error:', error);
-        console.error('Error stack:', error.stack);
+        // Log error details only in development
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Formatting Error:', error);
+        }
+        // SECURITY: Don't expose internal error details to clients
         return NextResponse.json(
             {
                 error: 'Failed to format code',
-                details: error?.message || String(error),
             },
-            { status: 422 }
+            { status: 422, headers: securityHeaders }
         );
     }
 }

@@ -42,6 +42,8 @@ import { fetchRepoTree } from "@/lib/github-api"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PromptCardSkeleton, RepoCardSkeleton } from "@/components/ui/loading-skeletons"
+import { NoPromptsEmptyState, NoReposEmptyState } from "@/components/ui/empty-states"
 import {
     DndContext,
     closestCenter,

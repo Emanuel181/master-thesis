@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Calendar, Mail, MapPin, Pencil, X, Check, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export default function ProfileHeader({
                                           user,
@@ -17,6 +17,83 @@ export default function ProfileHeader({
     const initials = user?.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : 'U';
+
+    const [resolvedImageUrl, setResolvedImageUrl] = useState('');
+    const [refreshNonce, setRefreshNonce] = useState(0);
+    const abortRef = useRef(null);
+    const refreshTimerRef = useRef(null);
+    const retriedRef = useRef(false);
+
+    const rawImage = typeof user?.image === 'string' ? user.image : '';
+    const isHttpsUrl = rawImage.startsWith('https://');
+    const isS3Key = rawImage.startsWith('users/');
+
+    const imageSrc = useMemo(() => {
+        if (isHttpsUrl) return rawImage;
+        if (isS3Key) return resolvedImageUrl;
+        return '';
+    }, [isHttpsUrl, isS3Key, rawImage, resolvedImageUrl]);
+
+    useEffect(() => {
+        if (!isS3Key) {
+            // No S3 key to resolve; do nothing (imageSrc falls back to '').
+            return;
+        }
+
+        // Clear any scheduled refresh for previous image.
+        if (refreshTimerRef.current) {
+            clearTimeout(refreshTimerRef.current);
+            refreshTimerRef.current = null;
+        }
+
+        // Abort any in-flight request when image changes/unmounts.
+        if (abortRef.current) {
+            abortRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        const run = async () => {
+            try {
+                const res = await fetch('/api/profile/image-download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ s3Key: rawImage }),
+                    signal: controller.signal,
+                });
+
+                if (!res.ok) {
+                    // Silent fail (avatar falls back to initials). Avoid exposing details.
+                    setResolvedImageUrl('');
+                    return;
+                }
+
+                const data = await res.json();
+                const url = typeof data?.downloadUrl === 'string' ? data.downloadUrl : '';
+                setResolvedImageUrl(url);
+
+                // Presigned URLs expire; refresh proactively.
+                // Server uses 3600s (1h). Refresh at ~50 min.
+                refreshTimerRef.current = setTimeout(() => {
+                    retriedRef.current = false;
+                    setRefreshNonce((n) => n + 1);
+                }, 50 * 60 * 1000);
+            } catch (e) {
+                if (e?.name === 'AbortError') return;
+                setResolvedImageUrl('');
+            }
+        };
+
+        run();
+
+        return () => {
+            if (refreshTimerRef.current) {
+                clearTimeout(refreshTimerRef.current);
+                refreshTimerRef.current = null;
+            }
+            controller.abort();
+        };
+    }, [isS3Key, rawImage, refreshNonce]);
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
@@ -33,7 +110,17 @@ export default function ProfileHeader({
                     {/* Avatar Section */}
                     <div className="relative flex-shrink-0">
                         <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-background shadow-sm">
-                            <AvatarImage src={user?.image || ""} alt="Profile" />
+                            <AvatarImage
+                                src={imageSrc}
+                                alt="Profile"
+                                onError={() => {
+                                    // Retry once if a presigned URL expired while the page stayed open.
+                                    if (!isS3Key) return;
+                                    if (retriedRef.current) return;
+                                    retriedRef.current = true;
+                                    setRefreshNonce((n) => n + 1);
+                                }}
+                            />
                             <AvatarFallback className="text-xl sm:text-2xl">{initials}</AvatarFallback>
                         </Avatar>
                         {/* Show camera only when editing */}

@@ -15,10 +15,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Plus, Loader2 } from "lucide-react"
+import { Plus, Loader2, Check } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 const iconNames = [
   "Activity", "Airplay", "AlarmClock", "AlertCircle", "Anchor", "Archive",
@@ -47,11 +48,38 @@ const iconNames = [
   "Zap"
 ];
 
+// Category color options
+export const categoryColors = [
+  { name: "default", label: "Default", class: "bg-muted", ring: "ring-border" },
+  { name: "red", label: "Red", class: "bg-red-500/20", ring: "ring-red-500" },
+  { name: "orange", label: "Orange", class: "bg-orange-500/20", ring: "ring-orange-500" },
+  { name: "amber", label: "Amber", class: "bg-amber-500/20", ring: "ring-amber-500" },
+  { name: "yellow", label: "Yellow", class: "bg-yellow-500/20", ring: "ring-yellow-500" },
+  { name: "lime", label: "Lime", class: "bg-lime-500/20", ring: "ring-lime-500" },
+  { name: "green", label: "Green", class: "bg-green-500/20", ring: "ring-green-500" },
+  { name: "emerald", label: "Emerald", class: "bg-emerald-500/20", ring: "ring-emerald-500" },
+  { name: "teal", label: "Teal", class: "bg-teal-500/20", ring: "ring-teal-500" },
+  { name: "cyan", label: "Cyan", class: "bg-cyan-500/20", ring: "ring-cyan-500" },
+  { name: "sky", label: "Sky", class: "bg-sky-500/20", ring: "ring-sky-500" },
+  { name: "blue", label: "Blue", class: "bg-blue-500/20", ring: "ring-blue-500" },
+  { name: "indigo", label: "Indigo", class: "bg-indigo-500/20", ring: "ring-indigo-500" },
+  { name: "violet", label: "Violet", class: "bg-violet-500/20", ring: "ring-violet-500" },
+  { name: "purple", label: "Purple", class: "bg-purple-500/20", ring: "ring-purple-500" },
+  { name: "fuchsia", label: "Fuchsia", class: "bg-fuchsia-500/20", ring: "ring-fuchsia-500" },
+  { name: "pink", label: "Pink", class: "bg-pink-500/20", ring: "ring-pink-500" },
+  { name: "rose", label: "Rose", class: "bg-rose-500/20", ring: "ring-rose-500" },
+];
+
+export function getCategoryColorClasses(colorName) {
+  return categoryColors.find(c => c.name === colorName) || categoryColors[0];
+}
+
 export function AddCategoryDialog({ onAddCategory }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [icon, setIcon] = useState("File")
+  const [color, setColor] = useState("default")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleAdd = async () => {
@@ -71,6 +99,7 @@ export function AddCategoryDialog({ onAddCategory }) {
           title: name,
           content: description,
           icon,
+          color,
         }),
       })
 
@@ -87,6 +116,7 @@ export function AddCategoryDialog({ onAddCategory }) {
         name: useCase.title,
         description: useCase.content,
         icon: useCase.icon,
+        color: useCase.color,
         pdfs: [],
       })
 
@@ -94,6 +124,7 @@ export function AddCategoryDialog({ onAddCategory }) {
       setName("")
       setDescription("")
       setIcon("File")
+      setColor("default")
       setOpen(false)
     } catch (error) {
       console.error("Error creating use case:", error)
@@ -172,6 +203,30 @@ export function AddCategoryDialog({ onAddCategory }) {
                 </div>
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right pt-2">
+              Color
+            </Label>
+            <div className="col-span-3">
+              <div className="flex flex-wrap gap-2">
+                {categoryColors.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => setColor(c.name)}
+                    className={cn(
+                      "h-7 w-7 rounded-full border-2 flex items-center justify-center transition-all",
+                      c.class,
+                      color === c.name ? "border-foreground scale-110" : "border-transparent hover:scale-105"
+                    )}
+                    title={c.label}
+                  >
+                    {color === c.name && <Check className="h-3 w-3" />}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <DialogFooter>

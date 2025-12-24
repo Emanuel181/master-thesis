@@ -2,11 +2,19 @@ import React from "react";
 
 import { Timeline } from "../timeline";
 
-import { Badge } from "@/components/ui/badge";
 
-import { Card, CardContent } from "@/components/ui/card";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+    CommandShortcut,
+} from "@/components/ui/command";
 
-import { Terminal, Database, ShieldCheck, GitPullRequest } from "lucide-react";
+import { Terminal, Database, ShieldCheck, GitPullRequest, FileCode, FileText, AlertTriangle, Bug } from "lucide-react";
 
 
 
@@ -30,39 +38,61 @@ export function TimelineDemo() {
 
                     <div className="grid grid-cols-1 gap-4">
 
-                        <div className="rounded-lg border border-[#0e2736]/10 dark:border-[#1fb6cf]/20 bg-white dark:bg-[#0e2736]/50 overflow-hidden">
+                        <Command className="rounded-lg border shadow-md bg-[#232323] text-white">
 
-                            <div className="p-4 font-mono text-xs">
+                            <CommandInput placeholder="Type a command or search..." />
 
-                                <div className="flex items-center gap-2 border-b border-[#0e2736]/10 dark:border-[#1fb6cf]/20 pb-2 mb-2 text-[#0e2736] dark:text-[#e6f4f7]">
+                            <CommandList>
 
-                                    <Terminal size={12} />
+                                <CommandGroup heading="Suggestions">
 
-                                    <span>scanner_logs.txt</span>
+                                    <CommandItem>
 
-                                </div>
+                                        <Terminal className="mr-2 h-4 w-4" />
 
-                                <div className="space-y-1">
+                                        <span>Analyzing dependency graph...</span>
 
-                                    <p className="text-[#0e2736] dark:text-[#e6f4f7]">➜ system start --scan ./src</p>
+                                    </CommandItem>
 
-                                    <p className="text-[#0e2736]/60 dark:text-[#e6f4f7]/60">Analyzing dependency graph...</p>
+                                    <CommandItem>
 
-                                    <p className="text-[#0e2736]/60 dark:text-[#e6f4f7]/60">Parsing AST nodes...</p>
+                                        <FileCode className="mr-2 h-4 w-4" />
 
-                                    <p className="text-red-600 dark:text-red-400 font-bold bg-red-500/10 inline-block px-1 rounded">
+                                        <span>Parsing AST nodes...</span>
 
-                                        [CRITICAL] CWE-89 Detected in auth.ts:42
+                                    </CommandItem>
 
-                                    </p>
+                                </CommandGroup>
 
-                                    <p className="text-[#0e2736] dark:text-[#e6f4f7] pl-4">&quot;SELECT * FROM users WHERE id = &quot; + input</p>
+                                <CommandSeparator />
 
-                                </div>
+                                <CommandGroup heading="Settings">
 
-                            </div>
+                                    <CommandItem>
 
-                        </div>
+                                        <AlertTriangle className="mr-2 h-4 w-4" />
+
+                                        <span>[CRITICAL] CWE-89 in auth.ts:42</span>
+
+                                        <CommandShortcut>⌘1</CommandShortcut>
+
+                                    </CommandItem>
+
+                                    <CommandItem>
+
+                                        <Bug className="mr-2 h-4 w-4" />
+
+                                        <span>SQL Injection detected</span>
+
+                                        <CommandShortcut>⌘2</CommandShortcut>
+
+                                    </CommandItem>
+
+                                </CommandGroup>
+
+                            </CommandList>
+
+                        </Command>
 
                     </div>
 
@@ -88,41 +118,57 @@ export function TimelineDemo() {
 
                     <div className="grid grid-cols-1 gap-4">
 
-                        <div className="rounded-lg border border-[#0e2736]/10 dark:border-[#1fb6cf]/20 bg-white dark:bg-[#0e2736]/50 overflow-hidden">
+                        <Command className="rounded-lg border shadow-md bg-[#232323] text-white">
 
-                            <div className="p-4">
+                            <CommandInput placeholder="Search knowledge base..." />
 
-                                <div className="flex items-center gap-2 mb-3 text-[#0e2736]/70 dark:text-[#e6f4f7]/70">
+                            <CommandList>
 
-                                    <Database size={16} />
+                                <CommandEmpty>No results found.</CommandEmpty>
 
-                                    <span className="font-semibold text-sm">Context Retrieved</span>
+                                <CommandGroup heading="Suggestions">
 
-                                </div>
+                                    <CommandItem>
 
-                                <div className="space-y-2">
+                                        <FileText className="mr-2 h-4 w-4" />
 
-                                    <div className="flex items-center justify-between bg-[#e6f4f7]/50 dark:bg-[#0a1c27]/50 p-2 rounded border border-[#0e2736]/5 dark:border-[#1fb6cf]/10">
+                                        <span>OWASP_A03_Injection.md</span>
 
-                                        <span className="text-xs text-[#0e2736] dark:text-[#e6f4f7]">OWASP_A03_Injection.md</span>
+                                        <CommandShortcut>98%</CommandShortcut>
 
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1fb6cf]/20 text-[#1fb6cf] font-medium">98% Match</span>
+                                    </CommandItem>
 
-                                    </div>
+                                    <CommandItem>
 
-                                    <div className="flex items-center justify-between bg-[#e6f4f7]/50 dark:bg-[#0a1c27]/50 p-2 rounded border border-[#0e2736]/5 dark:border-[#1fb6cf]/10">
+                                        <FileCode className="mr-2 h-4 w-4" />
 
-                                        <span className="text-xs text-[#0e2736] dark:text-[#e6f4f7]">prev_patch_auth_v1.ts</span>
+                                        <span>prev_patch_auth_v1.ts</span>
 
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1fb6cf]/20 text-[#1fb6cf] font-medium">94% Match</span>
+                                        <CommandShortcut>94%</CommandShortcut>
 
-                                    </div>
+                                    </CommandItem>
 
-                                </div>
+                                </CommandGroup>
 
-                            </div>
+                                <CommandSeparator />
 
-                        </div>
+                                <CommandGroup heading="Settings">
+
+                                    <CommandItem>
+
+                                        <Database className="mr-2 h-4 w-4" />
+
+                                        <span>CWE-89_mitigation_guide.md</span>
+
+                                        <CommandShortcut>91%</CommandShortcut>
+
+                                    </CommandItem>
+
+                                </CommandGroup>
+
+                            </CommandList>
+
+                        </Command>
 
                     </div>
 
@@ -216,7 +262,7 @@ export function TimelineDemo() {
 
                                 </div>
 
-                                <p className="text-[10px] text-[#0e2736]/60 dark:text-[#e6f4f7]/60 mt-2">2/2 Regression tests passed</p>
+                                <p className="text-xs text-[#0e2736]/60 dark:text-[#e6f4f7]/60 mt-2">2/2 Regression tests passed</p>
 
                             </div>
 

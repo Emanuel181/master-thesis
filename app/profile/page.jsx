@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/dashboard/sidebar/app-sidebar"
 import {
@@ -25,6 +25,32 @@ import { useSettings } from "@/contexts/settingsContext"
 import { useSession } from "next-auth/react"
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog"
 import { toast } from "sonner";
+import { NotificationProvider, NotificationCenter } from "@/components/ui/notification-center"
+import { CommandPaletteProvider, useCommandPalette } from "@/components/ui/command"
+import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog"
+import { Button } from "@/components/ui/button"
+import { Keyboard } from "lucide-react"
+
+// Header buttons component that can use the command palette context
+function HeaderButtons() {
+    const { setOpen } = useCommandPalette()
+
+    return (
+        <div className="flex items-center gap-2">
+            <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setOpen(true)}
+                title="Command Palette (Ctrl+K)"
+            >
+                <Keyboard className="h-5 w-5" />
+            </Button>
+            <NotificationCenter />
+            <CustomizationDialog showEditorTabs={false} />
+            <ThemeToggle />
+        </div>
+    )
+}
 
 export default function ProfilePage() {
     const { settings, mounted } = useSettings()
@@ -35,6 +61,13 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+    // Listen for open-feedback event (from command palette shortcut)
+    useEffect(() => {
+        const handleOpenFeedback = () => setIsFeedbackOpen(true);
+        window.addEventListener("open-feedback", handleOpenFeedback);
+        return () => window.removeEventListener("open-feedback", handleOpenFeedback);
+    }, []);
 
     const handleNavigation = (item) => {
         if (item.title === "Feedback") {
@@ -77,33 +110,28 @@ export default function ProfilePage() {
         }
 
         try {
-            // Get current user email from session
-            if (!session?.user?.email) {
+            if (!session?.user?.id) {
                 toast.error('User not authenticated');
                 return;
             }
 
-            // Generate a unique key for the image
-            const userEmail = session.user.email;
-            const timestamp = Date.now();
-            const fileExtension = file.name.split('.').pop();
-            const s3Key = `profile-images/${userEmail}/${timestamp}.${fileExtension}`;
-
-            // Get presigned upload URL
+            // Ask the server for a presigned upload URL + server-generated s3Key.
             const presignedResponse = await fetch('/api/profile/image-upload', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    s3Key,
                     contentType: file.type,
+                    fileName: file.name,
+                    fileSize: file.size,
                 }),
             });
 
             if (!presignedResponse.ok) {
-                throw new Error('Failed to get upload URL');
+                toast.error('Failed to get upload URL');
+                return;
             }
 
-            const { uploadUrl } = await presignedResponse.json();
+            const { uploadUrl, s3Key } = await presignedResponse.json();
 
             // Upload image to S3
             const uploadResponse = await fetch(uploadUrl, {
@@ -113,31 +141,20 @@ export default function ProfilePage() {
             });
 
             if (!uploadResponse.ok) {
-                throw new Error('Failed to upload image');
+                toast.error('Failed to upload image');
+                return;
             }
 
-            // Get the download URL
-            const downloadResponse = await fetch('/api/profile/image-download', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ s3Key }),
-            });
-
-            if (!downloadResponse.ok) {
-                throw new Error('Failed to get download URL');
-            }
-
-            const { downloadUrl } = await downloadResponse.json();
-
-            // Update the profile with the new image URL
+            // Update the profile with the S3 key (not a presigned URL).
             const updateResponse = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: downloadUrl }),
+                body: JSON.stringify({ image: s3Key }),
             });
 
             if (!updateResponse.ok) {
-                throw new Error('Failed to update profile');
+                toast.error('Failed to update profile');
+                return;
             }
 
             toast.success('Profile image uploaded successfully!');
@@ -154,72 +171,76 @@ export default function ProfilePage() {
     };
 
     return (
-        <SidebarProvider
-            key={sidebarKey}
-            className="h-screen overflow-hidden"
-            defaultOpen={defaultSidebarOpen}
-        >
-            <AppSidebar onNavigate={handleNavigation} />
-            <SidebarInset className="flex flex-col overflow-hidden">
-                <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                    <div className="flex items-center justify-between w-full gap-2 px-4 pr-2 sm:pr-4">
-                        <div className="flex items-center gap-2">
-                            <SidebarTrigger className="-ml-1" />
-                            <Separator
-                                orientation="vertical"
-                                className="mr-2 data-[orientation=vertical]:h-4"
-                            />
-                            <Breadcrumb>
-                                <BreadcrumbList>
-                                    <BreadcrumbItem className="hidden md:block">
-                                        <BreadcrumbLink href="/dashboard">
-                                            Home
-                                        </BreadcrumbLink>
-                                    </BreadcrumbItem>
-                                    <BreadcrumbSeparator />
-                                    <BreadcrumbItem>
-                                        <BreadcrumbLink href="/profile">
-                                            Profile
-                                        </BreadcrumbLink>
-                                    </BreadcrumbItem>
-                                </BreadcrumbList>
-                            </Breadcrumb>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <CustomizationDialog showEditorTabs={false} />
-                            <ThemeToggle />
-                        </div>
-                    </div>
-                </header>
-                <div className="flex-1 overflow-hidden">
-                    <ScrollArea className="h-full">
-                        <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 ${
-                            settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
-                        }`}>
+        <NotificationProvider>
+            <CommandPaletteProvider onNavigate={(item) => router.push(item.url || `/dashboard?page=${item.title}`)}>
+                <SidebarProvider
+                    key={sidebarKey}
+                    className="h-screen overflow-hidden"
+                    defaultOpen={defaultSidebarOpen}
+                >
+                    <AppSidebar onNavigate={handleNavigation} />
+                    <SidebarInset className="flex flex-col overflow-hidden">
+                        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                            <div className="flex items-center justify-between w-full gap-2 px-4 pr-2 sm:pr-4">
+                                <div className="flex items-center gap-2">
+                                    <SidebarTrigger className="-ml-1" />
+                                    <Separator
+                                        orientation="vertical"
+                                        className="mr-2 data-[orientation=vertical]:h-4"
+                                    />
+                                    <Breadcrumb>
+                                        <BreadcrumbList>
+                                            <BreadcrumbItem className="hidden md:block">
+                                                <BreadcrumbLink href="/dashboard">
+                                                    Home
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink href="/profile">
+                                                    Profile
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                        </BreadcrumbList>
+                                    </Breadcrumb>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <HeaderButtons />
+                                </div>
+                            </div>
+                        </header>
+                        <div className="flex-1 overflow-hidden">
+                            <ScrollArea className="h-full">
+                                <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 ${
+                                    settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
+                                }`}>
 
-                        {/* 3. Pass state and handlers to Header */}
-                        <ProfileHeader
-                            user={session?.user}
-                            isEditing={isEditing}
-                            onEdit={handleEditStart}
-                            onCancel={handleEditCancel}
-                            isSaving={isSaving}
-                            onImageUpload={handleImageUpload}
-                        />
+                                {/* 3. Pass state and handlers to Header */}
+                                <ProfileHeader
+                                    user={session?.user}
+                                    isEditing={isEditing}
+                                    onEdit={handleEditStart}
+                                    onCancel={handleEditCancel}
+                                    isSaving={isSaving}
+                                    onImageUpload={handleImageUpload}
+                                />
 
-                        {/* 4. Pass state and handlers to Content */}
-                        <ProfileContent
-                            isEditing={isEditing}
-                            onCancel={handleEditCancel}
-                            onUpdateSavingState={setIsSaving}
-                            onSaveSuccess={handleSaveSuccess}
-                            onImageUpload={handleImageUpload}
-                        />
-                    </div>
-                    </ScrollArea>
-                </div>
-            </SidebarInset>
-            <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
-        </SidebarProvider>
+                                {/* 4. Pass state and handlers to Content */}
+                                <ProfileContent
+                                    isEditing={isEditing}
+                                    onCancel={handleEditCancel}
+                                    onUpdateSavingState={setIsSaving}
+                                    onSaveSuccess={handleSaveSuccess}
+                                    onImageUpload={handleImageUpload}
+                                />
+                            </div>
+                            </ScrollArea>
+                        </div>
+                    </SidebarInset>
+                    <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
+                    <KeyboardShortcutsDialog />
+                </SidebarProvider>
+            </CommandPaletteProvider>
+        </NotificationProvider>
     )
 }

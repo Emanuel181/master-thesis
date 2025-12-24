@@ -965,6 +965,7 @@ const FolderTree = forwardRef(function FolderTree({
                             onMove={sortBy === "manual" ? handleMove : undefined}
                             disableDrag={sortBy !== "manual"}
                             disableDrop={sortBy !== "manual"}
+                            dndRootElement={null}
                         >
                             {TreeNode}
                         </Tree>
@@ -1282,7 +1283,7 @@ const FolderTree = forwardRef(function FolderTree({
                                 ))
                             ) : folderPickerSearch ? (
                                 <div className="text-center text-sm text-muted-foreground py-4">
-                                    No folders matching "{folderPickerSearch}"
+                                    No folders matching &ldquo;{folderPickerSearch}&rdquo;
                                 </div>
                             ) : null}
                         </div>

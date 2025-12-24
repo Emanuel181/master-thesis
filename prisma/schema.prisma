@@ -68,6 +68,7 @@ model KnowledgeBaseCategory {
   title     String
   content   String
   icon      String   @default("File")
+  color     String   @default("default")
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   pdfs      Pdf[]

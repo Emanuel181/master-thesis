@@ -3,6 +3,7 @@ import { Octokit } from '@octokit/rest';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
+import { securityHeaders } from '@/lib/api-security';
 
 // SECURITY: Only log in development
 const isDev = process.env.NODE_ENV === 'development';
@@ -38,6 +39,7 @@ function buildHierarchyTree(items, repo) {
 }
 
 export async function GET(request) {
+    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const { searchParams } = new URL(request.url);
     const owner = searchParams.get('owner');
     const repo = searchParams.get('repo');
@@ -45,12 +47,21 @@ export async function GET(request) {
     const shape = searchParams.get('shape');
 
     if (!owner || !repo) {
-        return NextResponse.json({ error: 'Missing owner or repo' }, { status: 400 });
+        return NextResponse.json({ error: 'Missing owner or repo', requestId }, { status: 400, headers: { ...securityHeaders, 'x-request-id': requestId } });
+    }
+
+    // Input validation - prevent injection and malformed inputs
+    const ownerRepoPattern = /^[a-zA-Z0-9_.-]+$/;
+    if (!ownerRepoPattern.test(owner) || owner.length > 100) {
+        return NextResponse.json({ error: 'Invalid owner format', requestId }, { status: 400, headers: { ...securityHeaders, 'x-request-id': requestId } });
+    }
+    if (!ownerRepoPattern.test(repo) || repo.length > 100) {
+        return NextResponse.json({ error: 'Invalid repo format', requestId }, { status: 400, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 
     const session = await auth();
-    if (!session) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 
     // Rate limiting - 60 requests per minute
@@ -61,22 +72,16 @@ export async function GET(request) {
     });
     if (!rl.allowed) {
         return NextResponse.json(
-            { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-            { status: 429 }
+            { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+            { status: 429, headers: { ...securityHeaders, 'x-request-id': requestId } }
         );
     }
 
-    // Get the user from database
-    let user = null;
-    if (session.user?.email) {
-        user = await prisma.user.findUnique({ where: { email: session.user.email } });
-    }
-    if (!user && session.user?.id) {
-        user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    }
+    // Get the user from database (prefer id)
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
     if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 401 });
+        return NextResponse.json({ error: 'User not found', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 
     // Fetch GitHub access token from database
@@ -87,79 +92,55 @@ export async function GET(request) {
         },
     });
 
-    // Try tokens in order: session.accessToken (only if from github), then DB token
-    const tokenCandidates = [];
-    // Only use session token if it's from GitHub login
-    if (session.accessToken && session.provider === 'github') {
-        tokenCandidates.push({ source: 'session', token: session.accessToken });
-    }
-    if (githubAccount && githubAccount.access_token) {
-        tokenCandidates.push({ source: 'db', token: githubAccount.access_token });
+    if (!githubAccount?.access_token) {
+        return NextResponse.json({ error: 'GitHub account not linked', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 
-    if (tokenCandidates.length === 0) {
-        return NextResponse.json({ error: 'GitHub account not linked' }, { status: 401 });
-    }
+    const octokit = new Octokit({ auth: githubAccount.access_token });
 
-    let lastError = null;
-    for (const candidate of tokenCandidates) {
-        try {
-            const octokit = new Octokit({ auth: candidate.token });
-
-            let commitSha;
-            if (ref === 'HEAD') {
-                // Get the default branch
-                const { data: repoData } = await octokit.repos.get({ owner, repo });
-                const defaultBranch = repoData.default_branch;
+    try {
+        let commitSha;
+        if (ref === 'HEAD') {
+            // Get the default branch
+            const { data: repoData } = await octokit.repos.get({ owner, repo });
+            const defaultBranch = repoData.default_branch;
+            const { data: refData } = await octokit.git.getRef({
+                owner,
+                repo,
+                ref: `heads/${defaultBranch}`,
+            });
+            commitSha = refData.object.sha;
+        } else {
+            // Assume ref is a commit SHA or branch/tag
+            try {
                 const { data: refData } = await octokit.git.getRef({
                     owner,
                     repo,
-                    ref: `heads/${defaultBranch}`,
+                    ref: `heads/${ref}`,
                 });
                 commitSha = refData.object.sha;
-            } else {
-                // Assume ref is a commit SHA or branch/tag
-                try {
-                    const { data: refData } = await octokit.git.getRef({
-                        owner,
-                        repo,
-                        ref: `heads/${ref}`,
-                    });
-                    commitSha = refData.object.sha;
-                } catch {
-                    // If not a branch, assume it's a commit SHA
-                    commitSha = ref;
-                }
+            } catch {
+                // If not a branch, assume it's a commit SHA
+                commitSha = ref;
             }
-
-            // Fetch the tree
-            const { data: treeData } = await octokit.git.getTree({
-                owner,
-                repo,
-                tree_sha: commitSha,
-                recursive: 'true',
-            });
-
-            if (isDev) console.log('[github/tree] fetched tree with', treeData.tree.length, 'items');
-            if (shape === 'hierarchy') {
-                return NextResponse.json({ root: buildHierarchyTree(treeData.tree, repo) });
-            }
-            return NextResponse.json({ tree: treeData.tree });
-        } catch (err) {
-            if (isDev) console.error('[github/tree] Octokit error:', err.message || err);
-            lastError = err;
-            // if 401, try next candidate
-            const statusCode = err.status || err.statusCode || (err.response && err.response.status) || 500;
-            if (statusCode === 401 || statusCode === 403) {
-                if (isDev) console.warn('[github/tree] token rejected (status', statusCode, '), trying next if available');
-                continue;
-            }
-            // for other errors, return immediately
-            return NextResponse.json({ error: 'Failed to fetch repo tree' }, { status: statusCode });
         }
-    }
 
-    // if we got here, all candidates failed (likely 401)
-    const statusCode = (lastError && (lastError.status || lastError.statusCode || (lastError.response && lastError.response.status))) || 401;
-    return NextResponse.json({ error: 'Failed to fetch repo tree' }, { status: statusCode });
+        // Fetch the tree
+        const { data: treeData } = await octokit.git.getTree({
+            owner,
+            repo,
+            tree_sha: commitSha,
+            recursive: 'true',
+        });
+
+        if (isDev) console.log('[github/tree] fetched tree with', treeData.tree.length, 'items');
+        if (shape === 'hierarchy') {
+            return NextResponse.json({ root: buildHierarchyTree(treeData.tree, repo) }, { headers: { ...securityHeaders, 'x-request-id': requestId } });
+        }
+        return NextResponse.json({ tree: treeData.tree }, { headers: { ...securityHeaders, 'x-request-id': requestId } });
+    } catch (err) {
+        if (isDev) console.error('[github/tree] Octokit error:', err.message || err);
+        const statusCode = err.status || err.statusCode || (err.response && err.response.status) || 500;
+        return NextResponse.json({ error: 'Failed to fetch repository tree', requestId }, { status: statusCode, headers: { ...securityHeaders, 'x-request-id': requestId } });
+    }
 }

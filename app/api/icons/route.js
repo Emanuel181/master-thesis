@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { rateLimit } from '@/lib/rate-limit';
+import { securityHeaders } from '@/lib/api-security';
 
 // Available icon names for use cases
 const ICON_NAMES = [
@@ -35,13 +37,26 @@ export async function GET() {
     if (!session?.user) {
         return NextResponse.json(
             { error: 'Unauthorized' },
-            { status: 401 }
+            { status: 401, headers: securityHeaders }
+        );
+    }
+
+    // Rate limiting - 60 requests per minute
+    const rl = rateLimit({
+        key: `icons:${session.user.id}`,
+        limit: 60,
+        windowMs: 60 * 1000
+    });
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: 'Rate limit exceeded', retryAt: rl.resetAt },
+            { status: 429, headers: securityHeaders }
         );
     }
 
     return NextResponse.json({
         icons: ICON_NAMES,
         total: ICON_NAMES.length,
-    });
+    }, { headers: securityHeaders });
 }
 

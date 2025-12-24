@@ -33,7 +33,7 @@ export const AgentPointer = ({ x, y, label, color, isVisible, icon: Icon }) => {
                 >
                     <div className={`relative flex items-center gap-2 px-3 py-2 rounded-full shadow-2xl border ring-4 backdrop-blur-md ${colors[color] || colors.blue}`}>
                         <Icon size={16} className={textColor} />
-                        <span className={`text-[11px] font-bold whitespace-nowrap ${textColor}`}>{label}</span>
+                        <span className={`text-xs font-bold whitespace-nowrap ${textColor}`}>{label}</span>
                     </div>
                     <svg
                         className={`absolute -bottom-3 -left-1 w-6 h-6 drop-shadow-md ${arrowColor}`}

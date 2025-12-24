@@ -58,13 +58,18 @@ export function SettingsProvider({ children }) {
 
   useEffect(() => {
     let parsedSettings = null;
-    const savedSettings = localStorage.getItem('app-settings');
-    if (savedSettings) {
-      try {
-        parsedSettings = JSON.parse(savedSettings);
-      } catch (e) {
-        console.error('Failed to parse settings:', e);
+    try {
+      const savedSettings = localStorage.getItem('app-settings');
+      if (savedSettings) {
+        try {
+          parsedSettings = JSON.parse(savedSettings);
+        } catch (e) {
+          console.error('Failed to parse settings:', e);
+        }
       }
+    } catch (e) {
+      // localStorage not available (SSR, private browsing, etc.)
+      console.warn('localStorage not available:', e);
     }
 
     if (parsedSettings) {
@@ -82,7 +87,12 @@ export function SettingsProvider({ children }) {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('app-settings', JSON.stringify(settings));
+      try {
+        localStorage.setItem('app-settings', JSON.stringify(settings));
+      } catch (e) {
+        // localStorage write failed (quota exceeded, private browsing, etc.)
+        console.warn('Failed to save settings to localStorage:', e);
+      }
       applySettings(settings);
     }
   }, [settings, mounted]);

@@ -64,13 +64,46 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         refreshLinkedProviders();
     }, [status, refreshLinkedProviders]);
 
-    // Periodic refresh of provider status
+    // Periodic refresh of provider status (with visibility awareness)
     useEffect(() => {
         if (status !== 'authenticated') return;
-        const interval = setInterval(() => {
-            refreshLinkedProviders();
-        }, 30000); // Reduced from 5s to 30s for better performance
-        return () => clearInterval(interval);
+
+        let interval;
+        const POLL_INTERVAL = 120000; // 2 minutes (reduced from 30s)
+
+        const startPolling = () => {
+            interval = setInterval(refreshLinkedProviders, POLL_INTERVAL);
+        };
+
+        const stopPolling = () => {
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+        };
+
+        // Only poll when tab is visible to reduce server load
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                // Refresh immediately when user returns, then resume polling
+                refreshLinkedProviders();
+                startPolling();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // Start initial polling if visible
+        if (!document.hidden) {
+            startPolling();
+        }
+
+        return () => {
+            stopPolling();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [status, refreshLinkedProviders]);
 
     // Load GitHub repos
@@ -197,6 +230,15 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
 export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode }) {
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Listen for open-project-switcher event (from command palette shortcut Ctrl+O)
+    useEffect(() => {
+        const handleOpenProjectSwitcher = () => {
+            setIsImportDialogOpen(true);
+        };
+        window.addEventListener("open-project-switcher", handleOpenProjectSwitcher);
+        return () => window.removeEventListener("open-project-switcher", handleOpenProjectSwitcher);
+    }, []);
 
     // Import repo by search term (owner/repo format)
     const handleImport = async () => {

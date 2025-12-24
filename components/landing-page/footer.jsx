@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { Github, Linkedin, Mail, FileText } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -22,29 +23,44 @@ const itemVariants = {
     }
 };
 
-// Social button - premium style
-const SocialButton = ({ icon: Icon, href }) => (
-    <motion.a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="p-2.5 rounded-full bg-[#1fb6cf]/10 border border-[#1fb6cf]/20 text-[#1fb6cf] hover:bg-[#1fb6cf]/20 hover:border-[#1fb6cf]/30 transition-all duration-300"
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-    >
-        <Icon className="w-4 h-4" />
-    </motion.a>
-);
 
 export function Footer() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
+    const [email, setEmail] = useState("");
+    const [status, setStatus] = useState("idle"); // idle, loading, success, error
+    const [message, setMessage] = useState("");
 
-    const socialLinks = [
-        { icon: Github, title: "GitHub", href: "#" },
-        { icon: Linkedin, title: "LinkedIn", href: "#" },
-        { icon: Mail, title: "Email", href: "mailto:" },
-    ];
+    const handleSubscribe = async (e) => {
+        e.preventDefault();
+        if (!email || !email.includes("@")) {
+            setStatus("error");
+            setMessage("Please enter a valid email address");
+            return;
+        }
+
+        setStatus("loading");
+        try {
+            const response = await fetch("/api/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                setStatus("success");
+                setMessage(data.message);
+                setEmail("");
+            } else {
+                setStatus("error");
+                setMessage(data.error || "Failed to subscribe");
+            }
+        } catch (error) {
+            setStatus("error");
+            setMessage("An error occurred. Please try again.");
+        }
+    };
 
     return (
         <footer ref={ref} className="relative border-t border-[#0e2736]/10 dark:border-[#1fb6cf]/10 bg-gradient-to-b from-white dark:from-[#0a1c27] to-[#e6f4f7]/20 dark:to-[#0e2736]/20">
@@ -71,10 +87,55 @@ export function Footer() {
                         <p className="text-sm leading-relaxed max-w-sm text-[#0e2736]/70 dark:text-[#e6f4f7]/70">
                             Autonomous security remediation powered by retrieval-augmented generation. A master thesis project exploring AI-driven vulnerability detection and patching.
                         </p>
-                        <div className="flex gap-2 pt-2">
-                            {socialLinks.map((social) => (
-                                <SocialButton key={social.title} icon={social.icon} href={social.href} />
-                            ))}
+
+                        {/* Email Subscription Form */}
+                        <div className="pt-3 space-y-3">
+                            <h4 className="font-medium text-[#0e2736] dark:text-[#e6f4f7] text-sm">Stay Updated</h4>
+                            <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="Enter your email"
+                                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-white dark:bg-[#0e2736] border border-[#0e2736]/10 dark:border-[#1fb6cf]/20 text-[#0e2736] dark:text-[#e6f4f7] placeholder:text-[#0e2736]/40 dark:placeholder:text-[#e6f4f7]/40 focus:outline-none focus:ring-2 focus:ring-[#1fb6cf]/30 focus:border-[#1fb6cf]/50 transition-all"
+                                        disabled={status === "loading" || status === "success"}
+                                    />
+                                    <motion.button
+                                        type="submit"
+                                        disabled={status === "loading" || status === "success"}
+                                        className="px-4 py-2 text-sm font-medium rounded-lg bg-[#1fb6cf] text-white hover:bg-[#1fb6cf]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                        whileHover={{ scale: status === "loading" || status === "success" ? 1 : 1.02 }}
+                                        whileTap={{ scale: status === "loading" || status === "success" ? 1 : 0.98 }}
+                                    >
+                                        {status === "loading" ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : status === "success" ? (
+                                            <CheckCircle2 className="w-4 h-4" />
+                                        ) : (
+                                            <Send className="w-4 h-4" />
+                                        )}
+                                    </motion.button>
+                                </div>
+                                {message && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`text-xs flex items-center gap-1 ${
+                                            status === "success" 
+                                                ? "text-green-600 dark:text-green-400" 
+                                                : "text-red-600 dark:text-red-400"
+                                        }`}
+                                    >
+                                        {status === "success" ? (
+                                            <CheckCircle2 className="w-3 h-3" />
+                                        ) : (
+                                            <AlertCircle className="w-3 h-3" />
+                                        )}
+                                        {message}
+                                    </motion.p>
+                                )}
+                            </form>
                         </div>
                     </motion.div>
 
@@ -84,7 +145,7 @@ export function Footer() {
                         <div className="space-y-2 text-sm text-[#0e2736]/70 dark:text-[#e6f4f7]/70">
                             <p className="font-medium text-[#0e2736] dark:text-[#e6f4f7]">Emanuel Rusu</p>
                             <p>West University of Timișoara</p>
-                            <p>Faculty of Mathematics and Computer Science</p>
+                            <p>Faculty of Computer Science</p>
                             <p>Master&apos;s Degree in Cybersecurity</p>
                         </div>
                         <motion.a
@@ -110,6 +171,21 @@ export function Footer() {
                     <p className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50">
                         © 2025 Emanuel Rusu — Master Thesis Project
                     </p>
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/privacy"
+                            className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50 hover:text-[#1fb6cf] transition-colors"
+                        >
+                            Privacy Policy
+                        </Link>
+                        <span className="text-[#0e2736]/30 dark:text-[#e6f4f7]/30">•</span>
+                        <Link
+                            href="/terms"
+                            className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50 hover:text-[#1fb6cf] transition-colors"
+                        >
+                            Terms & Conditions
+                        </Link>
+                    </div>
                     <p className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50">
                         Open Beta • Research Project
                     </p>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { rateLimit } from '@/lib/rate-limit';
+import { securityHeaders } from '@/lib/api-security';
 
 // Extension to language mapping
 const EXTENSION_LANGUAGE_MAP = {
@@ -117,7 +118,7 @@ export async function POST(request) {
         if (!session?.user) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
-                { status: 401 }
+                { status: 401, headers: securityHeaders }
             );
         }
 
@@ -130,7 +131,7 @@ export async function POST(request) {
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { status: 429, headers: securityHeaders }
             );
         }
 
@@ -139,18 +140,32 @@ export async function POST(request) {
         if (!filename && !content) {
             return NextResponse.json(
                 { error: 'Either filename or content is required' },
-                { status: 400 }
+                { status: 400, headers: securityHeaders }
             );
         }
 
-        const result = detectLanguage(filename, content);
+        // SECURITY: Validate input types and sizes
+        if (filename && (typeof filename !== 'string' || filename.length > 500)) {
+            return NextResponse.json(
+                { error: 'Invalid filename' },
+                { status: 400, headers: securityHeaders }
+            );
+        }
 
-        return NextResponse.json(result);
+        // Limit content size for language detection - only need first 10KB
+        const MAX_CONTENT_SIZE = 10 * 1024; // 10KB
+        const truncatedContent = content && typeof content === 'string'
+            ? content.slice(0, MAX_CONTENT_SIZE)
+            : undefined;
+
+        const result = detectLanguage(filename, truncatedContent);
+
+        return NextResponse.json(result, { headers: securityHeaders });
     } catch (error) {
         console.error('[detect-language] Error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
-            { status: 500 }
+            { status: 500, headers: securityHeaders }
         );
     }
 }

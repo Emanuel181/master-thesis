@@ -1,5 +1,8 @@
 import { BedrockAgentClient, GetAgentCommand, ListAgentActionGroupsCommand, ListAgentKnowledgeBasesCommand } from "@aws-sdk/client-bedrock-agent";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { securityHeaders } from "@/lib/api-security";
 
 const bedrockAgentClient = new BedrockAgentClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -7,13 +10,33 @@ const bedrockAgentClient = new BedrockAgentClient({
 
 // GET - Get detailed agent information including action groups and knowledge bases
 export async function GET(request, { params }) {
+    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     try {
-        const { id } = params;
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
+        }
 
-        if (!id) {
+        // Rate limiting - 60 requests per minute
+        const rl = rateLimit({
+            key: `bedrock:agent:get:${session.user.id}`,
+            limit: 60,
+            windowMs: 60 * 1000
+        });
+        if (!rl.allowed) {
             return NextResponse.json(
-                { error: "Agent ID is required" },
-                { status: 400 }
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+                { status: 429, headers: { ...securityHeaders, 'x-request-id': requestId } }
+            );
+        }
+
+        const id = params?.id;
+
+        // Conservative id validation: agent ids are typically opaque but URL-safe.
+        if (!id || typeof id !== 'string' || id.length > 200 || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+            return NextResponse.json(
+                { error: "Agent ID is required", requestId },
+                { status: 400, headers: { ...securityHeaders, 'x-request-id': requestId } }
             );
         }
 
@@ -26,7 +49,7 @@ export async function GET(request, { params }) {
         // Get action groups
         const listActionGroupsCommand = new ListAgentActionGroupsCommand({
             agentId: id,
-            agentVersion: 'DRAFT', // or '1' for published version
+            agentVersion: 'DRAFT',
         });
 
         let actionGroups = [];
@@ -34,13 +57,13 @@ export async function GET(request, { params }) {
             const actionGroupsResponse = await bedrockAgentClient.send(listActionGroupsCommand);
             actionGroups = actionGroupsResponse.actionGroupSummaries || [];
         } catch (error) {
-            console.warn("Could not fetch action groups:", error.message);
+            console.warn("Could not fetch action groups:", error?.message || String(error));
         }
 
         // Get knowledge bases
         const listKnowledgeBasesCommand = new ListAgentKnowledgeBasesCommand({
             agentId: id,
-            agentVersion: 'DRAFT', // or '1' for published version
+            agentVersion: 'DRAFT',
         });
 
         let knowledgeBases = [];
@@ -48,7 +71,7 @@ export async function GET(request, { params }) {
             const knowledgeBasesResponse = await bedrockAgentClient.send(listKnowledgeBasesCommand);
             knowledgeBases = knowledgeBasesResponse.agentKnowledgeBaseSummaries || [];
         } catch (error) {
-            console.warn("Could not fetch knowledge bases:", error.message);
+            console.warn("Could not fetch knowledge bases:", error?.message || String(error));
         }
 
         const agent = agentResponse.agent;
@@ -79,27 +102,16 @@ export async function GET(request, { params }) {
             })),
             knowledgeBases: knowledgeBases.map(kb => ({
                 id: kb.knowledgeBaseId,
-                name: kb.description, // Note: This might be different in the actual API
+                name: kb.description,
                 state: kb.knowledgeBaseState,
                 updatedDate: kb.updatedAt,
             })),
-        });
+        }, { headers: { ...securityHeaders, 'x-request-id': requestId } });
     } catch (error) {
         console.error("Error fetching agent details:", error);
-
-        let errorMessage = "Failed to fetch agent details from AWS Bedrock";
-        if (error.name === "AccessDeniedException") {
-            errorMessage = "AWS Bedrock access denied. Please check your IAM permissions.";
-        } else if (error.name === "ResourceNotFoundException") {
-            errorMessage = "Agent not found.";
-        }
-
         return NextResponse.json(
-            {
-                error: errorMessage,
-                details: error.message,
-            },
-            { status: 500 }
+            { error: "Failed to fetch agent details from AWS Bedrock", requestId },
+            { status: 500, headers: { ...securityHeaders, 'x-request-id': requestId } }
         );
     }
 }

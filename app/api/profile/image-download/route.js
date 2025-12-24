@@ -4,6 +4,11 @@ import { getPresignedDownloadUrl } from "@/lib/s3";
 import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders, getClientIp, isSameOrigin, readJsonBody, validateS3Key } from "@/lib/api-security";
+import { z } from "zod";
+
+const bodySchema = z.object({
+  s3Key: z.string().min(1).max(500),
+}).strict();
 
 export async function POST(request) {
   try {
@@ -57,19 +62,20 @@ export async function POST(request) {
       );
     }
 
-    const { s3Key } = parsed.body ?? {};
-
-    if (!s3Key) {
+    const validation = bodySchema.safeParse(parsed.body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "s3Key is required" },
+        { error: "Validation failed" },
         { status: 400, headers: securityHeaders }
       );
     }
 
-    const expectedPrefix = `users/${user.id}/`;
+    const { s3Key } = validation.data;
+
+    // Only permit profile images for this user, not arbitrary user-owned objects.
+    const expectedPrefix = `users/${user.id}/profile-images/`;
     const s3KeyValidation = validateS3Key(s3Key, { requiredPrefix: expectedPrefix, maxLen: 500 });
     if (!s3KeyValidation.ok) {
-      // Preserve semantics: prefix mismatch -> 403, otherwise 400
       const status = s3KeyValidation.error === 'Access denied' ? 403 : 400;
       return NextResponse.json(
         { error: s3KeyValidation.error },

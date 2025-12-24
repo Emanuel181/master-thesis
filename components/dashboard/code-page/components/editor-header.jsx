@@ -26,6 +26,7 @@ import {
     Settings2,
     Code2,
     ChevronDown,
+    FolderPlus,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
@@ -60,6 +61,9 @@ export function EditorHeader({
     onStart,
     activeTab,
     code,
+    // Tab group props
+    onCreateGroup,
+    hasOpenTabs = false,
 }) {
     return (
         <CardHeader className="py-2 px-2 sm:py-2.5 sm:px-4 shrink-0 border-b bg-card/50">
@@ -176,6 +180,25 @@ export function EditorHeader({
                 {/* Right Section: Actions */}
                 {!isPlaceholder && hasContent && (
                     <div className="flex items-center gap-1.5">
+                        {/* Create Tab Group Button */}
+                        {hasOpenTabs && onCreateGroup && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 w-7 p-0"
+                                            onClick={onCreateGroup}
+                                        >
+                                            <FolderPlus className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Create Tab Group</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>

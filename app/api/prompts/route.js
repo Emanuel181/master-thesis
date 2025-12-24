@@ -1,28 +1,27 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { uploadTextToS3, generatePromptS3Key } from '@/lib/s3';
 import { z } from 'zod';
 import { rateLimit } from '@/lib/rate-limit';
+import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
 
 // Input validation schemas
 const VALID_AGENTS = ["reviewer", "implementation", "tester", "report"];
 
 const createPromptSchema = z.object({
-    agent: z.enum(VALID_AGENTS, {
-        errorMap: () => ({ message: `Agent must be one of: ${VALID_AGENTS.join(', ')}` })
-    }),
+    agent: z.enum(VALID_AGENTS, `Agent must be one of: ${VALID_AGENTS.join(', ')}`),
     title: z.string().max(200, 'Title must be less than 200 characters').optional(),
     text: z.string()
         .min(1, 'Text is required')
         .max(50000, 'Text must be less than 50000 characters'),
 });
 
-export async function GET(request) {
+export async function GET() {
     try {
         const session = await auth();
-        if (!session || !session.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: securityHeaders });
         }
 
         // Rate limiting - 60 requests per minute
@@ -34,7 +33,7 @@ export async function GET(request) {
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { status: 429, headers: securityHeaders }
             );
         }
 
@@ -72,18 +71,26 @@ export async function GET(request) {
             }
         });
 
-        return NextResponse.json(grouped);
+        return NextResponse.json(grouped, { headers: securityHeaders });
     } catch (error) {
         console.error('Error fetching prompts:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: securityHeaders });
     }
 }
 
 export async function POST(request) {
     try {
         const session = await auth();
-        if (!session || !session.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: securityHeaders });
+        }
+
+        // CSRF protection for state-changing operations
+        if (!isSameOrigin(request)) {
+            return NextResponse.json(
+                { error: 'Forbidden' },
+                { status: 403, headers: securityHeaders }
+            );
         }
 
         // Rate limiting - 30 prompts created per hour
@@ -95,20 +102,22 @@ export async function POST(request) {
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { status: 429, headers: securityHeaders }
             );
         }
 
         const userId = session.user.id;
-        const body = await request.json();
+        const parsed = await readJsonBody(request);
+        if (!parsed.ok) {
+            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
+        }
 
         // Validate input
-        const validationResult = createPromptSchema.safeParse(body);
+        const validationResult = createPromptSchema.safeParse(parsed.body);
         if (!validationResult.success) {
             return NextResponse.json({
                 error: 'Validation failed',
-                details: validationResult.error.errors
-            }, { status: 400 });
+            }, { status: 400, headers: securityHeaders });
         }
 
         const { agent, title, text } = validationResult.data;
@@ -131,9 +140,9 @@ export async function POST(request) {
             id: prompt.id,
             title: prompt.title,
             text: prompt.text,
-        });
+        }, { headers: securityHeaders });
     } catch (error) {
         console.error('Error creating prompt:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: securityHeaders });
     }
 }

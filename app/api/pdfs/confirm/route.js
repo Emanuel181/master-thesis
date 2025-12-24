@@ -4,11 +4,15 @@ import { auth } from "@/auth";
 import { getPresignedDownloadUrl } from "@/lib/s3";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
+import { isSameOrigin, readJsonBody, securityHeaders, validateS3Key } from "@/lib/api-security";
 
 // Security constants
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
 const MAX_FILENAME_LENGTH = 255;
 const MAX_S3_KEY_LENGTH = 1024;
+
+// CUID validation pattern (starts with 'c', 25 chars, lowercase alphanumeric)
+const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid ID format');
 
 // Input validation schema
 const confirmUploadSchema = z.object({
@@ -18,30 +22,46 @@ const confirmUploadSchema = z.object({
         .regex(/^users\/[^\/]+\/use-cases\/[^\/]+\/[^\/]+$/, 'Invalid s3Key format'),
     fileName: z.string()
         .min(1, 'fileName is required')
-        .max(MAX_FILENAME_LENGTH, `fileName must be less than ${MAX_FILENAME_LENGTH} characters`),
+        .max(MAX_FILENAME_LENGTH, `fileName must be less than ${MAX_FILENAME_LENGTH} characters`)
+        .refine((n) => n.toLowerCase().endsWith('.pdf'), 'Only PDF files are allowed'),
     fileSize: z.number()
+        .finite()
         .int()
         .positive('fileSize must be positive')
         .max(MAX_FILE_SIZE, `fileSize must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`),
-    useCaseId: z.string()
-        .min(1, 'useCaseId is required')
-        .max(50, 'useCaseId must be less than 50 characters'),
-    folderId: z.string()
-        .max(50, 'folderId must be less than 50 characters')
+    useCaseId: cuidSchema,
+    folderId: cuidSchema
         .optional()
         .nullable(),
 });
 
+function formatZodErrors(zodError) {
+  const fieldErrors = {};
+  for (const issue of zodError.issues || []) {
+    const key = issue.path?.[0] ? String(issue.path[0]) : 'form';
+    if (!fieldErrors[key]) fieldErrors[key] = [];
+    fieldErrors[key].push(issue.message);
+  }
+  return fieldErrors;
+}
+
 // POST - Confirm PDF upload (save to database after successful S3 upload)
 export async function POST(request) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const headers = { ...securityHeaders, 'x-request-id': requestId };
   try {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Unauthorized", requestId },
+        { status: 401, headers }
       );
+    }
+
+    // CSRF protection for state-changing operations
+    if (!isSameOrigin(request)) {
+      return NextResponse.json({ error: 'Forbidden', requestId }, { status: 403, headers });
     }
 
     // Rate limiting - 30 confirmations per hour
@@ -52,41 +72,45 @@ export async function POST(request) {
     });
     if (!rl.allowed) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429 }
+        { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+        { status: 429, headers }
       );
     }
 
+    // Ensure user exists
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
+        { error: "User not found", requestId },
+        { status: 404, headers }
       );
     }
 
-    const body = await request.json();
+    const parsed = await readJsonBody(request);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: 'Invalid JSON body', requestId }, { status: 400, headers });
+    }
 
     // Validate input with Zod
-    const validationResult = confirmUploadSchema.safeParse(body);
+    const validationResult = confirmUploadSchema.safeParse(parsed.body);
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: validationResult.error.errors },
-        { status: 400 }
+        { error: "Validation failed", fieldErrors: formatZodErrors(validationResult.error), requestId },
+        { status: 400, headers }
       );
     }
 
     const { s3Key, fileName, fileSize, useCaseId, folderId } = validationResult.data;
 
-    // SECURITY: Verify the s3Key contains the correct userId to prevent path traversal
-    const expectedKeyPrefix = `users/${user.id}/use-cases/`;
-    if (!s3Key.startsWith(expectedKeyPrefix)) {
+    // SECURITY: strict s3Key validation + authorization (user-scoped)
+    const keyCheck = validateS3Key(s3Key, { requiredPrefix: `users/${user.id}/use-cases/`, maxLen: MAX_S3_KEY_LENGTH });
+    if (!keyCheck.ok) {
       return NextResponse.json(
-        { error: "Invalid s3Key: access denied" },
-        { status: 403 }
+        { error: keyCheck.error || 'Invalid s3Key', requestId },
+        { status: keyCheck.error === 'Access denied' ? 403 : 400, headers }
       );
     }
 
@@ -100,8 +124,8 @@ export async function POST(request) {
 
     if (!useCase) {
       return NextResponse.json(
-        { error: "Use case not found" },
-        { status: 404 }
+        { error: "Use case not found", requestId },
+        { status: 404, headers }
       );
     }
 
@@ -116,10 +140,23 @@ export async function POST(request) {
 
       if (!folder) {
         return NextResponse.json(
-          { error: "Folder not found" },
-          { status: 404 }
+          { error: "Folder not found", requestId },
+          { status: 404, headers }
         );
       }
+    }
+
+    // Idempotency: if the same s3Key is confirmed twice, return existing record.
+    const existing = await prisma.pdf.findFirst({
+      where: {
+        s3Key,
+        useCase: { userId: user.id },
+      },
+    });
+
+    if (existing) {
+      const url = await getPresignedDownloadUrl(existing.s3Key);
+      return NextResponse.json({ pdf: { ...existing, url }, requestId }, { status: 200, headers });
     }
 
     // Get the max order in the target location
@@ -150,7 +187,9 @@ export async function POST(request) {
     // Save PDF record to database
     const pdf = await prisma.pdf.create({
       data: {
-        url,
+        // Keep a stable, non-sensitive placeholder in DB (schema requires url).
+        // Real access is always via freshly-minted presigned URLs.
+        url: '',
         title: fileName,
         size: fileSize,
         s3Key,
@@ -160,12 +199,13 @@ export async function POST(request) {
       },
     });
 
-    return NextResponse.json({ pdf }, { status: 201 });
+    // Return fresh URL for immediate use in UI
+    return NextResponse.json({ pdf: { ...pdf, url }, requestId }, { status: 201, headers });
   } catch (error) {
     console.error("Error confirming PDF upload:", error);
     return NextResponse.json(
-      { error: "Failed to confirm upload" },
-      { status: 500 }
+      { error: "Failed to confirm upload", requestId },
+      { status: 500, headers }
     );
   }
 }

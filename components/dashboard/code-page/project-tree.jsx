@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import TreeView from './tree-view';
-import { ChevronLeft, ChevronRight, FolderOpen, FolderClosed, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FolderOpen, FolderClosed, Menu, Search, X } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import {
     Sheet,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 // Helper: Recursively set isOpen state
 const setExpansionState = (nodes, isOpen) => {
@@ -38,6 +39,7 @@ export default function ProjectTree({
     const [treeData, setTreeData] = useState([]);
     const [isMobile, setIsMobile] = useState(false);
     const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const sidebarLeftRef = useRef(0);
     const containerRef = useRef(null);
@@ -70,6 +72,36 @@ export default function ProjectTree({
     }, []);
 
     useEffect(() => { setTreeData(mapStructure(structure)); }, [structure, mapStructure]);
+
+    // Filter tree based on search term
+    const filterTree = useCallback((nodes, term) => {
+        if (!term.trim()) return nodes;
+        const searchLower = term.toLowerCase();
+
+        const filterNode = (node) => {
+            const nameMatches = node.name.toLowerCase().includes(searchLower);
+
+            if (node.children) {
+                const filteredChildren = node.children
+                    .map(filterNode)
+                    .filter(Boolean);
+
+                // Include folder if it has matching children or name matches
+                if (filteredChildren.length > 0 || nameMatches) {
+                    return { ...node, children: filteredChildren, isOpen: true };
+                }
+                return null;
+            }
+
+            return nameMatches ? node : null;
+        };
+
+        return nodes.map(filterNode).filter(Boolean);
+    }, []);
+
+    const filteredTreeData = useMemo(() => {
+        return filterTree(treeData, searchTerm);
+    }, [treeData, searchTerm, filterTree]);
 
     useEffect(() => { onDragStateChange?.(isDragging); }, [isDragging, onDragStateChange]);
 
@@ -183,13 +215,39 @@ export default function ProjectTree({
                             </div>
                         </SheetTitle>
                     </SheetHeader>
+                    {/* Mobile Search */}
+                    <div className="px-3 py-2 border-b">
+                        <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search files..."
+                                className="h-8 pl-7 pr-7 text-sm"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={() => setSearchTerm("")}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
+                                >
+                                    <X className="h-3 w-3 text-muted-foreground" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
                     <ScrollArea className="flex-1 min-h-0">
                         <div className="p-2">
-                            <TreeView
-                                ref={controlsRef}
-                                data={treeData}
-                                onItemClick={handleFileClick}
-                            />
+                            {filteredTreeData.length === 0 && searchTerm ? (
+                                <div className="text-center py-8 text-sm text-muted-foreground">
+                                    No files match &ldquo;{searchTerm}&rdquo;
+                                </div>
+                            ) : (
+                                <TreeView
+                                    ref={controlsRef}
+                                    data={filteredTreeData}
+                                    onItemClick={handleFileClick}
+                                />
+                            )}
                         </div>
                     </ScrollArea>
                 </SheetContent>
@@ -234,7 +292,13 @@ export default function ProjectTree({
             <div className="flex-1 overflow-hidden">
                 {!collapsed ? (
                     <div className="h-full w-full p-2">
-                        <TreeView ref={controlsRef} data={treeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
+                        {filteredTreeData.length === 0 && searchTerm ? (
+                            <div className="text-center py-8 text-xs text-muted-foreground">
+                                No files match &ldquo;{searchTerm}&rdquo;
+                            </div>
+                        ) : (
+                            <TreeView ref={controlsRef} data={filteredTreeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
+                        )}
                     </div>
                 ) : (
                     <div className="pt-4 flex justify-center cursor-pointer h-full hover:bg-muted/50" onClick={() => setCollapsed(false)}>

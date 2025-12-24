@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { AppSidebar } from "@/components/dashboard/sidebar/app-sidebar"
 import {
@@ -29,6 +29,35 @@ import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
 import { HomePage } from "@/components/home/home-page";
 
+// New feature imports
+import { CommandPaletteProvider, useCommandPalette } from "@/components/ui/command";
+import { NotificationProvider, NotificationCenter } from "@/components/ui/notification-center";
+import { UnsavedChangesProvider } from "@/components/ui/unsaved-changes-provider";
+import { OnboardingProvider } from "@/components/ui/onboarding";
+import { ErrorBoundary, PageErrorBoundary } from "@/components/ui/error-boundary";
+import { PageTransition } from "@/components/ui/page-transitions";
+import { QuickFileSwitcherProvider } from "@/components/ui/quick-file-switcher";
+import { SharedDndProvider } from "@/components/ui/dnd-provider";
+import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog";
+import { Button } from "@/components/ui/button";
+import { Keyboard } from "lucide-react";
+
+// Command palette trigger button component
+function CommandPaletteTrigger() {
+    const { setOpen } = useCommandPalette()
+
+    return (
+        <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setOpen(true)}
+            title="Command Palette (Ctrl+K)"
+        >
+            <Keyboard className="h-5 w-5" />
+        </Button>
+    )
+}
+
 // Helper to load saved code state
 const loadSavedCodeState = () => {
     if (typeof window === 'undefined') return { code: '', codeType: '', isLocked: false };
@@ -50,7 +79,7 @@ const loadSavedCodeState = () => {
 
 // Inner component that can use useProject context
 function DashboardContent({ settings, mounted }) {
-    const { projectClearCounter } = useProject();
+    const { projectClearCounter, projectStructure, setSelectedFile } = useProject();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     const [activeComponent, setActiveComponent] = useState("Home")
@@ -59,6 +88,13 @@ function DashboardContent({ settings, mounted }) {
     const [codeType, setCodeType] = useState(() => loadSavedCodeState().codeType);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [isCodeLocked, setIsCodeLocked] = useState(() => loadSavedCodeState().isLocked);
+
+    // Listen for open-feedback event (from command palette shortcut)
+    useEffect(() => {
+        const handleOpenFeedback = () => setIsFeedbackOpen(true);
+        window.addEventListener("open-feedback", handleOpenFeedback);
+        return () => window.removeEventListener("open-feedback", handleOpenFeedback);
+    }, []);
 
     // Clear code state when project is cleared
     // This intentionally responds to projectClearCounter changes from context
@@ -154,78 +190,115 @@ function DashboardContent({ settings, mounted }) {
     }
 
     const renderComponent = () => {
-        switch (activeComponent) {
-            case "Code input":
-                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
-            case "Knowledge base":
-                return <KnowledgeBaseVisualization />
-            case "Results":
-                return <Results initialCode={initialCode} />
-            case "Home":
-                return <HomePage />
-            default:
-                return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
-        }
+        const content = (() => {
+            switch (activeComponent) {
+                case "Code input":
+                    return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
+                case "Knowledge base":
+                    return <KnowledgeBaseVisualization />
+                case "Results":
+                    return <Results initialCode={initialCode} />
+                case "Home":
+                    return <HomePage />
+                default:
+                    return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
+            }
+        })();
+
+        return (
+            <PageErrorBoundary pageName={activeComponent}>
+                <PageTransition pageKey={activeComponent} variant="default">
+                    {content}
+                </PageTransition>
+            </PageErrorBoundary>
+        );
     }
 
 
     return (
-        <SidebarProvider
-            className="h-screen overflow-hidden"
-            open={sidebarOpen}
-            onOpenChange={setSidebarOpen}
-        >
-            <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
-            <SidebarInset className="flex flex-col overflow-hidden">
-                <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
-                    <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>
-                        <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
-                            <SidebarTrigger className="-ml-1 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9" />
-                            <Separator
-                                orientation="vertical"
-                                className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4 hidden xs:block"
-                            />
-                            <Breadcrumb className="min-w-0 hidden xs:block">
-                                <BreadcrumbList className="flex-nowrap">
-                                    {breadcrumbs.map((crumb, index) => (
-                                        <React.Fragment key={index}>
-                                            <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
-                                                <BreadcrumbLink
-                                                    href="#"
-                                                    className="truncate max-w-[80px] sm:max-w-[100px] md:max-w-none cursor-pointer text-xs sm:text-sm"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleNavigation({ title: crumb.label });
-                                                    }}
-                                                >
-                                                    {crumb.label}
-                                                </BreadcrumbLink>
-                                            </BreadcrumbItem>
-                                            {index < breadcrumbs.length - 1 && <BreadcrumbSeparator className="hidden sm:block" />}
-                                        </React.Fragment>
-                                    ))}
-                                </BreadcrumbList>
-                            </Breadcrumb>
-                            {/* Mobile breadcrumb - just show current page */}
-                            <span className="xs:hidden text-sm font-medium truncate">
-                                {breadcrumbs[breadcrumbs.length - 1]?.label}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                            <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
-                            <ThemeToggle />
-                        </div>
-                    </div>
-                </header>
-                <div className={`flex-1 flex flex-col overflow-hidden w-full ${
-                    settings.contentLayout === 'centered' && activeComponent !== 'Home' ? 'mx-auto max-w-5xl px-2 sm:px-3 md:px-4' : 'px-2 sm:px-3 md:px-4'
-                }`}>
-                    {renderComponent()}
-                </div>
-            </SidebarInset>
-            <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
-            <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
-        </SidebarProvider>
+        <ErrorBoundary title="Dashboard Error" description="There was a problem loading the dashboard.">
+            <NotificationProvider>
+                <UnsavedChangesProvider>
+                    <OnboardingProvider>
+                        <CommandPaletteProvider
+                            onNavigate={handleNavigation}
+                            isCodeLocked={isCodeLocked}
+                            activeComponent={activeComponent}
+                        >
+                            <QuickFileSwitcherProvider
+                                projectStructure={projectStructure}
+                                onFileSelect={(file) => {
+                                    setSelectedFile(file);
+                                    if (activeComponent !== "Code input") {
+                                        handleNavigation({ title: "Code input" });
+                                    }
+                                }}
+                            >
+                                <SidebarProvider
+                                    className="h-screen overflow-hidden"
+                                    open={sidebarOpen}
+                                    onOpenChange={setSidebarOpen}
+                                >
+                                    <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
+                                    <SidebarInset className="flex flex-col overflow-hidden">
+                                        <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
+                                            <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>
+                                                <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+                                                    <SidebarTrigger className="-ml-1 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9" />
+                                                    <Separator
+                                                        orientation="vertical"
+                                                        className="mr-1 sm:mr-2 data-[orientation=vertical]:h-4 hidden xs:block"
+                                                    />
+                                                    <Breadcrumb className="min-w-0 hidden xs:block">
+                                                        <BreadcrumbList className="flex-nowrap">
+                                                            {breadcrumbs.map((crumb, index) => (
+                                                                <React.Fragment key={index}>
+                                                                    <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
+                                                                        <BreadcrumbLink
+                                                                            href="#"
+                                                                            className="truncate max-w-[80px] sm:max-w-[100px] md:max-w-none cursor-pointer text-xs sm:text-sm"
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                handleNavigation({ title: crumb.label });
+                                                                            }}
+                                                                        >
+                                                                            {crumb.label}
+                                                                        </BreadcrumbLink>
+                                                                    </BreadcrumbItem>
+                                                                    {index < breadcrumbs.length - 1 && <BreadcrumbSeparator className="hidden sm:block" />}
+                                                                </React.Fragment>
+                                                            ))}
+                                                        </BreadcrumbList>
+                                                    </Breadcrumb>
+                                                    {/* Mobile breadcrumb - just show current page */}
+                                                    <span className="xs:hidden text-sm font-medium truncate">
+                                                        {breadcrumbs[breadcrumbs.length - 1]?.label}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                                    <CommandPaletteTrigger />
+                                                    <NotificationCenter />
+                                                    <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
+                                                    <ThemeToggle />
+                                                </div>
+                                            </div>
+                                        </header>
+                                        <div id="main-content" className={`flex-1 flex flex-col overflow-hidden w-full ${
+                                            settings.contentLayout === 'centered' && activeComponent !== 'Home' ? 'mx-auto max-w-5xl px-2 sm:px-3 md:px-4' : 'px-2 sm:px-3 md:px-4'
+                                        }`}>
+                                            {renderComponent()}
+                                        </div>
+                                    </SidebarInset>
+                                    <ModelsDialog isOpen={isModelsDialogOpen} onOpenChange={setIsModelsDialogOpen} codeType={codeType} onCodeTypeChange={setCodeType} />
+                                    <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
+                                    <KeyboardShortcutsDialog />
+                                </SidebarProvider>
+                            </QuickFileSwitcherProvider>
+                        </CommandPaletteProvider>
+                    </OnboardingProvider>
+                </UnsavedChangesProvider>
+            </NotificationProvider>
+        </ErrorBoundary>
     );
 }
 
@@ -233,8 +306,12 @@ export default function Page() {
     const { settings, mounted } = useSettings();
 
     return (
-        <ProjectProvider>
-            <DashboardContent settings={settings} mounted={mounted} />
-        </ProjectProvider>
+        <SharedDndProvider>
+            <ProjectProvider>
+                <Suspense fallback={null}>
+                    <DashboardContent settings={settings} mounted={mounted} />
+                </Suspense>
+            </ProjectProvider>
+        </SharedDndProvider>
     );
 }

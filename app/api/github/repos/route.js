@@ -3,12 +3,7 @@ import { auth } from '@/auth';
 import { Octokit } from '@octokit/rest';
 import prisma from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
-
-function maskToken(token) {
-    if (!token) return null;
-    if (token.length <= 10) return token.replace(/.(?=.{4})/g, '*');
-    return `${token.slice(0, 4)}...${token.slice(-4)}`;
-}
+import { securityHeaders } from '@/lib/api-security';
 
 function truncateDescription(description, maxLength = 50) {
     if (!description) return null;
@@ -16,17 +11,17 @@ function truncateDescription(description, maxLength = 50) {
     return description.slice(0, maxLength) + '...';
 }
 
-export async function GET(request) {
-    const start = Date.now();
+export async function GET() {
+    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     try {
         const session = await auth();
-        // SECURITY: Only log in development
+        // SECURITY: Only log in development (avoid PII)
         if (process.env.NODE_ENV === 'development') {
-            console.log('[github/repos] auth session:', !!session, session?.user?.email ?? null);
+            console.log('[github/repos] auth session:', !!session);
         }
 
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
         }
 
         // Rate limiting - 60 requests per minute
@@ -37,22 +32,16 @@ export async function GET(request) {
         });
         if (!rl.allowed) {
             return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429 }
+                { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
+                { status: 429, headers: { ...securityHeaders, 'x-request-id': requestId } }
             );
         }
 
-        // Get the user from database
-        let user = null;
-        if (session.user?.email) {
-            user = await prisma.user.findUnique({ where: { email: session.user.email } });
-        }
-        if (!user && session.user?.id) {
-            user = await prisma.user.findUnique({ where: { id: session.user.id } });
-        }
+        // Get the user from database (prefer id)
+        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 401 });
+            return NextResponse.json({ error: 'User not found', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
         }
 
         // Fetch GitHub access token from database
@@ -63,58 +52,26 @@ export async function GET(request) {
             },
         });
 
-        // Try tokens in order: session.accessToken (only if from github), then DB token
-        const tokenCandidates = [];
-        // Only use session token if it's from GitHub login and account exists
-        if (githubAccount && session.accessToken && session.provider === 'github') {
-            tokenCandidates.push({ source: 'session', token: session.accessToken });
-        }
-        if (githubAccount && githubAccount.access_token) {
-            tokenCandidates.push({ source: 'db', token: githubAccount.access_token });
+        if (!githubAccount?.access_token) {
+            return NextResponse.json({ error: 'GitHub account not linked', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
         }
 
-        if (tokenCandidates.length === 0) {
-            return NextResponse.json({ error: 'GitHub account not linked' }, { status: 401 });
-        }
+        const octokit = new Octokit({ auth: githubAccount.access_token });
+        const { data: repos } = await octokit.repos.listForAuthenticatedUser({
+            sort: 'updated',
+            per_page: 100,
+        });
 
-        let lastError = null;
-        for (const candidate of tokenCandidates) {
-            try {
-                const octokit = new Octokit({ auth: candidate.token });
-                const { data: repos } = await octokit.repos.listForAuthenticatedUser({
-                    sort: 'updated',
-                    per_page: 100,
-                });
+        const transformedRepos = repos.map(repo => ({
+            ...repo,
+            shortDescription: truncateDescription(repo.description, 50),
+        }));
 
-                // Transform repos to include shortDescription
-                const transformedRepos = repos.map(repo => ({
-                    ...repo,
-                    shortDescription: truncateDescription(repo.description, 50),
-                }));
-
-                return NextResponse.json(transformedRepos);
-            } catch (err) {
-                if (process.env.NODE_ENV === 'development') {
-                    console.error('[github/repos] Octokit error with', candidate.source, 'token:', err.message || err);
-                }
-                lastError = err;
-                // if 401, try next candidate
-                const statusCode = err.status || err.statusCode || (err.response && err.response.status) || 500;
-                if (statusCode === 401 || statusCode === 403) {
-                    continue;
-                }
-                // for other errors, return immediately
-                return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: statusCode });
-            }
-        }
-
-        // if we got here, all candidates failed (likely 401)
-        const statusCode = (lastError && (lastError.status || lastError.statusCode || (lastError.response && lastError.response.status))) || 401;
-        return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: statusCode });
+        return NextResponse.json(transformedRepos, { headers: { ...securityHeaders, 'x-request-id': requestId } });
     } catch (error) {
         if (process.env.NODE_ENV === 'development') {
             console.error('[github/repos] Unexpected error:', error);
         }
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error', requestId }, { status: 500, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 }

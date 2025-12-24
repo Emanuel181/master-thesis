@@ -24,15 +24,41 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
-export function NavMain({ items, onNavigate, isCodeLocked = false }) {
+// Badge component for counts
+function CountBadge({ count, className }) {
+    if (!count || count <= 0) return null
+
+    return (
+        <span
+            className={cn(
+                "ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-medium text-primary",
+                className
+            )}
+        >
+            {count > 99 ? "99+" : count}
+        </span>
+    )
+}
+
+export function NavMain({ items, onNavigate, isCodeLocked = false, badges = {} }) {
     const renderIcon = (icon) => {
-        if (!icon) return null;
-        const IconComponent = icon;
-        return <IconComponent />;
-    };
+        if (!icon) return null
+        const IconComponent = icon
+        return <IconComponent />
+    }
 
-    const { state } = useSidebar();
+    const { state } = useSidebar()
+
+    // Get badge count for an item (only show for Home)
+    const getBadgeCount = (title) => {
+        const badgeMap = {
+            Home: badges.prompts,
+            // Removed badges from Code input and Knowledge base
+        }
+        return badgeMap[title] || 0
+    }
 
     return (
         <TooltipProvider>
@@ -77,10 +103,13 @@ export function NavMain({ items, onNavigate, isCodeLocked = false }) {
                                 <SidebarMenuButton
                                     tooltip=""
                                     onClick={() => onNavigate(item)}
-                                    {...(item.title === "Workflow configuration" && !isCodeLocked ? { disabled: true } : {})}
+                                    disabled={item.title === "Workflow configuration" && !isCodeLocked ? true : undefined}
                                 >
                                     {renderIcon(item.icon)}
-                                    <span>{item.title}</span>
+                                    <span className="flex-1">{item.title}</span>
+                                    {state !== "collapsed" && (
+                                        <CountBadge count={getBadgeCount(item.title)} />
+                                    )}
                                 </SidebarMenuButton>
                                 {item.title === "Workflow configuration" && !isCodeLocked && (
                                     <Tooltip>
@@ -94,11 +123,18 @@ export function NavMain({ items, onNavigate, isCodeLocked = false }) {
                                         </TooltipContent>
                                     </Tooltip>
                                 )}
+                                {/* Show badge as dot in collapsed state */}
+                                {state === "collapsed" && getBadgeCount(item.title) > 0 && (
+                                    <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
+                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                                    </span>
+                                )}
                             </SidebarMenuItem>
                         )
                     )}
                 </SidebarMenu>
             </SidebarGroup>
         </TooltipProvider>
-    );
+    )
 }

@@ -563,7 +563,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
                       <span className="text-xs truncate">{label}</span>
                     </div>
                     <code
-                      className="text-[10px] px-1.5 py-0.5 rounded shrink-0"
+                      className="text-xs px-1.5 py-0.5 rounded shrink-0"
                       style={{
                         backgroundColor: currentEditorTheme.colors.background,
                         color: `#${currentColor}`,

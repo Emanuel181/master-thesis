@@ -29,6 +29,8 @@ import { AddCategoryDialog } from "./add-category-dialog";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { CategoryCard } from "./category-card";
 import { FolderTree } from "./folder-tree";
+import { CategoryCardSkeleton, DocumentListSkeleton } from "@/components/ui/loading-skeletons";
+import { NoCategoriesEmptyState, NoDocumentsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-states";
 
 // Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
 const PdfViewerDialog = dynamic(
