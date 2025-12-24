@@ -1549,26 +1549,18 @@ export function HomePage() {
 
             {/* Delete Confirmation AlertDialog */}
             <AlertDialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
-                <AlertDialogContent className="w-[90vw] max-w-sm p-4 sm:p-6">
+                <AlertDialogContent>
                     <AlertDialogHeader>
-                        <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2 sm:mb-3">
-                            <Trash2 className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
-                        </div>
-                        <AlertDialogTitle className="text-center text-base sm:text-lg">Confirm Deletion</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-xs sm:text-sm">
-                            {deleteDialog?.type === 'single' && "This prompt will be permanently deleted. This action cannot be undone."}
-                            {deleteDialog?.type === 'selected' && `${deleteDialog.count || selectedPrompts.size} prompt(s) will be permanently deleted. This action cannot be undone.`}
-                            {deleteDialog?.type === 'category' && `All prompts from "${deleteDialog.agent}" will be permanently deleted. This action cannot be undone.`}
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteDialog?.type === 'single' && "This action cannot be undone. This prompt will be permanently deleted."}
+                            {deleteDialog?.type === 'selected' && `This action cannot be undone. ${deleteDialog.count || selectedPrompts.size} prompt(s) will be permanently deleted.`}
+                            {deleteDialog?.type === 'category' && `This action cannot be undone. All prompts from "${deleteDialog.agent}" will be permanently deleted.`}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-                        <AlertDialogCancel className="w-full sm:w-auto order-2 sm:order-1 mt-0">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmDelete}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto order-1 sm:order-2"
-                        >
-                            Delete
-                        </AlertDialogAction>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

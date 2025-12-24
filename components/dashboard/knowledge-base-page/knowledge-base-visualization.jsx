@@ -1047,20 +1047,17 @@ export default function KnowledgeBaseVisualization() {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete &quot;{documentToDelete?.doc?.name}&quot;? This action cannot be undone and the document will be permanently removed from storage.
+                        This action cannot be undone. This will permanently delete &quot;{documentToDelete?.doc?.name}&quot; from storage.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setDocumentToDelete(null)}>
                         Cancel
                     </AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={handleConfirmedDelete}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                        Delete
+                    <AlertDialogAction onClick={handleConfirmedDelete}>
+                        Continue
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -1081,9 +1078,9 @@ export default function KnowledgeBaseVisualization() {
         <AlertDialog open={deleteUseCaseDialogOpen} onOpenChange={setDeleteUseCaseDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Use Case</AlertDialogTitle>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to delete this use case? All associated documents will also be deleted.
+                        This action cannot be undone. This will permanently delete this use case and all associated documents.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1120,9 +1117,8 @@ export default function KnowledgeBaseVisualization() {
                                 toast.error("Failed to delete use case");
                             }
                         }}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        Delete
+                        Continue
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
