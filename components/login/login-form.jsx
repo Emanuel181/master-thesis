@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { signIn } from "next-auth/react"
 import { motion } from "framer-motion"
@@ -55,6 +56,7 @@ function LoginFormInner({ className, ...props }) {
     const [mounted, setMounted] = React.useState(false)
     const [errorDialogOpen, setErrorDialogOpen] = React.useState(false)
     const [currentError, setCurrentError] = React.useState(null)
+    const [email, setEmail] = React.useState("")
     const searchParams = useSearchParams()
 
     // Get callback URL from query params, default to /dashboard
@@ -106,6 +108,29 @@ function LoginFormInner({ className, ...props }) {
         }
     }
 
+    const handleEmailSignIn = async (e) => {
+        e.preventDefault()
+        setIsLoading("nodemailer")
+        setErrorMessage(null)
+
+        try {
+            console.log('Signing in with email:', email, 'callbackUrl:', callbackUrl)
+            const res = await signIn("nodemailer", { email, callbackUrl, redirect: false })
+            
+            if (res?.error) {
+                 setErrorMessage("Sign-in failed. Please try again.")
+                 setIsLoading(null)
+            } else {
+                // Manually redirect to the verify page with the email
+                window.location.href = `/login/verify-code?email=${encodeURIComponent(email)}`
+            }
+        } catch (error) {
+            console.log('Sign in error:', error)
+            setErrorMessage("Sign-in failed. Please try again.")
+            setIsLoading(null)
+        }
+    }
+
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -125,7 +150,7 @@ function LoginFormInner({ className, ...props }) {
     }
 
     return (
-        <motion.form
+        <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -142,6 +167,31 @@ function LoginFormInner({ className, ...props }) {
                     <p className="text-muted-foreground text-base sm:text-lg text-balance max-w-[90%] sm:max-w-[80%]">
                         Choose a provider below to access your workspace.
                     </p>
+                </motion.div>
+
+                {/* Email Login */}
+                <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                    <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2">
+                        <Input
+                            type="email"
+                            placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="h-12 sm:h-14"
+                        />
+                        <Button
+                            type="submit"
+                            disabled={isLoading !== null || !email}
+                            className="w-full h-12 sm:h-14 font-medium text-sm sm:text-base"
+                        >
+                            {isLoading === "nodemailer" ? (
+                                <Loader2 className="h-5 w-5 sm:h-7 sm:w-7 animate-spin" />
+                            ) : (
+                                "Sign in with Email"
+                            )}
+                        </Button>
+                    </form>
                 </motion.div>
 
                 {/* Divider */}
@@ -324,7 +374,7 @@ function LoginFormInner({ className, ...props }) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </motion.form>
+        </motion.div>
     )
 }
 

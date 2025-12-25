@@ -3,10 +3,18 @@ import Github from "next-auth/providers/github"
 import Google from "next-auth/providers/google"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 import Gitlab from "next-auth/providers/gitlab"
+import Nodemailer from "next-auth/providers/nodemailer"
 
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "@/lib/prisma";
 
+
+import { createTransport } from "nodemailer"
+
+// Helper to generate a random 6-digit code
+function generateRandomCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString()
+}
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     debug: process.env.NODE_ENV === 'development', // Only enable debug in development
@@ -19,6 +27,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     pages: {
         signIn: "/login",
+        verifyRequest: "/login/verify-code",
     },
 
     providers: [
@@ -51,6 +60,69 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
             // SECURITY: allowDangerousEmailAccountLinking disabled to prevent account takeover attacks
             // If users need to link accounts with the same email, implement proper email verification
+        }),
+
+        Nodemailer({
+            server: {
+                host: process.env.EMAIL_SERVER_HOST,
+                port: process.env.EMAIL_SERVER_PORT,
+                auth: {
+                    user: process.env.EMAIL_SERVER_USER,
+                    pass: process.env.EMAIL_SERVER_PASSWORD,
+                },
+            },
+            from: process.env.EMAIL_FROM,
+            generateVerificationToken: async () => {
+                return generateRandomCode()
+            },
+            sendVerificationRequest: async ({ identifier: email, url, provider, token }) => {
+                const transport = createTransport(provider.server)
+                const result = await transport.sendMail({
+                    to: email,
+                    from: provider.from,
+                    subject: `Your Login Code: ${token}`,
+                    text: `Your login code is: ${token}\n\nOr click here: ${url}`,
+                    html: `
+<body style="background: #f9f9f9;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center" style="padding: 10px 0px 20px 0px; font-size: 22px; font-family: Helvetica, Arial, sans-serif; color: #444;">
+        <strong>VulnIQ Login</strong>
+      </td>
+    </tr>
+  </table>
+  <table width="100%" border="0" cellspacing="20" cellpadding="0" style="background: #fff; max-width: 600px; margin: auto; border-radius: 10px;">
+    <tr>
+      <td align="center" style="padding: 10px 0px 0px 0px; font-size: 18px; font-family: Helvetica, Arial, sans-serif; color: #444;">
+        Sign in to <strong>VulnIQ</strong>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center" style="border-radius: 5px;" bgcolor="#000000">
+              <span style="font-size: 32px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; text-decoration: none; padding: 15px 25px; border-radius: 5px; border: 1px solid #000000; display: inline-block; font-weight: bold; letter-spacing: 5px;">${token}</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding: 0px 0px 10px 0px; font-size: 16px; line-height: 22px; font-family: Helvetica, Arial, sans-serif; color: #444;">
+        Enter this code in the login screen to sign in.<br/>
+        This code will expire in 10 minutes.
+      </td>
+    </tr>
+  </table>
+</body>
+`
+                })
+                const failed = result.rejected.concat(result.pending).filter(Boolean)
+                if (failed.length) {
+                    throw new Error(`Email(s) (${failed.join(", ")}) could not be sent`)
+                }
+            }
         }),
 
         Gitlab({
