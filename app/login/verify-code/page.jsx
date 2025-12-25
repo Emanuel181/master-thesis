@@ -36,7 +36,21 @@ export default function VerifyCodePage() {
     const [isLocked, setIsLocked] = useState(false)
     const [lockoutEndTime, setLockoutEndTime] = useState(null)
     const [lockoutRemaining, setLockoutRemaining] = useState(0)
-    const [resendCooldown, setResendCooldown] = useState(0)
+    // Initialize resendCooldown from localStorage to persist across page refreshes
+    const [resendCooldown, setResendCooldown] = useState(() => {
+        if (typeof window === 'undefined') return 0 // SSR fallback
+        try {
+            const savedCooldown = localStorage.getItem(`otp_resend_cooldown_${email}`)
+            if (savedCooldown) {
+                const cooldownEndTime = parseInt(savedCooldown)
+                const remaining = Math.ceil((cooldownEndTime - Date.now()) / 1000)
+                return remaining > 0 ? remaining : 0
+            }
+        } catch {
+            // localStorage not available
+        }
+        return 0
+    })
     // Initialize with default value to prevent hydration mismatch
     const [codeExpiry, setCodeExpiry] = useState(600)
     const maxAttempts = 5 // Maximum verification attempts before lockout
@@ -314,15 +328,20 @@ export default function VerifyCodePage() {
 
         try {
             await signIn("nodemailer", { email, redirect: false })
-            setResendCooldown(resendCooldownDuration)
-            setCodeExpiry(600) // Reset expiry timer
-            
-            // Update storage for new timer - creates a fresh session
+
+            // Update storage first - creates a fresh session with new timestamp
+            const now = Date.now()
             try {
-                localStorage.setItem(`otp_timestamp_${email}`, Date.now().toString())
+                localStorage.setItem(`otp_timestamp_${email}`, now.toString())
+                // Save resend cooldown end time to persist across page refreshes
+                localStorage.setItem(`otp_resend_cooldown_${email}`, (now + resendCooldownDuration * 1000).toString())
             } catch {
                 // localStorage not available
             }
+
+            // Reset timers after updating storage
+            setResendCooldown(resendCooldownDuration)
+            setCodeExpiry(600) // Reset expiry timer to 10 minutes
 
             setOtp("") // Clear current input
             setAttempts(0) // Reset attempts on new code
@@ -436,8 +455,8 @@ export default function VerifyCodePage() {
                                 </div>
 
                                 <Button 
-                                    className="w-full h-12 text-base" 
-                                    size="lg" 
+                                    className="w-full h-9 sm:h-11 text-base"
+                                    size="lg"
                                     disabled={otp.length !== 6 || isLoading || isLocked || codeExpiry <= 0}
                                     onClick={() => handleVerify(otp)}
                                 >
@@ -500,6 +519,7 @@ export default function VerifyCodePage() {
                                         // Clear OTP session data when going back to login
                                         try {
                                             localStorage.removeItem(`otp_timestamp_${email}`)
+                                            localStorage.removeItem(`otp_resend_cooldown_${email}`)
                                         } catch {
                                             // localStorage not available
                                         }
