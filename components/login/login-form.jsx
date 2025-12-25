@@ -166,54 +166,11 @@ function LoginFormInner({ className, ...props }) {
                         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome</h1>
                     </div>
                     <p className="text-muted-foreground text-base sm:text-lg text-balance max-w-[90%] sm:max-w-[80%]">
-                        Choose a provider below to access your workspace.
+                        Choose a provider, or sign in using a verification code.
                     </p>
                 </motion.div>
 
-                {/* Email Login */}
-                <motion.div variants={itemVariants} className="flex flex-col gap-2">
-                    <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2">
-                        <Input
-                            type="email"
-                            placeholder="name@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="h-12 sm:h-14"
-                        />
-                        <Button
-                            type="submit"
-                            disabled={isLoading !== null || !email}
-                            className="w-full h-10 sm:h-12 font-medium text-sm sm:text-base"
-                        >
-                            {isLoading === "nodemailer" ? (
-                                <Loader2 className="h-5 w-5 sm:h-7 sm:w-7 animate-spin" />
-                            ) : (
-                                "Sign in with Email"
-                            )}
-                        </Button>
-                    </form>
-                </motion.div>
-
-                {/* Divider */}
-                <motion.div variants={itemVariants} className="relative mb-3 sm:mb-4">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t-2 border-muted" />
-                    </div>
-                    <div className="relative flex justify-center text-sm sm:text-base uppercase">
-                        <span className="bg-background px-2 text-muted-foreground font-semibold">
-                            Social login
-                        </span>
-                    </div>
-                </motion.div>
-
-                {errorMessage && (
-                    <motion.div variants={itemVariants} className="text-xs sm:text-sm text-red-500 text-center -mt-2">
-                        {errorMessage}
-                    </motion.div>
-                )}
-
-                {/* Buttons */}
+                {/* Social Login Buttons */}
                 <div className="flex flex-col gap-2 sm:gap-3">
                     <Field>
                         {/* GitHub */}
@@ -224,7 +181,7 @@ function LoginFormInner({ className, ...props }) {
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("github")}
                                 className={cn(
-                                    "w-full h-10 sm:h-12 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
+                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
                                     mounted && lastUsedProvider === "github" && "ring-2 ring-primary/50 border-primary/50"
                                 )}
                             >
@@ -251,7 +208,7 @@ function LoginFormInner({ className, ...props }) {
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("google")}
                                 className={cn(
-                                    "w-full h-10 sm:h-12 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
+                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
                                     mounted && lastUsedProvider === "google" && "ring-2 ring-primary/50 border-primary/50"
                                 )}
                             >
@@ -278,7 +235,7 @@ function LoginFormInner({ className, ...props }) {
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("microsoft-entra-id")}
                                 className={cn(
-                                    "w-full h-10 sm:h-12 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
+                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
                                     mounted && lastUsedProvider === "microsoft-entra-id" && "ring-2 ring-primary/50 border-primary/50"
                                 )}
                             >
@@ -305,7 +262,7 @@ function LoginFormInner({ className, ...props }) {
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("gitlab")}
                                 className={cn(
-                                    "w-full h-10 sm:h-12 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
+                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
                                     mounted && lastUsedProvider === "gitlab" && "ring-2 ring-primary/50 border-primary/50"
                                 )}
                             >
@@ -325,9 +282,52 @@ function LoginFormInner({ className, ...props }) {
                         </motion.div>
                     </Field>
                 </div>
+
+                {/* Divider */}
+                <motion.div variants={itemVariants} className="relative mb-3 sm:mb-4">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t-2 border-muted" />
+                    </div>
+                    <div className="relative flex justify-center text-sm sm:text-base uppercase">
+                        <span className="bg-background px-2 text-muted-foreground font-semibold">
+                            Or use email verification
+                        </span>
+                    </div>
+                </motion.div>
+
+                {errorMessage && (
+                    <motion.div variants={itemVariants} className="text-xs sm:text-sm text-red-500 text-center -mt-2">
+                        {errorMessage}
+                    </motion.div>
+                )}
+
+                {/* Email Login */}
+                <motion.div variants={itemVariants} className="flex flex-col gap-2">
+                    <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2">
+                        <Input
+                            type="email"
+                            placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="h-12 sm:h-14"
+                        />
+                        <Button
+                            type="submit"
+                            disabled={isLoading !== null || !email}
+                            className="w-full h-10 sm:h-12 font-medium text-sm sm:text-base"
+                        >
+                            {isLoading === "nodemailer" ? (
+                                <Loader2 className="h-5 w-5 sm:h-7 sm:w-7 animate-spin" />
+                            ) : (
+                                "Sign in with Email"
+                            )}
+                        </Button>
+                    </form>
+                </motion.div>
                 {/* Disclaimer - UPDATED */}
-                <motion.div variants={itemVariants} className="mt-8 text-center w-full">
-                    <p className="text-xs sm:text-sm text-muted-foreground w-full whitespace-nowrap">
+                <motion.div variants={itemVariants} className="mt-8 flex justify-center w-full">
+                    <p className="text-xs sm:text-sm text-muted-foreground max-w-sm text-center">
                         By continuing, you agree to VulnIQ's{" "}
                         <Link href="/terms" className="font-semibold text-foreground hover:underline underline-offset-4">
                             Terms of Service
