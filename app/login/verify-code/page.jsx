@@ -317,15 +317,18 @@ export default function VerifyCodePage() {
             setResendCooldown(resendCooldownDuration)
             setCodeExpiry(600) // Reset expiry timer
             
-            // Update storage for new timer
-            localStorage.setItem(`otp_timer_${email}`, '600')
-            localStorage.setItem(`otp_timestamp_${email}`, Date.now().toString())
+            // Update storage for new timer - creates a fresh session
+            try {
+                localStorage.setItem(`otp_timestamp_${email}`, Date.now().toString())
+            } catch {
+                // localStorage not available
+            }
 
             setOtp("") // Clear current input
             setAttempts(0) // Reset attempts on new code
             setError("")
             toast.success("New verification code sent!")
-        } catch (err) {
+        } catch {
             toast.error("Failed to send new code. Please try again.")
         }
     }
@@ -490,10 +493,20 @@ export default function VerifyCodePage() {
                             </CardContent>
                             
                             <CardFooter className="flex flex-col gap-2 border-t pt-6">
-                                <Button variant="ghost" asChild className="w-full">
-                                    <Link href="/login">
-                                        Back to login
-                                    </Link>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full"
+                                    onClick={() => {
+                                        // Clear OTP session data when going back to login
+                                        try {
+                                            localStorage.removeItem(`otp_timestamp_${email}`)
+                                        } catch {
+                                            // localStorage not available
+                                        }
+                                        window.location.href = '/login'
+                                    }}
+                                >
+                                    Back to login
                                 </Button>
                             </CardFooter>
                         </Card>

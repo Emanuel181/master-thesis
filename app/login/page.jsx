@@ -7,6 +7,7 @@ import { LoginForm } from "@/components/login/login-form"
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
+
     return (
         <div className="grid min-h-svh grid-cols-1 lg:grid-cols-2">
             {/* Left Side: Login Form */}

@@ -72,6 +72,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 },
             },
             from: process.env.EMAIL_FROM,
+            maxAge: 10 * 60, // 10 minutes - token expiration time
             generateVerificationToken: async () => {
                 return generateRandomCode()
             },
@@ -84,13 +85,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     text: `Your login code is: ${token}\n\nOr click here: ${url}`,
                     html: `
 <body style="background: #f9f9f9;">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0">
-    <tr>
-      <td align="center" style="padding: 10px 0px 20px 0px; font-size: 22px; font-family: Helvetica, Arial, sans-serif; color: #444;">
-        <strong>VulnIQ Login</strong>
-      </td>
-    </tr>
-  </table>
   <table width="100%" border="0" cellspacing="20" cellpadding="0" style="background: #fff; max-width: 600px; margin: auto; border-radius: 10px;">
     <tr>
       <td align="center" style="padding: 10px 0px 0px 0px; font-size: 18px; font-family: Helvetica, Arial, sans-serif; color: #444;">

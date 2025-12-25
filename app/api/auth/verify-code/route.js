@@ -1,5 +1,13 @@
 import prisma from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { createHash } from "crypto"
+
+// NextAuth hashes tokens before storing them - we need to hash the input to compare
+function hashToken(token) {
+    return createHash("sha256")
+        .update(`${token}${process.env.AUTH_SECRET}`)
+        .digest("hex")
+}
 
 export async function POST(req) {
     try {
@@ -9,35 +17,37 @@ export async function POST(req) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
         }
 
+        // Normalize the code and email (trim whitespace, lowercase email)
+        const normalizedCode = code.trim()
+        const normalizedEmail = email.trim().toLowerCase()
+
+        // Hash the code the same way NextAuth does
+        const hashedCode = hashToken(normalizedCode)
+
+        console.log(`[verify-code] Checking token for email: "${normalizedEmail}", code: "${normalizedCode}", hashed: "${hashedCode}"`)
+
         // 1. Find the valid verification token in the database
         const verificationToken = await prisma.verificationToken.findFirst({
             where: {
-                identifier: email,
-                token: code,
-                expires: {
-                    gt: new Date() // Must not be expired
-                }
+                identifier: normalizedEmail,
+                token: hashedCode,
             }
         })
 
         if (!verificationToken) {
-            // Check if there are any expired tokens or wrong codes to give better error messages
-            // But for security, usually generic "Invalid code" is better.
-            return NextResponse.json({ error: "Invalid or expired code" }, { status: 400 })
+            // Token doesn't exist at all
+            console.log(`[verify-code] No token found for email: ${normalizedEmail} with hashed code`)
+            return NextResponse.json({ error: "Invalid code. Please check and try again." }, { status: 400 })
         }
 
-        // 2. If valid, we don't need to do anything else here. 
-        // The client will use the standard NextAuth callback URL to "sign in" effectively.
-        // OR, we can return success and let the client redirect to the callback URL.
-        
-        // However, we want to prevent the "timer reset" issue.
-        // The timer is client-side state.
-        
-        // To handle "left tries", we would need a new model or field in the DB to track attempts.
-        // Standard NextAuth VerificationToken adapter doesn't track attempts count.
-        // We can implement a simple in-memory or Redis-based rate limit if needed, 
-        // or just rely on the fact that the token is hard to guess (6 digits).
-        
+        // Check if token has expired
+        if (new Date() > verificationToken.expires) {
+            console.log(`[verify-code] Token expired for email: ${normalizedEmail}. Expired at: ${verificationToken.expires}`)
+            return NextResponse.json({ error: "Code has expired. Please request a new one." }, { status: 400 })
+        }
+
+        // Token is valid
+        console.log(`[verify-code] Valid token found for email: ${normalizedEmail}`)
         return NextResponse.json({ success: true })
 
     } catch (error) {
