@@ -4,13 +4,15 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Field, FieldGroup } from "@/components/ui/field"
-import { signIn } from "next-auth/react"
-import { motion } from "framer-motion"
-import { Loader2, LockKeyhole, Clock, AlertTriangle, Mail } from "lucide-react"
-import { GitlabIcon } from "@/components/icons/gitlab"
-import { useSearchParams } from "next/navigation"
-import Link from "next/link"
+import { Label } from "@/components/ui/label"
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
 import {
     Dialog,
     DialogContent,
@@ -19,6 +21,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { signIn } from "next-auth/react"
+import { motion } from "framer-motion"
+import { Loader2, LockKeyhole, Clock, AlertTriangle, Mail } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 
 const LAST_PROVIDER_KEY = "vulniq-last-login-provider"
 
@@ -27,7 +34,7 @@ const ERROR_MESSAGES = {
     OAuthAccountNotLinked: {
         title: "Account Already Exists",
         description: "An account with this email already exists but is linked to a different sign-in provider.",
-        details: "To sign in, please use the same provider you originally used to create your account. If you're unsure which provider you used, try signing in with each option.",
+        details: "To sign in, please use the same provider you originally used to create your account.",
         icon: Mail,
     },
     OAuthSignin: {
@@ -60,13 +67,9 @@ function LoginFormInner({ className, ...props }) {
     const [email, setEmail] = React.useState("")
     const searchParams = useSearchParams()
 
-    // Get callback URL from query params, default to /dashboard
     const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
-
-    // Check for error in URL params
     const errorParam = searchParams.get("error")
 
-    // Handle OAuth errors from URL
     React.useEffect(() => {
         if (errorParam) {
             const errorInfo = ERROR_MESSAGES[errorParam] || ERROR_MESSAGES.Default
@@ -75,14 +78,11 @@ function LoginFormInner({ className, ...props }) {
         }
     }, [errorParam])
 
-    // Load last used provider from localStorage after mount (to avoid hydration mismatch)
     React.useEffect(() => {
         setMounted(true)
         try {
             const saved = localStorage.getItem(LAST_PROVIDER_KEY)
-            if (saved) {
-                setLastUsedProvider(saved)
-            }
+            if (saved) setLastUsedProvider(saved)
         } catch (e) {
             // localStorage not available
         }
@@ -91,20 +91,14 @@ function LoginFormInner({ className, ...props }) {
     const handleSignIn = async (provider) => {
         setIsLoading(provider)
         setErrorMessage(null)
-
-        // Save the provider as last used
         try {
             localStorage.setItem(LAST_PROVIDER_KEY, provider)
-        } catch (e) {
-            // localStorage not available
-        }
+        } catch (e) {}
 
         try {
-            console.log('Signing in with provider:', provider, 'callbackUrl:', callbackUrl)
             await signIn(provider, { callbackUrl })
         } catch (error) {
-            console.log('Sign in error:', error)
-            setErrorMessage("Sign-in failed. Please try again or use another provider.")
+            setErrorMessage("Sign-in failed. Please try again.")
             setIsLoading(null)
         }
     }
@@ -115,29 +109,24 @@ function LoginFormInner({ className, ...props }) {
         setErrorMessage(null)
 
         try {
-            console.log('Signing in with email:', email, 'callbackUrl:', callbackUrl)
             const res = await signIn("nodemailer", { email, callbackUrl, redirect: false })
-
             if (res?.error) {
                 setErrorMessage("Sign-in failed. Please try again.")
                 setIsLoading(null)
             } else {
-                // Manually redirect to the verify page with the email
                 window.location.href = `/login/verify-code?email=${encodeURIComponent(email)}`
             }
         } catch (error) {
-            console.log('Sign in error:', error)
             setErrorMessage("Sign-in failed. Please try again.")
             setIsLoading(null)
         }
     }
 
-
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+            transition: { staggerChildren: 0.1 },
         },
     }
 
@@ -155,195 +144,194 @@ function LoginFormInner({ className, ...props }) {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className={cn("flex flex-col gap-4 sm:gap-6 w-full max-w-sm mx-auto", className)}
+            className={cn("w-full max-w-5xl mx-auto", className)}
             {...props}
         >
-            <FieldGroup>
-                {/* Header */}
-                <motion.div variants={itemVariants} className="flex flex-col items-center gap-2 text-center mb-4 sm:mb-6">
-                    <div className="flex items-center justify-center gap-2">
-                        <LockKeyhole className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome</h1>
-                    </div>
-                    <p className="text-muted-foreground text-base sm:text-lg text-balance max-w-[90%] sm:max-w-[80%]">
-                        Choose a provider, or sign in using a verification code.
-                    </p>
-                </motion.div>
+            <Card className="border-border/50 shadow-lg">
+                <CardHeader className="space-y-1 text-center">
+                    <motion.div variants={itemVariants} className="flex justify-center mb-2">
+                        <div className="rounded-full bg-muted p-3">
+                            <LockKeyhole className="h-6 w-6 text-foreground" />
+                        </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
+                        <CardTitle className="text-2xl font-semibold tracking-tight">
+                            Welcome back
+                        </CardTitle>
+                        <CardDescription>
+                            Choose your preferred method to sign in to VulnIQ
+                        </CardDescription>
+                    </motion.div>
+                </CardHeader>
 
-                {/* Social Login Buttons */}
-                <div className="flex flex-col gap-2 sm:gap-3">
-                    <Field>
-                        {/* GitHub */}
-                        <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
+                <CardContent className="grid gap-4">
+                    {/* Social Login Buttons */}
+                    <div className="grid gap-2">
+                        <motion.div variants={itemVariants} className="grid gap-2">
                             <Button
                                 variant="outline"
                                 type="button"
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("github")}
                                 className={cn(
-                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
-                                    mounted && lastUsedProvider === "github" && "ring-2 ring-primary/50 border-primary/50"
+                                    "w-full relative",
+                                    mounted && lastUsedProvider === "github" && "border-primary ring-1 ring-primary"
                                 )}
                             >
                                 {isLoading === "github" ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <svg role="img" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
+                                    <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
                                 )}
-                                Login with GitHub
+                                Github
                                 {mounted && lastUsedProvider === "github" && (
-                                    <span className="absolute -top-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground rounded-full">
-                                        <Clock className="h-2.5 w-2.5" />
-                                        Last used
-                                    </span>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> Last used
+                                    </div>
                                 )}
                             </Button>
                         </motion.div>
 
-                        {/* Google */}
-                        <motion.div variants={itemVariants} className="mt-2 sm:mt-3" whileTap={{ scale: 0.98 }}>
+                        <motion.div variants={itemVariants} className="grid gap-2">
                             <Button
                                 variant="outline"
                                 type="button"
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("google")}
                                 className={cn(
-                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
-                                    mounted && lastUsedProvider === "google" && "ring-2 ring-primary/50 border-primary/50"
+                                    "w-full relative",
+                                    mounted && lastUsedProvider === "google" && "border-primary ring-1 ring-primary"
                                 )}
                             >
                                 {isLoading === "google" ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <svg viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" className="h-5 w-5"><path d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027" fill="#4285F4"></path><path d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1" fill="#34A853"></path><path d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782" fill="#FBBC05"></path><path d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335"></path></svg>
+                                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                                 )}
-                                Login with Google
+                                Google
                                 {mounted && lastUsedProvider === "google" && (
-                                    <span className="absolute -top-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground rounded-full">
-                                        <Clock className="h-2.5 w-2.5" />
-                                        Last used
-                                    </span>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> Last used
+                                    </div>
                                 )}
                             </Button>
                         </motion.div>
 
-                        {/* Microsoft */}
-                        <motion.div variants={itemVariants} className="mt-2 sm:mt-3" whileTap={{ scale: 0.98 }}>
+                        <motion.div variants={itemVariants} className="grid gap-2">
                             <Button
                                 variant="outline"
                                 type="button"
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("microsoft-entra-id")}
                                 className={cn(
-                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
-                                    mounted && lastUsedProvider === "microsoft-entra-id" && "ring-2 ring-primary/50 border-primary/50"
+                                    "w-full relative",
+                                    mounted && lastUsedProvider === "microsoft-entra-id" && "border-primary ring-1 ring-primary"
                                 )}
                             >
                                 {isLoading === "microsoft-entra-id" ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none" className="h-5 w-5"><path fill="#F35325" d="M1 1h6.5v6.5H1V1z"></path><path fill="#81BC06" d="M8.5 1H15v6.5H8.5V1z"></path><path fill="#05A6F0" d="M1 8.5h6.5V15H1V8.5z"></path><path fill="#FFBA08" d="M8.5 8.5H15V15H8.5V8.5z"></path></svg>
+                                    <svg viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
                                 )}
-                                Login with Microsoft
+                                Microsoft
                                 {mounted && lastUsedProvider === "microsoft-entra-id" && (
-                                    <span className="absolute -top-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground rounded-full">
-                                        <Clock className="h-2.5 w-2.5" />
-                                        Last used
-                                    </span>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> Last used
+                                    </div>
                                 )}
                             </Button>
                         </motion.div>
 
-                        {/* GitLab */}
-                        <motion.div variants={itemVariants} className="mt-2 sm:mt-3" whileTap={{ scale: 0.98 }}>
+                        <motion.div variants={itemVariants} className="grid gap-2">
                             <Button
                                 variant="outline"
                                 type="button"
                                 disabled={isLoading !== null}
                                 onClick={() => handleSignIn("gitlab")}
                                 className={cn(
-                                    "w-full h-9 sm:h-11 flex items-center justify-center gap-2 sm:gap-3 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30 font-medium text-sm sm:text-base relative",
-                                    mounted && lastUsedProvider === "gitlab" && "ring-2 ring-primary/50 border-primary/50"
+                                    "w-full relative",
+                                    mounted && lastUsedProvider === "gitlab" && "border-primary ring-1 ring-primary"
                                 )}
                             >
                                 {isLoading === "gitlab" ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <GitlabIcon className="h-5 w-5" />
+                                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 0 0-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 0 0-.867 0L1.387 9.452.045 13.587a.924.924 0 0 0 .331 1.023L12 23.054l11.624-8.443a.92.92 0 0 0 .331-1.024"/></svg>
                                 )}
-                                Login with GitLab
+                                GitLab
                                 {mounted && lastUsedProvider === "gitlab" && (
-                                    <span className="absolute -top-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
-                                        <Clock className="h-2.5 w-2.5" />
-                                        Last used
-                                    </span>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> Last used
+                                    </div>
                                 )}
                             </Button>
                         </motion.div>
-                    </Field>
-                </div>
-
-                {/* Divider */}
-                <motion.div variants={itemVariants} className="relative mb-3 sm:mb-4">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t-2 border-muted" />
                     </div>
-                    <div className="relative flex justify-center text-sm sm:text-base uppercase">
-                        <span className="bg-background px-2 text-muted-foreground font-semibold">
-                            Or use email verification
-                        </span>
-                    </div>
-                </motion.div>
 
-                {errorMessage && (
-                    <motion.div variants={itemVariants} className="text-xs sm:text-sm text-red-500 text-center -mt-2">
-                        {errorMessage}
+                    <motion.div variants={itemVariants} className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                Or continue with email
+                            </span>
+                        </div>
                     </motion.div>
-                )}
 
-                {/* Email Login */}
-                <motion.div variants={itemVariants} className="flex flex-col gap-2">
-                    <form onSubmit={handleEmailSignIn} className="flex flex-col gap-2">
-                        <Input
-                            type="email"
-                            placeholder="name@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="h-12 sm:h-14"
-                        />
-                        <Button
-                            type="submit"
-                            disabled={isLoading !== null || !email}
-                            className="w-full h-10 sm:h-12 font-medium text-sm sm:text-base"
+                    {/* Email Login */}
+                    <motion.div variants={itemVariants}>
+                        <form onSubmit={handleEmailSignIn} className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="h-10"
+                                />
+                            </div>
+                            <Button type="submit" disabled={isLoading !== null || !email}>
+                                {isLoading === "nodemailer" ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    "Sign in with Email"
+                                )}
+                            </Button>
+                        </form>
+                    </motion.div>
+
+                    {errorMessage && (
+                        <motion.div
+                            variants={itemVariants}
+                            className="text-sm font-medium text-destructive text-center"
                         >
-                            {isLoading === "nodemailer" ? (
-                                <Loader2 className="h-5 w-5 sm:h-7 sm:w-7 animate-spin" />
-                            ) : (
-                                "Sign in with Email"
-                            )}
-                        </Button>
-                    </form>
-                </motion.div>
-                {/* Disclaimer - UPDATED */}
-                <motion.div variants={itemVariants} className="mt-8 flex justify-center w-full">
-                    <p className="text-xs sm:text-sm text-muted-foreground max-w-sm text-center">
-                        By continuing, you agree to VulnIQ's{" "}
-                        <Link href="/terms" className="font-semibold text-foreground hover:underline underline-offset-4">
+                            {errorMessage}
+                        </motion.div>
+                    )}
+                </CardContent>
+
+                <CardFooter>
+                    <motion.p variants={itemVariants} className="text-xs text-center text-muted-foreground w-full">
+                        <span className="text-muted-foreground">By continuing, you agree to VulnIQ's</span>{" "}
+                        <Link href="/terms" className="text-white underline underline-offset-4 hover:text-primary">
                             Terms of Service
                         </Link>{" "}
-                        and{" "}
-                        <Link href="/privacy" className="font-semibold text-foreground hover:underline underline-offset-4">
+                        <span className="text-muted-foreground">and</span>{" "}
+                        <Link href="/privacy" className="text-white underline underline-offset-4 hover:text-primary">
                             Privacy Policy
                         </Link>
-                        .
-                    </p>
-                </motion.div>
-            </FieldGroup>
+                        <span className="text-muted-foreground">.</span>
+                    </motion.p>
+                </CardFooter>
+            </Card>
 
             {/* Error Dialog */}
             <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent>
                     <DialogHeader>
                         <div className="flex items-center gap-3">
                             {currentError?.icon && (
@@ -357,30 +345,21 @@ function LoginFormInner({ className, ...props }) {
                             {currentError?.description}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-sm text-muted-foreground">
-                            {currentError?.details}
-                        </p>
+                    <div className="py-4 text-sm text-muted-foreground">
+                        <p>{currentError?.details}</p>
                         {currentError?.code === "OAuthAccountNotLinked" && (
-                            <div className="mt-4 rounded-lg border border-border bg-muted/50 p-3">
-                                <p className="text-xs text-muted-foreground">
-                                    <strong>Tip:</strong> Try signing in with GitHub, Google, Microsoft, or GitLab —
-                                    whichever you used when you first created your account.
-                                </p>
+                            <div className="mt-4 rounded-md bg-muted p-3 text-xs">
+                                <strong>Tip:</strong> Try signing in with the provider you originally used to create your account.
                             </div>
                         )}
                     </div>
                     <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setErrorDialogOpen(false)}
-                        >
+                        <Button variant="outline" onClick={() => setErrorDialogOpen(false)}>
                             Close
                         </Button>
                         <Button
                             onClick={() => {
                                 setErrorDialogOpen(false)
-                                // Clear error from URL
                                 window.history.replaceState({}, '', '/login')
                             }}
                         >
