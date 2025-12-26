@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -16,7 +17,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle"
 import Image from 'next/image'
 
-export default function VerifyRequestPage() {
+function VerifyRequestContent() {
     const searchParams = useSearchParams()
     const email = searchParams.get('email')
 
@@ -248,5 +249,13 @@ export default function VerifyRequestPage() {
                 </div>
             </motion.div>
         </div>
+    )
+}
+
+export default function VerifyRequestPage() {
+    return (
+        <Suspense>
+            <VerifyRequestContent />
+        </Suspense>
     )
 }
