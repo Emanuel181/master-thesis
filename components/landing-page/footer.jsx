@@ -91,12 +91,12 @@ export function Footer() {
 
                     {/* Column 2: Thesis Info & Socials */}
                     <motion.div variants={itemVariants} className="space-y-4">
-                        <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master Thesis</h4>
+                        <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master thesis</h4>
                         <div className="space-y-2 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
                             <p className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)]">Emanuel Rusu</p>
                             <p>West University of Timișoara</p>
-                            <p>Faculty of Computer Science</p>
-                            <p>Master&apos;s Degree in Cybersecurity</p>
+                            <p>Faculty of computer science</p>
+                            <p>Master&apos;s degree in cybersecurity</p>
                         </div>
                         <div className="flex flex-col gap-3 pt-2">
                             <motion.a
@@ -107,7 +107,7 @@ export function Footer() {
                                 whileHover={{ x: 2 }}
                             >
                                 <FileText className="w-4 h-4" />
-                                View Thesis Paper
+                                View thesis paper
                             </motion.a>
                             <motion.a
                                 href="https://www.linkedin.com/in/rusu-emanuel/"
@@ -124,7 +124,7 @@ export function Footer() {
 
                     {/* Column 3: Newsletter */}
                     <motion.div variants={itemVariants} className="space-y-4">
-                        <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay Updated</h4>
+                        <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay updated</h4>
                         <p className="text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
                             Get notified about new features and research updates.
                         </p>
@@ -185,7 +185,7 @@ export function Footer() {
                     transition={{ delay: 0.5 }}
                 >
                     <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
-                        © 2025 Emanuel Rusu - Master Thesis Project
+                        © 2025 Emanuel Rusu - Master thesis project
                     </p>
                     <div className="flex items-center gap-4">
                         <Link
@@ -203,7 +203,7 @@ export function Footer() {
                         </Link>
                     </div>
                     <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
-                        Open Beta • Research Project
+                        Open beta • Research project
                     </p>
                 </motion.div>
             </motion.div>

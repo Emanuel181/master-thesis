@@ -114,7 +114,7 @@ export default function LandingPage() {
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1fb6cf] opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1fb6cf]"></span>
                                         </span>
-                                        Open Beta
+                                        Open beta
                                     </span>
                                 </motion.div>
 
@@ -140,7 +140,7 @@ export default function LandingPage() {
                                 >
                                     <Button asChild size="lg" className="rounded-lg w-full sm:w-auto">
                                         <a href="https://www.overleaf.com/read/vdqywdqywyhr#693113" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                                            View Thesis
+                                            View thesis
                                             <ArrowRight className="w-4 h-4" />
                                         </a>
                                     </Button>

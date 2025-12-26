@@ -9,7 +9,7 @@ import { Menu, X, ArrowRight, ChevronRight } from "lucide-react";
 
 const navItems = [
     { name: "Features", link: "/#features" },
-    { name: "Use Cases", link: "/#use-cases" },
+    { name: "Use cases", link: "/#use-cases" },
     { name: "About", link: "/about" },
     { name: "Connect", link: "/#connect" },
 ];
