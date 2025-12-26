@@ -314,7 +314,7 @@ function LoginFormInner({ className, ...props }) {
                                 {isLoading === "nodemailer" ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    "Sign in with Email"
+                                    "Sign in with email"
                                 )}
                             </Button>
                         </form>
