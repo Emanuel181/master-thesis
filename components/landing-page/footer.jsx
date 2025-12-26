@@ -99,6 +99,13 @@ export function Footer() {
                             <p>Master&apos;s degree in cybersecurity</p>
                         </div>
                         <div className="flex flex-col gap-3 pt-2">
+                            <Link
+                                href="/changelog"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <FileText className="w-4 h-4" />
+                                Changelog
+                            </Link>
                             <motion.a
                                 href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
                                 target="_blank"

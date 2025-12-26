@@ -12,6 +12,7 @@ const navItems = [
     { name: "Use cases", link: "/#use-cases" },
     { name: "About", link: "/about" },
     { name: "Connect", link: "/#connect" },
+    { name: "Changelog", link: "/changelog" },
 ];
 
 export const FloatingNavbar = () => {
