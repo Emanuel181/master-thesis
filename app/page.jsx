@@ -144,9 +144,9 @@ export default function LandingPage() {
                                             <ArrowRight className="w-4 h-4" />
                                         </a>
                                     </Button>
-                                    <Button asChild variant="outline" size="lg" className="rounded-lg w-full sm:w-auto">
-                                        <a href="#features">
-                                            See How It Works
+                                    <Button asChild variant="outline" size="lg" className="rounded-lg w-full sm:w-auto hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300">
+                                        <a href="/login">
+                                            Explore prototype
                                         </a>
                                     </Button>
                                 </motion.div>
@@ -159,13 +159,7 @@ export default function LandingPage() {
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                             >
-                                <div className="relative">
-                                    {/* Glow behind card */}
-                                    <div className="absolute -inset-4 bg-[#1fb6cf]/20 rounded-3xl blur-2xl opacity-50" />
-                                    <div className="relative rounded-2xl border border-[#1fb6cf]/20 bg-card glow-accent overflow-hidden">
-                                        <SecurityCodeDemo />
-                                    </div>
-                                </div>
+                                    <SecurityCodeDemo className="relative glow-accent"/>
                             </motion.div>
                         </div>
                     </div>
@@ -187,15 +181,15 @@ export default function LandingPage() {
                             transition={{ duration: 0.7 }}
                         >
                             <div className="text-center">
-                                <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4">
+                                <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground mb-6 font-medium">
                                     Vulnerability management is critical.
                                 </p>
-                                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
+                                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-tight">
                                     The next frontier is{" "}
                                     <PointerHighlight
                                         containerClassName="px-1"
-                                        rectangleClassName="border-[#1fb6cf]/60 bg-[#1fb6cf]/10"
-                                        pointerClassName="text-[#1fb6cf]"
+                                        rectangleClassName="border-[var(--brand-accent)]/60 bg-[var(--brand-accent)]/10"
+                                        pointerClassName="text-[var(--brand-accent)]"
                                     >
                                         <span className="gradient-text">agentic remediation</span>
                                     </PointerHighlight>

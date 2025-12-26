@@ -27,7 +27,7 @@ export function LampDemo() {
                 transition={{ delay: 0.5, duration: 0.6 }}
                 className="mt-4 text-[var(--brand-light)]/60 text-center text-base md:text-lg max-w-md"
             >
-                Intelligent security for the modern codebase
+                Making code security autonomous by default
             </motion.p>
 
             <motion.div

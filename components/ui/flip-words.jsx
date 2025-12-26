@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export const FlipWords = ({
                               words,
-                              duration = 3000,
+                              duration = 1500,
                               className
                           }) => {
     const [currentWord, setCurrentWord] = useState(words[0]);
@@ -67,7 +67,7 @@ export const FlipWords = ({
                             delay: wordIndex * 0.3,
                             duration: 0.3,
                         }}
-                        className="inline-block whitespace-nowrap">
+                        className="inline-block whitespace-nowrap text-[var(--brand-accent)]">
                         {word.split("").map((letter, letterIndex) => (
                             <motion.span
                                 key={word + letterIndex}

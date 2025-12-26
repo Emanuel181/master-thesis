@@ -16,29 +16,25 @@ export default function InfiniteMovingCardsDemo() {
 }
 
 const testimonials = [
-  {
-    quote: "Universities can leverage VulnIQ to teach practical security remediation and maintain university security, including keeping their websites secure. Import student code, create knowledge bases for course-specific security protocols, and let agents demonstrate real-world fixes through the 4-agent workflow: Reviewer for analysis, Implementation for patches, Tester for validation, and Report for documentation. Specialized prompts ensure curriculum alignment while RAG prevents hallucinations.",
-    name: "Universities",
-    title: "Educational Excellence",
-  },
-  {
-    quote: "Startups benefit from VulnIQ's rapid security workflow. With limited resources, import your codebase and deploy the 4-agent system: Reviewer identifies vulnerabilities, Implementation applies fixes grounded in your knowledge bases, Tester verifies changes, and Report documents everything. Custom prompts and RAG ensure cost-effective, hallucination-free security without expert hires.",
-    name: "Startups",
-    title: "Agile Security Solutions",
-  },
-  {
-    quote: "Students learning security get hands-on experience with VulnIQ's agent-based approach. Watch as the Reviewer agent analyzes code, Implementation applies protocol-driven fixes from knowledge bases, Tester validates results, and Report explains decisions. Specialized prompts guide learning while RAG ensures accurate, grounded remediation education.",
-    name: "Students Learning Security",
-    title: "Practical Learning Tools",
-  },
-  {
-    quote: "Enterprise developer teams scale security with VulnIQ's comprehensive workflow. Import large codebases, define specialized prompts per agent, and maintain extensive knowledge bases for industry protocols. The 4-agent system (Reviewer, Implementation, Tester, Report) uses RAG to deliver hallucination-free fixes at enterprise scale.",
-    name: "Enterprise Developer Teams",
-    title: "Enterprise-Grade Security",
-  },
-  {
-    quote: "Open source contributors enhance project security with VulnIQ's transparent workflow. Import repositories, create community knowledge bases for security standards, and let agents collaborate: Reviewer flags issues, Implementation suggests fixes, Tester ensures quality, and Report documents changes. RAG keeps all actions grounded in established protocols.",
-    name: "Open Source Contributors",
-    title: "Community-Driven Security",
-  },
+    {
+        quote: "Universities are a strong fit for VulnIQ because it bridges theory and real-world security practice. By importing student or faculty code, universities can teach practical remediation while actively improving campus web security. The 4-agent workflow mirrors professional security teams: Reviewer analyzes vulnerabilities, Implementation applies fixes based on course-specific knowledge bases, Tester validates results, and Report documents outcomes. Specialized prompts keep learning aligned with curriculum goals, while RAG ensures fixes are accurate and grounded in approved security protocols.",
+        name: "Universities",
+    },
+    {
+        quote: "Startups benefit from VulnIQ because it delivers expert-level security without the cost of a dedicated security team. Teams can import their codebase and immediately run the 4-agent workflow, where vulnerabilities are identified, fixed, tested, and documented automatically. Knowledge bases ensure fixes follow the company’s standards, and RAG prevents hallucinated solutions. This allows startups to move fast while maintaining strong security with minimal overhead.",
+        name: "Startups",
+    },
+    {
+        quote: "People learning about web security gain practical, hands-on insight with VulnIQ by observing how real vulnerabilities are handled step by step. The Reviewer explains what is wrong and why it matters, the Implementation agent applies protocol-driven fixes, the Tester verifies correctness, and the Report agent clearly explains each decision. Guided prompts support structured learning, while RAG ensures all explanations and fixes remain accurate and grounded in real security standards.",
+        name: "People Learning About Web Security",
+    },
+    {
+        quote: "Enterprise developer teams choose VulnIQ because it scales security processes across large and complex codebases. Teams can define specialized prompts and maintain extensive knowledge bases for internal and industry standards. The 4-agent system consistently analyzes, fixes, tests, and documents vulnerabilities, while RAG ensures every remediation is traceable and compliant. This enables reliable, repeatable security at enterprise scale without sacrificing accuracy.",
+        name: "Enterprise Developer Teams",
+    },
+    {
+        quote: "Open source contributors benefit from VulnIQ because it supports transparent, community-driven security improvements. Contributors can import repositories, rely on shared knowledge bases for accepted security standards, and use the agent workflow to collaboratively identify, fix, test, and document vulnerabilities. RAG ensures all recommendations stay aligned with established best practices, making security improvements trustworthy and easy to review.",
+        name: "Open Source Contributors",
+    },
 ];
+

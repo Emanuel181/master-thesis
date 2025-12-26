@@ -58,7 +58,7 @@ export const InfiniteMovingCards = ({
     <div
       ref={containerRef}
       className={cn(
-        "scroller relative z-20 max-w-7xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_20%,white_80%,transparent)]",
+        "scroller relative z-20 max-w-7xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_10%,white_90%,transparent)]",
         className,
       )}
     >
@@ -81,7 +81,7 @@ export const InfiniteMovingCards = ({
       >
         {items.map((item) => (
           <li
-            className="relative w-[350px] max-w-full shrink-0 rounded-2xl border border-b-0 border-[var(--brand-primary)]/10 bg-[linear-gradient(180deg,var(--brand-white),var(--brand-light))] px-8 py-6 md:w-[450px] dark:border-[var(--brand-accent)]/10 dark:bg-[linear-gradient(180deg,var(--brand-primary),var(--brand-dark))]"
+            className="relative w-[350px] max-w-full shrink-0 rounded-2xl border border-[var(--brand-primary)]/20 bg-[var(--card)] px-8 py-6 md:w-[450px] dark:border-[var(--brand-accent)]/30 dark:bg-[var(--brand-primary)]/90 shadow-sm"
             key={item.name}
           >
             <blockquote>
@@ -94,7 +94,7 @@ export const InfiniteMovingCards = ({
               </span>
               <div className="relative z-20 mt-6 flex flex-row items-center">
                 <span className="flex flex-col gap-1">
-                  <span className="text-sm leading-[1.6] font-normal text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">
+                  <span className="text-sm leading-[1.6] font-semibold text-[var(--brand-primary)]/80 dark:text-[var(--brand-light)]/80">
                     {item.name}
                   </span>
                   <span className="text-sm leading-[1.6] font-normal text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">

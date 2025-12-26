@@ -1,63 +1,79 @@
 "use client";
 
-import { Lock, Search, Terminal, FileCheck, Server, ShieldAlert, CloudOff, Database } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import React from "react";
+import { motion } from "framer-motion";
+import {
+    Database,
+    Github,
+    Gitlab,
+    Search,
+    Wrench,
+    ShieldCheck,
+    FileText,
+    Settings2,
+    Sparkles,
+    CheckCircle2,
+    XCircle,
+} from "lucide-react";
 
 export function FeaturesGrid() {
     return (
         <ul className="grid grid-cols-1 gap-6 md:grid-cols-12 lg:gap-8 xl:grid-rows-2">
-
-            {/* 1. ZERO HALLUCINATIONS (Top Left) */}
+            {/* 1. GROUNDED SECURITY INTELLIGENCE (Top Left) */}
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
-                icon={<FileCheck className="h-4 w-4" />}
-                title="Zero Hallucinations"
-                description="RAG verifies every generated patch against your trusted internal documentation."
-                header={<SkeletonZeroHallucinations />}
+                icon={<Database className="h-4 w-4" />}
+                title="Grounded Security Intelligence"
+                description="Each agent retrieves guidance from your security knowledge bases and use-case playbooks (e.g., secure login), so fixes stay consistent with your ground truth."
+                header={<SkeletonKnowledgeRAG />}
             />
 
-            {/* 2. LOCAL EXECUTION (Bottom Left) */}
+            {/* 2. SECURE CODE INGESTION (Bottom Left) */}
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
-                icon={<Server className="h-4 w-4" />}
-                title="Local Execution"
-                description="Air-gapped compatible. Run Llama on-premise; no data leaves your environment."
-                header={<SkeletonLocalExecution />}
+                icon={<Sparkles className="h-4 w-4" />}
+                title="Secure Code Ingestion"
+                description="Connect GitHub or GitLab and import repositories in minutes—VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting."
+                header={<SkeletonRepoImport />}
             />
 
-            {/* 3. ROLE-BASED AGENTS (Center Tall) */}
+            {/* 3. MULTI-AGENT SECURITY WORKFLOW (Center Tall) */}
             <GridItem
                 area="md:col-span-12 xl:col-span-4 xl:row-span-2"
-                icon={<Lock className="h-4 w-4" />}
-                title="Role-Based Agents"
-                description="Specialized agents for scanning, fixing, and testing ensure separation of concerns."
-                header={<SkeletonAgents />}
+                icon={<Settings2 className="h-4 w-4" />}
+                title="Multi-Agent Security Workflow"
+                description="A 4-agent pipeline—Reviewer → Implementer → Tester → Reporter—with per-agent specialized prompts for your stack and policies."
+                header={<SkeletonAgentPipeline />}
             />
 
-            {/* 4. REAL-TIME SCANNING (Top Right) */}
+            {/* 4. AUTOMATED SECURITY VALIDATION (Top Right) */}
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
-                icon={<Terminal className="h-4 w-4" />}
-                title="Real-time Scanning"
-                description="Continuous monitoring of new PRs against CVE databases."
-                header={<SkeletonScanning />}
+                icon={<ShieldCheck className="h-4 w-4" />}
+                title="Automated Security Validation"
+                description="After remediation, the Tester agent validates fixes with targeted security checks—confirming vulnerabilities are resolved without breaking behavior."
+                header={<SkeletonSecurityTesting />}
             />
 
-            {/* 5. AUDIT TRAILS (Bottom Right) */}
+            {/* 5. PROFESSIONAL SECURITY REPORTS (Bottom Right) */}
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
-                icon={<Search className="h-4 w-4" />}
-                title="Audit Trails"
-                description="Every AI decision is logged and cited for compliance."
-                header={<SkeletonAudit />}
+                icon={<FileText className="h-4 w-4" />}
+                title="Professional Security Reports"
+                description="The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes—ready for audits."
+                header={<SkeletonReportGeneration />}
             />
         </ul>
     );
 }
 
-const GridItem = ({ area, icon, title, description, header }) => {
+const GridItem = ({
+                      area,
+                      icon,
+                      title,
+                      description,
+                      header,
+                  }) => {
     return (
         <motion.li
             className={`min-h-[18rem] list-none ${area}`}
@@ -66,15 +82,14 @@ const GridItem = ({ area, icon, title, description, header }) => {
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-            <div className="relative h-full rounded-2xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 bg-[var(--card)] dark:bg-[var(--brand-primary)]/50 p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/30 hover:shadow-lg hover:shadow-[var(--brand-accent)]/5 group">
+            <div className="relative h-full rounded-2xl border border-[var(--brand-primary)]/30 dark:border-[var(--brand-accent)]/30 bg-[var(--card)] dark:bg-[var(--brand-primary)]/90 p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/60 hover:shadow-xl hover:shadow-[var(--brand-accent)]/15 group shadow-md">
                 {/* Subtle glow on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[var(--brand-accent)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[var(--brand-accent)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                 {/* Content */}
                 <div className="relative flex h-full flex-col gap-6">
-
                     {/* Visual header */}
-                    <div className="relative flex-1 min-h-[8rem] w-full overflow-hidden rounded-xl bg-[var(--brand-light)]/50 dark:bg-[var(--brand-dark)]/50 border border-[var(--brand-primary)]/5 dark:border-[var(--brand-accent)]/10 flex items-center justify-center group-hover:border-[var(--brand-accent)]/20 transition-colors">
+                    <div className="relative flex-1 min-h-[8rem] w-full overflow-hidden rounded-xl bg-[var(--brand-light)]/50 dark:bg-[var(--brand-dark)]/50 border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center group-hover:border-[var(--brand-accent)]/30 transition-colors">
                         {header}
                     </div>
 
@@ -88,7 +103,7 @@ const GridItem = ({ area, icon, title, description, header }) => {
                                 {title}
                             </h3>
                         </div>
-                        <p className="text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/60 leading-relaxed">
+                        <p className="text-sm text-[var(--brand-primary)]/90 dark:text-[var(--brand-light)]/90 leading-relaxed font-medium">
                             {description}
                         </p>
                     </div>
@@ -98,171 +113,368 @@ const GridItem = ({ area, icon, title, description, header }) => {
     );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                                    VISUALS                                  */
+/* -------------------------------------------------------------------------- */
 
-// --- REFINED ANIMATIONS ---
-
-// 1. ZERO HALLUCINATIONS: Shows verification process
-const SkeletonZeroHallucinations = () => {
+/**
+ * 1) Knowledge RAG:
+ * KB cards -> retrieval beam -> grounded output check
+ */
+const SkeletonKnowledgeRAG = () => {
     return (
-        <div className="relative w-full h-full flex flex-col items-center justify-center p-4 gap-3">
-            {/* Database indicator */}
-            <div className="flex items-center gap-2 opacity-60">
-                <Database size={12} className="text-[var(--brand-primary)] dark:text-[var(--brand-accent)]" />
-                <div className="h-px w-8 bg-[var(--brand-primary)]/20 dark:bg-[var(--brand-accent)]/30" />
-                <span className="text-[10px] text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 font-mono tracking-wider">VERIFIED</span>
-            </div>
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-[240px] flex items-center justify-between gap-4">
+                {/* KB stack */}
+                <div className="flex flex-col gap-2">
+                    {["LOGIN", "AUTH", "API"].map((label, i) => (
+                        <motion.div
+                            key={label}
+                            initial={{ opacity: 0.7, y: 0 }}
+                            animate={{ opacity: [0.65, 1, 0.65], y: [0, -1, 0] }}
+                            transition={{ duration: 2.4, delay: i * 0.2, repeat: Infinity, ease: "easeInOut" }}
+                            className="w-16 h-8 rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center"
+                        >
+              <span className="text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                {label}
+              </span>
+                        </motion.div>
+                    ))}
+                </div>
 
-            {/* State animation */}
-            <div className="w-full max-w-[160px] bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 rounded-lg p-3 relative overflow-hidden">
-                <motion.div
-                    className="absolute inset-0 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] flex flex-col items-center justify-center p-2"
-                    animate={{ opacity: [1, 1, 0, 0, 1] }}
-                    transition={{ duration: 4, repeat: Infinity, times: [0, 0.4, 0.5, 0.9, 1] }}
-                >
-                    <ShieldAlert size={20} className="text-[var(--brand-primary)]/40 dark:text-[var(--brand-accent)]/40 mb-2" />
-                    <div className="w-full h-1.5 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded mb-1" />
-                    <div className="w-3/4 h-1.5 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded" />
-                    <span className="text-[8px] text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 mt-2 font-medium tracking-wider">CHECKING...</span>
-                </motion.div>
+                {/* Retrieval beam */}
+                <div className="relative flex-1 h-20 flex items-center justify-center">
+                    <div className="absolute left-0 right-0 h-px bg-[var(--brand-primary)]/20 dark:bg-[var(--brand-accent)]/25" />
 
-                <motion.div
-                    className="absolute inset-0 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] flex flex-col items-center justify-center p-2"
-                    animate={{ opacity: [0, 0, 1, 1, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, times: [0, 0.4, 0.5, 0.9, 1] }}
-                >
-                    <div className="w-6 h-6 rounded-full bg-[var(--brand-accent)]/20 flex items-center justify-center mb-2">
-                        <FileCheck size={14} className="text-[var(--brand-accent)]" />
+                    <div className="w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/25 flex items-center justify-center">
+                        <Search className="h-4 w-4 text-[var(--brand-accent)]" />
                     </div>
-                    <div className="w-full h-1.5 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded mb-1" />
-                    <div className="w-3/4 h-1.5 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded" />
-                    <span className="text-[8px] text-[var(--brand-accent)] mt-2 font-medium tracking-wider">VERIFIED</span>
-                </motion.div>
+                </div>
 
-                <div className="opacity-0 flex flex-col items-center p-2">
-                    <div className="h-6 w-6"/>
-                    <div className="h-1.5 w-full my-1"/>
-                    <div className="h-1.5 w-3/4"/>
-                    <div className="h-3"/>
+                {/* Grounded output */}
+                <div className="w-20 h-20 rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex flex-col items-center justify-center gap-2">
+                    <motion.div
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-7 h-7 rounded-full bg-[var(--brand-accent)]/15 flex items-center justify-center"
+                    >
+                        <CheckCircle2 className="h-4 w-4 text-[var(--brand-accent)]" />
+                    </motion.div>
+                    <span className="text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+            GROUNDED
+          </span>
                 </div>
             </div>
         </div>
     );
-}
+};
 
-// 2. LOCAL EXECUTION: Shows air-gapped infrastructure
-const SkeletonLocalExecution = () => {
+/**
+ * 2) Repo Import:
+ * GitHub/GitLab -> secure intake container -> files flowing in
+ */
+const SkeletonRepoImport = () => {
     return (
-        <div className="flex w-full h-full items-center justify-center gap-6 p-4">
-            {/* Local server */}
-            <div className="relative w-16 h-20 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 rounded-lg flex flex-col items-center justify-end p-2">
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[var(--brand-accent)] rounded-full" />
-                <Server size={24} className="text-[var(--brand-primary)]/60 dark:text-[var(--brand-accent)] mb-2" />
-                <div className="w-full h-1 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded mb-1" />
-                <div className="w-full h-1 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded" />
-                <span className="text-[8px] text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 font-medium mt-1 tracking-wide">LOCAL</span>
-            </div>
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-[240px] flex items-center justify-between gap-4">
+                {/* Providers */}
+                <div className="flex flex-col gap-2">
+                    <div className="w-16 h-9 rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center gap-1.5">
+                        <Github className="h-4 w-4 text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70" />
+                        <span className="text-[9px] font-mono text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">
+              GITHUB
+            </span>
+                    </div>
+                    <div className="w-16 h-9 rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center gap-1.5">
+                        <Gitlab className="h-4 w-4 text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70" />
+                        <span className="text-[9px] font-mono text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">
+              GITLAB
+            </span>
+                    </div>
+                </div>
 
-            {/* Disconnection indicator */}
-            <div className="relative w-8 h-px bg-[var(--brand-primary)]/20 dark:bg-[var(--brand-accent)]/30 flex items-center justify-center">
-                <span className="absolute text-[var(--brand-primary)]/40 dark:text-[var(--brand-light)]/40 text-sm font-medium">×</span>
-            </div>
+                {/* Flow */}
+                <div className="relative flex-1 h-20 flex items-center justify-center">
+                    <div className="absolute left-0 right-0 h-px bg-[var(--brand-primary)]/20 dark:bg-[var(--brand-accent)]/25" />
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute h-2 w-2 rounded-sm bg-[var(--brand-accent)]/45"
+                            initial={{ x: -40, opacity: 0 }}
+                            animate={{ x: 40, opacity: [0, 1, 0] }}
+                            transition={{ duration: 1.6, delay: i * 0.35, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                    ))}
+                </div>
 
-            {/* Cloud (disabled) */}
-            <div className="flex flex-col items-center justify-center opacity-30">
-                <CloudOff size={28} className="text-[var(--brand-primary)] dark:text-[var(--brand-light)]" />
-                <span className="text-[8px] text-[var(--brand-primary)] dark:text-[var(--brand-light)] mt-1.5 font-medium tracking-wide">CLOUD</span>
-            </div>
-
-        </div>
-    );
-}
-
-// 3. AGENTS: Interaction
-const SkeletonAgents = () => {
-    return (
-        <div className="flex flex-col gap-5 items-center justify-center h-full w-full p-4">
-            <div className="flex items-center gap-4">
-                {/* Agent 1 */}
-                <motion.div
-                    animate={{ y: [0, -3, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-10 h-10 rounded-full bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center"
-                >
-                    <Search size={16} className="text-[var(--brand-primary)]/60 dark:text-[var(--brand-accent)]" />
-                </motion.div>
-
-                {/* Arrow */}
-                <motion.div
-                    className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-accent)]/40"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                >
-                    →
-                </motion.div>
-
-                {/* Agent 2 */}
-                <motion.div
-                    animate={{ y: [0, 3, 0] }}
-                    transition={{ duration: 3, delay: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-10 h-10 rounded-full bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center"
-                >
-                    <Terminal size={16} className="text-[var(--brand-primary)]/60 dark:text-[var(--brand-accent)]" />
-                </motion.div>
-            </div>
-
-            <div className="px-3 py-1 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] rounded-full border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20">
-                <span className="text-[9px] text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 font-medium tracking-wide">ORCHESTRATING</span>
+                {/* Intake box */}
+                <div className="w-20 h-20 rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-accent)]/20 flex flex-col items-center justify-center gap-2">
+                    <motion.div
+                        animate={{ opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-7 h-7 rounded-full bg-[var(--brand-accent)]/15 flex items-center justify-center"
+                    >
+                        <Database className="h-4 w-4 text-[var(--brand-accent)]" />
+                    </motion.div>
+                    <span className="text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+            INGEST
+          </span>
+                </div>
             </div>
         </div>
     );
 };
 
-// 4. SCANNING: Moving Line
-const SkeletonScanning = () => {
-    return (
-        <div className="relative w-4/5 h-28 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 rounded-lg overflow-hidden mx-auto my-auto flex flex-col gap-2 p-4">
-            {/* Code lines */}
-            <div className="w-1/2 h-2 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded-sm" />
-            <div className="w-3/4 h-2 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded-sm" />
-            <div className="w-full h-2 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded-sm" />
-            <div className="w-2/3 h-2 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded-sm" />
-            <div className="w-1/3 h-2 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] rounded-sm" />
+/**
+ * 3) 4-Agent pipeline:
+ * Reviewer -> Implementer -> Tester -> Reporter, sequential highlight
+ */
+const SkeletonAgentPipeline = () => {
+    const steps = [
+        { label: "REVIEWER", Icon: Search },
+        { label: "IMPLEMENT", Icon: Wrench },
+        { label: "TESTER", Icon: ShieldCheck },
+        { label: "REPORTER", Icon: FileText },
+    ];
 
-            {/* Scanner Line */}
-            <motion.div
-                className="absolute top-0 left-0 w-full h-[2px] bg-[var(--brand-accent)] z-10"
-                animate={{ top: ["0%", "100%", "0%"] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            />
+    return (
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-[220px] flex flex-col gap-3">
+                {steps.map((s, i) => (
+                    <motion.div
+                        key={s.label}
+                        className="relative rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 px-3 py-2 flex items-center gap-2"
+                        animate={{
+                            borderColor: [
+                                "rgba(0,0,0,0)",
+                                "rgba(0,0,0,0)",
+                                "rgba(0,0,0,0)",
+                                "rgba(0,0,0,0)",
+                            ],
+                        }}
+                    >
+                        <motion.div
+                            className="absolute inset-0 rounded-xl bg-[var(--brand-accent)]/10"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{
+                                duration: 4.8,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                                delay: i * 1.2,
+                            }}
+                        />
+                        <div className="relative w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/20 flex items-center justify-center">
+                            <s.Icon className="h-4 w-4 text-[var(--brand-accent)]" />
+                        </div>
+                        <div className="relative flex-1">
+                            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono tracking-wider text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                  {s.label}
+                </span>
+                                <motion.span
+                                    className="text-[9px] font-mono text-[var(--brand-accent)]"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: [0, 1, 0] }}
+                                    transition={{
+                                        duration: 4.8,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                        delay: i * 1.2,
+                                    }}
+                                >
+                                    ACTIVE
+                                </motion.span>
+                            </div>
+                            <div className="mt-1 h-1.5 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60 overflow-hidden">
+                                <motion.div
+                                    className="h-full rounded bg-[var(--brand-accent)]/60"
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: ["0%", "100%", "0%"] }}
+                                    transition={{
+                                        duration: 4.8,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                        delay: i * 1.2,
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
 };
 
-// 5. AUDIT: Log entries
-const SkeletonAudit = () => {
+/**
+ * 4) Testing:
+ * A small suite runs: fail -> fixed -> pass (shows validation)
+ */
+const SkeletonSecurityTesting = () => {
+    const rows = [
+        { label: "auth.spec", initial: "FAIL" },
+        { label: "csrf.spec", initial: "FAIL" },
+        { label: "deps.spec", initial: "PASS" },
+    ];
+
     return (
-        <div className="w-full h-full p-4 font-mono text-[10px] text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70 flex flex-col gap-2 overflow-hidden">
-            <div className="flex gap-2 items-center">
-                <span className="px-1.5 py-0.5 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70 rounded text-[9px] font-medium">INFO</span>
-                <span>Initializing agent...</span>
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-[260px] rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 p-3">
+                <div className="flex items-center justify-between mb-2">
+          <span className="text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">
+            TEST SUITE
+          </span>
+                    <motion.span
+                        className="text-[9px] font-mono text-[var(--brand-accent)]"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.6, repeat: Infinity }}
+                    >
+                        RUNNING
+                    </motion.span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                    {rows.map((r, i) => (
+                        <div
+                            key={r.label}
+                            className="flex items-center justify-between rounded-lg border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/15 px-2.5 py-2"
+                        >
+              <span className="text-[10px] font-mono text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                {r.label}
+              </span>
+
+                            <div className="flex items-center gap-1.5">
+                                {/* FAIL badge then PASS badge */}
+                                <motion.div
+                                    className="flex items-center gap-1.5"
+                                    animate={{ opacity: [1, 1, 0, 0] }}
+                                    transition={{
+                                        duration: 4.2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                        times: [0, 0.35, 0.5, 1],
+                                        delay: i * 0.25,
+                                    }}
+                                >
+                                    <XCircle className="h-3.5 w-3.5 text-orange-500" />
+                                    <span className="text-[9px] font-mono text-orange-600 dark:text-orange-400">
+                    FAIL
+                  </span>
+                                </motion.div>
+
+                                <motion.div
+                                    className="flex items-center gap-1.5"
+                                    animate={{ opacity: [0, 0, 1, 1] }}
+                                    transition={{
+                                        duration: 4.2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                        times: [0, 0.35, 0.5, 1],
+                                        delay: i * 0.25,
+                                    }}
+                                >
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-[var(--brand-accent)]" />
+                                    <span className="text-[9px] font-mono text-[var(--brand-accent)]">
+                    PASS
+                  </span>
+                                </motion.div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Progress bar */}
+                <div className="mt-3 h-2 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60 overflow-hidden">
+                    <motion.div
+                        className="h-full rounded bg-[var(--brand-accent)]/60"
+                        animate={{ width: ["10%", "100%", "10%"] }}
+                        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                </div>
             </div>
-            <div className="flex gap-2 items-center">
-                <span className="px-1.5 py-0.5 bg-[var(--brand-light)] dark:bg-[var(--brand-primary)] text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70 rounded text-[9px] font-medium">INFO</span>
-                <span>Connecting to VectorDB...</span>
+        </div>
+    );
+};
+
+/**
+ * 5) Report generation:
+ * Evidence/logs transform into a structured report
+ */
+const SkeletonReportGeneration = () => {
+    return (
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-[260px] grid grid-cols-2 gap-3">
+                {/* Evidence (left) */}
+                <div className="rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 p-3">
+                    <div className="text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 mb-2">
+                        EVIDENCE
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        {[60, 80, 45, 70].map((w, i) => (
+                            <motion.div
+                                key={i}
+                                className="h-2 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60"
+                                style={{ width: `${w}%` }}
+                                animate={{ opacity: [0.6, 1, 0.6] }}
+                                transition={{ duration: 2.2, delay: i * 0.15, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                        ))}
+                    </div>
+
+                    <motion.div
+                        className="mt-3 flex items-center gap-2 text-[9px] font-mono text-[var(--brand-accent)]"
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.8, repeat: Infinity }}
+                    >
+                        <Database className="h-3.5 w-3.5" />
+                        <span>KB CITED</span>
+                    </motion.div>
+                </div>
+
+                {/* Report (right) */}
+                <div className="relative rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-accent)]/20 p-3 overflow-hidden">
+                    <div className="flex items-center justify-between">
+            <span className="text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">
+              REPORT
+            </span>
+                        <motion.span
+                            className="text-[9px] font-mono text-[var(--brand-accent)]"
+                            animate={{ opacity: [0.35, 1, 0.35] }}
+                            transition={{ duration: 1.6, repeat: Infinity }}
+                        >
+                            GENERATING
+                        </motion.span>
+                    </div>
+
+                    <div className="mt-3 flex flex-col gap-2">
+                        {[
+                            { label: "Findings", delay: 0.2 },
+                            { label: "Fixes Applied", delay: 0.6 },
+                            { label: "Test Results", delay: 1.0 },
+                            { label: "Recommendations", delay: 1.4 },
+                        ].map((s) => (
+                            <motion.div
+                                key={s.label}
+                                className="flex items-center gap-2"
+                                initial={{ opacity: 0, x: -6 }}
+                                animate={{ opacity: [0, 1, 1, 0] }}
+                                transition={{ duration: 4.8, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                                <div className="h-2 w-2 rounded-full bg-[var(--brand-accent)]/60" />
+                                <div className="h-2 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60 w-full" />
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Page shimmer */}
+                    <motion.div
+                        className="absolute inset-y-0 -left-10 w-16 bg-[var(--brand-accent)]/10 rotate-12"
+                        animate={{ x: ["-40%", "160%"] }}
+                        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                </div>
             </div>
-            <div className="flex gap-2 items-center">
-                <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded text-[9px] font-medium">WARN</span>
-                <span className="text-orange-600 dark:text-orange-400">CVE-2024-89 detected</span>
-            </div>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ repeat: Infinity, duration: 2, repeatDelay: 1 }}
-                className="flex gap-2 items-center"
-            >
-                <span className="px-1.5 py-0.5 bg-[var(--brand-accent)]/20 text-[var(--brand-accent)] rounded text-[9px] font-medium">DONE</span>
-                <span className="text-[var(--brand-accent)]">Patch verified</span>
-            </motion.div>
         </div>
     );
 };

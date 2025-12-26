@@ -59,10 +59,10 @@ export const FloatingNavbar = () => {
                 }}
             >
                 <motion.nav
-                    className={`pointer-events-auto flex items-center justify-between gap-4 border px-5 py-3 rounded-full w-full max-w-4xl transition-all duration-300 ${
+                    className={`pointer-events-auto flex items-center justify-between gap-4 border px-6 py-3.5 rounded-full w-full max-w-5xl transition-all duration-500 ease-in-out ${
                         isScrolled 
-                            ? 'bg-background/95 backdrop-blur-md border-border shadow-lg' 
-                            : 'bg-background/60 backdrop-blur-sm border-border/50'
+                            ? 'bg-background/95 backdrop-blur-xl border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20 shadow-xl shadow-black/10' 
+                            : 'bg-background/80 dark:bg-[var(--brand-dark)]/90 backdrop-blur-md border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/30 shadow-md'
                     }`}
                     layout
                 >

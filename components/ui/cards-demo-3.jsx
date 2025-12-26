@@ -34,8 +34,8 @@ export default function CardDemo() {
           </p>
           
           <div className="flex flex-wrap gap-3 pt-2">
-            {["GPT-4o", "Claude 3.5 Sonnet", "Gemini 1.5 Pro", "Llama 3"].map((model) => (
-              <span key={model} className="px-3 py-1.5 text-sm rounded-md bg-muted text-muted-foreground border border-border">
+            {["OpenAI", "Anthropic", "Google Gemini", "Llama"].map((model) => (
+              <span key={model} className="px-3 py-1.5 text-sm rounded-md bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 font-medium">
                 {model}
               </span>
             ))}
@@ -197,7 +197,7 @@ export const Card = ({ className, children }) => {
   return (
     <div
       className={cn(
-        "max-w-sm w-full mx-auto p-8 rounded-xl border border-border bg-card shadow-lg group hover:shadow-xl transition-all duration-300 hover:border-[var(--brand-accent)]/20",
+        "max-w-sm w-full mx-auto p-8 rounded-xl border border-[var(--brand-primary)]/20 bg-card dark:bg-[var(--brand-primary)]/40 shadow-lg group hover:shadow-xl transition-all duration-300 hover:border-[var(--brand-accent)]/30",
         className
       )}
     >
@@ -243,7 +243,7 @@ export const CardSkeletonContainer = ({
         "h-[15rem] md:h-[20rem] rounded-xl z-40",
         className,
         showGradient &&
-          "bg-muted/50 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"
+          "bg-[var(--brand-light)]/20 dark:bg-[var(--brand-dark)]/50 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"
       )}
     >
       {children}
@@ -255,8 +255,8 @@ const Container = ({ className, children }) => {
   return (
     <div
       className={cn(
-        `h-16 w-16 rounded-full flex items-center justify-center bg-card
-    shadow-sm border border-border/50
+        `h-16 w-16 rounded-full flex items-center justify-center bg-card dark:bg-[var(--brand-primary)]/80
+    shadow-sm border border-border/50 dark:border-[var(--brand-accent)]/20
     `,
         className
       )}

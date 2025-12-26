@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSettings } from "@/contexts/settingsContext";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function ThemeToggle({ className = "" }) {
   const { settings, updateSettings } = useSettings();
@@ -33,7 +34,7 @@ export function ThemeToggle({ className = "" }) {
       variant="outline"
       size="icon"
       onClick={handleThemeToggle}
-      className={className}
+      className={cn(className, "text-[var(--brand-primary)] dark:text-[var(--brand-light)] hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300")}
       aria-label={`Switch to ${currentMode === "dark" ? "light" : "dark"} mode`}
     >
       {currentMode === "dark" ? (
