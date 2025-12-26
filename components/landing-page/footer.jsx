@@ -73,9 +73,9 @@ export function Footer() {
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12">
 
-                    {/* Brand Column */}
+                    {/* Column 1: Brand & Description */}
                     <motion.div
                         className="space-y-4"
                         variants={itemVariants}
@@ -84,62 +84,12 @@ export function Footer() {
                             <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 rounded-lg" width={28} height={28} />
                             <span className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-base tracking-tight">VulnIQ</span>
                         </div>
-                        <p className="text-sm leading-relaxed max-w-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                        <p className="text-sm leading-relaxed text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
                             Autonomous security remediation powered by retrieval-augmented generation. A master thesis project exploring AI-driven vulnerability detection and patching.
                         </p>
-
-                        {/* Email Subscription Form */}
-                        <div className="pt-3 space-y-3">
-                            <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay Updated</h4>
-                            <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="Enter your email"
-                                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/30 focus:border-[var(--brand-accent)]/50 transition-all"
-                                        disabled={status === "loading" || status === "success"}
-                                    />
-                                    <motion.button
-                                        type="submit"
-                                        disabled={status === "loading" || status === "success"}
-                                        className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                                        whileHover={{ scale: status === "loading" || status === "success" ? 1 : 1.02 }}
-                                        whileTap={{ scale: status === "loading" || status === "success" ? 1 : 0.98 }}
-                                    >
-                                        {status === "loading" ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : status === "success" ? (
-                                            <CheckCircle2 className="w-4 h-4" />
-                                        ) : (
-                                            <Send className="w-4 h-4" />
-                                        )}
-                                    </motion.button>
-                                </div>
-                                {message && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -5 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className={`text-xs flex items-center gap-1 ${
-                                            status === "success" 
-                                                ? "text-green-600 dark:text-green-400" 
-                                                : "text-red-600 dark:text-red-400"
-                                        }`}
-                                    >
-                                        {status === "success" ? (
-                                            <CheckCircle2 className="w-3 h-3" />
-                                        ) : (
-                                            <AlertCircle className="w-3 h-3" />
-                                        )}
-                                        {message}
-                                    </motion.p>
-                                )}
-                            </form>
-                        </div>
                     </motion.div>
 
-                    {/* Thesis Info */}
+                    {/* Column 2: Thesis Info & Socials */}
                     <motion.div variants={itemVariants} className="space-y-4">
                         <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master Thesis</h4>
                         <div className="space-y-2 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
@@ -148,31 +98,81 @@ export function Footer() {
                             <p>Faculty of Computer Science</p>
                             <p>Master&apos;s Degree in Cybersecurity</p>
                         </div>
-                        <motion.a
-                            href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium rounded-lg bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 hover:bg-[var(--brand-accent)]/20 transition-colors"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            <FileText className="w-4 h-4" />
-                            View Thesis Paper
-                        </motion.a>
-                        
-                        <div className="pt-4">
-                             <motion.a
+                        <div className="flex flex-col gap-3 pt-2">
+                            <motion.a
+                                href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--brand-accent)] hover:underline"
+                                whileHover={{ x: 2 }}
+                            >
+                                <FileText className="w-4 h-4" />
+                                View Thesis Paper
+                            </motion.a>
+                            <motion.a
                                 href="https://www.linkedin.com/in/rusu-emanuel/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-muted-foreground hover:text-[#0077b5] transition-colors"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0077b5] transition-colors"
+                                whileHover={{ x: 2 }}
                             >
-                                <Linkedin className="w-5 h-5" />
-                                <span className="text-sm">Connect on LinkedIn</span>
+                                <Linkedin className="w-4 h-4" />
+                                Connect on LinkedIn
                             </motion.a>
                         </div>
+                    </motion.div>
+
+                    {/* Column 3: Newsletter */}
+                    <motion.div variants={itemVariants} className="space-y-4">
+                        <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay Updated</h4>
+                        <p className="text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                            Get notified about new features and research updates.
+                        </p>
+                        <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email"
+                                    className="flex-1 px-3 py-2 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/30 focus:border-[var(--brand-accent)]/50 transition-all"
+                                    disabled={status === "loading" || status === "success"}
+                                />
+                                <motion.button
+                                    type="submit"
+                                    disabled={status === "loading" || status === "success"}
+                                    className="px-3 py-2 text-sm font-medium rounded-lg bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+                                    whileHover={{ scale: status === "loading" || status === "success" ? 1 : 1.02 }}
+                                    whileTap={{ scale: status === "loading" || status === "success" ? 1 : 0.98 }}
+                                >
+                                    {status === "loading" ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : status === "success" ? (
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    ) : (
+                                        <Send className="w-4 h-4" />
+                                    )}
+                                </motion.button>
+                            </div>
+                            {message && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`text-xs flex items-center gap-1 ${
+                                        status === "success" 
+                                            ? "text-green-600 dark:text-green-400" 
+                                            : "text-red-600 dark:text-red-400"
+                                    }`}
+                                >
+                                    {status === "success" ? (
+                                        <CheckCircle2 className="w-3 h-3" />
+                                    ) : (
+                                        <AlertCircle className="w-3 h-3" />
+                                    )}
+                                    {message}
+                                </motion.p>
+                            )}
+                        </form>
                     </motion.div>
 
                 </div>
@@ -185,7 +185,7 @@ export function Footer() {
                     transition={{ delay: 0.5 }}
                 >
                     <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
-                        © 2025 Emanuel Rusu — Master Thesis Project
+                        © 2025 Emanuel Rusu - Master Thesis Project
                     </p>
                     <div className="flex items-center gap-4">
                         <Link

@@ -33,7 +33,7 @@ export function FeaturesGrid() {
                 area="md:col-span-6 xl:col-span-4"
                 icon={<Sparkles className="h-4 w-4" />}
                 title="Secure Code Ingestion"
-                description="Connect GitHub or GitLab and import repositories in minutes—VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting."
+                description="Connect GitHub or GitLab and import repositories in minutes. VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting."
                 header={<SkeletonRepoImport />}
             />
 
@@ -42,7 +42,7 @@ export function FeaturesGrid() {
                 area="md:col-span-12 xl:col-span-4 xl:row-span-2"
                 icon={<Settings2 className="h-4 w-4" />}
                 title="Multi-Agent Security Workflow"
-                description="A 4-agent pipeline—Reviewer → Implementer → Tester → Reporter—with per-agent specialized prompts for your stack and policies."
+                description="A 4-agent pipeline: reviewer, implementer, tester, reporter. With per-agent specialized prompts and knowledge base for your stack and policies."
                 header={<SkeletonAgentPipeline />}
             />
 
@@ -51,7 +51,7 @@ export function FeaturesGrid() {
                 area="md:col-span-6 xl:col-span-4"
                 icon={<ShieldCheck className="h-4 w-4" />}
                 title="Automated Security Validation"
-                description="After remediation, the Tester agent validates fixes with targeted security checks—confirming vulnerabilities are resolved without breaking behavior."
+                description="After remediation, the Tester agent validates fixes with targeted security checks, confirming vulnerabilities are resolved without breaking behavior."
                 header={<SkeletonSecurityTesting />}
             />
 
@@ -60,7 +60,7 @@ export function FeaturesGrid() {
                 area="md:col-span-6 xl:col-span-4"
                 icon={<FileText className="h-4 w-4" />}
                 title="Professional Security Reports"
-                description="The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes—ready for audits."
+                description="The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes. Ready for audits."
                 header={<SkeletonReportGeneration />}
             />
         </ul>

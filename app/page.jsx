@@ -202,7 +202,7 @@ export default function LandingPage() {
                         <FeaturesGrid />
 
                         <div className="mt-12 w-full py-8">
-                            <h3 className="text-center text-sm font-semibold text-muted-foreground mb-6 uppercase tracking-wider">Powered By Modern Tech Stack</h3>
+                            <h3 className="text-center text-sm font-semibold text-muted-foreground mb-6 tracking-wider">Powered by modern tech stack</h3>
                              <div style={{ height: '60px', position: 'relative', overflow: 'hidden'}}>
                                 <LogoLoop 
                                     logos={techLogos} 

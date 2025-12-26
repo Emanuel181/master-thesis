@@ -16,13 +16,6 @@ export default function CardDemo() {
           transition={{ duration: 0.6 }}
           className="space-y-6"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-full bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-accent)] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--brand-accent)]"></span>
-            </span>
-            Provider Agnostic
-          </div>
           
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Power your agents with <br/>
@@ -54,7 +47,7 @@ export default function CardDemo() {
             <CardSkeletonContainer>
               <Skeleton />
             </CardSkeletonContainer>
-            <CardTitle>Model Agnostic</CardTitle>
+            <CardTitle>Model agnostic</CardTitle>
             <CardDescription>
               Choose among state of the art providers to power your agents.
             </CardDescription>
