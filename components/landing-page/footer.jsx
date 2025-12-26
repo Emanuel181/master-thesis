@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { FileText, Send, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin } from "lucide-react";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -63,9 +63,9 @@ export function Footer() {
     };
 
     return (
-        <footer ref={ref} className="relative border-t border-[#0e2736]/10 dark:border-[#1fb6cf]/10 bg-gradient-to-b from-white dark:from-[#0a1c27] to-[#e6f4f7]/20 dark:to-[#0e2736]/20">
+        <footer id="connect" ref={ref} className="relative border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 bg-gradient-to-b from-[var(--brand-white)] dark:from-[var(--brand-dark)] to-[var(--brand-light)]/20 dark:to-[var(--brand-primary)]/20">
             {/* Decorative top accent */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-[#1fb6cf]/50 to-transparent" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-[var(--brand-accent)]/50 to-transparent" />
 
             <motion.div
                 className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12 sm:py-16"
@@ -82,15 +82,15 @@ export function Footer() {
                     >
                         <div className="flex items-center gap-2.5">
                             <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 rounded-lg" width={28} height={28} />
-                            <span className="font-semibold text-[#0e2736] dark:text-[#e6f4f7] text-base tracking-tight">VulnIQ</span>
+                            <span className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-base tracking-tight">VulnIQ</span>
                         </div>
-                        <p className="text-sm leading-relaxed max-w-sm text-[#0e2736]/70 dark:text-[#e6f4f7]/70">
+                        <p className="text-sm leading-relaxed max-w-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
                             Autonomous security remediation powered by retrieval-augmented generation. A master thesis project exploring AI-driven vulnerability detection and patching.
                         </p>
 
                         {/* Email Subscription Form */}
                         <div className="pt-3 space-y-3">
-                            <h4 className="font-medium text-[#0e2736] dark:text-[#e6f4f7] text-sm">Stay Updated</h4>
+                            <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay Updated</h4>
                             <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
                                 <div className="flex gap-2">
                                     <input
@@ -98,13 +98,13 @@ export function Footer() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="Enter your email"
-                                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-white dark:bg-[#0e2736] border border-[#0e2736]/10 dark:border-[#1fb6cf]/20 text-[#0e2736] dark:text-[#e6f4f7] placeholder:text-[#0e2736]/40 dark:placeholder:text-[#e6f4f7]/40 focus:outline-none focus:ring-2 focus:ring-[#1fb6cf]/30 focus:border-[#1fb6cf]/50 transition-all"
+                                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/30 focus:border-[var(--brand-accent)]/50 transition-all"
                                         disabled={status === "loading" || status === "success"}
                                     />
                                     <motion.button
                                         type="submit"
                                         disabled={status === "loading" || status === "success"}
-                                        className="px-4 py-2 text-sm font-medium rounded-lg bg-[#1fb6cf] text-white hover:bg-[#1fb6cf]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                        className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                                         whileHover={{ scale: status === "loading" || status === "success" ? 1 : 1.02 }}
                                         whileTap={{ scale: status === "loading" || status === "success" ? 1 : 0.98 }}
                                     >
@@ -141,52 +141,68 @@ export function Footer() {
 
                     {/* Thesis Info */}
                     <motion.div variants={itemVariants} className="space-y-4">
-                        <h4 className="font-medium text-[#0e2736] dark:text-[#e6f4f7] text-sm">Master Thesis</h4>
-                        <div className="space-y-2 text-sm text-[#0e2736]/70 dark:text-[#e6f4f7]/70">
-                            <p className="font-medium text-[#0e2736] dark:text-[#e6f4f7]">Emanuel Rusu</p>
+                        <h4 className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master Thesis</h4>
+                        <div className="space-y-2 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                            <p className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)]">Emanuel Rusu</p>
                             <p>West University of Timișoara</p>
                             <p>Faculty of Computer Science</p>
                             <p>Master&apos;s Degree in Cybersecurity</p>
                         </div>
                         <motion.a
-                            href="#"
-                            className="inline-flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium rounded-lg bg-[#1fb6cf]/10 text-[#1fb6cf] border border-[#1fb6cf]/20 hover:bg-[#1fb6cf]/20 transition-colors"
+                            href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium rounded-lg bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 hover:bg-[var(--brand-accent)]/20 transition-colors"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                         >
                             <FileText className="w-4 h-4" />
                             View Thesis Paper
                         </motion.a>
+                        
+                        <div className="pt-4">
+                             <motion.a
+                                href="https://www.linkedin.com/in/rusu-emanuel/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-muted-foreground hover:text-[#0077b5] transition-colors"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                            >
+                                <Linkedin className="w-5 h-5" />
+                                <span className="text-sm">Connect on LinkedIn</span>
+                            </motion.a>
+                        </div>
                     </motion.div>
 
                 </div>
 
                 {/* Bottom Bar */}
                 <motion.div
-                    className="border-t border-[#0e2736]/10 dark:border-[#1fb6cf]/10 mt-12 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4"
+                    className="border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 mt-12 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4"
                     initial={{ opacity: 0 }}
                     animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                     transition={{ delay: 0.5 }}
                 >
-                    <p className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50">
+                    <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
                         © 2025 Emanuel Rusu — Master Thesis Project
                     </p>
                     <div className="flex items-center gap-4">
                         <Link
                             href="/privacy"
-                            className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50 hover:text-[#1fb6cf] transition-colors"
+                            className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-accent)] transition-colors"
                         >
                             Privacy Policy
                         </Link>
-                        <span className="text-[#0e2736]/30 dark:text-[#e6f4f7]/30">•</span>
+                        <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30">•</span>
                         <Link
                             href="/terms"
-                            className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50 hover:text-[#1fb6cf] transition-colors"
+                            className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-accent)] transition-colors"
                         >
                             Terms & Conditions
                         </Link>
                     </div>
-                    <p className="text-xs text-[#0e2736]/50 dark:text-[#e6f4f7]/50">
+                    <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
                         Open Beta • Research Project
                     </p>
                 </motion.div>

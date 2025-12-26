@@ -8,10 +8,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, X, ArrowRight, ChevronRight } from "lucide-react";
 
 const navItems = [
-    { name: "Features", link: "#features" },
-    { name: "How It Works", link: "#how-it-works" },
-    { name: "Models", link: "#models" },
-    { name: "About", link: "#about" },
+    { name: "Features", link: "/#features" },
+    { name: "Use Cases", link: "/#use-cases" },
+    { name: "About", link: "/about" },
+    { name: "Connect", link: "/#connect" },
 ];
 
 export const FloatingNavbar = () => {
@@ -41,7 +41,7 @@ export const FloatingNavbar = () => {
         <>
             {/* Progress bar - brand accent */}
             <motion.div
-                className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#1fb6cf] to-transparent z-[110] origin-left"
+                className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-accent)] to-transparent z-[110] origin-left"
                 style={{ scaleX }}
             />
 

@@ -58,7 +58,7 @@ export function PointerHighlight({
                 {/* The Rectangle Border */}
                 <motion.div
                     className={cn(
-                        "absolute top-0 left-0 border border-neutral-200 dark:border-white/40 rounded-sm",
+                        "absolute top-0 left-0 border border-[var(--brand-primary)]/20 dark:border-[var(--brand-light)]/40 rounded-sm",
                         rectangleClassName
                     )}
                     initial={{
@@ -93,7 +93,7 @@ export function PointerHighlight({
                 >
                     <Pointer
                         className={cn(
-                            "h-5 w-5 text-blue-500 fill-blue-500 stroke-white",
+                            "h-5 w-5 text-[var(--brand-accent)] fill-[var(--brand-accent)] stroke-white",
                             pointerClassName
                         )}
                     />

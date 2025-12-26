@@ -66,7 +66,7 @@ export default function TermsPage() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Home
@@ -80,7 +80,7 @@ export default function TermsPage() {
             {/* Main Content */}
             {/* Main Content with ScrollArea */}
             <ScrollArea className="flex-1" viewportRef={scrollRef}>
-                <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+                <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -89,8 +89,8 @@ export default function TermsPage() {
                     >
                         {/* Title Section */}
                         <div id="terms-top" className="text-center mb-12">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-                                <Scale className="w-8 h-8 text-primary" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--brand-accent)]/10 mb-6">
+                                <Scale className="w-8 h-8 text-[var(--brand-accent)]" />
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
                                 Terms & Conditions
@@ -115,7 +115,7 @@ export default function TermsPage() {
                                     href={`#${section.id}`}
                                     className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 py-1"
                                 >
-                                    <span className="text-primary">{index + 1}.</span>
+                                    <span className="text-[var(--brand-accent)]">{index + 1}.</span>
                                     {section.title}
                                 </a>
                             ))}
@@ -430,7 +430,7 @@ export default function TermsPage() {
                                 In the event of a dispute, you or VulnIQ must give the other a Notice of Dispute, which is a written statement that sets forth the name, address, and contact information of the party giving it, the facts giving rise to the dispute, and the relief requested.
                             </p>
                             <p>
-                                You must send any Notice of Dispute via email to: <a href="mailto:emanuel.rusu03@e-uvt.ro" className="text-primary hover:underline">emanuel.rusu03@e-uvt.ro</a>. VulnIQ will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address.
+                                You must send any Notice of Dispute via email to: <a href="mailto:emanuel.rusu03@e-uvt.ro" className="text-[var(--brand-accent)] hover:underline">emanuel.rusu03@e-uvt.ro</a>. VulnIQ will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address.
                             </p>
                             <p>
                                 You and VulnIQ will attempt to resolve any dispute through informal negotiation within sixty (60) days from the date the Notice of Dispute is sent. After sixty (60) days, you or VulnIQ may commence arbitration.
@@ -578,8 +578,8 @@ function Section({ id, title, icon: Icon, children }) {
             className="mb-10 scroll-mt-24"
         >
             <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-4 w-4 text-primary" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-accent)]/10">
+                    <Icon className="h-4 w-4 text-[var(--brand-accent)]" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h2>
             </div>

@@ -16,6 +16,27 @@ import { Footer } from "@/components/landing-page/footer";
 import { PointerHighlight } from "@/components/ui/pointer-highlight";
 import { FlipWordsDemo } from "@/components/flip-words-demo";
 import InfiniteMovingCardsDemo from "@/components/infinite-moving-cards-demo";
+import CardDemo from "@/components/ui/cards-demo-3";
+import { LogoLoop } from '@/components/ui/logo-loop';
+import { SiReact, SiNextdotjs, SiTailwindcss, SiDocker, SiGithub, SiWebstorm, SiShadcnui } from 'react-icons/si';
+import { FaAws } from "react-icons/fa";
+import { FaNodeJs } from "react-icons/fa6";
+import { IoLogoJavascript } from "react-icons/io";
+import { IoLogoCss3 } from "react-icons/io5";
+
+const techLogos = [
+  { node: <SiNextdotjs />, title: "Next.js", href: "https://nextjs.org" },
+  { node: <SiDocker />, title: "Docker", href: "https://www.docker.com" },
+  { node: <SiReact />, title: "React", href: "https://react.dev" },
+  { node: <SiGithub />, title: "GitHub", href: "https://github.com" },
+  { node: <SiTailwindcss />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
+  { node: <FaAws />, title: "AWS", href: "https://aws.amazon.com" },
+  { node: <SiWebstorm />, title: "WebStorm", href: "https://www.jetbrains.com/webstorm/" },
+  { node: <FaNodeJs />, title: "Node.js", href: "https://nodejs.org" },
+  { node: <IoLogoJavascript />, title: "JavaScript", href: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
+  { node: <IoLogoCss3 />, title: "CSS3", href: "https://developer.mozilla.org/en-US/docs/Web/CSS" },
+  { node: <SiShadcnui />, title: "Shadcn UI", href: "https://ui.shadcn.com" },
+];
 
 // ============================================================================
 // ANIMATION VARIANTS
@@ -58,7 +79,7 @@ export default function LandingPage() {
 
     return (
         <ScrollArea className="h-screen" viewportRef={scrollContainerRef}>
-            <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[#1fb6cf]/20 flex flex-col overflow-x-hidden relative">
+            <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 flex flex-col overflow-x-hidden relative">
 
                 {/* Background effects */}
                 <div className="fixed inset-0 mesh-gradient pointer-events-none" />
@@ -118,8 +139,8 @@ export default function LandingPage() {
                                     className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start"
                                 >
                                     <Button asChild size="lg" className="rounded-lg w-full sm:w-auto">
-                                        <a href="/login" className="flex items-center justify-center gap-2">
-                                            Get Started
+                                        <a href="https://www.overleaf.com/read/vdqywdqywyhr#693113" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+                                            View Thesis
                                             <ArrowRight className="w-4 h-4" />
                                         </a>
                                     </Button>
@@ -186,6 +207,23 @@ export default function LandingPage() {
                         {/* Grid */}
                         <FeaturesGrid />
 
+                        <div className="mt-12 w-full py-8">
+                            <h3 className="text-center text-sm font-semibold text-muted-foreground mb-6 uppercase tracking-wider">Powered By Modern Tech Stack</h3>
+                             <div style={{ height: '60px', position: 'relative', overflow: 'hidden'}}>
+                                <LogoLoop 
+                                    logos={techLogos} 
+                                    speed={60} 
+                                    direction="left" 
+                                    logoHeight={32} 
+                                    gap={60} 
+                                    hoverSpeed={0} 
+                                    scaleOnHover 
+                                    fadeOut={false} 
+                                    ariaLabel="Technology stack" 
+                                />
+                            </div>
+                        </div>
+
                         {/* Flip Words - Moved inside Features container for tighter spacing */}
                         {/* Adjust 'mt-8' to 'mt-4' or 'mt-12' to tune the distance exactly */}
                         <div className="mt-4 sm:mt-8 w-full">
@@ -193,8 +231,13 @@ export default function LandingPage() {
                         </div>
 
                         {/* Infinite Moving Cards */}
-                        <div className="mt-4 sm:mt-8 w-full">
+                        <div id="use-cases" className="mt-4 sm:mt-8 w-full">
                             <InfiniteMovingCardsDemo />
+                        </div>
+
+                        {/* Providers Demo */}
+                        <div className="mt-16 w-full">
+                            <CardDemo />
                         </div>
                     </div>
                 </section>

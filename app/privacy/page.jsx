@@ -53,9 +53,13 @@ export default function PrivacyPage() {
     };
 
     return (
-        <div className="h-screen flex flex-col bg-background overflow-hidden">
+        <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
+            {/* Background effects */}
+            <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
+            <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
+
             {/* Header */}
-            <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="flex items-center gap-2 font-semibold text-xl group">
@@ -64,7 +68,7 @@ export default function PrivacyPage() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Home
@@ -77,7 +81,7 @@ export default function PrivacyPage() {
 
             {/* Main Content with ScrollArea */}
             <ScrollArea className="flex-1" viewportRef={scrollRef}>
-                <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+                <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -86,8 +90,8 @@ export default function PrivacyPage() {
                     >
                         {/* Title Section */}
                         <div id="privacy-top" className="text-center mb-12">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-                                <Shield className="w-8 h-8 text-primary" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--brand-accent)]/10 mb-6">
+                                <Shield className="w-8 h-8 text-[var(--brand-accent)]" />
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
                                 Privacy Policy
@@ -127,7 +131,7 @@ export default function PrivacyPage() {
                                     href={`#${section.id}`}
                                     className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 py-1"
                                 >
-                                    <span className="text-primary">{index + 1}.</span>
+                                    <span className="text-[var(--brand-accent)]">{index + 1}.</span>
                                     {section.title}
                                 </a>
                             ))}
@@ -489,9 +493,9 @@ export default function PrivacyPage() {
                             </p>
                             <div className="mt-4 p-4 rounded-lg border border-border bg-muted/30">
                                 <p className="flex items-center gap-2">
-                                    <Mail className="h-4 w-4 text-primary" />
+                                    <Mail className="h-4 w-4 text-[var(--brand-accent)]" />
                                     <strong>Via Email:</strong>{' '}
-                                    <a href="mailto:emanuel.rusu.secure@gmail.com" className="text-primary hover:underline">
+                                    <a href="mailto:emanuel.rusu.secure@gmail.com" className="text-[var(--brand-accent)] hover:underline">
                                         emanuel.rusu.secure@gmail.com
                                     </a>
                                 </p>
@@ -539,8 +543,8 @@ function Section({ id, title, icon: Icon, children }) {
             className="mb-10 scroll-mt-24"
         >
             <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-4 w-4 text-primary" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-accent)]/10">
+                    <Icon className="h-4 w-4 text-[var(--brand-accent)]" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h2>
             </div>
