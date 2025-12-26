@@ -54,8 +54,7 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-# set hostname to localhost
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOST=0.0.0.0
 
-CMD ["node", "server.js", "--port", "3000", "--hostname", "0.0.0.0"]
+CMD ["node", "server.js"]

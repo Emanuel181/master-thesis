@@ -1,4 +1,4 @@
-// app/api/healthz/route.ts
+// app/api/health/route.js
 import { NextResponse } from 'next/server';
 
 /**
