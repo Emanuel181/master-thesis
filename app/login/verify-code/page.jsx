@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -140,7 +140,7 @@ const getEmailProviders = () => {
     ];
 }
 
-export default function VerifyCodePage() {
+function VerifyCodeContent() {
     const searchParams = useSearchParams()
     const email = searchParams.get('email')
     const [otp, setOtp] = useState("")
@@ -566,5 +566,13 @@ export default function VerifyCodePage() {
                 </div>
             </motion.div>
         </div>
+    )
+}
+
+export default function VerifyCodePage() {
+    return (
+        <Suspense>
+            <VerifyCodeContent />
+        </Suspense>
     )
 }
