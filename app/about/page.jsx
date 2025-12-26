@@ -81,10 +81,10 @@ export default function AboutPage() {
                             <Shield className="w-10 h-10 text-[var(--brand-accent)]" />
                         </div>
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                            Agentic RAG for <span className="gradient-text">Automated Program Repair</span>
+                            Agentic RAG for <span className="gradient-text">automated program repair</span>
                         </h1>
                         <p className="text-muted-foreground text-xl leading-relaxed max-w-2xl mx-auto">
-                            A Master's Thesis Project investigating the efficacy of LLM-based agents augmented with specialized security knowledge for vulnerability remediation.
+                            A Master's thesis project investigating the efficacy of LLM-based agents augmented with specialized security knowledge for vulnerability remediation.
                         </p>
                     </motion.div>
 
@@ -106,7 +106,7 @@ export default function AboutPage() {
                                         <div className="p-2 rounded-lg bg-destructive/10">
                                             <Target className="w-5 h-5" />
                                         </div>
-                                        <h3 className="font-semibold">Problem Statement</h3>
+                                        <h3 className="font-semibold">Problem statement</h3>
                                     </div>
                                     <p className="text-muted-foreground leading-relaxed">
                                         Large Language Models (LLMs) are increasingly applied to Automated Program Repair (APR), but often struggle due to insufficient domain knowledge and a tendency to produce "hallucinations" or unreliable fixes.
@@ -114,7 +114,7 @@ export default function AboutPage() {
                                 </div>
                             </div>
                             <div className="order-1 md:order-2 space-y-4">
-                                <h2 className="text-3xl font-bold tracking-tight">Limitations of Current Approaches</h2>
+                                <h2 className="text-3xl font-bold tracking-tight">Limitations of current approaches</h2>
                                 <p className="text-lg text-muted-foreground leading-relaxed">
                                     Without grounded context, even advanced models rely on probabilistic generation rather than verified security practices. This limitation hinders the practical application of LLMs in critical security infrastructure where precision is paramount.
                                 </p>
@@ -130,12 +130,12 @@ export default function AboutPage() {
                             className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
                         >
                             <div className="space-y-4">
-                                <h2 className="text-3xl font-bold tracking-tight">Proposed Methodology</h2>
+                                <h2 className="text-3xl font-bold tracking-tight">Proposed methodology</h2>
                                 <p className="text-lg text-muted-foreground leading-relaxed">
                                     This research proposes an agentic system leveraging Retrieval-Augmented Generation (RAG) to enhance the reliability and precision of source code vulnerability remediation.
                                 </p>
                                 <p className="text-muted-foreground leading-relaxed">
-                                    The framework positions LLMs as central controllers orchestrating reasoning and tool interaction. By utilizing RAG, we augment the LLM's context with retrieved external security knowledge—such as best-practice guidelines, relevant code snippets, and historical fixes.
+                                    The framework positions LLMs as central controllers orchestrating reasoning and tool interaction. By utilizing RAG, we augment the LLM's context with retrieved external security knowledge, such as best-practice guidelines, relevant code snippets, and historical fixes.
                                 </p>
                             </div>
                             <div className="relative">
@@ -145,7 +145,7 @@ export default function AboutPage() {
                                         <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10">
                                             <Zap className="w-5 h-5" />
                                         </div>
-                                        <h3 className="font-semibold">System Architecture</h3>
+                                        <h3 className="font-semibold">System architecture</h3>
                                     </div>
                                     <ul className="space-y-3">
                                         <li className="flex items-start gap-3">
@@ -174,12 +174,12 @@ export default function AboutPage() {
                             className="bg-muted/30 rounded-3xl p-8 md:p-12 text-center border border-border/50"
                         >
                             <Award className="w-12 h-12 text-[var(--brand-accent)] mx-auto mb-6" />
-                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Research Contributions</h2>
+                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Research contributions</h2>
                             <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
                                 Results from the scientific community demonstrate that this knowledge-driven, structured approach significantly boosts performance in software security tasks. Tailoring the RAG context with distilled security knowledge yields substantial improvements in secure code generation metrics over state-of-the-art baselines.
                             </p>
                             <p className="text-muted-foreground max-w-2xl mx-auto text-sm">
-                                The proposed agentic RAG system provides a robust, context-aware, and knowledge-grounded framework for automated vulnerability repair—a crucial step toward creating reliable, high-quality APR solutions essential for modern software security.
+                                The proposed agentic RAG system provides a robust, context-aware, and knowledge-grounded framework for automated vulnerability repair, a crucial step toward creating reliable, high-quality APR solutions essential for modern software security.
                             </p>
                         </motion.div>
 
@@ -193,18 +193,18 @@ export default function AboutPage() {
                             viewport={{ once: true }}
                             className="text-center mb-16"
                         >
-                            <h2 className="text-3xl font-bold tracking-tight mb-4">Research Objectives</h2>
+                            <h2 className="text-3xl font-bold tracking-tight mb-4">Research objectives</h2>
                         </motion.div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                             <ValueCard 
                                 icon={Target} 
-                                title="Contextual Precision" 
+                                title="Contextual precision"
                                 description="Implementing a RAG pipeline that ensures every remediation suggestion is contextually accurate to the specific codebase architecture." 
                             />
                             <ValueCard 
                                 icon={Zap} 
-                                title="Automated Reasoning" 
+                                title="Automated reasoning"
                                 description="Developing agentic workflows that can autonomously analyze, reason about, and repair vulnerabilities with minimal human intervention." 
                             />
                         </div>
@@ -221,9 +221,9 @@ export default function AboutPage() {
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--brand-accent)] to-transparent opacity-50" />
                         <div className="relative z-10">
                             <Award className="w-12 h-12 text-[var(--brand-accent)] mx-auto mb-6" />
-                            <h2 className="text-3xl font-bold mb-6">About the Research</h2>
+                            <h2 className="text-3xl font-bold mb-6">About the research</h2>
                             <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-                                This project is part of a Master's Thesis focused on advancing the field of Automated Program Repair through the integration of modern LLMs and knowledge retrieval systems.
+                                This project is part of a Master's thesis focused on advancing the field of Automated Program Repair through the integration of modern LLMs and knowledge retrieval systems.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Button asChild size="lg" className="rounded-full bg-[var(--brand-accent)] text-[var(--brand-primary)] hover:bg-[var(--brand-accent)]/90 font-semibold shadow-lg shadow-[var(--brand-accent)]/20">
@@ -240,7 +240,7 @@ export default function AboutPage() {
 
                     {/* Tech Stack Loop */}
                     <div className="max-w-4xl mx-auto mb-20">
-                         <h3 className="text-center text-sm font-semibold text-muted-foreground mb-8 uppercase tracking-wider">Built With Modern Technologies</h3>
+                         <h3 className="text-center text-sm font-semibold text-muted-foreground mb-8 tracking-wider">Built with modern technologies</h3>
                          <div className="h-[60px] relative overflow-hidden">
                             <LogoLoop 
                                 logos={techLogos} 

@@ -11,39 +11,39 @@ import { useRef } from "react";
 
 export default function TermsPage() {
     const sections = [
-        { id: 'general', title: 'General Terms', icon: FileText },
+        { id: 'general', title: 'General terms', icon: FileText },
         { id: 'license', title: 'License', icon: Scale },
         { id: 'meanings', title: 'Meanings', icon: FileText },
         { id: 'restrictions', title: 'Restrictions', icon: Shield },
-        { id: 'refund', title: 'Return and Refund Policy', icon: RefreshCw },
-        { id: 'suggestions', title: 'Your Suggestions', icon: FileText },
-        { id: 'consent', title: 'Your Consent', icon: FileText },
-        { id: 'links', title: 'Links to Other Websites', icon: FileText },
+        { id: 'refund', title: 'Return and refund policy', icon: RefreshCw },
+        { id: 'suggestions', title: 'Your suggestions', icon: FileText },
+        { id: 'consent', title: 'Your consent', icon: FileText },
+        { id: 'links', title: 'Links to other websites', icon: FileText },
         { id: 'cookies', title: 'Cookies', icon: Cookie },
-        { id: 'changes', title: 'Changes To Our Terms', icon: RefreshCw },
-        { id: 'modifications', title: 'Modifications to Our App', icon: RefreshCw },
-        { id: 'updates', title: 'Updates to Our App', icon: RefreshCw },
-        { id: 'third-party', title: 'Third-Party Services', icon: FileText },
-        { id: 'termination', title: 'Term and Termination', icon: AlertTriangle },
-        { id: 'copyright', title: 'Copyright Infringement', icon: Scale },
+        { id: 'changes', title: 'Changes to our terms', icon: RefreshCw },
+        { id: 'modifications', title: 'Modifications to our app', icon: RefreshCw },
+        { id: 'updates', title: 'Updates to our app', icon: RefreshCw },
+        { id: 'third-party', title: 'Third-party services', icon: FileText },
+        { id: 'termination', title: 'Term and termination', icon: AlertTriangle },
+        { id: 'copyright', title: 'Copyright infringement', icon: Scale },
         { id: 'indemnification', title: 'Indemnification', icon: Shield },
-        { id: 'warranties', title: 'No Warranties', icon: AlertTriangle },
-        { id: 'liability', title: 'Limitation of Liability', icon: AlertTriangle },
+        { id: 'warranties', title: 'No warranties', icon: AlertTriangle },
+        { id: 'liability', title: 'Limitation of liability', icon: AlertTriangle },
         { id: 'severability', title: 'Severability', icon: Scale },
         { id: 'waiver', title: 'Waiver', icon: Scale },
         { id: 'amendments', title: 'Amendments', icon: RefreshCw },
         { id: 'entire', title: 'Entire Agreement', icon: FileText },
-        { id: 'updates-terms', title: 'Updates to Our Terms', icon: RefreshCw },
-        { id: 'intellectual', title: 'Intellectual Property', icon: Shield },
-        { id: 'arbitrate', title: 'Agreement to Arbitrate', icon: Gavel },
-        { id: 'dispute', title: 'Notice of Dispute', icon: Mail },
-        { id: 'binding', title: 'Binding Arbitration', icon: Gavel },
-        { id: 'submissions', title: 'Submissions and Privacy', icon: Shield },
+        { id: 'updates-terms', title: 'Updates to our terms', icon: RefreshCw },
+        { id: 'intellectual', title: 'Intellectual property', icon: Shield },
+        { id: 'arbitrate', title: 'Agreement to arbitrate', icon: Gavel },
+        { id: 'dispute', title: 'Notice of dispute', icon: Mail },
+        { id: 'binding', title: 'Binding arbitration', icon: Gavel },
+        { id: 'submissions', title: 'Submissions and privacy', icon: Shield },
         { id: 'promotions', title: 'Promotions', icon: FileText },
-        { id: 'errors', title: 'Typographical Errors', icon: AlertTriangle },
+        { id: 'errors', title: 'Typographical errors', icon: AlertTriangle },
         { id: 'miscellaneous', title: 'Miscellaneous', icon: FileText },
         { id: 'disclaimer', title: 'Disclaimer', icon: AlertTriangle },
-        { id: 'contact', title: 'Contact Us', icon: Mail },
+        { id: 'contact', title: 'Contact us', icon: Mail },
     ];
 
     const scrollRef = useRef(null);
@@ -69,7 +69,7 @@ export default function TermsPage() {
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Home
+                                Back to home
                             </Link>
                         </Button>
                         <ThemeToggle />
@@ -107,7 +107,7 @@ export default function TermsPage() {
                             transition={{ duration: 0.5, delay: 0.1 }}
                             className="mb-12 p-6 rounded-lg border border-border bg-muted/30"
                     >
-                        <h2 className="text-lg font-semibold mb-4">Table of Contents</h2>
+                        <h2 className="text-lg font-semibold mb-4">Table of contents</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {sections.map((section, index) => (
                                 <a
@@ -125,7 +125,7 @@ export default function TermsPage() {
                     {/* Content Sections */}
                     <div className="prose prose-neutral dark:prose-invert max-w-none">
                         {/* General Terms */}
-                        <Section id="general" title="General Terms" icon={FileText}>
+                        <Section id="general" title="General terms" icon={FileText}>
                             <p>
                                 By accessing and placing an order with VulnIQ, you confirm that you are in agreement with and bound by the terms of service contained in the Terms & Conditions outlined below. These terms apply to the entire website and any email or other type of communication between you and VulnIQ.
                             </p>
@@ -176,7 +176,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Return and Refund Policy */}
-                        <Section id="refund" title="Return and Refund Policy" icon={RefreshCw}>
+                        <Section id="refund" title="Return and refund policy" icon={RefreshCw}>
                             <p>
                                 Thanks for shopping at VulnIQ. We appreciate the fact that you like to buy the stuff we build. We also want to make sure you have a rewarding experience while you're exploring, evaluating, and purchasing our products.
                             </p>
@@ -189,7 +189,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Your Suggestions */}
-                        <Section id="suggestions" title="Your Suggestions" icon={FileText}>
+                        <Section id="suggestions" title="Your suggestions" icon={FileText}>
                             <p>
                                 Any feedback, comments, ideas, improvements or suggestions (collectively, "Suggestions") provided by you to VulnIQ with respect to the app shall remain the sole and exclusive property of VulnIQ.
                             </p>
@@ -199,14 +199,14 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Your Consent */}
-                        <Section id="consent" title="Your Consent" icon={FileText}>
+                        <Section id="consent" title="Your consent" icon={FileText}>
                             <p>
                                 We've updated our Terms & Conditions to provide you with complete transparency into what is being set when you visit our site and how it's being used. By using our app, registering an account, or making a purchase, you hereby consent to our Terms & Conditions.
                             </p>
                         </Section>
 
                         {/* Links to Other Websites */}
-                        <Section id="links" title="Links to Other Websites" icon={FileText}>
+                        <Section id="links" title="Links to other websites" icon={FileText}>
                             <p>
                                 This Terms & Conditions applies only to the Services. The Services may contain links to other websites not operated or controlled by VulnIQ. We are not responsible for the content, accuracy or opinions expressed in such websites, and such websites are not investigated, monitored or checked for accuracy or completeness by us.
                             </p>
@@ -229,7 +229,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Changes To Our Terms & Conditions */}
-                        <Section id="changes" title="Changes To Our Terms & Conditions" icon={RefreshCw}>
+                        <Section id="changes" title="Changes to our terms & conditions" icon={RefreshCw}>
                             <p>
                                 You acknowledge and agree that VulnIQ may stop (permanently or temporarily) providing the Service (or any features within the Service) to you or to users generally at VulnIQ's sole discretion, without prior notice to you.
                             </p>
@@ -242,14 +242,14 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Modifications to Our app */}
-                        <Section id="modifications" title="Modifications to Our App" icon={RefreshCw}>
+                        <Section id="modifications" title="Modifications to our app" icon={RefreshCw}>
                             <p>
                                 VulnIQ reserves the right to modify, suspend or discontinue, temporarily or permanently, the app or any service to which it connects, with or without notice and without liability to you.
                             </p>
                         </Section>
 
                         {/* Updates to Our app */}
-                        <Section id="updates" title="Updates to Our App" icon={RefreshCw}>
+                        <Section id="updates" title="Updates to our app" icon={RefreshCw}>
                             <p>
                                 VulnIQ may from time to time provide enhancements or improvements to the features/functionality of the app, which may include patches, bug fixes, updates, upgrades and other modifications ("Updates").
                             </p>
@@ -262,7 +262,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Third-Party Services */}
-                        <Section id="third-party" title="Third-Party Services" icon={FileText}>
+                        <Section id="third-party" title="Third-party services" icon={FileText}>
                             <p>
                                 We may display, include or make available third-party content (including data, information, applications and other products services) or provide links to third-party websites or services ("Third-Party Services").
                             </p>
@@ -275,7 +275,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Term and Termination */}
-                        <Section id="termination" title="Term and Termination" icon={AlertTriangle}>
+                        <Section id="termination" title="Term and termination" icon={AlertTriangle}>
                             <p>
                                 This Agreement shall remain in effect until terminated by you or VulnIQ.
                             </p>
@@ -291,7 +291,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Copyright Infringement Notice */}
-                        <Section id="copyright" title="Copyright Infringement Notice" icon={Scale}>
+                        <Section id="copyright" title="Copyright infringement notice" icon={Scale}>
                             <p>
                                 If you are a copyright owner or such owner's agent and believe any material on our app constitutes an infringement on your copyright, please contact us setting forth the following information:
                             </p>
@@ -317,7 +317,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* No Warranties */}
-                        <Section id="warranties" title="No Warranties" icon={AlertTriangle}>
+                        <Section id="warranties" title="No warranties" icon={AlertTriangle}>
                             <p>
                                 The app is provided to you "AS IS" and "AS AVAILABLE" and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, VulnIQ, on its own behalf and on behalf of its affiliates and its and their respective licensors and service providers, expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the app, including all implied warranties of merchantability, fitness for a particular purpose, title and non-infringement, and warranties that may arise out of course of dealing, course of performance, usage or trade practice.
                             </p>
@@ -333,7 +333,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Limitation of Liability */}
-                        <Section id="liability" title="Limitation of Liability" icon={AlertTriangle}>
+                        <Section id="liability" title="Limitation of liability" icon={AlertTriangle}>
                             <p>
                                 Notwithstanding any damages that you might incur, the entire liability of VulnIQ and any of its suppliers under any provision of this Agreement and your exclusive remedy for all of the foregoing shall be limited to the amount actually paid by you for the app.
                             </p>
@@ -375,7 +375,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Amendments to this Agreement */}
-                        <Section id="amendments" title="Amendments to this Agreement" icon={RefreshCw}>
+                        <Section id="amendments" title="Amendments to this agreement" icon={RefreshCw}>
                             <p>
                                 VulnIQ reserves the right, at its sole discretion, to modify or replace this Agreement at any time. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
                             </p>
@@ -385,7 +385,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Entire Agreement */}
-                        <Section id="entire" title="Entire Agreement" icon={FileText}>
+                        <Section id="entire" title="Entire agreement" icon={FileText}>
                             <p>
                                 The Agreement constitutes the entire agreement between you and VulnIQ regarding your use of the app and supersedes all prior and contemporaneous written or oral agreements between you and VulnIQ.
                             </p>
@@ -395,7 +395,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Updates to Our Terms */}
-                        <Section id="updates-terms" title="Updates to Our Terms" icon={RefreshCw}>
+                        <Section id="updates-terms" title="Updates to our terms" icon={RefreshCw}>
                             <p>
                                 We may change our Service and policies, and we may need to make changes to these Terms so that they accurately reflect our Service and policies. Unless otherwise required by law, we will notify you (for example, through our Service) before we make changes to these Terms and give you an opportunity to review them before they go into effect.
                             </p>
@@ -405,7 +405,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Intellectual Property */}
-                        <Section id="intellectual" title="Intellectual Property" icon={Shield}>
+                        <Section id="intellectual" title="Intellectual property" icon={Shield}>
                             <p>
                                 The app and its entire contents, features and functionality (including but not limited to all information, software, text, displays, images, video and audio, and the design, selection and arrangement thereof), are owned by VulnIQ, its licensors or other providers of such material and are protected by Romania and international copyright, trademark, patent, trade secret and other intellectual property or proprietary rights laws.
                             </p>
@@ -415,7 +415,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Agreement to Arbitrate */}
-                        <Section id="arbitrate" title="Agreement to Arbitrate" icon={Gavel}>
+                        <Section id="arbitrate" title="Agreement to arbitrate" icon={Gavel}>
                             <p>
                                 This section applies to any dispute EXCEPT IT DOESN'T INCLUDE A DISPUTE RELATING TO CLAIMS FOR INJUNCTIVE OR EQUITABLE RELIEF REGARDING THE ENFORCEMENT OR VALIDITY OF YOUR OR VulnIQ's INTELLECTUAL PROPERTY RIGHTS.
                             </p>
@@ -425,7 +425,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Notice of Dispute */}
-                        <Section id="dispute" title="Notice of Dispute" icon={Mail}>
+                        <Section id="dispute" title="Notice of dispute" icon={Mail}>
                             <p>
                                 In the event of a dispute, you or VulnIQ must give the other a Notice of Dispute, which is a written statement that sets forth the name, address, and contact information of the party giving it, the facts giving rise to the dispute, and the relief requested.
                             </p>
@@ -438,7 +438,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Binding Arbitration */}
-                        <Section id="binding" title="Binding Arbitration" icon={Gavel}>
+                        <Section id="binding" title="Binding arbitration" icon={Gavel}>
                             <p>
                                 If you and VulnIQ don't resolve any dispute by informal negotiation, any other effort to resolve the dispute will be conducted exclusively by binding arbitration as described in this section. You are giving up the right to litigate (or participate in as a party or class member) all disputes in court before a judge or jury.
                             </p>
@@ -451,7 +451,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Submissions and Privacy */}
-                        <Section id="submissions" title="Submissions and Privacy" icon={Shield}>
+                        <Section id="submissions" title="Submissions and privacy" icon={Shield}>
                             <p>
                                 In the event that you submit or post any ideas, creative suggestions, designs, photographs, information, advertisements, data or proposals, including ideas for new or improved products, services, features, technologies or promotions, you expressly agree that such submissions will automatically be treated as non-confidential and non-proprietary and will become the sole property of VulnIQ without any compensation or credit to you whatsoever.
                             </p>
@@ -474,7 +474,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Typographical Errors */}
-                        <Section id="errors" title="Typographical Errors" icon={AlertTriangle}>
+                        <Section id="errors" title="Typographical errors" icon={AlertTriangle}>
                             <p>
                                 In the event a product and/or service is listed at an incorrect price or with incorrect information due to typographical error, we shall have the right to refuse or cancel any orders placed for the product and/or service listed at the incorrect price.
                             </p>
@@ -522,7 +522,7 @@ export default function TermsPage() {
                         </Section>
 
                         {/* Contact Us */}
-                        <Section id="contact" title="Contact Us" icon={Mail}>
+                        <Section id="contact" title="Contact us" icon={Mail}>
                             <p>
                                 Don't hesitate to contact us if you have any questions.
                             </p>
@@ -542,7 +542,7 @@ export default function TermsPage() {
                     <div className="mt-12 flex justify-center">
                         <Button variant="outline" onClick={scrollToTop}>
                             <ChevronUp className="mr-2 h-4 w-4" />
-                            Back to Top
+                            Back to top
                         </Button>
                     </div>
                 </motion.div>

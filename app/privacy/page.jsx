@@ -11,37 +11,37 @@ import { useRef } from "react";
 
 export default function PrivacyPage() {
     const sections = [
-        { id: 'definitions', title: 'Definitions and Key Terms', icon: FileText },
-        { id: 'collect', title: 'What Information Do We Collect?', icon: Database },
-        { id: 'use', title: 'How Do We Use The Information?', icon: Eye },
-        { id: 'end-user', title: 'End User Information from Third Parties', icon: Users },
-        { id: 'customer', title: 'Customer Information from Third Parties', icon: Users },
-        { id: 'share', title: 'Do We Share Information with Third Parties?', icon: Globe },
-        { id: 'where-when', title: 'Where and When Is Information Collected?', icon: Server },
-        { id: 'email', title: 'How Do We Use Your Email Address?', icon: Mail },
-        { id: 'retention', title: 'How Long Do We Keep Your Information?', icon: Database },
-        { id: 'protect', title: 'How Do We Protect Your Information?', icon: Shield },
-        { id: 'transfer', title: 'International Data Transfers', icon: Globe },
-        { id: 'secure', title: 'Is the Information Secure?', icon: Lock },
-        { id: 'update', title: 'Can I Update or Correct My Information?', icon: FileText },
-        { id: 'sale', title: 'Sale of Business', icon: Scale },
+        { id: 'definitions', title: 'Definitions and key terms', icon: FileText },
+        { id: 'collect', title: 'What information do we collect?', icon: Database },
+        { id: 'use', title: 'How do we use the information?', icon: Eye },
+        { id: 'end-user', title: 'End user information from third parties', icon: Users },
+        { id: 'customer', title: 'Customer information from third parties', icon: Users },
+        { id: 'share', title: 'Do we share information with third parties?', icon: Globe },
+        { id: 'where-when', title: 'Where and when is information collected?', icon: Server },
+        { id: 'email', title: 'How do we use your email address?', icon: Mail },
+        { id: 'retention', title: 'How long do we keep your information?', icon: Database },
+        { id: 'protect', title: 'How do we protect your information?', icon: Shield },
+        { id: 'transfer', title: 'International data transfers', icon: Globe },
+        { id: 'secure', title: 'Is the information secure?', icon: Lock },
+        { id: 'update', title: 'Can I update or correct my information?', icon: FileText },
+        { id: 'sale', title: 'Sale of business', icon: Scale },
         { id: 'affiliates', title: 'Affiliates', icon: Users },
-        { id: 'governing', title: 'Governing Law', icon: Scale },
-        { id: 'consent', title: 'Your Consent', icon: FileText },
-        { id: 'links', title: 'Links to Other Websites', icon: Globe },
+        { id: 'governing', title: 'Governing law', icon: Scale },
+        { id: 'consent', title: 'Your consent', icon: FileText },
+        { id: 'links', title: 'Links to other websites', icon: Globe },
         { id: 'cookies', title: 'Cookies', icon: Cookie },
-        { id: 'blocking', title: 'Blocking and Disabling Cookies', icon: Cookie },
-        { id: 'kids', title: "Kids' Privacy", icon: Users },
-        { id: 'changes', title: 'Changes To Our Privacy Policy', icon: FileText },
-        { id: 'third-party', title: 'Third-Party Services', icon: Globe },
-        { id: 'tracking', title: 'Tracking Technologies', icon: Eye },
-        { id: 'gdpr', title: 'GDPR Information', icon: Shield },
+        { id: 'blocking', title: 'Blocking and disabling cookies', icon: Cookie },
+        { id: 'kids', title: "Kids' privacy", icon: Users },
+        { id: 'changes', title: 'Changes to our privacy policy', icon: FileText },
+        { id: 'third-party', title: 'Third-party services', icon: Globe },
+        { id: 'tracking', title: 'Tracking technologies', icon: Eye },
+        { id: 'gdpr', title: 'GDPR information', icon: Shield },
         { id: 'gdpr-what', title: 'What is GDPR?', icon: Shield },
-        { id: 'personal-data', title: 'What is Personal Data?', icon: Database },
-        { id: 'data-principles', title: 'Data Protection Principles', icon: Shield },
-        { id: 'gdpr-important', title: 'Why is GDPR Important?', icon: Shield },
-        { id: 'rights', title: 'Individual Data Subject Rights', icon: Users },
-        { id: 'contact', title: 'Contact Us', icon: Mail },
+        { id: 'personal-data', title: 'What is personal data?', icon: Database },
+        { id: 'data-principles', title: 'Data protection principles', icon: Shield },
+        { id: 'gdpr-important', title: 'Why is GDPR important?', icon: Shield },
+        { id: 'rights', title: 'Individual data subject rights', icon: Users },
+        { id: 'contact', title: 'Contact us', icon: Mail },
     ];
 
     const scrollRef = useRef(null);
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Home
+                                Back to home
                             </Link>
                         </Button>
                         <ThemeToggle />
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                         className="mb-12 p-6 rounded-lg border border-border bg-muted/30"
                     >
-                        <h2 className="text-lg font-semibold mb-4">Table of Contents</h2>
+                        <h2 className="text-lg font-semibold mb-4">Table of contents</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {sections.map((section, index) => (
                                 <a
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
                     {/* Content Sections */}
                     <div className="prose prose-neutral dark:prose-invert max-w-none">
                         {/* Definitions and Key Terms */}
-                        <Section id="definitions" title="Definitions and Key Terms" icon={FileText}>
+                        <Section id="definitions" title="Definitions and key terms" icon={FileText}>
                             <p>To help explain things as clearly as possible in this Privacy Policy, every time any of these terms are referenced, are strictly defined as:</p>
                             <ul className="space-y-3">
                                 <li><strong>Cookie:</strong> small amount of data generated by a website and saved by your web browser. It is used to identify your browser, provide analytics, remember information about you such as your language preference or login information.</li>
@@ -160,7 +160,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* What Information Do We Collect? */}
-                        <Section id="collect" title="What Information Do We Collect?" icon={Database}>
+                        <Section id="collect" title="What information do we collect?" icon={Database}>
                             <p>We collect information from you when you visit our app, register on our site, place an order, subscribe to our newsletter, respond to a survey or fill out a form.</p>
                             <ul className="space-y-2">
                                 <li>Name / Username</li>
@@ -171,7 +171,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* How Do We Use The Information We Collect? */}
-                        <Section id="use" title="How Do We Use The Information We Collect?" icon={Eye}>
+                        <Section id="use" title="How do we use the information we collect?" icon={Eye}>
                             <p>Any of the information we collect from you may be used in one of the following ways:</p>
                             <ul className="space-y-2">
                                 <li>To personalize your experience (your information helps us to better respond to your individual needs)</li>
@@ -184,7 +184,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* When does VulnIQ use end user information from third parties? */}
-                        <Section id="end-user" title="When Does VulnIQ Use End User Information from Third Parties?" icon={Users}>
+                        <Section id="end-user" title="When does VulnIQ use end user information from third parties?" icon={Users}>
                             <p>
                                 VulnIQ will collect End User Data necessary to provide the VulnIQ services to our customers.
                             </p>
@@ -194,7 +194,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* When does VulnIQ use customer information from third parties? */}
-                        <Section id="customer" title="When Does VulnIQ Use Customer Information from Third Parties?" icon={Users}>
+                        <Section id="customer" title="When does VulnIQ use customer information from third parties?" icon={Users}>
                             <p>
                                 We receive some information from the third parties when you contact us. For example, when you submit your email address to us to show interest in becoming a VulnIQ customer, we receive information from a third party that provides automated fraud detection services to VulnIQ.
                             </p>
@@ -204,7 +204,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Do we share the information we collect with third parties? */}
-                        <Section id="share" title="Do We Share the Information We Collect with Third Parties?" icon={Globe}>
+                        <Section id="share" title="Do we share the information we collect with third parties?" icon={Globe}>
                             <p>
                                 We may share the information that we collect, both personal and non-personal, with third parties such as advertisers, contest sponsors, promotional and marketing partners, and others who provide our content or whose products or services we think may interest you. We may also share it with our current and future affiliated companies and business partners, and if we are involved in a merger, asset sale or other business reorganization, we may also share or transfer your personal and non-personal information to our successors-in-interest.
                             </p>
@@ -220,14 +220,14 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Where and when is information collected from customers and end users? */}
-                        <Section id="where-when" title="Where and When Is Information Collected from Customers and End Users?" icon={Server}>
+                        <Section id="where-when" title="Where and when is information collected from customers and end users?" icon={Server}>
                             <p>
                                 VulnIQ will collect personal information that you submit to us. We may also receive personal information about you from third parties as described above.
                             </p>
                         </Section>
 
                         {/* How Do We Use Your Email Address? */}
-                        <Section id="email" title="How Do We Use Your Email Address?" icon={Mail}>
+                        <Section id="email" title="How do we use your email address?" icon={Mail}>
                             <p>
                                 By submitting your email address on this app, you agree to receive emails from us. You can cancel your participation in any of these email lists at any time by clicking on the opt-out link or other unsubscribe option that is included in the respective email. We only send emails to people who have authorized us to contact them, either directly, or through a third party. We do not send unsolicited commercial emails, because we hate spam as much as you do.
                             </p>
@@ -243,7 +243,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* How Long Do We Keep Your Information? */}
-                        <Section id="retention" title="How Long Do We Keep Your Information?" icon={Database}>
+                        <Section id="retention" title="How long do we keep your information?" icon={Database}>
                             <p>
                                 We keep your information only so long as we need it to provide VulnIQ to you and fulfill the purposes described in this policy. This is also the case for anyone that we share your information with and who carries out services on our behalf.
                             </p>
@@ -253,7 +253,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* How Do We Protect Your Information? */}
-                        <Section id="protect" title="How Do We Protect Your Information?" icon={Shield}>
+                        <Section id="protect" title="How do we protect your information?" icon={Shield}>
                             <p>
                                 We implement a variety of security measures to maintain the safety of your personal information when you place an order or enter, submit, or access your personal information. We offer the use of a secure server. All supplied sensitive/credit information is transmitted via Secure Socket Layer (SSL) technology and then encrypted into our Payment gateway providers database only to be accessible by those authorized with special access rights to such systems, and are required to keep the information confidential.
                             </p>
@@ -263,7 +263,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Could my information be transferred to other countries? */}
-                        <Section id="transfer" title="Could My Information Be Transferred to Other Countries?" icon={Globe}>
+                        <Section id="transfer" title="Could my information be transferred to other countries?" icon={Globe}>
                             <p>
                                 VulnIQ is incorporated in Romania. Information collected via our website, through direct interactions with you, or from use of our help services may be transferred from time to time to our offices or personnel, or to third parties, located throughout the world, and may be viewed and hosted anywhere in the world, including countries that may not have laws of general applicability regulating the use and transfer of such data.
                             </p>
@@ -273,7 +273,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Is the information collected through the VulnIQ Service secure? */}
-                        <Section id="secure" title="Is the Information Collected Through the VulnIQ Service Secure?" icon={Lock}>
+                        <Section id="secure" title="Is the information collected through the VulnIQ dervice decure?" icon={Lock}>
                             <p>
                                 We take precautions to protect the security of your information. We have physical, electronic, and managerial procedures to help safeguard, prevent unauthorized access, maintain data security, and correctly use your information.
                             </p>
@@ -286,7 +286,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Can I update or correct my information? */}
-                        <Section id="update" title="Can I Update or Correct My Information?" icon={FileText}>
+                        <Section id="update" title="Can I update or correct my information?" icon={FileText}>
                             <p>
                                 The rights you have to request updates or corrections to the information VulnIQ collects depend on your relationship with VulnIQ. Personnel may update or correct their information as detailed in our internal company employment policies.
                             </p>
@@ -305,7 +305,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Sale of Business */}
-                        <Section id="sale" title="Sale of Business" icon={Scale}>
+                        <Section id="sale" title="Sale of business" icon={Scale}>
                             <p>
                                 We reserve the right to transfer information to a third party in the event of a sale, merger or other transfer of all or substantially all of the assets of VulnIQ or any of its Corporate Affiliates (as defined herein), or that portion of VulnIQ or any of its Corporate Affiliates to which the Service relates, or in the event that we discontinue our business or file a petition or have filed against us a petition in bankruptcy, reorganization or similar proceeding, provided that the third party agrees to adhere to the terms of this Privacy Policy.
                             </p>
@@ -322,7 +322,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Governing Law */}
-                        <Section id="governing" title="Governing Law" icon={Scale}>
+                        <Section id="governing" title="Governing law" icon={Scale}>
                             <p>
                                 This Privacy Policy is governed by the laws of Romania without regard to its conflict of laws provision. You consent to the exclusive jurisdiction of the courts in connection with any action or dispute arising between the parties under or in connection with this Privacy Policy except for those individuals who may have rights to make claims under Privacy Shield, or the Swiss-US framework.
                             </p>
@@ -335,14 +335,14 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Your Consent */}
-                        <Section id="consent" title="Your Consent" icon={FileText}>
+                        <Section id="consent" title="Your consent" icon={FileText}>
                             <p>
                                 We've updated our Privacy Policy to provide you with complete transparency into what is being set when you visit our site and how it's being used. By using our app, registering an account, or making a purchase, you hereby consent to our Privacy Policy and agree to its terms.
                             </p>
                         </Section>
 
                         {/* Links to Other Websites */}
-                        <Section id="links" title="Links to Other Websites" icon={Globe}>
+                        <Section id="links" title="Links to other websites" icon={Globe}>
                             <p>
                                 This Privacy Policy applies only to the Services. The Services may contain links to other websites not operated or controlled by VulnIQ. We are not responsible for the content, accuracy or opinions expressed in such websites, and such websites are not investigated, monitored or checked for accuracy or completeness by us.
                             </p>
@@ -365,7 +365,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Blocking and disabling cookies and similar technologies */}
-                        <Section id="blocking" title="Blocking and Disabling Cookies and Similar Technologies" icon={Cookie}>
+                        <Section id="blocking" title="Blocking and disabling cookies and similar technologies" icon={Cookie}>
                             <p>
                                 Wherever you're located you may also set your browser to block cookies and similar technologies, but this action may block our essential cookies and prevent our website from functioning properly, and you may not be able to fully utilize all of its features and services.
                             </p>
@@ -375,7 +375,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Kids' Privacy */}
-                        <Section id="kids" title="Kids' Privacy" icon={Users}>
+                        <Section id="kids" title="Kids' privacy" icon={Users}>
                             <p>
                                 We do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from anyone under the age of 13. If You are a parent or guardian and You are aware that Your child has provided Us with Personal Data, please contact Us.
                             </p>
@@ -385,7 +385,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Changes To Our Privacy Policy */}
-                        <Section id="changes" title="Changes To Our Privacy Policy" icon={FileText}>
+                        <Section id="changes" title="Changes to our privacy policy" icon={FileText}>
                             <p>
                                 We may change our Service and policies, and we may need to make changes to this Privacy Policy so that they accurately reflect our Service and policies. Unless otherwise required by law, we will notify you (for example, through our Service) before we make changes to this Privacy Policy and give you an opportunity to review them before they go into effect.
                             </p>
@@ -395,7 +395,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Third-Party Services */}
-                        <Section id="third-party" title="Third-Party Services" icon={Globe}>
+                        <Section id="third-party" title="Third-party services" icon={Globe}>
                             <p>
                                 We may display, include or make available third-party content (including data, information, applications and other products services) or provide links to third-party websites or services ("Third-Party Services").
                             </p>
@@ -408,7 +408,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Tracking Technologies */}
-                        <Section id="tracking" title="Tracking Technologies" icon={Eye}>
+                        <Section id="tracking" title="Tracking technologies" icon={Eye}>
                             <div className="space-y-6">
                                 <div>
                                     <h3 className="font-semibold text-foreground mb-2">Cookies</h3>
@@ -449,14 +449,14 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* What is personal data? */}
-                        <Section id="personal-data" title="What is Personal Data?" icon={Database}>
+                        <Section id="personal-data" title="What is personal data?" icon={Database}>
                             <p>
                                 Any data that relates to an identifiable or identified individual. GDPR covers a broad spectrum of information that could be used on its own, or in combination with other pieces of information, to identify a person. Personal data extends beyond a person's name or email address. Some examples include financial information, political opinions, genetic data, biometric data, IP addresses, physical address, sexual orientation, and ethnicity.
                             </p>
                         </Section>
 
                         {/* The Data Protection Principles */}
-                        <Section id="data-principles" title="The Data Protection Principles" icon={Shield}>
+                        <Section id="data-principles" title="The data protection principles" icon={Shield}>
                             <p>The Data Protection Principles include requirements such as:</p>
                             <ul className="space-y-3">
                                 <li>Personal data collected must be processed in a fair, legal, and transparent way and should only be used in a way that a person would reasonably expect.</li>
@@ -467,7 +467,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Why is GDPR important? */}
-                        <Section id="gdpr-important" title="Why is GDPR Important?" icon={Shield}>
+                        <Section id="gdpr-important" title="Why is GDPR important?" icon={Shield}>
                             <p>
                                 GDPR adds some new requirements regarding how companies should protect individuals' personal data that they collect and process. It also raises the stakes for compliance by increasing enforcement and imposing greater fines for breach.
                             </p>
@@ -477,7 +477,7 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Individual Data Subject's Rights - Data Access, Portability and Deletion */}
-                        <Section id="rights" title="Individual Data Subject's Rights - Data Access, Portability and Deletion" icon={Users}>
+                        <Section id="rights" title="Individual data subject's rights - data access, portability and deletion" icon={Users}>
                             <p>
                                 We are committed to helping our customers meet the data subject rights requirements of GDPR. VulnIQ processes or stores all personal data in fully vetted, DPA compliant vendors. We do store all conversation and personal data for up to 6 years unless your account is deleted. In which case, we dispose of all data in accordance with our Terms of Service and Privacy Policy, but we will not hold it longer than 60 days.
                             </p>
@@ -487,14 +487,14 @@ export default function PrivacyPage() {
                         </Section>
 
                         {/* Contact Us */}
-                        <Section id="contact" title="Contact Us" icon={Mail}>
+                        <Section id="contact" title="Contact us" icon={Mail}>
                             <p>
                                 Don't hesitate to contact us if you have any questions.
                             </p>
                             <div className="mt-4 p-4 rounded-lg border border-border bg-muted/30">
                                 <p className="flex items-center gap-2">
                                     <Mail className="h-4 w-4 text-[var(--brand-accent)]" />
-                                    <strong>Via Email:</strong>{' '}
+                                    <strong>Via email:</strong>{' '}
                                     <a href="mailto:emanuel.rusu.secure@gmail.com" className="text-[var(--brand-accent)] hover:underline">
                                         emanuel.rusu.secure@gmail.com
                                     </a>
@@ -507,7 +507,7 @@ export default function PrivacyPage() {
                     <div className="mt-12 flex justify-center">
                         <Button variant="outline" onClick={scrollToTop}>
                             <ChevronUp className="mr-2 h-4 w-4" />
-                            Back to Top
+                            Back to top
                         </Button>
                     </div>
                 </motion.div>
