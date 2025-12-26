@@ -40,6 +40,13 @@ const data = {
 export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
     const { data: session, status } = useSession()
 
+    // Save user name to localStorage when session is loaded
+    React.useEffect(() => {
+        if (session?.user?.name) {
+            localStorage.setItem("vulniq-user-name", session.user.name)
+        }
+    }, [session])
+
     // Get counts from contexts for badges
     const { prompts } = usePrompts()
     const { useCases } = useUseCases()

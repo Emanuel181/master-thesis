@@ -35,6 +35,19 @@ export default function LoginPage() {
                         <LoginForm />
                     </motion.div>
                 </div>
+
+                {/* Terms and Privacy Policy */}
+                <div className="text-center text-xs text-muted-foreground pb-6">
+                    <span className="text-muted-foreground">By continuing, you agree to VulnIQ's</span>{" "}
+                    <Link href="/terms" className="text-white underline underline-offset-4 hover:text-primary">
+                        Terms of Service
+                    </Link>{" "}
+                    <span className="text-muted-foreground">and</span>{" "}
+                    <Link href="/privacy" className="text-white underline underline-offset-4 hover:text-primary">
+                        Privacy Policy
+                    </Link>
+                    <span className="text-muted-foreground">.</span>
+                </div>
             </div>
 
             {/* Right Side: Animated Moving Gradient Background */}

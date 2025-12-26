@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Terminal,
@@ -11,70 +11,36 @@ import {
     CheckCircle2,
     Play,
     Beaker,
-    FileText,
-    ClipboardCheck,
     MousePointer2,
-    Bug,
     GitBranch,
-    X,
-    Minus,
-    Square,
-    Scan
+    ShieldAlert,
+    Zap,
+    Lock,
+    Bell,
+    FileText,       // Report Icon
+    LayoutTemplate  // Reporting Agent Icon
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+// --- Utilities ---
 function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-const Badge = ({ children, variant = 'default', className }) => {
-    const variants = {
-        default: 'bg-slate-800 text-slate-400 border-slate-700',
-        blue: 'bg-[#1fb6cf]/10 text-[#1fb6cf] border-[#1fb6cf]/20',
-        red: 'bg-red-500/10 text-red-400 border-red-500/20',
-        green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-        purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-        orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    };
-    return (
-        <span className={cn('px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider shadow-sm', variants[variant], className)}>
-            {children}
-        </span>
-    );
+// --- Configuration ---
+const TIMING = {
+    TYPING_SPEED: 25,
+    RAG_DURATION: 4000,
+    SCAN_DURATION: 3000,
+    DETECT_DURATION: 3500,
+    PATCHING_DURATION: 3000,
+    TESTING_DURATION: 4000,
+    SUGGESTION_DURATION: 5000,
+    FINAL_PAUSE: 8000, // Extended slightly to let the user read the report
 };
 
-const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon }) => {
-    if (!isVisible) return null;
-    const colors = { blue: 'text-[#1fb6cf]', red: 'text-red-500', emerald: 'text-emerald-500', purple: 'text-purple-500', orange: 'text-orange-500', green: 'text-emerald-500' };
-    const bgColors = { blue: 'bg-[#1fb6cf]', red: 'bg-red-600', emerald: 'bg-emerald-600', purple: 'bg-purple-600', orange: 'bg-orange-600', green: 'bg-emerald-600' };
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1, x, y }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ type: 'spring', stiffness: 120, damping: 15 }}
-            className="absolute top-0 left-0 z-50 pointer-events-none filter drop-shadow-lg"
-        >
-            <MousePointer2 className={cn('h-5 w-5 fill-current stroke-white', colors[color])} />
-            <div className={cn('ml-4 mt-1 px-2 py-1 rounded-full text-[10px] font-bold text-white whitespace-nowrap flex items-center gap-1.5 shadow-lg', bgColors[color])}>
-                {Icon && <Icon size={10} />}
-                {label}
-            </div>
-        </motion.div>
-    );
-};
-
-// --- Timing ---
-const TYPING_SPEED = 12;
-const SCAN_DURATION = 2000;
-const DETECT_DURATION = 2500;
-const FETCH_RAG_DURATION = 3000;
-const PATCHING_DURATION = 2000;
-const TESTING_DURATION = 3500;
-const FINAL_PAUSE = 5000;
-
-// --- Shorter Python code that fits without scrolling ---
+// --- Code Snippets ---
 const VULNERABLE_CODE = `from flask import Flask, request, jsonify
 import sqlite3
 
@@ -115,6 +81,46 @@ def login():
         return jsonify({'token': create_token(user[0])})
     return jsonify({'error': 'Invalid'}), 401`;
 
+// --- Components ---
+
+const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon }) => {
+    return (
+        <AnimatePresence>
+            {isVisible && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8, y: y + 40, x: x + 20 }}
+                    animate={{ opacity: 1, scale: 1, x, y }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+                    className="absolute z-50 pointer-events-none filter drop-shadow-xl"
+                >
+                    <MousePointer2 className={cn('h-6 w-6 fill-current stroke-white',
+                        color === 'blue' ? 'text-cyan-500' :
+                            color === 'red' ? 'text-red-500' :
+                                color === 'purple' ? 'text-purple-500' :
+                                    color === 'orange' ? 'text-orange-500' :
+                                        color === 'emerald' ? 'text-emerald-500' : 'text-slate-500'
+                    )} />
+                    <motion.div
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 16 }}
+                        className={cn('mt-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap min-w-max flex items-center gap-2 shadow-lg backdrop-blur-md border border-white/10',
+                            color === 'blue' ? 'bg-cyan-600/90' :
+                                color === 'red' ? 'bg-red-600/90' :
+                                    color === 'purple' ? 'bg-purple-600/90' :
+                                        color === 'orange' ? 'bg-orange-600/90' :
+                                            color === 'emerald' ? 'bg-emerald-600/90' : 'bg-slate-600'
+                        )}
+                    >
+                        {Icon && <Icon size={12} />}
+                        {label}
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
 const useTypewriter = (text, start) => {
     const [displayedText, setDisplayedText] = useState('');
     const [isDone, setIsDone] = useState(false);
@@ -131,7 +137,7 @@ const useTypewriter = (text, start) => {
                 clearInterval(timer);
                 setIsDone(true);
             }
-        }, TYPING_SPEED);
+        }, TIMING.TYPING_SPEED);
         return () => clearInterval(timer);
     }, [text, start]);
     return { displayedText, isDone, setDisplayedText };
@@ -141,86 +147,76 @@ export const SecurityCodeDemo = () => {
     const [step, setStep] = useState(0);
     const { displayedText, isDone: typingFinished, setDisplayedText } = useTypewriter(VULNERABLE_CODE, step === 1);
 
-    // Animation flow:
-    // 0: Init → 1: Typing code → 2: Scanning → 3: Vulnerability detected → 4: Fetch RAG data → 5: Patching → 6: Testing → 7: Success
+    // Animation Flow Control
     useEffect(() => {
         let timeout;
-        if (step === 0) { setDisplayedText(''); timeout = setTimeout(() => setStep(1), 800); }
-        if (step === 1 && typingFinished) timeout = setTimeout(() => setStep(2), 600);
-        if (step === 2) timeout = setTimeout(() => setStep(3), SCAN_DURATION);
-        if (step === 3) timeout = setTimeout(() => setStep(4), DETECT_DURATION);
-        if (step === 4) timeout = setTimeout(() => setStep(5), FETCH_RAG_DURATION);
-        if (step === 5) timeout = setTimeout(() => setStep(6), PATCHING_DURATION);
-        if (step === 6) timeout = setTimeout(() => setStep(7), TESTING_DURATION);
-        if (step === 7) timeout = setTimeout(() => setStep(0), FINAL_PAUSE);
-        return () => { if (timeout) clearTimeout(timeout); };
+        const next = (ms, nextStep) => { timeout = setTimeout(() => setStep(nextStep), ms); };
+
+        switch (step) {
+            case 0: setDisplayedText(''); next(800, 1); break;
+            case 1: if (typingFinished) next(800, 2); break;
+            case 2: next(TIMING.RAG_DURATION, 3); break;
+            case 3: next(TIMING.SCAN_DURATION, 4); break;
+            case 4: next(TIMING.DETECT_DURATION, 5); break;
+            case 5: next(TIMING.PATCHING_DURATION, 6); break;
+            case 6: next(TIMING.TESTING_DURATION, 7); break;
+            case 7: next(TIMING.SUGGESTION_DURATION, 8); break;
+            case 8: next(TIMING.FINAL_PAUSE, 0); break;
+            default: break;
+        }
+        return () => clearTimeout(timeout);
     }, [step, typingFinished, setDisplayedText]);
 
     const codeContent = step === 1 ? displayedText : step >= 5 ? PATCHED_CODE : VULNERABLE_CODE;
 
-    const getStatusBadge = () => {
-        if (step < 2) return <Badge variant="default">IDLE</Badge>;
-        if (step === 2) return <Badge variant="blue">SCANNING</Badge>;
-        if (step === 3) return <Badge variant="red">VULNERABLE</Badge>;
-        if (step === 4) return <Badge variant="orange">FETCHING RAG</Badge>;
-        if (step === 5) return <Badge variant="green">PATCHING</Badge>;
-        if (step === 6) return <Badge variant="purple">TESTING</Badge>;
-        return <Badge variant="green">SECURE</Badge>;
-    };
-
-    const renderCode = (text) => {
+    const renderCode = useMemo(() => (text) => {
         const parts = text.split(/([a-zA-Z_][a-zA-Z0-9_]*|[^a-zA-Z0-9_\s]+|\s+)/).filter(Boolean);
         return parts.map((chunk, i) => {
-            if (['from', 'import', 'def', 'return', 'if', 'and', 'or', 'not'].includes(chunk)) return <span key={i} className="text-purple-400 font-medium">{chunk}</span>;
-            if (['Flask', 'request', 'jsonify', 'sqlite3'].includes(chunk)) return <span key={i} className="text-yellow-200">{chunk}</span>;
-            if (['login', 'get', 'connect', 'execute', 'fetchone', 'check_password', 'create_token'].includes(chunk)) return <span key={i} className="text-[#1fb6cf]">{chunk}</span>;
-            if (['app', 'email', 'pwd', 'query', 'conn', 'user', 'json'].includes(chunk)) return <span key={i} className="text-[#e6f4f7]">{chunk}</span>;
-            if (chunk.includes('SELECT') || chunk.includes('FROM') || chunk.includes('WHERE')) return <span key={i} className="text-orange-300 font-bold">{chunk}</span>;
-            if (chunk.startsWith('#')) return <span key={i} className="text-[#1fb6cf]/50 italic">{chunk}</span>;
-            if (['{', '}', '(', ')', ':', '=', '.', '[', ']', ',', '@', '?', "'", '"'].includes(chunk)) return <span key={i} className="text-[#1fb6cf]/60">{chunk}</span>;
-            return <span key={i} className="text-[#e6f4f7]/80">{chunk}</span>;
+            if (['from', 'import', 'def', 'return', 'if', 'and', 'or', 'not'].includes(chunk)) return <span key={i} className="text-[#c678dd] font-medium">{chunk}</span>;
+            if (['Flask', 'request', 'jsonify', 'sqlite3'].includes(chunk)) return <span key={i} className="text-[#e5c07b]">{chunk}</span>;
+            if (['login', 'get', 'connect', 'execute', 'fetchone', 'check_password', 'create_token'].includes(chunk)) return <span key={i} className="text-[#61afef]">{chunk}</span>;
+            if (['app', 'email', 'pwd', 'query', 'conn', 'user', 'json'].includes(chunk)) return <span key={i} className="text-[#abb2bf]">{chunk}</span>;
+            if (chunk.includes('SELECT') || chunk.includes('FROM') || chunk.includes('WHERE')) return <span key={i} className="text-[#d19a66] font-bold">{chunk}</span>;
+            if (chunk.startsWith('#')) return <span key={i} className="text-[#5c6370] italic">{chunk}</span>;
+            if (['{', '}', '(', ')', ':', '=', '.', '[', ']', ',', '@'].includes(chunk)) return <span key={i} className="text-[#56b6c2]">{chunk}</span>;
+            if (["'", '"'].includes(chunk) || (chunk.startsWith("'") || chunk.startsWith('"'))) return <span key={i} className="text-[#98c379]">{chunk}</span>;
+            return <span key={i} className="text-[#abb2bf]">{chunk}</span>;
         });
-    };
+    }, []);
 
-    const VULN_LINE_OFFSET = 280; // Line 12
+    const VULN_LINE_OFFSET = 232;
 
     return (
-        <div className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 px-2 sm:px-0">
-            <div className="rounded-xl border border-[#1fb6cf]/20 bg-[#0a1c27] shadow-2xl overflow-hidden ring-2 sm:ring-4 ring-[#0e2736]/40 relative backdrop-blur-sm h-[420px] sm:h-[480px] md:h-[520px] flex flex-col">
+        <div className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 p-4">
+            <div className="rounded-xl bg-[#1e222a] shadow-2xl overflow-hidden ring-1 ring-white/10 relative backdrop-blur-sm h-[600px] flex flex-col">
 
-                {/* Header */}
-                <div className="flex items-center justify-between px-2 sm:px-4 h-10 sm:h-11 border-b border-[#1fb6cf]/10 bg-[#0a1c27]">
-                    <div className="flex items-center gap-4 sm:gap-16">
-                        <div className="flex space-x-1.5 sm:space-x-2 group">
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/20 group-hover:bg-red-500 border border-red-500/30 transition-colors"><X size={6} className="text-red-900 opacity-0 group-hover:opacity-100 m-auto mt-0.5"/></div>
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500/20 group-hover:bg-amber-500 border border-amber-500/30 transition-colors"><Minus size={6} className="text-amber-900 opacity-0 group-hover:opacity-100 m-auto mt-0.5"/></div>
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500/20 group-hover:bg-emerald-500 border border-emerald-500/30 transition-colors"><Square size={5} className="text-emerald-900 opacity-0 group-hover:opacity-100 fill-current m-auto mt-0.5"/></div>
+                {/* --- Window Header --- */}
+                <div className="flex items-center justify-between px-4 h-12 bg-[#21252b]">
+                    <div className="flex items-center gap-4">
+                        <div className="flex space-x-2">
+                            <div className="w-3 h-3 rounded-full bg-red-500/20" />
+                            <div className="w-3 h-3 rounded-full bg-amber-500/20" />
+                            <div className="w-3 h-3 rounded-full bg-emerald-500/20" />
                         </div>
-                        <div className="h-10 sm:h-11 flex items-center">
-                            <div className="px-3 sm:px-5 h-full flex items-center gap-1.5 bg-[#0e2736] border-t-2 border-[#1fb6cf] text-[#e6f4f7] text-[10px] sm:text-xs font-medium">
-                                <FileCode size={12} className="text-[#1fb6cf]" />
-                                <span>auth.py</span>
-                            </div>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-[#282c34] rounded text-xs text-slate-400">
+                            <FileCode size={12} className="text-cyan-400" />
+                            <span>auth_service.py</span>
                         </div>
                     </div>
-                    <div className="scale-75 sm:scale-100 origin-right">{getStatusBadge()}</div>
                 </div>
 
-                {/* Editor */}
-                <div className="relative flex-1 font-mono text-[9px] sm:text-[10px] md:text-[11px] overflow-hidden bg-[#0a1c27] flex">
-                    {/* Line Numbers */}
-                    <div className="w-7 sm:w-10 md:w-12 flex flex-col items-end pr-2 sm:pr-3 pt-3 text-[#1fb6cf]/40 border-r border-[#1fb6cf]/10 bg-[#0a1c27] z-10 shrink-0 text-[8px] sm:text-[9px] md:text-[10px]">
-                        {Array.from({ length: 20 }).map((_, i) => (
-                            <div key={i} className="leading-[18px] sm:leading-[20px] md:leading-[22px] h-[18px] sm:h-[20px] md:h-[22px]">{i + 1}</div>
+                {/* --- Editor Area --- */}
+                <div className="relative flex-1 font-mono text-[11px] sm:text-[12px] overflow-hidden bg-[#282c34] flex">
+                    <div className="w-12 flex flex-col items-end pr-3 pt-4 text-slate-600 bg-[#282c34] z-10 shrink-0 select-none">
+                        {Array.from({ length: 24 }).map((_, i) => (
+                            <div key={i} className="leading-[22px] h-[22px]">{i + 1}</div>
                         ))}
                     </div>
 
-                    {/* Code Canvas */}
-                    <div className="relative flex-1 pt-3 pl-2 sm:pl-3 overflow-hidden">
-
-                        {/* Scanning animation overlay */}
+                    <div className="relative flex-1 pt-4 pl-4 overflow-hidden">
+                        {/* Scanning Laser */}
                         <AnimatePresence>
-                            {step === 2 && (
+                            {step === 3 && (
                                 <motion.div
                                     className="absolute inset-0 z-20 pointer-events-none"
                                     initial={{ opacity: 0 }}
@@ -228,53 +224,62 @@ export const SecurityCodeDemo = () => {
                                     exit={{ opacity: 0 }}
                                 >
                                     <motion.div
-                                        className="absolute left-0 right-0 h-6 bg-gradient-to-b from-[#1fb6cf]/20 to-transparent"
+                                        className="absolute left-0 right-0 h-[2px] bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]"
                                         initial={{ top: 0 }}
                                         animate={{ top: '100%' }}
-                                        transition={{ duration: 1.8, ease: 'linear' }}
+                                        transition={{ duration: TIMING.SCAN_DURATION / 1000, ease: 'linear' }}
+                                    />
+                                    <motion.div
+                                        className="absolute left-0 right-0 h-32 bg-gradient-to-b from-cyan-500/10 to-transparent"
+                                        initial={{ top: -128 }}
+                                        animate={{ top: '100%' }}
+                                        transition={{ duration: TIMING.SCAN_DURATION / 1000, ease: 'linear' }}
                                     />
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        {/* Vulnerable line highlight */}
+                        {/* Line Highlights */}
                         <AnimatePresence>
-                            {(step === 3 || step === 4) && (
+                            {step === 4 && (
                                 <motion.div
-                                    initial={{ opacity: 0, scaleX: 0 }}
+                                    initial={{ opacity: 0, scaleX: 0.95 }}
                                     animate={{ opacity: 1, scaleX: 1 }}
                                     exit={{ opacity: 0 }}
                                     style={{ top: VULN_LINE_OFFSET }}
-                                    className="absolute left-0 right-0 h-[22px] bg-red-500/15 border-l-2 border-red-500 pointer-events-none z-0 origin-left"
+                                    className="absolute left-0 right-0 h-[44px] bg-red-500/10 border-l-[3px] border-red-500 pointer-events-none z-0 origin-left"
                                 />
                             )}
                         </AnimatePresence>
 
-                        {/* Patched line highlight */}
                         <AnimatePresence>
-                            {step === 5 && (
+                            {step >= 5 && step < 8 && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
                                     style={{ top: VULN_LINE_OFFSET }}
-                                    className="absolute left-0 right-0 h-[22px] bg-emerald-500/15 border-l-2 border-emerald-500 pointer-events-none z-0"
+                                    className="absolute left-0 right-0 h-[44px] bg-emerald-500/10 border-l-[3px] border-emerald-500 pointer-events-none z-0"
                                 />
                             )}
                         </AnimatePresence>
 
-                        {/* Code */}
-                        <div className="whitespace-pre relative z-10 leading-[18px] sm:leading-[20px] md:leading-[22px] pr-2">
+                        {/* Text Renderer */}
+                        <div className="whitespace-pre relative z-10 leading-[22px]">
                             <AnimatePresence mode='wait'>
                                 <motion.div
                                     key={step >= 5 ? 'patched' : 'vulnerable'}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
+                                    initial={{ opacity: 0.8, filter: 'blur(2px)' }}
+                                    animate={{ opacity: 1, filter: 'blur(0px)' }}
+                                    transition={{ duration: 0.4 }}
                                 >
                                     {codeContent && renderCode(codeContent)}
                                     {step === 1 && !typingFinished && (
-                                        <span className="inline-block w-1.5 h-3.5 align-middle bg-[#1fb6cf] animate-pulse ml-0.5 rounded-[1px]" />
+                                        <motion.span
+                                            animate={{ opacity: [1, 0, 1] }}
+                                            transition={{ repeat: Infinity, duration: 0.8 }}
+                                            className="inline-block w-2 h-4 align-middle bg-cyan-400 ml-1"
+                                        />
                                     )}
                                 </motion.div>
                             </AnimatePresence>
@@ -282,77 +287,97 @@ export const SecurityCodeDemo = () => {
                     </div>
                 </div>
 
-                {/* Terminal - Testing */}
+                {/* --- Terminal --- */}
                 <AnimatePresence>
-                    {step === 6 && (
+                    {step >= 6 && (
                         <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 100, opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-[#1fb6cf]/10 bg-[#0e2736] z-30 overflow-hidden"
+                            initial={{ height: 0 }}
+                            animate={{ height: 160 }}
+                            exit={{ height: 0 }}
+                            className="border-t border-slate-800 bg-[#1e222a] z-30 overflow-hidden flex flex-col"
                         >
-                            <div className="p-2 px-3">
-                                <div className="flex items-center gap-2 text-[#1fb6cf]/80 text-[9px] font-bold uppercase tracking-wider mb-2">
-                                    <Terminal size={10} /> Terminal
+                            <div className="flex items-center justify-between px-4 py-2 bg-[#21252b] border-b border-slate-800">
+                                <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <Terminal size={12} /> Security Test Suite
                                 </div>
-                                <div className="font-mono text-[10px] text-[#e6f4f7]/60 space-y-1">
-                                    <div><span className="text-emerald-500">$</span> <span className="text-[#e6f4f7]/80">pytest test_auth.py -v</span></div>
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-                                        <span className="text-orange-400">⚡</span> Testing: <span className="text-yellow-200">{`"' OR 1=1 --"`}</span>
-                                    </motion.div>
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }} className="flex items-center gap-1.5">
-                                        <CheckCircle2 size={10} className="text-emerald-400" />
-                                        <span className="text-emerald-400 font-medium">PASSED - Injection blocked</span>
-                                    </motion.div>
+                            </div>
+                            <div className="p-4 font-mono text-[11px] text-slate-300 space-y-2 overflow-y-auto">
+                                <div className="flex gap-2">
+                                    <span className="text-emerald-500 font-bold">➜</span>
+                                    <span>pytest tests/security/test_sqli.py</span>
                                 </div>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }} className="pl-4 border-l-2 border-slate-700 ml-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-purple-400">⚡ ACTION:</span>
+                                        <span>Injecting payload <span className="text-amber-300">"' OR 1=1 --"</span></span>
+                                    </div>
+                                </motion.div>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.5 }} className="flex items-center gap-2 mt-2 bg-emerald-950/30 p-2 rounded border border-emerald-500/20 w-fit">
+                                    <CheckCircle2 size={14} className="text-emerald-400" />
+                                    <span className="text-emerald-100 font-medium">PASSED: Injection Blocked</span>
+                                </motion.div>
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Status Bar */}
-                <div className="h-6 bg-[#0e2736] border-t border-[#1fb6cf]/10 flex items-center justify-between px-3 text-[9px] text-[#e6f4f7]/50 font-medium select-none z-40">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1"><GitBranch size={9} /><span>main</span></div>
-                        <div className="flex items-center gap-1">
-                            <AlertTriangle size={9} className={step === 3 ? "text-red-500" : "text-[#1fb6cf]/40"} />
-                            <span>{step === 3 ? "1 Issue" : "0 Issues"}</span>
+                {/* --- Footer --- */}
+                <div className="h-8 bg-[#21252b] border-t border-slate-800 flex items-center justify-between px-4 text-[10px] text-slate-500 font-medium z-40">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                            <GitBranch size={10} />
+                            <span>main</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className="hidden sm:inline">Ln 12</span>
-                        <div className="flex items-center gap-1 text-yellow-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                            Python
+                    <div className="flex items-center gap-4">
+                        <span className="text-slate-400 hidden sm:inline-block">Python</span>
+                        <span className="hidden sm:inline-block">UTF-8</span>
+                        <span className="hidden sm:inline-block">Spaces: 4</span>
+                        <div className="w-[1px] h-3 bg-slate-700 mx-1 hidden sm:block" />
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                                <Terminal size={10} />
+                            </div>
+                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer relative">
+                                <Bell size={10} />
+                                {step === 7 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Overlay: Vulnerability Detection */}
+                {/* --- Animated Overlays --- */}
+
+                {/* 1. RAG Context */}
                 <AnimatePresence>
-                    {step === 3 && (
+                    {step === 2 && (
                         <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="absolute top-14 right-4 z-30"
+                            initial={{ opacity: 0, scale: 0.9, x: 50 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute top-20 right-8 z-50"
                         >
-                            <div className="w-64 rounded-lg border border-red-500/30 bg-[#0f1117]/95 shadow-xl backdrop-blur-md overflow-hidden">
-                                <div className="bg-red-500/10 px-3 py-2 border-b border-red-500/20 flex items-center gap-2">
-                                    <AlertTriangle size={12} className="text-red-400" />
-                                    <span className="text-[10px] font-bold text-red-300">Vulnerability Detected</span>
+                            <div className="w-64 rounded-lg border border-orange-500/20 bg-[#1e222a]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
+                                <div className="bg-orange-500/5 px-4 py-2 border-b border-orange-500/10 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Database size={14} className="text-orange-400" />
+                                        <span className="text-xs font-bold text-orange-200">Knowledge base</span>
+                                    </div>
+                                    <Loader2 size={12} className="text-orange-400 animate-spin" />
                                 </div>
-                                <div className="p-3 space-y-2">
-                                    <div className="flex items-center justify-between text-[10px]">
-                                        <span className="text-slate-500">Type</span>
-                                        <span className="text-red-400 font-mono font-bold">CWE-89</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-[10px]">
-                                        <span className="text-slate-500">Severity</span>
-                                        <span className="text-red-400 font-bold">Critical</span>
-                                    </div>
-                                    <div className="text-[9px] text-slate-400 bg-slate-900/50 rounded p-2 mt-2">
-                                        SQL Injection via f-string interpolation at line 12
+                                <div className="p-4 space-y-3">
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between text-[10px] text-slate-400">
+                                            <span>Retrieving...</span>
+                                        </div>
+                                        <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                            <motion.div
+                                                className="h-full bg-orange-500 shadow-[0_0_10px_orange]"
+                                                initial={{ width: '0%' }}
+                                                animate={{ width: '100%' }}
+                                                transition={{ duration: 1.5, ease: "easeInOut" }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -360,97 +385,137 @@ export const SecurityCodeDemo = () => {
                     )}
                 </AnimatePresence>
 
-                {/* Overlay: Fetching RAG Data for this specific vulnerability */}
+                {/* 2. Vulnerability Alert */}
                 <AnimatePresence>
                     {step === 4 && (
                         <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="absolute top-14 right-4 z-30"
+                            initial={{ opacity: 0, y: 10, x: 20 }}
+                            animate={{ opacity: 1, y: 0, x: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute top-[240px] right-8 z-50"
                         >
-                            <div className="w-72 rounded-lg border border-orange-500/30 bg-[#0f1117]/95 shadow-xl backdrop-blur-md overflow-hidden">
-                                <div className="bg-orange-500/10 px-3 py-2 border-b border-orange-500/20 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Database size={12} className="text-orange-400" />
-                                        <span className="text-[10px] font-bold text-orange-300">Fetching Remediation Data</span>
-                                    </div>
-                                    <Loader2 size={10} className="text-orange-400 animate-spin" />
-                                </div>
-                                <div className="p-3 space-y-2 text-[9px]">
-                                    <div className="text-slate-500 mb-2">Retrieving RAG context for <span className="text-orange-400 font-mono">CWE-89</span></div>
-                                    <motion.div className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-                                        <CheckCircle2 size={9} className="text-emerald-400" />
-                                        <span className="text-slate-400">OWASP SQL Injection Guide</span>
-                                    </motion.div>
-                                    <motion.div className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-                                        <CheckCircle2 size={9} className="text-emerald-400" />
-                                        <span className="text-slate-400">Python sqlite3 Parameterization</span>
-                                    </motion.div>
-                                    <motion.div className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>
-                                        <CheckCircle2 size={9} className="text-emerald-400" />
-                                        <span className="text-slate-400">Flask Security Best Practices</span>
-                                    </motion.div>
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}>
-                                        <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden mt-2">
-                                            <motion.div className="h-full bg-orange-500" initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 0.8, delay: 2 }} />
+                            <div className="w-72 rounded-lg border border-red-500/30 bg-[#1e222a]/95 shadow-[0_0_30px_rgba(239,68,68,0.2)] backdrop-blur-xl">
+                                <div className="p-4">
+                                    <div className="flex items-start gap-3 mb-2">
+                                        <div className="p-2 rounded bg-red-500/10 text-red-500">
+                                            <AlertTriangle size={16} />
                                         </div>
-                                    </motion.div>
+                                        <div>
+                                            <div className="text-red-400 font-bold text-xs uppercase tracking-wide">High Severity</div>
+                                            <div className="text-white font-bold text-sm">SQL Injection (CWE-89)</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                                        Unsanitized input detected in f-string interpolation.
+                                    </p>
                                 </div>
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Overlay: Patching notification */}
+                {/* 3. Patching Notification */}
                 <AnimatePresence>
                     {step === 5 && (
                         <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="absolute top-14 right-4 z-30"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute top-[240px] right-8 z-50"
                         >
-                            <div className="bg-emerald-950/80 backdrop-blur-md border border-emerald-500/30 px-3 py-2 rounded-lg flex items-center gap-2 shadow-lg">
-                                <CheckCircle2 size={14} className="text-emerald-400" />
-                                <div className="text-[10px]">
-                                    <div className="text-emerald-100 font-semibold">Applying Fix</div>
-                                    <div className="text-emerald-400/70">Parameterized query</div>
+                            <div className="bg-emerald-900/90 border border-emerald-500/30 p-3 rounded-lg shadow-2xl flex items-center gap-3 backdrop-blur-md">
+                                <div className="relative p-1.5 bg-emerald-500 rounded-full text-emerald-950">
+                                    <FileCode size={16} />
+                                </div>
+                                <div>
+                                    <div className="text-emerald-100 font-bold text-xs">Applying Fix</div>
+                                    <div className="text-emerald-400/80 text-[10px]">Parameterized query...</div>
                                 </div>
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Final Success */}
+                {/* 4. Suggestion Analysis */}
                 <AnimatePresence>
-                    {step >= 7 && (
+                    {step === 7 && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="absolute top-20 right-8 z-50"
+                        >
+                            <div className="w-72 rounded-lg border border-cyan-500/20 bg-[#1e222a]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
+                                <div className="bg-cyan-950/30 px-4 py-2 border-b border-cyan-500/10 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Zap size={14} className="text-cyan-400" />
+                                        <span className="text-xs font-bold text-cyan-200">Other Recommendations</span>
+                                    </div>
+                                </div>
+                                <div className="p-3 space-y-2">
+                                    <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex items-center justify-between group cursor-pointer hover:border-cyan-500/30 transition-colors">
+                                        <div className="flex items-center gap-2">
+                                            <ShieldAlert size={12} className="text-amber-400" />
+                                            <div className="text-[10px] text-slate-300">Missing Rate Limiting</div>
+                                        </div>
+                                        <div className="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-[9px] font-bold border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-white transition-all">
+                                            ADD PATCH
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex items-center justify-between group cursor-pointer hover:border-cyan-500/30 transition-colors">
+                                        <div className="flex items-center gap-2">
+                                            <Lock size={12} className="text-amber-400" />
+                                            <div className="text-[10px] text-slate-300">Weak Input Validation</div>
+                                        </div>
+                                        <div className="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-[9px] font-bold border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-white transition-all">
+                                            ADD PATCH
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 5. Final Report Card (Updated for Reporting Agent) */}
+                <AnimatePresence>
+                    {step === 8 && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+                            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px]"
                         >
                             <motion.div
                                 initial={{ scale: 0.9, y: 20 }}
                                 animate={{ scale: 1, y: 0 }}
-                                className="w-72 bg-[#0f1117] border border-slate-700/50 rounded-xl shadow-2xl overflow-hidden"
+                                className="w-72 bg-[#1e222a] border border-orange-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10"
                             >
-                                <div className="h-1 bg-gradient-to-r from-emerald-500/0 via-emerald-500 to-emerald-500/0" />
-                                <div className="p-5 text-center">
-                                    <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <ClipboardCheck size={24} className="text-emerald-400" />
-                                    </div>
-                                    <h3 className="text-base font-bold text-white mb-1">Secure & Verified</h3>
-                                    <p className="text-slate-400 text-[10px] mb-4">Vulnerability patched and validated</p>
-                                    <div className="grid grid-cols-2 gap-2 text-[9px]">
-                                        <div className="bg-slate-900 rounded p-2 text-left">
-                                            <div className="text-slate-500 mb-1 flex items-center gap-1"><Bug size={8} /> Fix</div>
-                                            <div className="text-slate-200 font-medium">Applied</div>
+                                <div className="relative h-20 bg-gradient-to-br from-orange-600 to-amber-800 flex items-center justify-center overflow-hidden">
+                                    <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+                                    <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg z-10"
+                                    >
+                                        <FileText size={20} className="text-orange-600" />
+                                    </motion.div>
+                                </div>
+                                <div className="p-6 text-center">
+                                    <h3 className="text-lg font-bold text-white">Security Report Generated</h3>
+                                    <div className="mt-4 flex flex-col gap-2">
+                                        <div className="flex justify-between text-xs text-slate-400 border-b border-slate-700 pb-2">
+                                            <span>Status</span>
+                                            <span className="text-emerald-400 font-bold">Resolved</span>
                                         </div>
-                                        <div className="bg-slate-900 rounded p-2 text-left">
-                                            <div className="text-slate-500 mb-1 flex items-center gap-1"><Beaker size={8} /> Tests</div>
-                                            <div className="text-emerald-400 font-medium">Passed</div>
+                                        <div className="flex justify-between text-xs text-slate-400">
+                                            <span>Checks</span>
+                                            <span className="text-white">1 Passed</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs text-slate-400">
+                                            <span>Agent</span>
+                                            <span className="text-white">Reporting Agent</span>
                                         </div>
                                     </div>
                                 </div>
@@ -459,13 +524,21 @@ export const SecurityCodeDemo = () => {
                     )}
                 </AnimatePresence>
 
-                {/* Agent Pointers */}
-                <AgentPointer isVisible={step === 2} x={200} y={120} label="Scanner" color="blue" icon={Scan} />
-                <AgentPointer isVisible={step === 3} x={60} y={VULN_LINE_OFFSET - 30} label="Detector" color="red" icon={AlertTriangle} />
-                <AgentPointer isVisible={step === 4} x={400} y={100} label="RAG Retriever" color="orange" icon={Database} />
-                <AgentPointer isVisible={step === 5} x={200} y={VULN_LINE_OFFSET - 30} label="Fixer" color="emerald" icon={FileCode} />
-                <AgentPointer isVisible={step === 6} x={100} y={350} label="Tester" color="purple" icon={Play} />
-                <AgentPointer isVisible={step === 7} x={250} y={180} label="Reporter" color="green" icon={FileText} />
+                {/* --- Agent Pointers --- */}
+                <AgentPointer isVisible={step === 3} x={180} y={150} label="Reviewer Agent" color="blue" icon={Play} />
+                <AgentPointer isVisible={step === 4} x={60} y={VULN_LINE_OFFSET + 10} label="Reviewer Agent" color="red" icon={AlertTriangle} />
+                <AgentPointer isVisible={step === 5} x={60} y={VULN_LINE_OFFSET + 10} label="Fixer Agent" color="emerald" icon={FileCode} />
+                <AgentPointer isVisible={step === 6} x={200} y={480} label="QA Agent" color="purple" icon={Beaker} />
+
+                {/* --- NEW Reporting Agent --- */}
+                <AgentPointer
+                    isVisible={step === 8}
+                    x={600}
+                    y={320}
+                    label="Reporting Agent"
+                    color="orange"
+                    icon={LayoutTemplate}
+                />
             </div>
         </div>
     );

@@ -24,6 +24,122 @@ import Image from 'next/image'
 import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 
+// Helper to get email provider details
+const getEmailProviders = () => {
+    return [
+        {
+            name: 'Gmail',
+            url: 'https://mail.google.com/mail/u/0/#search/from%3Anoreply%40hfhackathon.com+in%3Aanywhere',
+            icon: (props) => (
+                <svg viewBox="7.086 -169.483 1277.149 1277.149" shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" xmlns="http://www.w3.org/2000/svg" fill="#000000" {...props}>
+                    <g strokeWidth="0"></g>
+                    <g strokeLinecap="round" strokeLinejoin="round"></g>
+                    <g>
+                        <path fill="none" d="M1138.734 931.095h.283M1139.017 931.095h-.283"></path>
+                        <path d="M1179.439 7.087c57.543 0 104.627 47.083 104.627 104.626v30.331l-145.36 103.833-494.873 340.894L148.96 242.419v688.676h-37.247c-57.543 0-104.627-47.082-104.627-104.625V111.742C7.086 54.198 54.17 7.115 111.713 7.115l532.12 394.525L1179.41 7.115l.029-.028z" fill="#e75a4d"></path>
+                        <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="1959.712" y1="737.107" x2="26066.213" y2="737.107" gradientTransform="matrix(.0283 0 0 -.0283 248.36 225.244)">
+                            <stop offset="0" stopColor="#f8f6ef"></stop>
+                            <stop offset="1" stopColor="#e7e4d6"></stop>
+                        </linearGradient>
+                        <path fill="url(#a)" d="M111.713 7.087l532.12 394.525L1179.439 7.087z"></path>
+                        <path fill="#e7e4d7" d="M148.96 242.419v688.676h989.774V245.877L643.833 586.771z"></path>
+                        <path fill="#b8b7ae" d="M148.96 931.095l494.873-344.324-2.24-1.586L148.96 923.527z"></path>
+                        <path fill="#b7b6ad" d="M1138.734 245.877l.283 685.218-495.184-344.324z"></path>
+                        <path d="M1284.066 142.044l.17 684.51c-2.494 76.082-35.461 103.238-145.219 104.514l-.283-685.219 145.36-103.833-.028.028z" fill="#b2392f"></path>
+                        <path fill="#f7f5ed" d="M111.713 7.087l532.12 394.525L1179.439 7.087z"></path>
+                    </g>
+                </svg>
+            ),
+        },
+        {
+            name: 'Outlook',
+            url: 'https://outlook.live.com/mail/0/inbox',
+            icon: (props) => (
+                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+                    <rect x="10" y="2" width="20" height="28" rx="2" fill="#1066B5"></rect>
+                    <rect x="10" y="2" width="20" height="28" rx="2" fill="url(#paint0_linear_87_7742)"></rect>
+                    <rect x="10" y="5" width="10" height="10" fill="#32A9E7"></rect>
+                    <rect x="10" y="15" width="10" height="10" fill="#167EB4"></rect>
+                    <rect x="20" y="15" width="10" height="10" fill="#32A9E7"></rect>
+                    <rect x="20" y="5" width="10" height="10" fill="#58D9FD"></rect>
+                    <mask id="mask0_87_7742" style={{maskType: "alpha"}} maskUnits="userSpaceOnUse" x="8" y="14" width="24" height="16">
+                        <path d="M8 14H30C31.1046 14 32 14.8954 32 16V28C32 29.1046 31.1046 30 30 30H10C8.89543 30 8 29.1046 8 28V14Z" fill="url(#paint1_linear_87_7742)"></path>
+                    </mask>
+                    <g mask="url(#mask0_87_7742)">
+                        <path d="M32 14V18H30V14H32Z" fill="#135298"></path>
+                        <path d="M32 30V16L7 30H32Z" fill="url(#paint2_linear_87_7742)"></path>
+                        <path d="M8 30V16L33 30H8Z" fill="url(#paint3_linear_87_7742)"></path>
+                    </g>
+                    <path d="M8 12C8 10.3431 9.34315 9 11 9H17C18.6569 9 20 10.3431 20 12V24C20 25.6569 18.6569 27 17 27H8V12Z" fill="#000000" fillOpacity="0.3"></path>
+                    <rect y="7" width="18" height="18" rx="2" fill="url(#paint4_linear_87_7742)"></rect>
+                    <path d="M14 16.0693V15.903C14 13.0222 11.9272 11 9.01582 11C6.08861 11 4 13.036 4 15.9307V16.097C4 18.9778 6.07278 21 9 21C11.9114 21 14 18.964 14 16.0693ZM11.6424 16.097C11.6424 18.0083 10.5665 19.1579 9.01582 19.1579C7.46519 19.1579 6.37342 17.9806 6.37342 16.0693V15.903C6.37342 13.9917 7.44937 12.8421 9 12.8421C10.5348 12.8421 11.6424 14.0194 11.6424 15.9307V16.097Z" fill="white"></path>
+                    <defs>
+                        <linearGradient id="paint0_linear_87_7742" x1="10" y1="16" x2="30" y2="16" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#064484"></stop>
+                            <stop offset="1" stopColor="#0F65B5"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint1_linear_87_7742" x1="8" y1="26.7692" x2="32" y2="26.7692" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#1B366F"></stop>
+                            <stop offset="1" stopColor="#2657B0"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint2_linear_87_7742" x1="32" y1="23" x2="8" y2="23" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#44DCFD"></stop>
+                            <stop offset="0.453125" stopColor="#259ED0"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint3_linear_87_7742" x1="8" y1="23" x2="32" y2="23" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#259ED0"></stop>
+                            <stop offset="1" stopColor="#44DCFD"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint4_linear_87_7742" x1="0" y1="16" x2="18" y2="16" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#064484"></stop>
+                            <stop offset="1" stopColor="#0F65B5"></stop>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            ),
+        },
+        {
+            name: 'Yahoo Mail',
+            url: 'https://mail.yahoo.com',
+            icon: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" aria-label="Yahoo!" role="img" viewBox="0 0 512 512" fill="#000000" {...props}>
+                    <g strokeWidth="0"></g>
+                    <g strokeLinecap="round" strokeLinejoin="round"></g>
+                    <g>
+                        <rect width="512" height="512" rx="15%" fill="#5f01d1"></rect>
+                        <g fill="#ffffff">
+                            <path d="M203 404h-62l25-59-69-165h63l37 95 37-95h62m58 76h-69l62-148h69"></path>
+                            <circle cx="303" cy="308" r="38"></circle>
+                        </g>
+                    </g>
+                </svg>
+            ),
+        },
+        {
+            name: 'iCloud Mail',
+            url: 'https://www.icloud.com/mail',
+            icon: (props) => (
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 80 52"
+                    {...props}
+                >
+                    <defs>
+                        <linearGradient id="linearGradient1072" x1="-108.90347" y1="2124.834" x2="-1137.1982" y2="2110.6506" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0.07740541,0,0,0.07740541,88.373952,-128.02586)">
+                            <stop style={{ stopColor: "#3e82f4", stopOpacity: 1 }} offset="0" />
+                            <stop style={{ stopColor: "#93dcf7", stopOpacity: 1 }} offset="1" />
+                        </linearGradient>
+                    </defs>
+                    <path
+                        style={{ fill: "url(#linearGradient1072)", fillOpacity: 1 }}
+                        d="M 45.864371,0.751258 A 21.518704,21.518704 0 0 0 27.127725,11.764594 11.804325,11.804325 0 0 0 21.976186,10.573131 11.804325,11.804325 0 0 0 10.35494,20.48888 16.255137,16.255137 0 0 0 0.37795502,35.481798 16.255137,16.255137 0 0 0 16.640956,51.721206 16.255137,16.255137 0 0 0 18.679799,51.57426 h 45.187983 a 15.130063,15.202083 0 0 0 0.712824,0.03447 15.130063,15.202083 0 0 0 0.679264,-0.03447 h 1.082164 V 51.49383 A 15.130063,15.202083 0 0 0 79.703385,36.406573 V 36.3774 A 15.130063,15.202083 0 0 0 67.386251,21.477308 21.518704,21.518704 0 0 0 45.864371,0.751258 Z"
+                    />
+                </svg>
+            ),
+        },
+    ];
+}
+
 export default function VerifyCodePage() {
     const searchParams = useSearchParams()
     const email = searchParams.get('email')
@@ -53,6 +169,7 @@ export default function VerifyCodePage() {
     })
     // Initialize with default value to prevent hydration mismatch
     const [codeExpiry, setCodeExpiry] = useState(600)
+    const [hydrated, setHydrated] = useState(false)
     const maxAttempts = 5 // Maximum verification attempts before lockout
     const lockoutDuration = 300 // 5 minutes lockout in seconds
     const resendCooldownDuration = 60 // 60 seconds between resends
@@ -80,124 +197,9 @@ export default function VerifyCodePage() {
             } catch {
                 // localStorage not available, use default
             }
+            setHydrated(true)
         })
     }, [email])
-
-    // Helper to get email provider details
-    const getEmailProviders = () => {
-        return [
-            {
-                name: 'Gmail',
-                url: 'https://mail.google.com/mail/u/0/#search/from%3Anoreply%40hfhackathon.com+in%3Aanywhere',
-                icon: (props) => (
-                    <svg viewBox="7.086 -169.483 1277.149 1277.149" shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" xmlns="http://www.w3.org/2000/svg" fill="#000000" {...props}>
-                        <g strokeWidth="0"></g>
-                        <g strokeLinecap="round" strokeLinejoin="round"></g>
-                        <g>
-                            <path fill="none" d="M1138.734 931.095h.283M1139.017 931.095h-.283"></path>
-                            <path d="M1179.439 7.087c57.543 0 104.627 47.083 104.627 104.626v30.331l-145.36 103.833-494.873 340.894L148.96 242.419v688.676h-37.247c-57.543 0-104.627-47.082-104.627-104.625V111.742C7.086 54.198 54.17 7.115 111.713 7.115l532.12 394.525L1179.41 7.115l.029-.028z" fill="#e75a4d"></path>
-                            <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="1959.712" y1="737.107" x2="26066.213" y2="737.107" gradientTransform="matrix(.0283 0 0 -.0283 248.36 225.244)">
-                                <stop offset="0" stopColor="#f8f6ef"></stop>
-                                <stop offset="1" stopColor="#e7e4d6"></stop>
-                            </linearGradient>
-                            <path fill="url(#a)" d="M111.713 7.087l532.12 394.525L1179.439 7.087z"></path>
-                            <path fill="#e7e4d7" d="M148.96 242.419v688.676h989.774V245.877L643.833 586.771z"></path>
-                            <path fill="#b8b7ae" d="M148.96 931.095l494.873-344.324-2.24-1.586L148.96 923.527z"></path>
-                            <path fill="#b7b6ad" d="M1138.734 245.877l.283 685.218-495.184-344.324z"></path>
-                            <path d="M1284.066 142.044l.17 684.51c-2.494 76.082-35.461 103.238-145.219 104.514l-.283-685.219 145.36-103.833-.028.028z" fill="#b2392f"></path>
-                            <path fill="#f7f5ed" d="M111.713 7.087l532.12 394.525L1179.439 7.087z"></path>
-                        </g>
-                    </svg>
-                ),
-            },
-            {
-                name: 'Outlook',
-                url: 'https://outlook.live.com/mail/0/inbox',
-                icon: (props) => (
-                    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-                        <rect x="10" y="2" width="20" height="28" rx="2" fill="#1066B5"></rect>
-                        <rect x="10" y="2" width="20" height="28" rx="2" fill="url(#paint0_linear_87_7742)"></rect>
-                        <rect x="10" y="5" width="10" height="10" fill="#32A9E7"></rect>
-                        <rect x="10" y="15" width="10" height="10" fill="#167EB4"></rect>
-                        <rect x="20" y="15" width="10" height="10" fill="#32A9E7"></rect>
-                        <rect x="20" y="5" width="10" height="10" fill="#58D9FD"></rect>
-                        <mask id="mask0_87_7742" style={{maskType: "alpha"}} maskUnits="userSpaceOnUse" x="8" y="14" width="24" height="16">
-                            <path d="M8 14H30C31.1046 14 32 14.8954 32 16V28C32 29.1046 31.1046 30 30 30H10C8.89543 30 8 29.1046 8 28V14Z" fill="url(#paint1_linear_87_7742)"></path>
-                        </mask>
-                        <g mask="url(#mask0_87_7742)">
-                            <path d="M32 14V18H30V14H32Z" fill="#135298"></path>
-                            <path d="M32 30V16L7 30H32Z" fill="url(#paint2_linear_87_7742)"></path>
-                            <path d="M8 30V16L33 30H8Z" fill="url(#paint3_linear_87_7742)"></path>
-                        </g>
-                        <path d="M8 12C8 10.3431 9.34315 9 11 9H17C18.6569 9 20 10.3431 20 12V24C20 25.6569 18.6569 27 17 27H8V12Z" fill="#000000" fillOpacity="0.3"></path>
-                        <rect y="7" width="18" height="18" rx="2" fill="url(#paint4_linear_87_7742)"></rect>
-                        <path d="M14 16.0693V15.903C14 13.0222 11.9272 11 9.01582 11C6.08861 11 4 13.036 4 15.9307V16.097C4 18.9778 6.07278 21 9 21C11.9114 21 14 18.964 14 16.0693ZM11.6424 16.097C11.6424 18.0083 10.5665 19.1579 9.01582 19.1579C7.46519 19.1579 6.37342 17.9806 6.37342 16.0693V15.903C6.37342 13.9917 7.44937 12.8421 9 12.8421C10.5348 12.8421 11.6424 14.0194 11.6424 15.9307V16.097Z" fill="white"></path>
-                        <defs>
-                            <linearGradient id="paint0_linear_87_7742" x1="10" y1="16" x2="30" y2="16" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="#064484"></stop>
-                                <stop offset="1" stopColor="#0F65B5"></stop>
-                            </linearGradient>
-                            <linearGradient id="paint1_linear_87_7742" x1="8" y1="26.7692" x2="32" y2="26.7692" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="#1B366F"></stop>
-                                <stop offset="1" stopColor="#2657B0"></stop>
-                            </linearGradient>
-                            <linearGradient id="paint2_linear_87_7742" x1="32" y1="23" x2="8" y2="23" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="#44DCFD"></stop>
-                                <stop offset="0.453125" stopColor="#259ED0"></stop>
-                            </linearGradient>
-                            <linearGradient id="paint3_linear_87_7742" x1="8" y1="23" x2="32" y2="23" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="#259ED0"></stop>
-                                <stop offset="1" stopColor="#44DCFD"></stop>
-                            </linearGradient>
-                            <linearGradient id="paint4_linear_87_7742" x1="0" y1="16" x2="18" y2="16" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="#064484"></stop>
-                                <stop offset="1" stopColor="#0F65B5"></stop>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                ),
-            },
-            {
-                name: 'Yahoo Mail',
-                url: 'https://mail.yahoo.com',
-                icon: (props) => (
-                    <svg xmlns="http://www.w3.org/2000/svg" aria-label="Yahoo!" role="img" viewBox="0 0 512 512" fill="#000000" {...props}>
-                        <g strokeWidth="0"></g>
-                        <g strokeLinecap="round" strokeLinejoin="round"></g>
-                        <g>
-                            <rect width="512" height="512" rx="15%" fill="#5f01d1"></rect>
-                            <g fill="#ffffff">
-                                <path d="M203 404h-62l25-59-69-165h63l37 95 37-95h62m58 76h-69l62-148h69"></path>
-                                <circle cx="303" cy="308" r="38"></circle>
-                            </g>
-                        </g>
-                    </svg>
-                ),
-            },
-            {
-                name: 'iCloud Mail',
-                url: 'https://www.icloud.com/mail',
-                icon: (props) => (
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 80 52"
-                        {...props}
-                    >
-                        <defs>
-                            <linearGradient id="linearGradient1072" x1="-108.90347" y1="2124.834" x2="-1137.1982" y2="2110.6506" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0.07740541,0,0,0.07740541,88.373952,-128.02586)">
-                                <stop style={{ stopColor: "#3e82f4", stopOpacity: 1 }} offset="0" />
-                                <stop style={{ stopColor: "#93dcf7", stopOpacity: 1 }} offset="1" />
-                            </linearGradient>
-                        </defs>
-                        <path
-                            style={{ fill: "url(#linearGradient1072)", fillOpacity: 1 }}
-                            d="M 45.864371,0.751258 A 21.518704,21.518704 0 0 0 27.127725,11.764594 11.804325,11.804325 0 0 0 21.976186,10.573131 11.804325,11.804325 0 0 0 10.35494,20.48888 16.255137,16.255137 0 0 0 0.37795502,35.481798 16.255137,16.255137 0 0 0 16.640956,51.721206 16.255137,16.255137 0 0 0 18.679799,51.57426 h 45.187983 a 15.130063,15.202083 0 0 0 0.712824,0.03447 15.130063,15.202083 0 0 0 0.679264,-0.03447 h 1.082164 V 51.49383 A 15.130063,15.202083 0 0 0 79.703385,36.406573 V 36.3774 A 15.130063,15.202083 0 0 0 67.386251,21.477308 21.518704,21.518704 0 0 0 45.864371,0.751258 Z"
-                        />
-                    </svg>
-                ),
-            },
-        ];
-    }
 
     const providers = getEmailProviders()
 
@@ -410,7 +412,7 @@ export default function VerifyCodePage() {
                                 <div className="w-full flex items-center justify-between text-xs text-muted-foreground">
                                     <div className="flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
-                                        <span>Code expires in: {formatTime(codeExpiry)}</span>
+                                        <span>Code expires in: {hydrated ? formatTime(codeExpiry) : "10:00"}</span>
                                     </div>
                                     {attempts > 0 && (
                                         <div className="flex items-center gap-1">

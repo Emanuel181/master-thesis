@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, Suspense } from "react"
+import React, { useState, useEffect, Suspense, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { AppSidebar } from "@/components/dashboard/sidebar/app-sidebar"
 import {
@@ -158,7 +158,7 @@ function DashboardContent({ settings, mounted }) {
     }, [searchParams])
     /* eslint-enable react-hooks/set-state-in-effect */
 
-    const handleNavigation = (item) => {
+    const handleNavigation = useCallback((item) => {
         if (item.title === "Workflow configuration") {
             if (!isCodeLocked) {
                 // Don't allow workflow configuration if code is not locked
@@ -187,7 +187,7 @@ function DashboardContent({ settings, mounted }) {
             setBreadcrumbs(newBreadcrumbs)
         }
         setActiveComponent(item.title)
-    }
+    }, [isCodeLocked, setIsModelsDialogOpen, setIsFeedbackOpen, setBreadcrumbs, setActiveComponent]);
 
     const renderComponent = () => {
         const content = (() => {
