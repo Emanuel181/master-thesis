@@ -241,7 +241,7 @@ export function OnboardingProvider({ children, steps = defaultSteps }) {
         <OnboardingContext.Provider value={value}>
             {children}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[425px]" showCloseButton={false}>
                     <DialogHeader className="relative">
                         <Button
                             variant="ghost"

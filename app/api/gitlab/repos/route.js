@@ -16,6 +16,35 @@ function truncateDescription(description, maxLength = 50) {
     return description.slice(0, maxLength) + '...';
 }
 
+async function refreshGitLabToken(refreshToken) {
+    try {
+        const params = new URLSearchParams({
+            client_id: process.env.AUTH_GITLAB_ID,
+            client_secret: process.env.AUTH_GITLAB_SECRET,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token',
+            redirect_uri: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/callback/gitlab`
+        });
+
+        const response = await fetch('https://gitlab.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            console.error('[gitlab/refresh] failed to refresh token:', response.status, error);
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('[gitlab/refresh] network error:', error);
+        return null;
+    }
+}
+
 export async function GET(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const start = Date.now();
@@ -78,11 +107,40 @@ export async function GET(request) {
                 while (true) {
                     const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`;
 
-                    const response = await fetch(apiUrl, {
+                    let response = await fetch(apiUrl, {
                         headers: {
                             'Authorization': `Bearer ${candidate.token}`
                         }
                     });
+
+                    // Handle 401 Unauthorized by attempting refresh
+                    if (response.status === 401 && candidate.source === 'db' && gitlabAccount?.refresh_token) {
+                        console.log('[gitlab/repos] 401 received, attempting token refresh...');
+                        const newTokens = await refreshGitLabToken(gitlabAccount.refresh_token);
+                        
+                        if (newTokens?.access_token) {
+                            // Update database with new tokens
+                            await prisma.account.update({
+                                where: { id: gitlabAccount.id },
+                                data: {
+                                    access_token: newTokens.access_token,
+                                    refresh_token: newTokens.refresh_token || gitlabAccount.refresh_token,
+                                    expires_at: Math.floor(Date.now() / 1000) + newTokens.expires_in,
+                                    token_type: newTokens.token_type
+                                }
+                            });
+                            
+                            console.log('[gitlab/repos] token refreshed successfully');
+                            
+                            // Update current candidate token and retry request
+                            candidate.token = newTokens.access_token;
+                            response = await fetch(apiUrl, {
+                                headers: {
+                                    'Authorization': `Bearer ${candidate.token}`
+                                }
+                            });
+                        }
+                    }
 
                     if (!response.ok) {
                         // Avoid reflecting upstream error bodies back to clients (may include sensitive info)
@@ -142,7 +200,11 @@ export async function GET(request) {
             }
         }
 
-        return NextResponse.json({ error: 'Failed to fetch repositories', requestId }, { status: 502, headers: { ...securityHeaders, 'x-request-id': requestId } });
+        return NextResponse.json({ 
+            error: 'Failed to fetch repositories', 
+            details: lastError?.message || 'Unknown error',
+            requestId 
+        }, { status: 502, headers: { ...securityHeaders, 'x-request-id': requestId } });
     } catch (error) {
         console.error('[gitlab/repos] Unexpected error:', error);
         return NextResponse.json({ error: 'Internal server error', requestId }, { status: 500, headers: { ...securityHeaders, 'x-request-id': requestId } });

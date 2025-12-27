@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
     Dialog,
