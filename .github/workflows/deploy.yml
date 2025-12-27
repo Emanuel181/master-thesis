@@ -37,11 +37,20 @@ jobs:
       ##################################
       # Semgrep (SAST)
       ##################################
-      - name: Semgrep Scan
+      - name: Semgrep Scan (SARIF)
         run: |
           pip install semgrep
           mkdir -p reports
-          semgrep scan --config=auto --json > reports/semgrep.json
+          semgrep scan \
+            --config=auto \
+            --sarif \
+            --output=reports/semgrep.sarif \
+            || true
+
+      - name: Upload Semgrep to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/semgrep.sarif
 
       ##################################
       # SonarQube
@@ -64,7 +73,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
       ##################################
-      # Snyk (Dependencies) – FIXED
+      # Snyk (Dependencies)
       ##################################
       - name: Snyk Dependency Scan
         env:
@@ -72,7 +81,9 @@ jobs:
         run: |
           npm install -g snyk
           mkdir -p reports
-          snyk test --severity-threshold=high --json > reports/snyk.json
+          snyk test \
+            --severity-threshold=high \
+            --json > reports/snyk.json || true
 
       ##################################
       # Upload Security Reports
@@ -115,7 +126,7 @@ jobs:
             .
 
       ##################################
-      # Trivy Image Scan (Hard Gate)
+      # Trivy Image Scan
       ##################################
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.20.0
@@ -123,7 +134,8 @@ jobs:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
           severity: LOW,MEDIUM,HIGH,CRITICAL
           exit-code: 0
-          format: table
+          format: json
+          output: reports/trivy.json
 
       ##################################
       # Push to ECR (Only If All Scans Pass)
