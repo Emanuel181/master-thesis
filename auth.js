@@ -70,6 +70,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }),
 
         Nodemailer({
+            server: {
+                host: "ignore",
+                port: 25,
+                auth: {
+                    user: "ignore",
+                    pass: "ignore",
+                },
+            },
             from: process.env.EMAIL_FROM,
             maxAge: 10 * 60, // 10 minutes - token expiration time
             generateVerificationToken: async () => {
