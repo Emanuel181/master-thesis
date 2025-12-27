@@ -2,17 +2,20 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 
 const UseCasesContext = createContext();
 
 export function UseCasesProvider({ children }) {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [useCases, setUseCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchUseCases = useCallback(async () => {
-    if (!session?.user) {
+    // Don't fetch if not authenticated or if on login pages
+    if (!session?.user || pathname?.startsWith('/login')) {
       setLoading(false);
       return;
     }
@@ -33,7 +36,7 @@ export function UseCasesProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, pathname]);
 
   useEffect(() => {
     fetchUseCases();
