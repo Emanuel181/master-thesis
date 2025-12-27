@@ -39,6 +39,32 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
     const [gitlabRepos, setGitlabRepos] = useState([]);
     const [isLoadingRepos, setIsLoadingRepos] = useState(false);
 
+    // Load GitHub repos
+    const loadRepos = useCallback(async () => {
+        setIsLoadingRepos(true);
+        try {
+            const response = await fetch('/api/github/repos');
+            if (response.ok) setRepos(await response.json());
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoadingRepos(false);
+        }
+    }, []);
+
+    // Load GitLab repos
+    const loadGitlabRepos = useCallback(async () => {
+        setIsLoadingRepos(true);
+        try {
+            const response = await fetch('/api/gitlab/repos');
+            if (response.ok) setGitlabRepos(await response.json());
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoadingRepos(false);
+        }
+    }, []);
+
     // Refresh linked providers from API
     const refreshLinkedProviders = useCallback(async () => {
         if (!session) return;
@@ -49,14 +75,27 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             const linked = new Set(data.providers || []);
             const githubLinked = linked.has('github');
             const gitlabLinked = linked.has('gitlab');
-            setIsGithubConnected(githubLinked);
-            setIsGitlabConnected(gitlabLinked);
+            
+            setIsGithubConnected(prev => {
+                if (!prev && githubLinked) {
+                    loadRepos();
+                }
+                return githubLinked;
+            });
+            
+            setIsGitlabConnected(prev => {
+                if (!prev && gitlabLinked) {
+                    loadGitlabRepos();
+                }
+                return gitlabLinked;
+            });
+
             if (!githubLinked) setRepos([]);
             if (!gitlabLinked) setGitlabRepos([]);
         } catch (err) {
             console.error('Error refreshing linked providers:', err);
         }
-    }, [session]);
+    }, [session, loadRepos, loadGitlabRepos]);
 
     // Initial load of provider status
     useEffect(() => {
@@ -105,32 +144,6 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [status, refreshLinkedProviders]);
-
-    // Load GitHub repos
-    const loadRepos = async () => {
-        setIsLoadingRepos(true);
-        try {
-            const response = await fetch('/api/github/repos');
-            if (response.ok) setRepos(await response.json());
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsLoadingRepos(false);
-        }
-    };
-
-    // Load GitLab repos
-    const loadGitlabRepos = async () => {
-        setIsLoadingRepos(true);
-        try {
-            const response = await fetch('/api/gitlab/repos');
-            if (response.ok) setGitlabRepos(await response.json());
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsLoadingRepos(false);
-        }
-    };
 
     // Disconnect GitHub
     const handleDisconnectGitHub = async () => {

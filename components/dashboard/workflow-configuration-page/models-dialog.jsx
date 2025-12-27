@@ -35,8 +35,10 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 
 export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
+    const { status } = useSession();
     const [reviewerModel, setReviewerModel] = React.useState("");
     const [implementationModel, setImplementationModel] = React.useState("");
     const [testerModel, setTesterModel] = React.useState("");
@@ -169,6 +171,13 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
 
     // Fetch models from AWS Bedrock on component mount
     React.useEffect(() => {
+        if (status === "loading") return;
+
+        if (status === "unauthenticated") {
+            _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
+            return;
+        }
+
         const fetchAgents = async () => {
             try {
                 const response = await fetch('/api/bedrock/agents');
@@ -191,7 +200,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         };
 
         fetchAgents();
-    }, []);
+    }, [status]);
 
     const [selectedSystemPrompts, setSelectedSystemPrompts] = React.useState({
         reviewer: "",

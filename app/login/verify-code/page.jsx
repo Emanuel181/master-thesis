@@ -176,6 +176,7 @@ function VerifyCodeContent() {
 
     const inputRef = useRef(null)
     const hasInitializedTimer = useRef(false)
+    const isVerifyingRef = useRef(false)
 
     // Hydration: Load timer from localStorage after mount to prevent SSR mismatch
     useEffect(() => {
@@ -253,6 +254,9 @@ function VerifyCodeContent() {
 
     // Helper to get email provider details
     const handleVerify = async (code) => {
+        // Prevent multiple simultaneous verification attempts
+        if (isVerifyingRef.current) return
+        
         // Validate code format (only numbers, exactly 6 digits)
         if (!/^\d{6}$/.test(code)) {
             setError("Please enter a valid 6-digit code")
@@ -271,6 +275,7 @@ function VerifyCodeContent() {
             return
         }
 
+        isVerifyingRef.current = true
         setIsLoading(true)
         setError("")
 
@@ -299,6 +304,7 @@ function VerifyCodeContent() {
                      setError(data.error || "Invalid code. Please try again.")
                 }
                 
+                isVerifyingRef.current = false
                 setIsLoading(false)
                 // Clear OTP field on error
                 setOtp("")
@@ -320,6 +326,7 @@ function VerifyCodeContent() {
         } catch (err) {
             console.error("Verification error:", err)
             setError("Something went wrong. Please try again.")
+            isVerifyingRef.current = false
             setIsLoading(false)
         }
     }
