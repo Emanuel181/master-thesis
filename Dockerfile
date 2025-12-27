@@ -55,7 +55,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Pre-render cache permissions
-RUN mkdir .next && chown nextjs:nodejs .next
+RUN mkdir -p .next && chown -R nextjs:nodejs .next
 
 USER nextjs
 
