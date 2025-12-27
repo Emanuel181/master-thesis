@@ -199,11 +199,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                     // Only update if we have data to update
                     if (Object.keys(updateData).length > 0) {
-                        await prisma.user.update({
-                            where: { id: user.id },
-                            data: updateData,
-                        });
-                        console.log('Updated user profile from provider:', account?.provider, updateData);
+                        try {
+                            // Check if user exists before updating
+                            const existingUser = await prisma.user.findUnique({
+                                where: { id: user.id }
+                            });
+
+                            if (existingUser) {
+                                await prisma.user.update({
+                                    where: { id: user.id },
+                                    data: updateData,
+                                });
+                                console.log('Updated user profile from provider:', account?.provider, updateData);
+                            }
+                        } catch (updateError) {
+                            console.error('Error in user update block:', updateError);
+                        }
                     }
                 } catch (error) {
                     console.error('Error updating user profile from provider:', error);
