@@ -29,7 +29,7 @@ const getEmailProviders = () => {
     return [
         {
             name: 'Gmail',
-            url: 'https://mail.google.com/mail/u/0/#search/from%3Anoreply%40hfhackathon.com+in%3Aanywhere',
+            url: 'https://mail.google.com/mail/u/0/#search/from%3Anoreply%40vulniq.org+in%3Aanywhere',
             icon: (props) => (
                 <svg viewBox="7.086 -169.483 1277.149 1277.149" shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" xmlns="http://www.w3.org/2000/svg" fill="#000000" {...props}>
                     <g strokeWidth="0"></g>

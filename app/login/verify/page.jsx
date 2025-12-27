@@ -26,7 +26,7 @@ function VerifyRequestContent() {
         const providers = [
             {
                 name: 'Gmail',
-                url: 'https://mail.google.com/mail/u/0/#search/from%3Anoreply%40hfhackathon.com+in%3Aanywhere',
+                url: 'https://mail.google.com/mail/u/0/#search/from%3Anoreply%40vulniq.org+in%3Aanywhere',
                 icon: (props) => (
                     <Image 
                         src="https://img.icons8.com/?size=100&id=P7UIlhbpWzZm&format=png&color=000000"

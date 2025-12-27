@@ -4,12 +4,19 @@ import Google from "next-auth/providers/google"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 import Gitlab from "next-auth/providers/gitlab"
 import Nodemailer from "next-auth/providers/nodemailer"
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses"
 
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "@/lib/prisma";
 
-
-import { createTransport } from "nodemailer"
+// Initialize SES Client
+const ses = new SESClient({
+    region: process.env.AWS_REGION || "us-east-1",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+});
 
 // Helper to generate a random 6-digit code
 function generateRandomCode() {
@@ -63,27 +70,21 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }),
 
         Nodemailer({
-            server: {
-                host: process.env.EMAIL_SERVER_HOST,
-                port: process.env.EMAIL_SERVER_PORT,
-                auth: {
-                    user: process.env.EMAIL_SERVER_USER,
-                    pass: process.env.EMAIL_SERVER_PASSWORD,
-                },
-            },
             from: process.env.EMAIL_FROM,
             maxAge: 10 * 60, // 10 minutes - token expiration time
             generateVerificationToken: async () => {
                 return generateRandomCode()
             },
             sendVerificationRequest: async ({ identifier: email, url, provider, token }) => {
-                const transport = createTransport(provider.server)
-                const result = await transport.sendMail({
-                    to: email,
-                    from: provider.from,
-                    subject: `Your Login Code: ${token}`,
-                    text: `Your login code is: ${token}\n\nOr click here: ${url}`,
-                    html: `
+                const command = new SendEmailCommand({
+                    Source: provider.from,
+                    Destination: { ToAddresses: [email] },
+                    Message: {
+                        Subject: { Data: `Your Login Code: ${token}` },
+                        Body: {
+                            Text: { Data: `Your login code is: ${token}\n\nOr click here: ${url}` },
+                            Html: {
+                                Data: `
 <body style="background: #f9f9f9;">
   <table width="100%" border="0" cellspacing="20" cellpadding="0" style="background: #fff; max-width: 600px; margin: auto; border-radius: 10px;">
     <tr>
@@ -111,10 +112,16 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   </table>
 </body>
 `
-                })
-                const failed = result.rejected.concat(result.pending).filter(Boolean)
-                if (failed.length) {
-                    throw new Error(`Email(s) (${failed.join(", ")}) could not be sent`)
+                            }
+                        }
+                    }
+                });
+
+                try {
+                    await ses.send(command);
+                } catch (error) {
+                    console.error("SES Error:", error);
+                    throw new Error(`Failed to send verification email: ${error.message}`);
                 }
             }
         }),
@@ -134,6 +141,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 },
             },
             // WARNING: allowDangerousEmailAccountLinking removed for security
+            // Consider implementing proper email verification flow instead
         }),
     ],
 
