@@ -1,7 +1,7 @@
 # ----------------------------
 # Dependencies
 # ----------------------------
-FROM node:20.11-alpine AS deps
+FROM node:24-alpine AS deps
 
 RUN apk add --no-cache libc6-compat
 
