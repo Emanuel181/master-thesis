@@ -23,6 +23,7 @@ COPY . .
 # Disable Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED=1
 
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 # Prisma client generation (no DB access required)
 RUN npx prisma generate
 
