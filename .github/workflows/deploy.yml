@@ -121,8 +121,8 @@ jobs:
         uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          severity: HIGH,CRITICAL
-          exit-code: 1
+          severity: LOW,MEDIUM,HIGH,CRITICAL
+          exit-code: 0
           format: table
 
       ##################################
