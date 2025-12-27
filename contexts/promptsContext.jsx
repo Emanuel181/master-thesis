@@ -1,10 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 
 const PromptsContext = createContext();
 
 export function PromptsProvider({ children }) {
+    const { data: session } = useSession();
+    const pathname = usePathname();
     const [prompts, setPrompts] = useState({});
     const [selectedPrompts, setSelectedPrompts] = useState({
         reviewer: [],
@@ -16,6 +20,12 @@ export function PromptsProvider({ children }) {
     const [error, setError] = useState(null);
 
     const fetchPrompts = async () => {
+        // Don't fetch if not authenticated or if on login pages
+        if (!session?.user || pathname?.startsWith('/login')) {
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             const response = await fetch("/api/prompts");
@@ -36,7 +46,7 @@ export function PromptsProvider({ children }) {
     // Fetch prompts on mount
     useEffect(() => {
         fetchPrompts();
-    }, []);
+    }, [session, pathname]);
 
     const handlePromptChange = (agent, promptId) => {
         setSelectedPrompts(prev => {
