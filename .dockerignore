@@ -8,3 +8,12 @@ yarn-debug.log*
 yarn-error.log*
 .idea
 .vscode
+.gitignore
+.env
+.env.*
+npm-debug.log
+Dockerfile
+README.md
+coverage
+reports
+

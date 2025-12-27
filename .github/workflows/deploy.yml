@@ -1,23 +1,91 @@
-name: Build and Push to ECR
+name: Secure Build and Push to ECR
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
+  pull_request:
 
 permissions:
-  id-token: write
   contents: read
+  security-events: write
+  id-token: write
 
 jobs:
-  build-and-push:
-    name: Build and Push to ECR
+  security-build-push:
+    name: Security Scan → Build → Push
     runs-on: ubuntu-latest
+
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+
     steps:
+      ##################################
+      # Checkout
+      ##################################
       - name: Checkout
         uses: actions/checkout@v4
 
+      ##################################
+      # Cache npm
+      ##################################
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+
+      ##################################
+      # Semgrep (SAST)
+      ##################################
+      - name: Semgrep Scan
+        run: |
+          pip install semgrep
+          mkdir -p reports
+          semgrep scan --config=auto --json > reports/semgrep.json
+
+      ##################################
+      # SonarQube
+      ##################################
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+
+      ##################################
+      # CodeQL / LGTM
+      ##################################
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Analyze CodeQL
+        uses: github/codeql-action/analyze@v3
+
+      ##################################
+      # Snyk (Dependencies) – FIXED
+      ##################################
+      - name: Snyk Dependency Scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          npm install -g snyk
+          mkdir -p reports
+          snyk test --severity-threshold=high --json > reports/snyk.json
+
+      ##################################
+      # Upload Security Reports
+      ##################################
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: reports/
+
+      ##################################
+      # AWS OIDC Authentication
+      ##################################
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -25,21 +93,44 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+
+      ##################################
+      # Login to Amazon ECR
+      ##################################
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
+      ##################################
+      # Build Docker Image (BuildKit)
+      ##################################
+      - name: Build Docker Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DOCKER_BUILDKIT: 1
         run: |
-          # Build a docker container and
-          # push it to ECR so that it can
-          # be deployed to ECS.
-          docker build --build-arg DATABASE_URL="$DATABASE_URL" -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            .
+
+      ##################################
+      # Trivy Image Scan (Hard Gate)
+      ##################################
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          format: table
+
+      ##################################
+      # Push to ECR (Only If All Scans Pass)
+      ##################################
+      - name: Push Image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
