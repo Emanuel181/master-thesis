@@ -43,6 +43,8 @@ RUN apk add --no-cache libc6-compat
 # Prisma needs full schema + migrations
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 
 # DATABASE_URL is injected at runtime by ECS
 CMD ["npx", "prisma", "migrate", "deploy"]
