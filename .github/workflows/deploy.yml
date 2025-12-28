@@ -187,8 +187,19 @@ jobs:
           
           echo "Migration task completed with exit code: $EXIT_CODE"
           
+          # Extract task ID for logs
+          TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
+          
+          # Fetch logs regardless of exit code
+          echo "Fetching migration logs..."
+          aws logs get-log-events \
+            --log-group-name "/ecs/vulniq-prisma-migrate" \
+            --log-stream-name "ecs/prisma-migrate/$TASK_ID" \
+            --query 'events[*].message' \
+            --output text || echo "Could not fetch logs"
+          
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "Migration failed! Fetching logs..."
+            echo "Migration failed!"
             exit 1
           fi
           
