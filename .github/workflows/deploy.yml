@@ -141,19 +141,32 @@ jobs:
           MIGRATE_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:migrate-$IMAGE_TAG"
           echo "Using migration image: $MIGRATE_IMAGE"
           
-          # Run the migration task with the correct image override
+          # Get the current task definition
+          TASK_DEF=$(aws ecs describe-task-definition \
+            --task-definition ${{ secrets.ECS_MIGRATION_TASK }} \
+            --query 'taskDefinition' \
+            --output json)
+          
+          # Update the image in the container definition and remove fields that can't be re-registered
+          NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$MIGRATE_IMAGE" '
+            .containerDefinitions[0].image = $IMAGE |
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)
+          ')
+          
+          # Register the new task definition
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json "$NEW_TASK_DEF" \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          
+          echo "Registered new task definition: $NEW_TASK_DEF_ARN"
+          
+          # Run the migration task with the new task definition
           TASK_ARN=$(aws ecs run-task \
             --cluster ${{ secrets.ECS_CLUSTER }} \
-            --task-definition ${{ secrets.ECS_MIGRATION_TASK }} \
+            --task-definition "$NEW_TASK_DEF_ARN" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.ECS_SUBNETS }}],securityGroups=[${{ secrets.ECS_SECURITY_GROUP }}],assignPublicIp=ENABLED}" \
-            --overrides "{
-              \"containerOverrides\": [{
-                \"name\": \"prisma-migrate\",
-                \"image\": \"$MIGRATE_IMAGE\",
-                \"command\": [\"npx\", \"prisma\", \"migrate\", \"deploy\"]
-              }]
-            }" \
             --query 'tasks[0].taskArn' \
             --output text)
           
