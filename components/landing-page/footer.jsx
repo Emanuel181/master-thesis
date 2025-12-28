@@ -122,6 +122,7 @@ export function Footer() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0077b5] transition-colors"
                                 whileHover={{ x: 2 }}
+                                aria-label="Connect on LinkedIn (opens in new tab)"
                             >
                                 <Linkedin className="w-4 h-4" />
                                 Connect on LinkedIn
@@ -151,6 +152,7 @@ export function Footer() {
                                     className="px-3 py-2 text-sm font-medium rounded-lg bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
                                     whileHover={{ scale: status === "loading" || status === "success" ? 1 : 1.02 }}
                                     whileTap={{ scale: status === "loading" || status === "success" ? 1 : 0.98 }}
+                                    aria-label="Subscribe"
                                 >
                                     {status === "loading" ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />

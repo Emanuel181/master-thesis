@@ -9,8 +9,9 @@ export function LampDemo() {
     return (
         <LampContainer>
             <motion.h1
-                initial={{ opacity: 0.5, y: 100 }}
+                initial={{ opacity: 0.5, y: 50 }} // reduced initial y distance
                 whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }} // Trigger once
                 transition={{
                     delay: 0.3,
                     duration: 0.8,
@@ -24,6 +25,7 @@ export function LampDemo() {
             <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ delay: 0.5, duration: 0.6 }}
                 className="mt-4 text-[var(--brand-light)]/60 text-center text-base md:text-lg max-w-md"
             >
@@ -33,6 +35,7 @@ export function LampDemo() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ delay: 0.7, duration: 0.6 }}
                 className="mt-8 flex flex-col sm:flex-row gap-4"
             >

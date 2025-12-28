@@ -74,6 +74,7 @@ export const FloatingNavbar = () => {
                     className="flex items-center gap-2.5 font-medium group"
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
+                    aria-label="VulnIQ Home"
                 >
                     <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-7 w-7 rounded-lg" width={28} height={28} />
                     <span className="font-semibold text-foreground tracking-tight hidden sm:block text-sm">
@@ -119,9 +120,9 @@ export const FloatingNavbar = () => {
                 <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     <Button asChild size="sm" className="rounded-full text-xs sm:text-sm px-3 sm:px-5 h-8 sm:h-9">
-                        <a href="/login" className="flex items-center gap-1 sm:gap-1.5">
-                            <span className="hidden xs:inline">Get started</span>
-                            <span className="xs:hidden">Start</span>
+                        <a href="/login" className="flex items-center gap-1 sm:gap-1.5" aria-label="Get started free" suppressHydrationWarning>
+                            <span className="xs:hidden">Get started</span>
+                            <span className="hidden xs:inline">Get started free</span>
                             <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </a>
                     </Button>
@@ -199,7 +200,7 @@ export const FloatingNavbar = () => {
                             transition={{ delay: 0.2 }}
                         >
                             <Button asChild className="w-full rounded-xl" size="sm">
-                                <a href="/login">Get started free</a>
+                                <a href="/login" aria-label="Get started free" suppressHydrationWarning>Get started free</a>
                             </Button>
                         </motion.div>
                     </div>

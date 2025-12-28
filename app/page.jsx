@@ -9,20 +9,44 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Components
 import { SecurityCodeDemo } from '@/components/landing-page/hero/security-code-demo';
-import { FeaturesGrid } from '@/components/landing-page/features/features-grid';
-import { LampDemo } from '@/components/landing-page/vulniq-lamp';
-import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
+import dynamic from 'next/dynamic';
+
+const FeaturesGrid = dynamic(() => import('@/components/landing-page/features/features-grid').then(mod => mod.FeaturesGrid), {
+  loading: () => <div className="min-h-[600px] animate-pulse bg-muted/10 rounded-lg" />,
+});
+
+const LampDemo = dynamic(() => import('@/components/landing-page/vulniq-lamp').then(mod => mod.LampDemo), {
+  loading: () => <div className="min-h-[400px]" />,
+});
+
+const InfiniteMovingCardsDemo = dynamic(() => import('@/components/infinite-moving-cards-demo'));
+const FlipWordsDemo = dynamic(() => import('@/components/flip-words-demo').then(mod => mod.FlipWordsDemo));
+const CardDemo = dynamic(() => import('@/components/ui/cards-demo-3'));
+const LogoLoop = dynamic(
+  () => import('@/components/ui/logo-loop').then(mod => mod.LogoLoop),
+  { ssr: false }
+);
+const SiReact = dynamic(() => import('react-icons/si').then(mod => mod.SiReact));
+const SiNextdotjs = dynamic(() => import('react-icons/si').then(mod => mod.SiNextdotjs));
+const SiTailwindcss = dynamic(() => import('react-icons/si').then(mod => mod.SiTailwindcss));
+const SiDocker = dynamic(() => import('react-icons/si').then(mod => mod.SiDocker));
+const SiGithub = dynamic(() => import('react-icons/si').then(mod => mod.SiGithub));
+const SiWebstorm = dynamic(() => import('react-icons/si').then(mod => mod.SiWebstorm));
+const SiShadcnui = dynamic(() => import('react-icons/si').then(mod => mod.SiShadcnui));
+const FaAws = dynamic(() => import('react-icons/fa').then(mod => mod.FaAws));
+const FaNodeJs = dynamic(() => import('react-icons/fa6').then(mod => mod.FaNodeJs));
+const IoLogoJavascript = dynamic(() => import('react-icons/io').then(mod => mod.IoLogoJavascript));
+const IoLogoCss3 = dynamic(() => import('react-icons/io5').then(mod => mod.IoLogoCss3));
+
+const FloatingNavbar = dynamic(
+  () =>
+    import("@/components/landing-page/floating-navbar").then(
+      (mod) => mod.FloatingNavbar
+    ),
+  { ssr: false }
+);
 import { Footer } from "@/components/landing-page/footer";
 import { PointerHighlight } from "@/components/ui/pointer-highlight";
-import { FlipWordsDemo } from "@/components/flip-words-demo";
-import InfiniteMovingCardsDemo from "@/components/infinite-moving-cards-demo";
-import CardDemo from "@/components/ui/cards-demo-3";
-import { LogoLoop } from '@/components/ui/logo-loop';
-import { SiReact, SiNextdotjs, SiTailwindcss, SiDocker, SiGithub, SiWebstorm, SiShadcnui } from 'react-icons/si';
-import { FaAws } from "react-icons/fa";
-import { FaNodeJs } from "react-icons/fa6";
-import { IoLogoJavascript } from "react-icons/io";
-import { IoLogoCss3 } from "react-icons/io5";
 
 const techLogos = [
   { node: <SiNextdotjs />, title: "Next.js", href: "https://nextjs.org" },
@@ -139,13 +163,13 @@ export default function LandingPage() {
                                     className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start"
                                 >
                                     <Button asChild size="lg" className="rounded-lg w-full sm:w-auto">
-                                        <a href="https://www.overleaf.com/read/vdqywdqywyhr#693113" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+                                        <a href="https://www.overleaf.com/read/vdqywdqywyhr#693113" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2" aria-label="View thesis">
                                             View thesis
                                             <ArrowRight className="w-4 h-4" />
                                         </a>
                                     </Button>
                                     <Button asChild variant="outline" size="lg" className="rounded-lg w-full sm:w-auto hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300">
-                                        <a href="/login">
+                                        <a href="/login" aria-label="Explore prototype">
                                             Explore prototype
                                         </a>
                                     </Button>
@@ -203,7 +227,7 @@ export default function LandingPage() {
 
                         <div className="mt-12 w-full py-8">
                             <h3 className="text-center text-sm font-semibold text-muted-foreground mb-6 tracking-wider">Powered by modern tech stack</h3>
-                             <div style={{ height: '60px', position: 'relative', overflow: 'hidden'}}>
+                            <div style={{ height: '60px', position: 'relative', overflow: 'hidden'}} aria-hidden="true">
                                 <LogoLoop 
                                     logos={techLogos} 
                                     speed={60} 

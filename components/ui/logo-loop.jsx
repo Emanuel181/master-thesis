@@ -282,7 +282,9 @@ export const LogoLoop = memo(
             className="logoloop__list"
             key={`copy-${copyIndex}`}
             role="list"
-            aria-hidden={copyIndex > 0}
+            // Ensure lists are not hidden from screen readers if they contain focusable elements
+            // or if they are the primary visual content.
+            // aria-hidden={copyIndex > 0} 
             ref={copyIndex === 0 ? seqRef : undefined}
           >
             {logos.map((item, itemIndex) => renderLogoItem(item, `${copyIndex}-${itemIndex}`))}

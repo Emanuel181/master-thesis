@@ -2,27 +2,27 @@
 # Dependencies
 # ----------------------------
 FROM node:24-alpine AS deps
+WORKDIR /app
 
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci
 
 # ----------------------------
-# Builder
+# Builder (Next.js)
 # ----------------------------
 FROM node:24-alpine AS builder
-
 WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 
-# Prisma client generation (no DB access)
+
+# Prisma client generation (NO DB required)
 RUN npx prisma generate
 
 # Build Next.js
@@ -32,10 +32,25 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ----------------------------
-# Runner
+# MIGRATION IMAGE (IMPORTANT)
+# ----------------------------
+FROM node:24-alpine AS migrate
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
+# Prisma needs full schema + migrations
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+COPY package.json ./
+
+# DATABASE_URL is injected at runtime by ECS
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+# ----------------------------
+# Runner (App)
 # ----------------------------
 FROM node:24-alpine AS runner
-
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -55,9 +70,4 @@ RUN mkdir -p .next && chown -R nextjs:nodejs .next
 USER nextjs
 
 EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD wget -qO- http://127.0.0.1:3000 || exit 1
-
-# DEFAULT CMD = app
 CMD ["node", "server.js"]

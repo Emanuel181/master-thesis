@@ -84,7 +84,7 @@ export async function GET() {
 
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404, headers: securityHeaders });
+            return NextResponse.json({ error: "User not found" }, { status: 401, headers: securityHeaders });
         }
 
         // Transform the response to include formatted data

@@ -67,19 +67,13 @@ export function FeaturesGrid() {
     );
 }
 
-const GridItem = ({
-                      area,
-                      icon,
-                      title,
-                      description,
-                      header,
-                  }) => {
+const GridItem = ({ area, icon, title, description, header }) => {
     return (
         <motion.li
             className={`min-h-[18rem] list-none ${area}`}
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
+            viewport={{ once: true, margin: "100px" }} // Increased margin to delay loading until closer
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
             <div className="relative h-full rounded-2xl border border-[var(--brand-primary)]/30 dark:border-[var(--brand-accent)]/30 bg-[var(--card)] dark:bg-[var(--brand-primary)]/90 p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/60 hover:shadow-xl hover:shadow-[var(--brand-accent)]/15 group shadow-md">

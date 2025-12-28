@@ -84,39 +84,39 @@ def login():
 // --- Components ---
 
 const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon }) => {
+    if (!isVisible) return null;
+    
     return (
         <AnimatePresence>
-            {isVisible && (
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: y + 40, x: x + 20 }}
+                animate={{ opacity: 1, scale: 1, x, y }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+                className="absolute z-50 pointer-events-none filter drop-shadow-xl"
+            >
+                <MousePointer2 className={cn('h-6 w-6 fill-current stroke-white',
+                    color === 'blue' ? 'text-[var(--brand-accent)]' :
+                        color === 'red' ? 'text-red-500' :
+                            color === 'purple' ? 'text-purple-500' :
+                                color === 'orange' ? 'text-orange-500' :
+                                    color === 'emerald' ? 'text-emerald-500' : 'text-slate-500'
+                )} />
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.8, y: y + 40, x: x + 20 }}
-                    animate={{ opacity: 1, scale: 1, x, y }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-                    className="absolute z-50 pointer-events-none filter drop-shadow-xl"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 16 }}
+                    className={cn('mt-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap min-w-max flex items-center gap-2 shadow-lg backdrop-blur-md border border-white/10',
+                        color === 'blue' ? 'bg-[var(--brand-accent)]/90' :
+                            color === 'red' ? 'bg-red-600/90' :
+                                color === 'purple' ? 'bg-purple-600/90' :
+                                    color === 'orange' ? 'bg-orange-600/90' :
+                                        color === 'emerald' ? 'bg-emerald-600/90' : 'bg-slate-600'
+                    )}
                 >
-                    <MousePointer2 className={cn('h-6 w-6 fill-current stroke-white',
-                        color === 'blue' ? 'text-[var(--brand-accent)]' :
-                            color === 'red' ? 'text-red-500' :
-                                color === 'purple' ? 'text-purple-500' :
-                                    color === 'orange' ? 'text-orange-500' :
-                                        color === 'emerald' ? 'text-emerald-500' : 'text-slate-500'
-                    )} />
-                    <motion.div
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 16 }}
-                        className={cn('mt-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap min-w-max flex items-center gap-2 shadow-lg backdrop-blur-md border border-white/10',
-                            color === 'blue' ? 'bg-[var(--brand-accent)]/90' :
-                                color === 'red' ? 'bg-red-600/90' :
-                                    color === 'purple' ? 'bg-purple-600/90' :
-                                        color === 'orange' ? 'bg-orange-600/90' :
-                                            color === 'emerald' ? 'bg-emerald-600/90' : 'bg-slate-600'
-                        )}
-                    >
-                        {Icon && <Icon size={12} />}
-                        {label}
-                    </motion.div>
+                    {Icon && <Icon size={12} />}
+                    {label}
                 </motion.div>
-            )}
+            </motion.div>
         </AnimatePresence>
     );
 };
@@ -145,6 +145,7 @@ const useTypewriter = (text, start) => {
 
 export const SecurityCodeDemo = () => {
     const [step, setStep] = useState(0);
+    
     const { displayedText, isDone: typingFinished, setDisplayedText } = useTypewriter(VULNERABLE_CODE, step === 1);
 
     // Animation Flow Control
@@ -170,24 +171,34 @@ export const SecurityCodeDemo = () => {
     const codeContent = step === 1 ? displayedText : step >= 5 ? PATCHED_CODE : VULNERABLE_CODE;
 
     const renderCode = useMemo(() => (text) => {
-        const parts = text.split(/([a-zA-Z_][a-zA-Z0-9_]*|[^a-zA-Z0-9_\s]+|\s+)/).filter(Boolean);
-        return parts.map((chunk, i) => {
-            if (['from', 'import', 'def', 'return', 'if', 'and', 'or', 'not'].includes(chunk)) return <span key={i} className="text-[#c678dd] font-medium">{chunk}</span>;
-            if (['Flask', 'request', 'jsonify', 'sqlite3'].includes(chunk)) return <span key={i} className="text-[#e5c07b]">{chunk}</span>;
-            if (['login', 'get', 'connect', 'execute', 'fetchone', 'check_password', 'create_token'].includes(chunk)) return <span key={i} className="text-[#61afef]">{chunk}</span>;
-            if (['app', 'email', 'pwd', 'query', 'conn', 'user', 'json'].includes(chunk)) return <span key={i} className="text-[#abb2bf]">{chunk}</span>;
-            if (chunk.includes('SELECT') || chunk.includes('FROM') || chunk.includes('WHERE')) return <span key={i} className="text-[#d19a66] font-bold">{chunk}</span>;
-            if (chunk.startsWith('#')) return <span key={i} className="text-[#5c6370] italic">{chunk}</span>;
-            if (['{', '}', '(', ')', ':', '=', '.', '[', ']', ',', '@'].includes(chunk)) return <span key={i} className="text-[#56b6c2]">{chunk}</span>;
-            if (["'", '"'].includes(chunk) || (chunk.startsWith("'") || chunk.startsWith('"'))) return <span key={i} className="text-[#98c379]">{chunk}</span>;
-            return <span key={i} className="text-[#abb2bf]">{chunk}</span>;
-        });
+        // Simple manual parsing to avoid regex performance issues in main thread
+        // We only care about high-level syntax highlighting for the demo
+        const lines = text.split('\n');
+        return lines.map((line, i) => (
+            <div key={i} className="leading-[22px] min-h-[22px]">
+                {line.split(/(\s+|[(){}[\].,:;'"=])/g).map((token, j) => {
+                    if (!token) return null;
+                    if (/^\s+$/.test(token)) return <span key={j}>{token}</span>;
+                    
+                    if (['from', 'import', 'def', 'return', 'if', 'and', 'or', 'not', 'class'].includes(token)) return <span key={j} className="text-[#c678dd] font-medium">{token}</span>;
+                    if (['Flask', 'request', 'jsonify', 'sqlite3'].includes(token)) return <span key={j} className="text-[#e5c07b]">{token}</span>;
+                    if (['login', 'get', 'connect', 'execute', 'fetchone', 'check_password', 'create_token'].includes(token)) return <span key={j} className="text-[#61afef]">{token}</span>;
+                    if (['app', 'email', 'pwd', 'query', 'conn', 'user', 'json'].includes(token)) return <span key={j} className="text-[#abb2bf]">{token}</span>;
+                    if (token.includes('SELECT') || token.includes('FROM') || token.includes('WHERE')) return <span key={j} className="text-[#d19a66] font-bold">{token}</span>;
+                    if (token.startsWith('#')) return <span key={j} className="text-[#5c6370] italic">{token}</span>;
+                    if (["'", '"'].some(q => token.includes(q))) return <span key={j} className="text-[#98c379]">{token}</span>;
+                    if (['{', '}', '(', ')', ':', '=', '.', '[', ']', ',', '@'].includes(token)) return <span key={j} className="text-[#56b6c2]">{token}</span>;
+                    
+                    return <span key={j} className="text-[#abb2bf]">{token}</span>;
+                })}
+            </div>
+        ));
     }, []);
 
     const VULN_LINE_OFFSET = 232;
 
     return (
-        <div className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 p-4">
+        <div id="security-demo-container" className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 p-4">
             <div className="rounded-xl bg-[var(--brand-primary)] shadow-2xl overflow-hidden ring-1 ring-[var(--brand-accent)]/20 relative backdrop-blur-sm h-[600px] flex flex-col">
 
                 {/* --- Window Header --- */}
@@ -207,7 +218,7 @@ export const SecurityCodeDemo = () => {
 
                 {/* --- Editor Area --- */}
                 <div className="relative flex-1 font-mono text-[11px] sm:text-[12px] overflow-hidden bg-[var(--brand-primary)]/90 flex">
-                    <div className="w-12 flex flex-col items-end pr-3 pt-4 text-slate-500 bg-[var(--brand-primary)]/90 z-10 shrink-0 select-none border-r border-white/5">
+                    <div className="w-12 flex flex-col items-end pr-3 pt-4 text-slate-500 bg-[var(--brand-primary)]/90 z-10 shrink-0 select-none border-r border-white/5" aria-hidden="true">
                         {Array.from({ length: 24 }).map((_, i) => (
                             <div key={i} className="leading-[22px] h-[22px]">{i + 1}</div>
                         ))}
@@ -269,17 +280,14 @@ export const SecurityCodeDemo = () => {
                             <AnimatePresence mode='wait'>
                                 <motion.div
                                     key={step >= 5 ? 'patched' : 'vulnerable'}
-                                    initial={{ opacity: 0.8, filter: 'blur(2px)' }}
-                                    animate={{ opacity: 1, filter: 'blur(0px)' }}
+                                    initial={{ opacity: 0.8 }}
+                                    animate={{ opacity: 1 }}
                                     transition={{ duration: 0.4 }}
                                 >
                                     {codeContent && renderCode(codeContent)}
+                                    {/* Cursor - simplified animation to avoid layout shifts */}
                                     {step === 1 && !typingFinished && (
-                                        <motion.span
-                                            animate={{ opacity: [1, 0, 1] }}
-                                            transition={{ repeat: Infinity, duration: 0.8 }}
-                                            className="inline-block w-2 h-4 align-middle bg-[var(--brand-accent)] ml-1"
-                                        />
+                                        <span className="inline-block w-2 h-4 align-middle bg-[var(--brand-accent)] ml-1 animate-pulse" aria-hidden="true" />
                                     )}
                                 </motion.div>
                             </AnimatePresence>

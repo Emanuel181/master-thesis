@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 const UseCasesContext = createContext();
@@ -15,7 +15,7 @@ export function UseCasesProvider({ children }) {
 
   const fetchUseCases = useCallback(async () => {
     // Don't fetch if not authenticated or if on login pages
-    if (!session?.user || pathname?.startsWith('/login')) {
+    if (!session?.user?.id || pathname?.startsWith('/login')) {
       setLoading(false);
       return;
     }
@@ -24,9 +24,27 @@ export function UseCasesProvider({ children }) {
       setLoading(true);
       setError(null);
       const response = await fetch('/api/use-cases');
+      
       if (!response.ok) {
-        console.error('Fetch failed with status:', response.status, response.statusText);
-        throw new Error('Failed to fetch use cases');
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { statusText: response.statusText };
+        }
+        
+        console.log('[UseCases] Fetch status:', response.status, 'Error:', errorData);
+
+        // Handle authentication errors (401 Unauthorized or 404 User not found)
+        if (response.status === 401 || (response.status === 404 && errorData.error === 'User not found')) {
+            console.warn('Authentication invalid or user not found. Signing out...');
+            await signOut({ callbackUrl: '/login' });
+            return;
+        }
+
+        console.error('Fetch failed with status:', response.status, errorData);
+        
+        throw new Error(errorData.error || 'Failed to fetch use cases');
       }
       const data = await response.json();
       setUseCases(data.useCases || []);
