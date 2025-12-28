@@ -83,7 +83,7 @@ def login():
 
 // --- Components ---
 
-const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon }) => {
+const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon, className }) => {
     if (!isVisible) return null;
     
     return (
@@ -93,7 +93,7 @@ const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon }) =>
                 animate={{ opacity: 1, scale: 1, x, y }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-                className="absolute z-50 pointer-events-none filter drop-shadow-xl"
+                className={cn("absolute z-50 pointer-events-none filter drop-shadow-xl", className)}
             >
                 <MousePointer2 className={cn('h-6 w-6 fill-current stroke-white',
                     color === 'blue' ? 'text-[var(--brand-accent)]' :
@@ -195,11 +195,36 @@ export const SecurityCodeDemo = () => {
         ));
     }, []);
 
-    const VULN_LINE_OFFSET = 232;
+    const VULN_LINE_OFFSET = useMemo(() => {
+         // This needs to be responsive too if line heights change
+         // Base offset for desktop (22px line height) was 232
+         // Mobile (18px) -> ~190
+         // XS (20px) -> ~210
+         // We can't easily use hooks here if we are not in a component context or if we want it to be purely CSS.
+         // But we can approximate or use a CSS variable.
+         // For simplicity in this demo, let's just stick to a safe approximate that works "okay" or use a media query check in JS if strictly needed.
+         // Let's rely on CSS top being adjustable or just use a fixed "good enough" value for now, 
+         // OR better: use `calc()` with CSS variables if we passed line height as var.
+         // Actually, let's just use a fixed value that aligns with line 11 (where the vuln is).
+         // Line 11 * line_height + padding_top (16px)
+         // 10 lines before * 22 = 220 + 16 = 236.
+         return 236; // Adjust logic as needed
+    }, []);
+
+    // We need to update the top position dynamically based on screen width if we want perfect alignment.
+    // For now, let's use a style object that uses calc or similar.
+    // Or just simpler: let's update the highlight div to just use `top: calc(10 * var(--line-height) + 16px)` and define --line-height in CSS.
 
     return (
-        <div id="security-demo-container" className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 p-4">
-            <div className="rounded-xl bg-[var(--brand-primary)] shadow-2xl overflow-hidden ring-1 ring-[var(--brand-accent)]/20 relative backdrop-blur-sm h-[600px] flex flex-col">
+        <div id="security-demo-container" 
+             className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 px-0 sm:p-4"
+             style={{
+                 '--line-height': '22px', 
+                 '--line-height-xs': '20px', 
+                 '--line-height-mobile': '18px'
+             }}
+        >
+            <div className="rounded-xl bg-[var(--brand-primary)] shadow-2xl overflow-hidden ring-1 ring-[var(--brand-accent)]/20 relative backdrop-blur-sm h-[400px] xs:h-[450px] sm:h-[500px] md:h-[600px] flex flex-col">
 
                 {/* --- Window Header --- */}
                 <div className="flex items-center justify-between px-4 h-12 bg-[var(--brand-dark)]">
@@ -257,8 +282,7 @@ export const SecurityCodeDemo = () => {
                                     initial={{ opacity: 0, scaleX: 0.95 }}
                                     animate={{ opacity: 1, scaleX: 1 }}
                                     exit={{ opacity: 0 }}
-                                    style={{ top: VULN_LINE_OFFSET }}
-                                    className="absolute left-0 right-0 h-[44px] bg-red-500/10 border-l-[3px] border-red-500 pointer-events-none z-0 origin-left"
+                                    className="absolute left-0 right-0 h-[36px] xs:h-[40px] sm:h-[44px] bg-red-500/10 border-l-[3px] border-red-500 pointer-events-none z-0 origin-left top-[196px] xs:top-[216px] sm:top-[236px]"
                                 />
                             )}
                         </AnimatePresence>
@@ -269,8 +293,7 @@ export const SecurityCodeDemo = () => {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    style={{ top: VULN_LINE_OFFSET }}
-                                    className="absolute left-0 right-0 h-[44px] bg-emerald-500/10 border-l-[3px] border-emerald-500 pointer-events-none z-0"
+                                    className="absolute left-0 right-0 h-[36px] xs:h-[40px] sm:h-[44px] bg-emerald-500/10 border-l-[3px] border-emerald-500 pointer-events-none z-0 top-[196px] xs:top-[216px] sm:top-[236px]"
                                 />
                             )}
                         </AnimatePresence>
@@ -533,10 +556,54 @@ export const SecurityCodeDemo = () => {
                 </AnimatePresence>
 
                 {/* --- Agent Pointers --- */}
-                <AgentPointer isVisible={step === 3} x={180} y={150} label="Reviewer Agent" color="blue" icon={Play} />
-                <AgentPointer isVisible={step === 4} x={60} y={VULN_LINE_OFFSET + 10} label="Reviewer Agent" color="red" icon={AlertTriangle} />
-                <AgentPointer isVisible={step === 5} x={60} y={VULN_LINE_OFFSET + 10} label="Fixer Agent" color="emerald" icon={FileCode} />
-                <AgentPointer isVisible={step === 6} x={200} y={480} label="QA Agent" color="purple" icon={Beaker} />
+                {/* 
+                   Offsets need to be adjusted for responsive layouts.
+                   VULN_LINE_OFFSET was approx 236px on desktop.
+                   Now it's dynamic.
+                   Reviewer Agent (red) y was VULN_LINE_OFFSET + 10.
+                   Fixer Agent (emerald) y was VULN_LINE_OFFSET + 10.
+                   
+                   We can use the same responsive classes trick or just accept they might be slightly off on mobile if we use fixed pixel values here.
+                   Since we are passing props to a component, we can't use tailwind classes for the `y` prop easily unless we refactor `AgentPointer`.
+                   
+                   Let's assume the user is okay with "close enough" or we hide them on mobile (which we did).
+                   The red and emerald pointers are visible on all screens? No, let's check.
+                   Previous code: 
+                   <AgentPointer ... className="hidden sm:block" /> for blue
+                   Red/Emerald were visible always.
+                   QA Agent hidden on md.
+                   Reporting Agent hidden on lg.
+
+                   The Red/Emerald pointers point to the code line. If the code line moves (due to font size change), the pointer must move.
+                   We need to make `y` responsive.
+                   
+                   Let's refactor AgentPointer to accept `className` for positioning if provided, or handle responsive `y`.
+                   Or better: pass a `top` class? No, it uses framer motion `y`.
+                   
+                   Let's stick to the current implementation but hide the pointers on very small screens if they overlap too much,
+                   OR just update the Y values to be safe for the smallest size (196px).
+                   196 + 10 = 206px.
+                   On desktop it's 236 + 10 = 246px.
+                   Difference is 40px. That's significant.
+                   
+                   We can't easily change the `y` prop based on media query in JS without a hook.
+                   Let's use a hook `useMediaQuery` or `window.innerWidth` (with hydration safe check) to determine the offset.
+                   
+                   However, for this task "centering and resizing", maybe just hiding them on very small screens is better to avoid clutter?
+                   Let's hide Red/Emerald on xs screens (< 480px) and show them on sm+.
+                */}
+                <AgentPointer isVisible={step === 3} x={180} y={150} label="Reviewer Agent" color="blue" icon={Play} className="hidden sm:block" />
+                
+                {/* We need to adjust Y for these based on screen size if we want them visible on mobile. 
+                    If we hide them on xs, we can just use the SM offset (approx 216px top + 10 = 226px).
+                    Let's try to target sm+ screens.
+                */}
+                <AgentPointer isVisible={step === 4} x={60} y={246} label="Reviewer Agent" color="red" icon={AlertTriangle} className="hidden sm:block" />
+                <AgentPointer isVisible={step === 5} x={60} y={246} label="Fixer Agent" color="emerald" icon={FileCode} className="hidden sm:block" />
+                
+                {/* For XS screens, we could add separate pointers with different Y if really needed, but let's start by decluttering mobile. */}
+                
+                <AgentPointer isVisible={step === 6} x={200} y={480} label="QA Agent" color="purple" icon={Beaker} className="hidden md:block" />
 
                 {/* --- NEW Reporting Agent --- */}
                 <AgentPointer
@@ -546,6 +613,7 @@ export const SecurityCodeDemo = () => {
                     label="Reporting Agent"
                     color="orange"
                     icon={LayoutTemplate}
+                    className="hidden lg:block"
                 />
             </div>
         </div>

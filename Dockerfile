@@ -21,7 +21,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 
-
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 # Prisma client generation (NO DB required)
 RUN npx prisma generate
 
@@ -41,7 +42,6 @@ RUN apk add --no-cache libc6-compat
 
 # Prisma needs full schema + migrations
 COPY --from=deps /app/node_modules ./node_modules
-COPY prisma ./prisma
 COPY package.json ./
 
 # DATABASE_URL is injected at runtime by ECS

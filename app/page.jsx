@@ -122,7 +122,7 @@ export default function LandingPage() {
                     <div className="absolute top-1/4 left-10 w-72 h-72 bg-[#1fb6cf]/10 rounded-full blur-[100px] pointer-events-none hidden sm:block" />
                     <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-[#1fb6cf]/5 rounded-full blur-[120px] pointer-events-none hidden sm:block" />
 
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 w-full pt-24 sm:pt-32 pb-12 sm:pb-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 w-full pt-20 sm:pt-32 pb-12 sm:pb-16">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-20 items-center">
 
                             {/* Left: Copy */}
@@ -178,12 +178,12 @@ export default function LandingPage() {
 
                             {/* Right: Demo */}
                             <motion.div
-                                className="w-full order-1 lg:order-2"
+                                className="w-full order-1 lg:order-2 flex justify-center"
                                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                             >
-                                    <SecurityCodeDemo className="relative glow-accent"/>
+                                    <SecurityCodeDemo className="relative glow-accent w-full"/>
                             </motion.div>
                         </div>
                     </div>

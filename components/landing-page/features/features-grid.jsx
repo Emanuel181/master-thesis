@@ -70,30 +70,30 @@ export function FeaturesGrid() {
 const GridItem = ({ area, icon, title, description, header }) => {
     return (
         <motion.li
-            className={`min-h-[18rem] list-none ${area}`}
+            className={`min-h-[16rem] sm:min-h-[18rem] list-none ${area}`}
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "100px" }} // Increased margin to delay loading until closer
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-            <div className="relative h-full rounded-2xl border border-[var(--brand-primary)]/30 dark:border-[var(--brand-accent)]/30 bg-[var(--card)] dark:bg-[var(--brand-primary)]/90 p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/60 hover:shadow-xl hover:shadow-[var(--brand-accent)]/15 group shadow-md">
+            <div className="relative h-full rounded-2xl border border-[var(--brand-primary)]/30 dark:border-[var(--brand-accent)]/30 bg-[var(--card)] dark:bg-[var(--brand-primary)]/90 p-4 sm:p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/60 hover:shadow-xl hover:shadow-[var(--brand-accent)]/15 group shadow-md flex flex-col">
                 {/* Subtle glow on hover */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[var(--brand-accent)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                 {/* Content */}
-                <div className="relative flex h-full flex-col gap-6">
+                <div className="relative flex h-full flex-col gap-4 sm:gap-6">
                     {/* Visual header */}
                     <div className="relative flex-1 min-h-[8rem] w-full overflow-hidden rounded-xl bg-[var(--brand-light)]/50 dark:bg-[var(--brand-dark)]/50 border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center group-hover:border-[var(--brand-accent)]/30 transition-colors">
                         {header}
                     </div>
 
                     {/* Text content */}
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg border border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/10 flex items-center justify-center text-[var(--brand-accent)] group-hover:bg-[var(--brand-accent)]/20 transition-colors">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/10 flex items-center justify-center text-[var(--brand-accent)] group-hover:bg-[var(--brand-accent)]/20 transition-colors shrink-0">
                                 {icon}
                             </div>
-                            <h3 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-lg">
+                            <h3 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-base sm:text-lg">
                                 {title}
                             </h3>
                         </div>

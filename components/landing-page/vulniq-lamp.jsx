@@ -17,7 +17,7 @@ export function LampDemo() {
                     duration: 0.8,
                     ease: "easeInOut",
                 }}
-                className="mt-8 bg-gradient-to-br from-[var(--brand-light)] to-[var(--brand-accent)] py-4 bg-clip-text text-center text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-transparent"
+                className="mt-8 bg-gradient-to-br from-[var(--brand-light)] to-[var(--brand-accent)] py-4 bg-clip-text text-center text-4xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-transparent"
             >
                 VulnIQ
             </motion.h1>
