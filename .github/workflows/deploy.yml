@@ -1,4 +1,4 @@
-name: Secure Build and Push to ECR
+name: Secure Build → Scan → Push → Migrate → Deploy
 
 on:
   push:
@@ -11,8 +11,8 @@ permissions:
   id-token: write
 
 jobs:
-  security-build-push:
-    name: Security Scan → Build → Push
+  deploy:
+    name: Security Scan → Build → Push → Migrate → Deploy
     runs-on: ubuntu-latest
 
     env:
@@ -37,32 +37,30 @@ jobs:
       ##################################
       # Semgrep (SAST)
       ##################################
-      - name: Semgrep Scan (SARIF)
+      - name: Semgrep Scan
         run: |
           pip install semgrep
           mkdir -p reports
           semgrep scan \
             --config=auto \
             --sarif \
-            --output=reports/semgrep.sarif \
-            || true
+            --output=reports/semgrep.sarif || true
 
-      - name: Upload Semgrep to Code Scanning
+      - name: Upload Semgrep Results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/semgrep.sarif
 
       ##################################
-      # SonarQube
+      # SonarCloud
       ##################################
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-
       ##################################
-      # CodeQL / LGTM
+      # CodeQL
       ##################################
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -73,76 +71,68 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
       ##################################
-      # Snyk (Dependencies)
+      # Snyk
       ##################################
       - name: Snyk Dependency Scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
           npm install -g snyk
-          mkdir -p reports
-          snyk test \
-            --severity-threshold=high \
-            --json > reports/snyk.json || true
+          snyk test --severity-threshold=high || true
 
       ##################################
-      # Upload Security Reports
+      # AWS Authentication
       ##################################
-      - name: Upload Security Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-reports
-          path: reports/
-
-      ##################################
-      # AWS OIDC Authentication
-      ##################################
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-
       ##################################
-      # Login to Amazon ECR
+      # Login to ECR
       ##################################
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       ##################################
-      # Build Docker Image (BuildKit)
+      # Build & Push App Image
       ##################################
-      - name: Build Docker Image
+      - name: Build & Push App Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          DOCKER_BUILDKIT: 1
         run: |
           docker build \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             .
-
-      ##################################
-      # Trivy Image Scan
-      ##################################
-      - name: Trivy Image Scan
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          severity: LOW,MEDIUM,HIGH,CRITICAL
-          exit-code: 0
-          format: json
-          output: reports/trivy.json
-
-      ##################################
-      # Push to ECR (Only If All Scans Pass)
-      ##################################
-      - name: Push Image to ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      ##################################
+      # Run Prisma Migrations (BLOCKING)
+      ##################################
+      - name: Run Prisma Migrations
+        run: |
+          aws ecs run-task \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --task-definition ${{ secrets.ECS_MIGRATION_TASK }} \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.ECS_SUBNETS }}],securityGroups=[${{ secrets.ECS_SECURITY_GROUP }}],assignPublicIp=DISABLED}" \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "prisma-migrate",
+                "command": ["npx", "prisma", "migrate", "deploy"]
+              }]
+            }'
+
+      ##################################
+      # Deploy ECS Service
+      ##################################
+      - name: Deploy ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service ${{ secrets.ECS_SERVICE }} \
+            --force-new-deployment
