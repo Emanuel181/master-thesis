@@ -20,6 +20,8 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
 # Prisma client generation (no DB access)
 RUN npx prisma generate
 
