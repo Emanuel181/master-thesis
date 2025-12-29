@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,48 @@ export const FloatingNavbar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [visible, setVisible] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isAboveLamp, setIsAboveLamp] = useState(false);
 
     const { scrollY, scrollYProgress } = useScroll();
 
     // Subtle progress indicator
     const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+    // Check if navbar is above lamp section
+    useEffect(() => {
+        const checkLampPosition = () => {
+            const lampSection = document.getElementById('about');
+            if (lampSection) {
+                const rect = lampSection.getBoundingClientRect();
+                // Navbar is above lamp when lamp section top is near or above viewport top
+                setIsAboveLamp(rect.top <= 100 && rect.bottom > 0);
+            }
+        };
+
+        // Check on scroll - try both window and scroll container
+        const handleScroll = () => checkLampPosition();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        
+        // Also listen to scroll on the ScrollArea viewport
+        const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+        }
+        
+        // Initial check
+        checkLampPosition();
+        
+        // Also check after a short delay for initial render
+        const timeoutId = setTimeout(checkLampPosition, 100);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (scrollContainer) {
+                scrollContainer.removeEventListener('scroll', handleScroll);
+            }
+            clearTimeout(timeoutId);
+        };
+    }, []);
 
     useMotionValueEvent(scrollY, "change", (latest) => {
         const previous = scrollY.getPrevious();
@@ -77,7 +114,7 @@ export const FloatingNavbar = () => {
                     aria-label="VulnIQ Home"
                 >
                     <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg" width={28} height={28} priority fetchPriority="high" />
-                    <span className="font-semibold text-foreground tracking-tight hidden xs:block text-xs sm:text-sm">
+                    <span className={`font-semibold tracking-tight hidden xs:block text-xs sm:text-sm transition-colors duration-300 ${isAboveLamp ? 'text-white' : 'text-foreground'} dark:text-white`}>
                         VulnIQ
                     </span>
                 </motion.a>
@@ -119,7 +156,7 @@ export const FloatingNavbar = () => {
                 {/* RIGHT: Actions */}
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
                     <ThemeToggle />
-                    <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target">
+                    <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)]">
                         <a href="/login" className="flex items-center gap-0.5 xs:gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account" suppressHydrationWarning>
                             <span className="hidden xs:inline">Get started</span>
                             <span className="xs:hidden" aria-hidden="true">Go</span>

@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Footer } from '@/components/landing-page/footer';
 import { PointerHighlight } from '@/components/ui/pointer-highlight';
+import { Button } from '@/components/ui/button';
+import { ChevronUp } from 'lucide-react';
 
 // Static hero for fast initial paint (no framer-motion)
 import { StaticHero } from '@/components/landing-page/hero/static-hero';
@@ -136,6 +138,12 @@ export default function LandingPage() {
   const scrollContainerRef = useRef(null);
   const [isHydrated, setIsHydrated] = useState(false);
 
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Defer animation loading until after first paint
   useEffect(() => {
     // Use requestIdleCallback to load animations after initial render
@@ -231,7 +239,7 @@ export default function LandingPage() {
           </section>
         </main>
 
-        <Footer />
+        <Footer onScrollToTop={scrollToTop} />
       </div>
     </ScrollArea>
   );

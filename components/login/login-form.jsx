@@ -310,7 +310,7 @@ function LoginFormInner({ className, ...props }) {
                                     className="h-10"
                                 />
                             </div>
-                            <Button type="submit" disabled={isLoading !== null || !email}>
+                            <Button type="submit" disabled={isLoading !== null || !email} className="text-white dark:text-[var(--brand-primary)]">
                                 {isLoading === "nodemailer" ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (

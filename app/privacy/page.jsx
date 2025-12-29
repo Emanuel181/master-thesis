@@ -492,10 +492,10 @@ export default function PrivacyPage() {
                                 Don't hesitate to contact us if you have any questions.
                             </p>
                             <div className="mt-4 p-4 rounded-lg border border-border bg-muted/30">
-                                <p className="flex items-center gap-2">
-                                    <Mail className="h-4 w-4 text-[var(--brand-accent)]" />
-                                    <strong>Via email:</strong>{' '}
-                                    <a href="mailto:emanuel.rusu.secure@gmail.com" className="text-[var(--brand-accent)] hover:underline">
+                                <p className="flex flex-wrap items-center gap-2">
+                                    <Mail className="h-4 w-4 text-[var(--brand-accent)] flex-shrink-0" />
+                                    <strong>Via email:</strong>
+                                    <a href="mailto:emanuel.rusu.secure@gmail.com" className="text-[var(--brand-accent)] hover:underline break-all">
                                         emanuel.rusu.secure@gmail.com
                                     </a>
                                 </p>

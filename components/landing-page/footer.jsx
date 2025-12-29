@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const containerVariants = {
@@ -25,7 +25,7 @@ const itemVariants = {
 };
 
 
-export function Footer() {
+export function Footer({ onScrollToTop }) {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
     const [email, setEmail] = useState("");
@@ -150,7 +150,7 @@ export function Footer() {
                                 <Button
                                     type="submit"
                                     disabled={status === "loading" || status === "success"}
-                                    className="w-full sm:w-auto min-h-[44px] whitespace-nowrap"
+                                    className="w-full sm:w-auto min-h-[44px] whitespace-nowrap text-white dark:bg-white dark:text-[var(--brand-primary)] dark:hover:bg-white/90"
                                     aria-label={status === "loading" ? "Subscribing..." : status === "success" ? "Subscribed successfully" : "Subscribe to newsletter"}
                                 >
                                     <span>Subscribe</span>
@@ -188,11 +188,25 @@ export function Footer() {
 
                 {/* Bottom Bar */}
                 <motion.div
-                    className="border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 mt-8 sm:mt-10 md:mt-12 lg:mt-16 pt-6 sm:pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left"
+                    className="border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 mt-8 sm:mt-10 md:mt-12 lg:mt-16 pt-6 sm:pt-8 flex flex-col gap-4"
                     initial={{ opacity: 0 }}
                     animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                     transition={{ delay: 0.5 }}
                 >
+                    {/* Back to top button */}
+                    <div className="flex justify-center">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onScrollToTop ? onScrollToTop() : window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className="text-xs"
+                        >
+                            <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
+                            Back to top
+                        </Button>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
                             © 2025 Emanuel Rusu - Master thesis project
@@ -200,14 +214,14 @@ export function Footer() {
                         <div className="flex items-center justify-center sm:justify-start gap-3">
                             <Link
                                 href="/privacy"
-                                className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-white dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
+                                className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
                             >
                                 Privacy Policy
                             </Link>
                             <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30">•</span>
                             <Link
                                 href="/terms"
-                                className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-white dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
+                                className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
                             >
                                 Terms & Conditions
                             </Link>
@@ -216,6 +230,7 @@ export function Footer() {
                     <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
                         Open beta • Research project
                     </p>
+                    </div>
                 </motion.div>
             </motion.div>
         </footer>

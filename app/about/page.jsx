@@ -272,6 +272,14 @@ export default function AboutPage() {
 
                 </main>
 
+                {/* Back to top button */}
+                <div className="flex justify-center py-8">
+                    <Button variant="outline" onClick={scrollToTop}>
+                        <ChevronUp className="mr-2 h-4 w-4" />
+                        Back to top
+                    </Button>
+                </div>
+
                 <Footer />
             </ScrollArea>
         </div>
