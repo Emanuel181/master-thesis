@@ -141,17 +141,20 @@ jobs:
           MIGRATE_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:migrate-$IMAGE_TAG"
           echo "Using migration image: $MIGRATE_IMAGE"
           
-          # Build task definition from template
-          TASK_DEF=$(cat .aws/task-definition-migrate.json | \
+          # Build task definition from template and write to temp file
+          cat .aws/task-definition-migrate.json | \
             sed "s|\${IMAGE}|$MIGRATE_IMAGE|g" | \
             sed "s|\${EXECUTION_ROLE_ARN}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}|g" | \
             sed "s|\${TASK_ROLE_ARN}|${{ secrets.ECS_TASK_ROLE_ARN }}|g" | \
             sed "s|\${DATABASE_URL_SECRET_ARN}|${{ secrets.DATABASE_URL_SECRET_ARN }}|g" | \
-            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g")
+            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g" > /tmp/task-def-migrate.json
+          
+          echo "Task definition:"
+          cat /tmp/task-def-migrate.json
           
           echo "Registering migration task definition..."
-          NEW_TASK_DEF_ARN=$(echo "$TASK_DEF" | aws ecs register-task-definition \
-            --cli-input-json file:///dev/stdin \
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/task-def-migrate.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           
@@ -211,18 +214,21 @@ jobs:
           APP_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "Deploying image: $APP_IMAGE"
           
-          # Build task definition from template
-          TASK_DEF=$(cat .aws/task-definition-app.json | \
+          # Build task definition from template and write to temp file
+          cat .aws/task-definition-app.json | \
             sed "s|\${IMAGE}|$APP_IMAGE|g" | \
             sed "s|\${EXECUTION_ROLE_ARN}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}|g" | \
             sed "s|\${TASK_ROLE_ARN}|${{ secrets.ECS_TASK_ROLE_ARN }}|g" | \
             sed "s|\${DATABASE_URL_SECRET_ARN}|${{ secrets.DATABASE_URL_SECRET_ARN }}|g" | \
             sed "s|\${NEXTAUTH_SECRET_ARN}|${{ secrets.NEXTAUTH_SECRET_ARN }}|g" | \
-            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g")
+            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g" > /tmp/task-def-app.json
+          
+          echo "Task definition:"
+          cat /tmp/task-def-app.json
           
           echo "Registering app task definition..."
-          NEW_TASK_DEF_ARN=$(echo "$TASK_DEF" | aws ecs register-task-definition \
-            --cli-input-json file:///dev/stdin \
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/task-def-app.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           
