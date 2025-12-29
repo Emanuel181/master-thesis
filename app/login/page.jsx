@@ -8,11 +8,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LoginForm } from "@/components/login/login-form"
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, PersonStanding } from "lucide-react";
+import { useAccessibility } from "@/contexts/accessibilityContext";
 
 export default function LoginPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const [serviceStatus, setServiceStatus] = useState("checking") // checking, operational, partial, down
+    const { openPanel, setForceHideFloating } = useAccessibility()
+
+    // Hide floating button on login page
+    useEffect(() => {
+        setForceHideFloating(true)
+        return () => setForceHideFloating(false)
+    }, [setForceHideFloating])
 
     useEffect(() => {
         if (status === 'authenticated') {
@@ -62,7 +72,13 @@ export default function LoginPage() {
                         />
                         <span className="text-lg font-semibold">VulnIQ</span>
                     </Link>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                            <Link href="/">
+                                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Back to Home</span>
+                            </Link>
+                        </Button>
                         <a
                             href="https://status.vulniq.org"
                             target="_blank"
@@ -87,6 +103,7 @@ export default function LoginPage() {
                                  serviceStatus === "down" ? "Services not operational" : "Checking..."}
                             </span>
                         </a>
+                        <AccessibilityButton />
                         <ThemeToggle />
                     </div>
                 </div>
@@ -149,5 +166,21 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
             </motion.div>
         </div>
+    )
+}
+
+// Accessibility Button Component
+function AccessibilityButton() {
+    const { openPanel } = useAccessibility()
+
+    return (
+        <button
+            onClick={openPanel}
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+            aria-label="Open Accessibility Menu"
+            title="Accessibility Options"
+        >
+            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+        </button>
     )
 }

@@ -49,6 +49,18 @@
   display: none;
 }
 
+/* Hide native scrollbar in code blocks for shadcn ScrollArea */
+.prose-content pre,
+.prose-content code {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.prose-content pre::-webkit-scrollbar,
+.prose-content code::-webkit-scrollbar {
+  display: none !important;
+}
+
 /* ============================================
    PERFORMANCE-OPTIMIZED CSS ANIMATIONS
    ============================================ */
@@ -851,4 +863,355 @@ html {
 
 .animate-scroll {
   animation: scroll var(--animation-duration, 40s) linear infinite var(--animation-direction, forwards);
+}
+
+/* ============================================
+   BLOG PROSE STYLES
+   ============================================ */
+
+.blog-content {
+  color: hsl(var(--foreground) / 0.9);
+  line-height: 1.75;
+}
+
+.blog-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border) / 0.3);
+}
+
+.blog-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.blog-content h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.blog-content p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.blog-content strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.blog-content ul,
+.blog-content ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.blog-content ul {
+  list-style-type: disc;
+}
+
+.blog-content ol {
+  list-style-type: decimal;
+}
+
+.blog-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+
+.blog-content li::marker {
+  color: var(--brand-accent);
+}
+
+.blog-content a {
+  color: var(--brand-accent);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.blog-content a:hover {
+  text-decoration: underline;
+}
+
+.blog-content code {
+  background: hsl(var(--muted));
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dark .blog-content code {
+  background: rgba(var(--brand-accent-rgb), 0.1);
+}
+
+.blog-content pre {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+
+.dark .blog-content pre {
+  background: hsl(var(--card) / 0.8);
+  border-color: rgba(var(--brand-accent-rgb), 0.15);
+}
+
+.blog-content pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.blog-content blockquote {
+  border-left: 4px solid var(--brand-accent);
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.75rem 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+}
+
+.blog-content hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border) / 0.5);
+  margin: 2rem 0;
+}
+
+.blog-content table {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.blog-content thead {
+  background: hsl(var(--muted));
+}
+
+.dark .blog-content thead {
+  background: rgba(var(--brand-accent-rgb), 0.1);
+}
+
+.blog-content th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.blog-content td {
+  padding: 0.75rem 1rem;
+  border: 1px solid hsl(var(--border) / 0.5);
+  color: hsl(var(--foreground) / 0.9);
+}
+
+.blog-content tbody tr:nth-child(even) {
+  background: hsl(var(--muted) / 0.3);
+}
+
+.blog-content img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+/* ============================================
+   ACCESSIBILITY WIDGET STYLES
+   ============================================ */
+
+/* CSS Variables for Accessibility */
+:root {
+  --a11y-font-scale: 1;
+  --a11y-line-height: 1.6;
+  --a11y-letter-spacing: 0px;
+  --a11y-word-spacing: 0px;
+  --a11y-saturation: 100%;
+}
+
+/* Font Size Scaling - only applied when a11y-scaled class is on body */
+body.a11y-scaled h1,
+body.a11y-scaled h2,
+body.a11y-scaled h3,
+body.a11y-scaled h4,
+body.a11y-scaled h5,
+body.a11y-scaled h6,
+body.a11y-scaled p,
+body.a11y-scaled span:not(.a11y-widget-button *),
+body.a11y-scaled li,
+body.a11y-scaled a:not(.a11y-widget-button),
+body.a11y-scaled label {
+  font-size: calc(1em * var(--a11y-font-scale)) !important;
+  line-height: var(--a11y-line-height) !important;
+  letter-spacing: var(--a11y-letter-spacing) !important;
+  word-spacing: var(--a11y-word-spacing) !important;
+}
+
+/* Bold Text */
+.a11y-font-weight * {
+  font-weight: 700 !important;
+}
+
+/* Dyslexia Friendly Font */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://website-widgets.pages.dev/fonts/OpenDyslexic3-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.a11y-dyslexia-font * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', Arial, sans-serif !important;
+}
+
+/* Highlight Links */
+.a11y-highlight-links a {
+  outline: 3px solid #0066ff !important;
+  outline-offset: 2px !important;
+  background: rgba(0, 102, 255, 0.1) !important;
+}
+
+/* Highlight Headings */
+.a11y-highlight-headings h1,
+.a11y-highlight-headings h2,
+.a11y-highlight-headings h3,
+.a11y-highlight-headings h4,
+.a11y-highlight-headings h5,
+.a11y-highlight-headings h6 {
+  outline: 3px solid #ff6600 !important;
+  outline-offset: 2px !important;
+  background: rgba(255, 102, 0, 0.1) !important;
+}
+
+/* Reading Guide */
+#a11y-reading-guide {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 0, 0.3) 20%,
+    rgba(255, 255, 0, 0.3) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 99998;
+  transition: top 0.05s ease-out;
+}
+
+/* Big Cursor */
+.a11y-big-cursor,
+.a11y-big-cursor * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' stroke='%23fff' stroke-width='1' d='M5.5 3.21V20.8l4.86-4.86h6.78L5.5 3.21z'/%3E%3C/svg%3E") 4 4, auto !important;
+}
+
+/* Stop Animations */
+.a11y-stop-animations *,
+.a11y-stop-animations *::before,
+.a11y-stop-animations *::after {
+  animation-duration: 0.001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+  scroll-behavior: auto !important;
+}
+
+/* Enhanced Focus Indicator */
+.a11y-focus-indicator *:focus {
+  outline: 4px solid #0066ff !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 0 8px rgba(0, 102, 255, 0.25) !important;
+}
+
+.a11y-focus-indicator *:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.a11y-focus-indicator *:focus-visible {
+  outline: 4px solid #0066ff !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 0 8px rgba(0, 102, 255, 0.25) !important;
+}
+
+/* Contrast Modes */
+.a11y-contrast-dark {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+.a11y-contrast-dark img,
+.a11y-contrast-dark video,
+.a11y-contrast-dark svg,
+.a11y-contrast-dark [style*="background-image"] {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+.a11y-contrast-light {
+  filter: brightness(1.2) contrast(0.9) !important;
+  background: #fff !important;
+}
+
+.a11y-contrast-high {
+  filter: contrast(1.5) !important;
+}
+
+.a11y-contrast-monochrome {
+  filter: grayscale(100%) !important;
+}
+
+/* Saturation Control */
+body[style*="--a11y-saturation"] {
+  filter: saturate(var(--a11y-saturation));
+}
+
+/* Text Alignment */
+.a11y-text-left * {
+  text-align: left !important;
+}
+
+.a11y-text-center * {
+  text-align: center !important;
+}
+
+.a11y-text-right * {
+  text-align: right !important;
+}
+
+/* Accessibility Widget Button - Always on top */
+.a11y-widget-button {
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  isolation: isolate;
+}
+
+/* Prevent accessibility styles from affecting the widget itself */
+[class*="a11y-"]:not(.a11y-guide-element) .SheetContent,
+[class*="a11y-"]:not(.a11y-guide-element) [data-radix-popper-content-wrapper],
+.a11y-big-cursor button[aria-label="Open Accessibility Menu"],
+.a11y-big-cursor .a11y-widget-button {
+  cursor: pointer !important;
+}
+
+/* Exclude accessibility widget from font/style changes */
+.a11y-dyslexia-font .a11y-widget-button,
+.a11y-dyslexia-font .a11y-widget-button *,
+.a11y-font-weight .a11y-widget-button,
+.a11y-font-weight .a11y-widget-button * {
+  font-family: inherit !important;
+  font-weight: normal !important;
 }

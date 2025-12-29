@@ -4,13 +4,22 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, FileText, Scale, Shield, AlertTriangle, Cookie, RefreshCw, Gavel, Mail } from "lucide-react";
+import { ArrowLeft, FileText, Scale, Shield, AlertTriangle, Cookie, RefreshCw, Gavel, Mail, PersonStanding } from "lucide-react";
 import { Footer } from "@/components/landing-page/footer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { useAccessibility } from "@/contexts/accessibilityContext";
 
 export default function TermsPage() {
+    const { openPanel, setForceHideFloating } = useAccessibility()
+    
+    // Hide floating button on terms page
+    useEffect(() => {
+        setForceHideFloating(true)
+        return () => setForceHideFloating(false)
+    }, [setForceHideFloating])
+
     const sections = [
         { id: 'general', title: 'General terms', icon: FileText },
         { id: 'license', title: 'License', icon: Scale },
@@ -71,6 +80,14 @@ export default function TermsPage() {
                                 Back to home
                             </Link>
                         </Button>
+                        <button
+                            onClick={openPanel}
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            aria-label="Open Accessibility Menu"
+                            title="Accessibility Options"
+                        >
+                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                        </button>
                         <ThemeToggle />
                     </div>
                 </div>

@@ -32,6 +32,21 @@ const LampDemo = dynamic(
   { loading: () => <div className="min-h-[400px]" /> }
 );
 
+const CTASection = dynamic(
+  () => import('@/components/landing-page/cta-section').then(mod => mod.CTASection),
+  { loading: () => <div className="min-h-[300px]" /> }
+);
+
+const FAQSection = dynamic(
+  () => import('@/components/landing-page/faq-section').then(mod => mod.FAQSection),
+  { loading: () => <div className="min-h-[400px]" /> }
+);
+
+const BlogSection = dynamic(
+  () => import('@/components/landing-page/blog-section').then(mod => mod.BlogSection),
+  { loading: () => <div className="min-h-[400px]" /> }
+);
+
 const InfiniteMovingCardsDemo = dynamic(
   () => import('@/components/infinite-moving-cards-demo'),
   { loading: () => <div className="min-h-[200px]" /> }
@@ -236,6 +251,21 @@ export default function LandingPage() {
           {/* Lamp Section */}
           <section id="about" className="relative z-10 w-full overflow-hidden">
             <LampDemo />
+          </section>
+
+          {/* FAQ Section */}
+          <section id="faq" className="relative z-10 w-full overflow-hidden">
+            <FAQSection />
+          </section>
+
+          {/* Blog Section */}
+          <section id="blog" className="relative z-10 w-full overflow-hidden">
+            <BlogSection />
+          </section>
+
+          {/* CTA Section */}
+          <section id="connect" className="relative z-10 w-full overflow-hidden">
+            <CTASection />
           </section>
         </main>
 

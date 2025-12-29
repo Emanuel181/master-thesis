@@ -22,10 +22,52 @@ import {
     Settings, 
     Workflow, 
     LogIn, 
-    Keyboard 
+    Keyboard,
+    Rocket,
+    Activity,
+    Smartphone,
+    ArrowLeft
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const changelogData = [
+    {
+        version: "v1.2.0",
+        date: "December 2025",
+        title: "Observability, mobile & Product Hunt",
+        description: "Enhanced system monitoring, mobile responsiveness, and public launch on Product Hunt.",
+        type: "minor",
+        changes: [
+            {
+                category: "Observability",
+                icon: <Activity className="w-4 h-4 text-green-500" />,
+                items: [
+                    "Added real-time service health monitoring with status indicators.",
+                    "Integrated Gatus for uptime monitoring at status.vulniq.org.",
+                    "Live status badges in footer and login page showing operational state."
+                ]
+            },
+            {
+                category: "Product Hunt",
+                icon: <Rocket className="w-4 h-4 text-orange-500" />,
+                items: [
+                    "Launched VulnIQ on Product Hunt for public visibility.",
+                    "Added Product Hunt card in footer with direct link to product page.",
+                    "Enhanced SEO with structured data for better search engine indexing."
+                ]
+            },
+            {
+                category: "Mobile optimizations",
+                icon: <Smartphone className="w-4 h-4 text-blue-500" />,
+                items: [
+                    "Improved responsive design across all pages for mobile devices.",
+                    "Optimized tables with horizontal scrolling for smaller screens.",
+                    "Enhanced touch targets and navigation for mobile users."
+                ]
+            }
+        ]
+    },
     {
         version: "v1.1.0",
         date: "December 2025",
@@ -193,6 +235,14 @@ export default function ChangelogPage() {
                         transition={{ duration: 0.6 }}
                         className="text-center mb-16"
                     >
+                        <div className="flex justify-start mb-6">
+                            <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                                <Link href="/">
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Back to Home
+                                </Link>
+                            </Button>
+                        </div>
                         <Badge variant="outline" className="mb-4 border-[var(--brand-accent)]/30 text-[var(--brand-accent)] bg-[var(--brand-accent)]/5 px-3 py-1">
                             Development Journey
                         </Badge>

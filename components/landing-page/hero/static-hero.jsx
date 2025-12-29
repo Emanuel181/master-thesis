@@ -72,8 +72,8 @@ export function StaticHero() {
                 size="lg"
                 className="rounded-lg w-full sm:w-auto hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300"
               >
-                <a href="/login" aria-label="Explore prototype">
-                  Explore prototype
+                <a href="/login" aria-label="Explore VulnIQ">
+                  Explore VulnIQ
                 </a>
               </Button>
             </div>

@@ -40,7 +40,8 @@ import { QuickFileSwitcherProvider } from "@/components/ui/quick-file-switcher";
 import { SharedDndProvider } from "@/components/ui/dnd-provider";
 import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog";
 import { Button } from "@/components/ui/button";
-import { Keyboard } from "lucide-react";
+import { Keyboard, PersonStanding } from "lucide-react";
+import { useAccessibility } from "@/contexts/accessibilityContext";
 
 // Command palette trigger button component
 function CommandPaletteTrigger() {
@@ -54,6 +55,22 @@ function CommandPaletteTrigger() {
             title="Command Palette (Ctrl+K)"
         >
             <Keyboard className="h-5 w-5" />
+        </Button>
+    )
+}
+
+// Accessibility button component for dashboard
+function AccessibilityTrigger() {
+    const { openPanel } = useAccessibility()
+
+    return (
+        <Button
+            variant="outline"
+            size="icon"
+            onClick={openPanel}
+            title="Accessibility Options"
+        >
+            <PersonStanding className="h-5 w-5" />
         </Button>
     )
 }
@@ -80,6 +97,7 @@ const loadSavedCodeState = () => {
 // Inner component that can use useProject context
 function DashboardContent({ settings, mounted }) {
     const { projectClearCounter, projectStructure, setSelectedFile } = useProject();
+    const { setForceHideFloating } = useAccessibility();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     const [activeComponent, setActiveComponent] = useState("Home")
@@ -88,6 +106,12 @@ function DashboardContent({ settings, mounted }) {
     const [codeType, setCodeType] = useState(() => loadSavedCodeState().codeType);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [isCodeLocked, setIsCodeLocked] = useState(() => loadSavedCodeState().isLocked);
+
+    // Hide floating accessibility button on dashboard (use header icon instead)
+    useEffect(() => {
+        setForceHideFloating(true);
+        return () => setForceHideFloating(false);
+    }, [setForceHideFloating]);
 
     // Listen for open-feedback event (from command palette shortcut)
     useEffect(() => {
@@ -278,6 +302,7 @@ function DashboardContent({ settings, mounted }) {
                                                 <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                     <CommandPaletteTrigger />
                                                     <NotificationCenter />
+                                                    <AccessibilityTrigger />
                                                     <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
                                                     <ThemeToggle />
                                                 </div>

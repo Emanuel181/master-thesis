@@ -88,52 +88,65 @@ export function Footer({ onScrollToTop }) {
     };
 
     return (
-        <footer id="connect" ref={ref} className="relative border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 bg-gradient-to-b from-[var(--brand-white)] dark:from-[var(--brand-dark)] to-[var(--brand-light)]/20 dark:to-[var(--brand-primary)]/20 overflow-hidden w-full">
-            {/* Decorative top accent */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 sm:w-1/2 md:w-1/3 h-px bg-gradient-to-r from-transparent via-[var(--brand-accent)]/50 to-transparent" />
-
+        <footer ref={ref} className="relative py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 bg-[var(--brand-dark)] dark:bg-[var(--brand-dark)] w-full">
             <motion.div
-                className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 sm:py-8 md:py-10 lg:py-12 xl:py-16 w-full"
+                className="max-w-7xl mx-auto"
                 variants={containerVariants}
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}
             >
-                <div className="grid grid-cols-1 gap-8 sm:gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-12 xl:gap-16">
+                {/* Main footer card */}
+                <div className="relative rounded-2xl sm:rounded-3xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 bg-[var(--brand-light)]/95 dark:bg-[var(--brand-primary)]/40 backdrop-blur-sm overflow-hidden">
+                    {/* Decorative top accent */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 sm:w-1/2 md:w-1/3 h-px bg-gradient-to-r from-transparent via-[var(--brand-accent)]/50 to-transparent" />
+
+                    <div className="px-6 sm:px-8 md:px-10 lg:px-12 xl:px-16 py-8 sm:py-10 md:py-12 lg:py-16">
+                        <div className="grid grid-cols-1 gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
 
                     {/* Column 1: Brand & Description */}
                     <motion.div
-                        className="space-y-4 md:col-span-2 lg:col-span-1"
+                        className="space-y-4 sm:col-span-2 lg:col-span-1"
                         variants={itemVariants}
                     >
                         <div className="flex items-center gap-2.5">
                             <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" width={32} height={32} loading="eager" />
                             <span className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-base sm:text-lg tracking-tight">VulnIQ</span>
                         </div>
-                        <p className="text-sm sm:text-base leading-relaxed text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70 max-w-md">
-                            Autonomous security remediation powered by retrieval-augmented generation. A master thesis project exploring AI-driven vulnerability detection and patching.
+                        <p className="text-sm leading-relaxed text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                            Autonomous security remediation powered by retrieval-augmented generation.
                         </p>
+                        {/* Product Hunt Card */}
+                        <motion.a
+                            href="https://www.producthunt.com/products/vulniq"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#fff5f4] dark:bg-[#2a1f1e] border border-[#ffded9] dark:border-[#4a2f2c] hover:border-[#FF6154]/50 transition-all group"
+                            whileHover={{ scale: 1.02 }}
+                        >
+                            <svg className="w-8 h-8 text-[#FF6154]" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M13.604 8.4h-3.405V12h3.405c.995 0 1.801-.806 1.801-1.8 0-.995-.806-1.8-1.801-1.8zM12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm1.604 14.4h-3.405V18H7.801V6h5.803c2.319 0 4.2 1.881 4.2 4.2 0 2.319-1.881 4.2-4.2 4.2z"/>
+                            </svg>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase tracking-wider text-[#FF6154]/70 font-medium">Follow us on</span>
+                                <span className="text-sm font-semibold text-[#FF6154]">Product Hunt</span>
+                            </div>
+                        </motion.a>
                     </motion.div>
 
-                    {/* Column 2: Thesis Info & Socials */}
+                    {/* Column 2: Resources */}
                     <motion.div variants={itemVariants} className="space-y-4">
-                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm sm:text-base">Master thesis</h4>
-                        <div className="space-y-2 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
-                            <p className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)]">Emanuel Rusu</p>
-                            <p>West University of Timișoara</p>
-                            <p>Faculty of computer science</p>
-                            <p>Master&apos;s degree in cybersecurity</p>
-                        </div>
-                        <div className="flex flex-col gap-3 pt-2">
+                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Resources</h4>
+                        <div className="flex flex-col gap-2.5">
                             <Link
                                 href="/changelog"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1 -ml-1 pl-1 rounded touch-target"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <FileText className="w-4 h-4" />
                                 Changelog
                             </Link>
                             <Link
                                 href="/site-map"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1 -ml-1 pl-1 rounded touch-target"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <Map className="w-4 h-4" />
                                 Sitemap
@@ -142,30 +155,18 @@ export function Footer({ onScrollToTop }) {
                                 href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--brand-accent)] hover:underline py-1 -ml-1 pl-1 rounded touch-target"
+                                className="inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline"
                                 whileHover={{ x: 2 }}
                             >
                                 <FileText className="w-4 h-4" />
                                 View thesis paper
                             </motion.a>
                             <motion.a
-                                href="https://www.linkedin.com/in/rusu-emanuel/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0077b5] transition-colors py-1 -ml-1 pl-1 rounded touch-target"
-                                whileHover={{ x: 2 }}
-                                aria-label="Connect on LinkedIn (opens in new tab)"
-                            >
-                                <Linkedin className="w-4 h-4" />
-                                Connect on LinkedIn
-                            </motion.a>
-                            <motion.a
                                 href="https://status.vulniq.org"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1 -ml-1 pl-1 rounded touch-target"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 whileHover={{ x: 2 }}
-                                aria-label="View system status (opens in new tab)"
                             >
                                 <span className="relative flex h-2.5 w-2.5">
                                     <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
@@ -179,33 +180,52 @@ export function Footer({ onScrollToTop }) {
                                         serviceStatus === "down" ? "bg-red-500" : "bg-gray-500"
                                     }`} />
                                 </span>
-                                {serviceStatus === "operational" ? "Services are operational" : 
-                                 serviceStatus === "partial" ? "Services partially operational" : 
-                                 serviceStatus === "down" ? "Services not operational" : "Checking status..."}
+                                System status
                             </motion.a>
                         </div>
                     </motion.div>
 
-                    {/* Column 3: Newsletter & Product Hunt */}
-                    <motion.div variants={itemVariants} className="space-y-4 md:col-span-2 lg:col-span-1">
-                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm sm:text-base">Stay updated</h4>
+                    {/* Column 3: About */}
+                    <motion.div variants={itemVariants} className="space-y-4">
+                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master thesis</h4>
+                        <div className="space-y-1.5 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                            <p className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)]">Emanuel Rusu</p>
+                            <p>West University of Timișoara</p>
+                            <p>Faculty of Computer Science</p>
+                            <p>MSc Cybersecurity</p>
+                        </div>
+                        <motion.a
+                            href="https://www.linkedin.com/in/rusu-emanuel/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0077b5] transition-colors"
+                            whileHover={{ x: 2 }}
+                        >
+                            <Linkedin className="w-4 h-4" />
+                            Connect on LinkedIn
+                        </motion.a>
+                    </motion.div>
+
+                    {/* Column 4: Newsletter */}
+                    <motion.div variants={itemVariants} className="space-y-4 sm:col-span-2 lg:col-span-1">
+                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay updated</h4>
                         <p className="text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
                             Get notified about new features and research updates.
                         </p>
-                        <form onSubmit={handleSubscribe} className="flex flex-col gap-3 max-w-md">
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Enter your email"
-                                    className="flex-1 min-w-0 px-4 py-3 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40 focus:border-[var(--brand-accent)]/60 transition-all min-h-[44px]"
-                                    disabled={status === "loading" || status === "success"}
-                                />
+                        <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Enter your email address"
+                                className="w-full px-4 py-3 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40 focus:border-[var(--brand-accent)]/60 transition-all min-h-[44px]"
+                                disabled={status === "loading" || status === "success"}
+                            />
+                            <div className="flex gap-2">
                                 <Button
                                     type="submit"
                                     disabled={status === "loading" || status === "success"}
-                                    className="w-full sm:w-auto min-h-[44px] whitespace-nowrap text-white dark:bg-white dark:text-[var(--brand-primary)] dark:hover:bg-white/90"
+                                    className="w-full min-h-[44px] whitespace-nowrap text-white dark:bg-white dark:text-[var(--brand-primary)] dark:hover:bg-white/90"
                                     aria-label={status === "loading" ? "Subscribing..." : status === "success" ? "Subscribed successfully" : "Subscribe to newsletter"}
                                 >
                                     <span>Subscribe</span>
@@ -237,36 +257,11 @@ export function Footer({ onScrollToTop }) {
                                 </motion.p>
                             )}
                         </form>
-
-                        {/* Product Hunt Card */}
-                        <div className="mt-6 p-4 rounded-xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 bg-[var(--brand-white)] dark:bg-[var(--brand-primary)]/50 max-w-md">
-                            <div className="flex items-center gap-3 mb-3">
-                                <Image 
-                                    src="/web-app-manifest-512x512.png" 
-                                    alt="VulnIQ" 
-                                    width={48} 
-                                    height={48} 
-                                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <h5 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm leading-tight truncate">VulnIQ</h5>
-                                    <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 mt-0.5 line-clamp-2">Security remediation without hallucinations</p>
-                                </div>
-                            </div>
-                            <a 
-                                href="https://www.producthunt.com/products/vulniq?embed=true&utm_source=embed&utm_medium=post_embed" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF6154] hover:bg-[#e5574b] text-white text-xs font-semibold rounded-lg transition-colors"
-                            >
-                                Check it out on Product Hunt →
-                            </a>
-                        </div>
                     </motion.div>
 
                 </div>
 
-                {/* Bottom Bar */}
+                {/* Bottom Bar - inside card */}
                 <motion.div
                     className="border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 mt-8 sm:mt-10 md:mt-12 lg:mt-16 pt-6 sm:pt-8 flex flex-col gap-4"
                     initial={{ opacity: 0 }}
@@ -279,7 +274,7 @@ export function Footer({ onScrollToTop }) {
                             variant="outline"
                             size="sm"
                             onClick={() => onScrollToTop ? onScrollToTop() : window.scrollTo({ top: 0, behavior: 'smooth' })}
-                            className="text-xs"
+                            className="text-xs bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20"
                         >
                             <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
                             Back to top
@@ -288,30 +283,40 @@ export function Footer({ onScrollToTop }) {
                     
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
-                            © 2025 Emanuel Rusu - Master thesis project
+                        <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
+                            © 2025 VulnIQ. All rights reserved.
                         </p>
                         <div className="flex items-center justify-center sm:justify-start gap-3">
                             <Link
                                 href="/privacy"
-                                className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
+                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
                             >
                                 Privacy Policy
                             </Link>
                             <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30">•</span>
                             <Link
                                 href="/terms"
-                                className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
+                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
                             >
                                 Terms & Conditions
                             </Link>
                         </div>
                     </div>
-                    <p className="text-xs text-[var(--brand-primary)]/50 dark:text-[var(--brand-light)]/50">
-                        Open beta • Research project
+                    <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
+                        Open beta • Research project •{" "}
+                        <a 
+                            href="https://info.uvt.ro/en/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors underline underline-offset-2"
+                        >
+                            Faculty of Computer Science
+                        </a>
                     </p>
                     </div>
                 </motion.div>
+                    </div>
+                </div>
             </motion.div>
         </footer>
     );
