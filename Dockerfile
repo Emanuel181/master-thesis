@@ -46,6 +46,9 @@ COPY package.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
+# Generate Prisma client (required for migrate deploy)
+RUN npx prisma generate
+
 # DATABASE_URL is injected at runtime by ECS
 CMD ["npx", "prisma", "migrate", "deploy"]
 

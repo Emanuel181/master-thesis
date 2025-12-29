@@ -133,35 +133,31 @@ jobs:
       # Run Prisma Migrations (BLOCKING)
       ##################################
       - name: Run Prisma Migrations
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
-          # Use the migration image we just pushed
           MIGRATE_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:migrate-$IMAGE_TAG"
           echo "Using migration image: $MIGRATE_IMAGE"
           
-          # Get the current task definition
-          TASK_DEF=$(aws ecs describe-task-definition \
-            --task-definition ${{ secrets.ECS_MIGRATION_TASK }} \
-            --query 'taskDefinition' \
-            --output json)
+          # Build task definition from template
+          TASK_DEF=$(cat .aws/task-definition-migrate.json | \
+            sed "s|\${IMAGE}|$MIGRATE_IMAGE|g" | \
+            sed "s|\${EXECUTION_ROLE_ARN}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}|g" | \
+            sed "s|\${TASK_ROLE_ARN}|${{ secrets.ECS_TASK_ROLE_ARN }}|g" | \
+            sed "s|\${DATABASE_URL_SECRET_ARN}|${{ secrets.DATABASE_URL_SECRET_ARN }}|g" | \
+            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g")
           
-          # Update the image in the container definition and remove fields that can't be re-registered
-          NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$MIGRATE_IMAGE" '
-            .containerDefinitions[0].image = $IMAGE |
-            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)
-          ')
-          
-          # Register the new task definition
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json "$NEW_TASK_DEF" \
+          echo "Registering migration task definition..."
+          NEW_TASK_DEF_ARN=$(echo "$TASK_DEF" | aws ecs register-task-definition \
+            --cli-input-json file:///dev/stdin \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           
-          echo "Registered new task definition: $NEW_TASK_DEF_ARN"
+          echo "Registered: $NEW_TASK_DEF_ARN"
           
-          # Run the migration task with the new task definition
+          # Run the migration task
           TASK_ARN=$(aws ecs run-task \
             --cluster ${{ secrets.ECS_CLUSTER }} \
             --task-definition "$NEW_TASK_DEF_ARN" \
@@ -185,12 +181,10 @@ jobs:
             --query 'tasks[0].containers[0].exitCode' \
             --output text)
           
-          echo "Migration task completed with exit code: $EXIT_CODE"
+          echo "Migration completed with exit code: $EXIT_CODE"
           
-          # Extract task ID for logs
+          # Fetch logs
           TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
-          
-          # Fetch logs regardless of exit code
           echo "Fetching migration logs..."
           aws logs get-log-events \
             --log-group-name "/ecs/vulniq-prisma-migrate" \
@@ -209,8 +203,36 @@ jobs:
       # Deploy ECS Service
       ##################################
       - name: Deploy ECS Service
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
+          APP_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "Deploying image: $APP_IMAGE"
+          
+          # Build task definition from template
+          TASK_DEF=$(cat .aws/task-definition-app.json | \
+            sed "s|\${IMAGE}|$APP_IMAGE|g" | \
+            sed "s|\${EXECUTION_ROLE_ARN}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}|g" | \
+            sed "s|\${TASK_ROLE_ARN}|${{ secrets.ECS_TASK_ROLE_ARN }}|g" | \
+            sed "s|\${DATABASE_URL_SECRET_ARN}|${{ secrets.DATABASE_URL_SECRET_ARN }}|g" | \
+            sed "s|\${NEXTAUTH_SECRET_ARN}|${{ secrets.NEXTAUTH_SECRET_ARN }}|g" | \
+            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g")
+          
+          echo "Registering app task definition..."
+          NEW_TASK_DEF_ARN=$(echo "$TASK_DEF" | aws ecs register-task-definition \
+            --cli-input-json file:///dev/stdin \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          
+          echo "Registered: $NEW_TASK_DEF_ARN"
+          
+          # Update service with new task definition
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER }} \
             --service ${{ secrets.ECS_SERVICE }} \
+            --task-definition "$NEW_TASK_DEF_ARN" \
             --force-new-deployment
+          
+          echo "Deployment initiated successfully!"
