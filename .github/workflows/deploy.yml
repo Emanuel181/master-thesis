@@ -177,6 +177,13 @@ jobs:
             --cluster ${{ secrets.ECS_CLUSTER }} \
             --tasks "$TASK_ARN"
           
+          # Get full task details for debugging
+          echo "Task details:"
+          aws ecs describe-tasks \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --output json
+          
           # Check the exit code
           EXIT_CODE=$(aws ecs describe-tasks \
             --cluster ${{ secrets.ECS_CLUSTER }} \
@@ -184,7 +191,15 @@ jobs:
             --query 'tasks[0].containers[0].exitCode' \
             --output text)
           
-          echo "Migration completed with exit code: $EXIT_CODE"
+          # Get stopped reason
+          STOPPED_REASON=$(aws ecs describe-tasks \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' \
+            --output text)
+          
+          echo "Exit code: $EXIT_CODE"
+          echo "Stopped reason: $STOPPED_REASON"
           
           # Fetch logs
           TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
