@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -146,12 +147,10 @@ export function Footer() {
                                     className="flex-1 min-w-0 px-4 py-3 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40 focus:border-[var(--brand-accent)]/60 transition-all min-h-[44px]"
                                     disabled={status === "loading" || status === "success"}
                                 />
-                                <motion.button
+                                <Button
                                     type="submit"
                                     disabled={status === "loading" || status === "success"}
-                                    className="w-full sm:w-auto px-6 py-3 text-sm font-semibold rounded-lg bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px] whitespace-nowrap"
-                                    whileHover={{ scale: status === "loading" || status === "success" ? 1 : 1.02 }}
-                                    whileTap={{ scale: status === "loading" || status === "success" ? 1 : 0.98 }}
+                                    className="w-full sm:w-auto min-h-[44px] whitespace-nowrap"
                                     aria-label={status === "loading" ? "Subscribing..." : status === "success" ? "Subscribed successfully" : "Subscribe to newsletter"}
                                 >
                                     <span>Subscribe</span>
@@ -162,7 +161,7 @@ export function Footer() {
                                     ) : (
                                         <Send className="w-4 h-4" />
                                     )}
-                                </motion.button>
+                                </Button>
                             </div>
                             {message && (
                                 <motion.p

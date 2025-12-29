@@ -39,13 +39,13 @@ export function LampDemo() {
                 transition={{ delay: 0.7, duration: 0.6 }}
                 className="mt-4 sm:mt-6 md:mt-8 flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 w-full max-w-xs sm:max-w-none px-4 sm:w-auto sm:px-0"
             >
-                <Button asChild size="default" className="rounded-lg bg-[var(--brand-accent)] text-[var(--brand-dark)] hover:bg-[var(--brand-accent)]/90 font-semibold w-full sm:w-auto text-sm sm:text-base">
+                <Button asChild size="default" className="rounded-lg font-semibold w-full sm:w-auto text-sm sm:text-base">
                     <a href="/login" className="flex items-center justify-center gap-2">
                         Get Started
                         <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </a>
                 </Button>
-                <Button asChild variant="outline" size="default" className="rounded-lg border-[var(--brand-light)]/20 text-[var(--brand-light)] bg-transparent hover:bg-[var(--brand-light)]/10 w-full sm:w-auto text-sm sm:text-base">
+                <Button asChild variant="outline" size="default" className="rounded-lg border-[var(--brand-light)]/30 text-[var(--brand-light)] bg-transparent hover:bg-[var(--brand-light)]/10 w-full sm:w-auto text-sm sm:text-base">
                     <a href="#features">
                         Learn More
                     </a>

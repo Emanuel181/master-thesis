@@ -27,64 +27,22 @@ export const FlipWords = ({
 
     return (
         <AnimatePresence
+            mode="wait"
             onExitComplete={() => {
                 setIsAnimating(false);
             }}>
-            <motion.div
-                initial={{
-                    opacity: 0,
-                    transform: "translateY(10px)",
-                }}
-                animate={{
-                    opacity: 1,
-                    transform: "translateY(0px)",
-                }}
-                transition={{
-                    type: "spring",
-                    stiffness: 100,
-                    damping: 10,
-                }}
-                exit={{
-                    opacity: 0,
-                    transform: "translateY(-40px) translateX(40px) scale(2)",
-                    position: "absolute",
-                }}
-                style={{ willChange: "transform, opacity" }}
+            <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
                 className={cn(
-                    "z-10 inline-block relative text-left text-[var(--brand-primary)] dark:text-[var(--brand-light)] px-2",
+                    "inline-block text-[var(--brand-accent)]",
                     className
                 )}
                 key={currentWord}>
-                {/* edit suggested by Sajal: https://x.com/DewanganSajal */}
-                {currentWord.split(" ").map((word, wordIndex) => (
-                    <motion.span
-                        key={word + wordIndex}
-                        initial={{ opacity: 0, transform: "translateY(10px)" }}
-                        animate={{ opacity: 1, transform: "translateY(0px)" }}
-                        transition={{
-                            delay: wordIndex * 0.3,
-                            duration: 0.3,
-                        }}
-                        style={{ willChange: "transform, opacity" }}
-                        className="inline-block whitespace-nowrap text-[var(--brand-accent)]">
-                        {word.split("").map((letter, letterIndex) => (
-                            <motion.span
-                                key={word + letterIndex}
-                                initial={{ opacity: 0, transform: "translateY(10px)" }}
-                                animate={{ opacity: 1, transform: "translateY(0px)" }}
-                                transition={{
-                                    delay: wordIndex * 0.3 + letterIndex * 0.05,
-                                    duration: 0.2,
-                                }}
-                                style={{ willChange: "transform, opacity" }}
-                                className="inline-block">
-                                {letter}
-                            </motion.span>
-                        ))}
-                        <span className="inline-block">&nbsp;</span>
-                    </motion.span>
-                ))}
-            </motion.div>
+                {currentWord}
+            </motion.span>
         </AnimatePresence>
     );
 };
