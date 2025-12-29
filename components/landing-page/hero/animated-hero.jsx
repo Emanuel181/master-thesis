@@ -97,13 +97,12 @@ export function AnimatedHero({ scrollContainerRef }) {
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start"
             >
-              <Button asChild size="lg" className="rounded-lg w-full sm:w-auto bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/90 dark:bg-white dark:hover:bg-white/90 [&>a]:text-white dark:[&>a]:text-[var(--brand-primary)]">
+              <Button asChild size="lg" className="rounded-lg w-full sm:w-auto bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/90 dark:bg-white dark:hover:bg-white/90">
                 <a
                   href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2"
-                  style={{ color: 'inherit' }}
+                  className="flex items-center justify-center gap-2 text-white dark:text-[var(--brand-primary)]"
                   aria-label="View thesis"
                 >
                   View thesis
