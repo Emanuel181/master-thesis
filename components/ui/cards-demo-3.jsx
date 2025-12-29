@@ -113,22 +113,22 @@ const Skeleton = () => {
     }, []);
 
     return (
-        <div className="p-8 overflow-hidden h-full relative flex items-center justify-center">
-            <div className="flex flex-row shrink-0 justify-center items-center gap-2">
-                <Container className="h-8 w-8 circle-1">
-                    <ClaudeLogo className="h-4 w-4" />
+        <div className="p-4 sm:p-8 overflow-hidden h-full relative flex items-center justify-center">
+            <div className="flex flex-row shrink-0 justify-center items-center gap-1 sm:gap-2">
+                <Container className="h-6 w-6 sm:h-8 sm:w-8 circle-1">
+                    <ClaudeLogo className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Container>
-                <Container className="h-12 w-12 circle-2">
-                    <GoCopilot className="h-6 w-6 dark:text-white" />
+                <Container className="h-8 w-8 sm:h-12 sm:w-12 circle-2">
+                    <GoCopilot className="h-4 w-4 sm:h-6 sm:w-6 dark:text-white" />
                 </Container>
-                <Container className="circle-3">
-                    <OpenAILogo className="h-8 w-8 dark:text-white" />
+                <Container className="h-10 w-10 sm:h-16 sm:w-16 circle-3">
+                    <OpenAILogo className="h-5 w-5 sm:h-8 sm:w-8 dark:text-white" />
                 </Container>
-                <Container className="h-12 w-12 circle-4">
-                    <MetaIconOutline className="h-6 w-6" />
+                <Container className="h-8 w-8 sm:h-12 sm:w-12 circle-4">
+                    <MetaIconOutline className="h-4 w-4 sm:h-6 sm:w-6" />
                 </Container>
-                <Container className="h-8 w-8 circle-5">
-                    <GeminiLogo className="h-4 w-4" />
+                <Container className="h-6 w-6 sm:h-8 sm:w-8 circle-5">
+                    <GeminiLogo className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Container>
             </div>
 
