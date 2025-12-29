@@ -225,7 +225,7 @@ export const LogoLoop = memo(
     }, [effectiveHoverSpeed]);
 
     const renderLogoItem = useCallback(
-      (item, key) => {
+      (item, key, isDuplicate = false) => {
         if (renderItem) {
           return (
             <li className="logoloop__item" key={key} role="listitem">
@@ -253,6 +253,7 @@ export const LogoLoop = memo(
           />
         );
         const itemAriaLabel = isNodeItem ? (item.ariaLabel ?? item.title) : (item.alt ?? item.title);
+        // For duplicate copies, make links non-focusable to avoid aria-hidden issues
         const itemContent = item.href ? (
           <a
             className="logoloop__link"
@@ -260,6 +261,7 @@ export const LogoLoop = memo(
             aria-label={itemAriaLabel || 'logo link'}
             target="_blank"
             rel="noreferrer noopener"
+            tabIndex={isDuplicate ? -1 : undefined}
           >
             {content}
           </a>
@@ -277,19 +279,20 @@ export const LogoLoop = memo(
 
     const logoLists = useMemo(
       () =>
-        Array.from({ length: copyCount }, (_, copyIndex) => (
-          <ul
-            className="logoloop__list"
-            key={`copy-${copyIndex}`}
-            role="list"
-            // Ensure lists are not hidden from screen readers if they contain focusable elements
-            // or if they are the primary visual content.
-            // aria-hidden={copyIndex > 0} 
-            ref={copyIndex === 0 ? seqRef : undefined}
-          >
-            {logos.map((item, itemIndex) => renderLogoItem(item, `${copyIndex}-${itemIndex}`))}
-          </ul>
-        )),
+        Array.from({ length: copyCount }, (_, copyIndex) => {
+          const isDuplicate = copyIndex > 0;
+          return (
+            <ul
+              className="logoloop__list"
+              key={`copy-${copyIndex}`}
+              role="list"
+              aria-hidden={isDuplicate}
+              ref={copyIndex === 0 ? seqRef : undefined}
+            >
+              {logos.map((item, itemIndex) => renderLogoItem(item, `${copyIndex}-${itemIndex}`, isDuplicate))}
+            </ul>
+          );
+        }),
       [copyCount, logos, renderLogoItem]
     );
 

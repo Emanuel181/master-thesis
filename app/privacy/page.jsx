@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -518,10 +518,10 @@ export default function PrivacyPage() {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
                     <p>© {new Date().getFullYear()} VulnIQ. All rights reserved.</p>
                     <div className="mt-2 flex justify-center gap-4">
-                        <Link href="/privacy" className="hover:text-foreground transition-colors">
+                        <Link href="/privacy" className="hover:text-white dark:hover:text-white transition-colors">
                             Privacy Policy
                         </Link>
-                        <Link href="/terms" className="hover:text-foreground transition-colors">
+                        <Link href="/terms" className="hover:text-white dark:hover:text-white transition-colors">
                             Terms & Conditions
                         </Link>
                     </div>

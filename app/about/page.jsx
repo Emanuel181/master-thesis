@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -9,25 +9,39 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef } from "react";
 import { Footer } from "@/components/landing-page/footer";
-import { LogoLoop } from '@/components/ui/logo-loop';
-import { SiReact, SiNextdotjs, SiTailwindcss, SiDocker, SiGithub, SiWebstorm, SiShadcnui } from 'react-icons/si';
-import { FaAws } from "react-icons/fa";
-import { FaNodeJs } from "react-icons/fa6";
-import { IoLogoJavascript } from "react-icons/io";
-import { IoLogoCss3 } from "react-icons/io5";
+import dynamic from 'next/dynamic';
+import {
+  IconNextjs,
+  IconDocker,
+  IconReact,
+  IconGithub,
+  IconTailwind,
+  IconAws,
+  IconNode,
+  IconJs,
+  IconCss,
+  IconWebstorm,
+  IconShadcn
+} from "@/components/icons/tech-icons";
+
+// Dynamically import LogoLoop (heavy component with icons)
+const LogoLoop = dynamic(() => import('@/components/ui/logo-loop').then(mod => mod.LogoLoop), {
+  ssr: false,
+  loading: () => <div className="h-16" />
+});
 
 const techLogos = [
-  { node: <SiNextdotjs />, title: "Next.js", href: "https://nextjs.org" },
-  { node: <SiDocker />, title: "Docker", href: "https://www.docker.com" },
-  { node: <SiReact />, title: "React", href: "https://react.dev" },
-  { node: <SiGithub />, title: "GitHub", href: "https://github.com" },
-  { node: <SiTailwindcss />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaAws />, title: "AWS", href: "https://aws.amazon.com" },
-  { node: <SiWebstorm />, title: "WebStorm", href: "https://www.jetbrains.com/webstorm/" },
-  { node: <FaNodeJs />, title: "Node.js", href: "https://nodejs.org" },
-  { node: <IoLogoJavascript />, title: "JavaScript", href: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
-  { node: <IoLogoCss3 />, title: "CSS3", href: "https://developer.mozilla.org/en-US/docs/Web/CSS" },
-  { node: <SiShadcnui />, title: "Shadcn UI", href: "https://ui.shadcn.com" },
+  { node: <IconNextjs className="w-6 h-6" />, title: "Next.js", href: "https://nextjs.org" },
+  { node: <IconDocker className="w-6 h-6" />, title: "Docker", href: "https://www.docker.com" },
+  { node: <IconReact className="w-6 h-6" />, title: "React", href: "https://react.dev" },
+  { node: <IconGithub className="w-6 h-6" />, title: "GitHub", href: "https://github.com" },
+  { node: <IconTailwind className="w-6 h-6" />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
+  { node: <IconAws className="w-6 h-6" />, title: "AWS", href: "https://aws.amazon.com" },
+  { node: <IconWebstorm className="w-6 h-6" />, title: "WebStorm", href: "https://www.jetbrains.com/webstorm/" },
+  { node: <IconNode className="w-6 h-6" />, title: "Node.js", href: "https://nodejs.org" },
+  { node: <IconJs className="w-6 h-6" />, title: "JavaScript", href: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
+  { node: <IconCss className="w-6 h-6" />, title: "CSS3", href: "https://developer.mozilla.org/en-US/docs/Web/CSS" },
+  { node: <IconShadcn className="w-6 h-6" />, title: "Shadcn UI", href: "https://ui.shadcn.com" },
 ];
 
 export default function AboutPage() {

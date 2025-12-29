@@ -1,34 +1,34 @@
 "use client";
-import { animate, motion } from "motion/react";
+import { animate, motion } from "framer-motion";
 import React, { useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { GoCopilot } from "react-icons/go";
+import { IconCopilot } from "@/components/icons/tech-icons";
 
 export default function CardDemo() {
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
         {/* Left: Text Explanation */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="space-y-6"
+          className="space-y-4 sm:space-y-6 order-2 lg:order-1"
         >
           
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Power your agents with <br/>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground text-center lg:text-left">
+            Power your agents with <br className="hidden sm:block"/>
             <span className="gradient-text">state-of-the-art models</span>
           </h2>
           
-          <p className="text-lg text-muted-foreground leading-relaxed">
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed text-center lg:text-left">
             Don't get locked into a single ecosystem. VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost for your specific use cases.
           </p>
           
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-2 sm:gap-3 pt-2 justify-center lg:justify-start">
             {["OpenAI", "Anthropic", "Google Gemini", "Llama"].map((model) => (
-              <span key={model} className="px-3 py-1.5 text-sm rounded-md bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 font-medium">
+              <span key={model} className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 font-medium">
                 {model}
               </span>
             ))}
@@ -41,7 +41,7 @@ export default function CardDemo() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex justify-center lg:justify-end"
+          className="flex justify-center order-1 lg:order-2 lg:justify-end"
         >
           <Card>
             <CardSkeletonContainer>
@@ -113,27 +113,27 @@ const Skeleton = () => {
   }, []);
   
   return (
-    <div className="p-8 overflow-hidden h-full relative flex items-center justify-center">
-      <div className="flex flex-row shrink-0 justify-center items-center gap-2">
-        <Container className="h-8 w-8 circle-1">
-          <ClaudeLogo className="h-4 w-4" />
+    <div className="p-4 sm:p-6 md:p-8 overflow-hidden h-full relative flex items-center justify-center">
+      <div className="flex flex-row shrink-0 justify-center items-center gap-1.5 sm:gap-2">
+        <Container className="h-6 w-6 sm:h-8 sm:w-8 circle-1">
+          <ClaudeLogo className="h-3 w-3 sm:h-4 sm:w-4" />
         </Container>
-        <Container className="h-12 w-12 circle-2">
-          <GoCopilot className="h-6 w-6 dark:text-white" />
+        <Container className="h-9 w-9 sm:h-12 sm:w-12 circle-2">
+          <IconCopilot className="h-4 w-4 sm:h-6 sm:w-6 dark:text-white" />
         </Container>
         <Container className="circle-3">
-          <OpenAILogo className="h-8 w-8 dark:text-white" />
+          <OpenAILogo className="h-6 w-6 sm:h-8 sm:w-8 dark:text-white" />
         </Container>
-        <Container className="h-12 w-12 circle-4">
-          <MetaIconOutline className="h-6 w-6" />
+        <Container className="h-9 w-9 sm:h-12 sm:w-12 circle-4">
+          <MetaIconOutline className="h-4 w-4 sm:h-6 sm:w-6" />
         </Container>
-        <Container className="h-8 w-8 circle-5">
-          <GeminiLogo className="h-4 w-4" />
+        <Container className="h-6 w-6 sm:h-8 sm:w-8 circle-5">
+          <GeminiLogo className="h-3 w-3 sm:h-4 sm:w-4" />
         </Container>
       </div>
 
-      <div className="h-40 w-px absolute top-20 m-auto z-40 bg-gradient-to-b from-transparent via-[var(--brand-accent)] to-transparent animate-move">
-        <div className="w-10 h-32 top-1/2 -translate-y-1/2 absolute -left-10">
+      <div className="h-32 sm:h-40 w-px absolute top-16 sm:top-20 m-auto z-40 bg-gradient-to-b from-transparent via-[var(--brand-accent)] to-transparent animate-move">
+        <div className="w-8 sm:w-10 h-24 sm:h-32 top-1/2 -translate-y-1/2 absolute -left-8 sm:-left-10">
           <Sparkles />
         </div>
       </div>
@@ -190,7 +190,7 @@ export const Card = ({ className, children }) => {
   return (
     <div
       className={cn(
-        "max-w-sm w-full mx-auto p-8 rounded-xl border border-[var(--brand-primary)]/20 bg-card dark:bg-[var(--brand-primary)]/40 shadow-lg group hover:shadow-xl transition-all duration-300 hover:border-[var(--brand-accent)]/30",
+        "max-w-xs sm:max-w-sm w-full mx-auto p-5 sm:p-6 md:p-8 rounded-xl border border-[var(--brand-primary)]/20 bg-card dark:bg-[var(--brand-primary)]/40 shadow-lg group hover:shadow-xl transition-all duration-300 hover:border-[var(--brand-accent)]/30",
         className
       )}
     >
@@ -203,7 +203,7 @@ export const CardTitle = ({ children, className }) => {
   return (
     <h3
       className={cn(
-        "text-lg font-semibold text-foreground py-2",
+        "text-base sm:text-lg font-semibold text-foreground py-1.5 sm:py-2",
         className
       )}
     >
@@ -216,7 +216,7 @@ export const CardDescription = ({ children, className }) => {
   return (
     <p
       className={cn(
-        "text-sm font-normal text-muted-foreground max-w-sm",
+        "text-xs sm:text-sm font-normal text-muted-foreground max-w-xs sm:max-w-sm",
         className
       )}
     >

@@ -12,10 +12,17 @@ export const Timeline = ({ data }) => {
     const [height, setHeight] = useState(0);
 
     useEffect(() => {
-        if (ref.current) {
-            const rect = ref.current.getBoundingClientRect();
-            setHeight(rect.height);
-        }
+        // Use requestAnimationFrame to avoid forced reflow
+        const measureHeight = () => {
+            if (ref.current) {
+                const rect = ref.current.getBoundingClientRect();
+                setHeight(rect.height);
+            }
+        };
+        
+        // Defer measurement to avoid layout thrashing
+        const rafId = requestAnimationFrame(measureHeight);
+        return () => cancelAnimationFrame(rafId);
     }, [ref]);
 
     const { scrollYProgress } = useScroll({

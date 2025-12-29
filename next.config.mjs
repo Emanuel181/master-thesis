@@ -1,21 +1,71 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Note: standalone output may fail on Windows with Next.js 16 + Turbopack due to colon in chunk filenames
+  // Build on Linux/Docker for production, or use WSL on Windows
   output: 'standalone',
   poweredByHeader: false,
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "node:buffer": "buffer",
-      "node:stream": "stream",
-      "node:util": "util",
-      "node:process": "process",
-    };
-    return config;
+  compress: true,
+  productionBrowserSourceMaps: false,
+  // Target modern browsers only - avoids legacy polyfills
+  transpilePackages: [],
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  experimental: {
+    // Optimize CSS for faster loading
+    optimizeCss: true,
+    // Inline critical CSS for faster FCP
+    inlineCss: true,
+    // Enable modern JavaScript output without legacy polyfills
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+    optimizePackageImports: [
+      // Icon libraries
+      'lucide-react',
+      '@tabler/icons-react',
+      '@iconify/react',
+      // Animation libraries
+      'framer-motion',
+      'motion-dom',
+      // UI libraries
+      '@radix-ui/react-scroll-area',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-tooltip',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-select',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-collapsible',
+      '@radix-ui/react-context-menu',
+      '@radix-ui/react-hover-card',
+      '@radix-ui/react-label',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-radio-group',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-switch',
+      // Data visualization
+      'recharts',
+      'reactflow',
+      // Utilities
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      '@dnd-kit/utilities',
+      'date-fns',
+      'clsx',
+      'tailwind-merge',
+      'class-variance-authority',
+    ],
   },
   async headers() {
     return [
+      // Public marketing pages - allow bfcache
       {
-        source: '/:path*',
+        source: '/',
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
@@ -47,7 +97,59 @@ const nextConfig = {
           },
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
+            value: 'public, max-age=0, must-revalidate'
+          }
+        ]
+      },
+      // Other public pages
+      {
+        source: '/(about|privacy|terms|changelog)',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate'
+          }
+        ]
+      },
+      // Protected/API routes - no cache for security
+      {
+        source: '/(dashboard|profile|api)/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; frame-ancestors 'self';"
+          },
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, no-store, must-revalidate'
           }
         ]
       },
@@ -67,6 +169,24 @@ const nextConfig = {
                 key: 'Cache-Control',
                 value: 'public, max-age=31536000, immutable'
             }
+        ]
+      },
+      {
+        source: '/:path*.{jpg,jpeg,png,gif,ico,svg,webp}',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      },
+      {
+        source: '/:path*.{woff,woff2,ttf,otf,eot}',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
         ]
       }
     ]

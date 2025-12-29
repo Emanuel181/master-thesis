@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function LampDemo() {
@@ -28,14 +28,15 @@ export const LampContainer = ({
   return (
     <div
       className={cn(
-        "relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden bg-[var(--brand-dark)] w-full z-0",
+        "relative flex min-h-[50vh] sm:min-h-[60vh] md:min-h-[70vh] flex-col items-center justify-center overflow-hidden bg-[var(--brand-dark)] w-full max-w-[100vw] z-0",
         className
       )}>
       <div
-        className="relative flex w-full flex-1 scale-y-125 items-center justify-center isolate z-0 ">
+        className="relative flex w-full max-w-[100vw] flex-1 items-center justify-center isolate z-0 overflow-hidden">
+        {/* Left conic gradient */}
         <motion.div
-          initial={{ opacity: 0.5, width: "15rem" }}
-          whileInView={{ opacity: 1, width: "30rem" }}
+          initial={{ opacity: 0.5, width: "5rem" }}
+          whileInView={{ opacity: 1, width: "8rem" }}
           transition={{
             delay: 0.3,
             duration: 0.8,
@@ -44,15 +45,16 @@ export const LampContainer = ({
           style={{
             backgroundImage: `conic-gradient(var(--conic-position), var(--tw-gradient-stops))`,
           }}
-          className="absolute inset-auto right-1/2 h-56 overflow-visible w-[30rem] bg-gradient-conic from-[var(--brand-accent)] via-transparent to-transparent text-white [--conic-position:from_70deg_at_center_top]">
+          className="absolute h-20 sm:h-40 md:h-56 w-[8rem] sm:w-[20rem] md:w-[30rem] -translate-x-1/2 bg-gradient-conic from-[var(--brand-accent)] via-transparent to-transparent text-white [--conic-position:from_70deg_at_center_top]">
           <div
-            className="absolute w-[100%] left-0 bg-[var(--brand-dark)] h-40 bottom-0 z-20 [mask-image:linear-gradient(to_top,white,transparent)]" />
+            className="absolute w-full left-0 bg-[var(--brand-dark)] h-12 sm:h-32 md:h-40 bottom-0 z-20 [mask-image:linear-gradient(to_top,white,transparent)]" />
           <div
-            className="absolute w-40 h-[100%] left-0 bg-[var(--brand-dark)] bottom-0 z-20 [mask-image:linear-gradient(to_right,white,transparent)]" />
+            className="absolute w-12 sm:w-32 md:w-40 h-full left-0 bg-[var(--brand-dark)] bottom-0 z-20 [mask-image:linear-gradient(to_right,white,transparent)]" />
         </motion.div>
+        {/* Right conic gradient */}
         <motion.div
-          initial={{ opacity: 0.5, width: "15rem" }}
-          whileInView={{ opacity: 1, width: "30rem" }}
+          initial={{ opacity: 0.5, width: "5rem" }}
+          whileInView={{ opacity: 1, width: "8rem" }}
           transition={{
             delay: 0.3,
             duration: 0.8,
@@ -61,41 +63,41 @@ export const LampContainer = ({
           style={{
             backgroundImage: `conic-gradient(var(--conic-position), var(--tw-gradient-stops))`,
           }}
-          className="absolute inset-auto left-1/2 h-56 w-[30rem] bg-gradient-conic from-transparent via-transparent to-[var(--brand-accent)] text-white [--conic-position:from_290deg_at_center_top]">
+          className="absolute h-20 sm:h-40 md:h-56 w-[8rem] sm:w-[20rem] md:w-[30rem] translate-x-1/2 bg-gradient-conic from-transparent via-transparent to-[var(--brand-accent)] text-white [--conic-position:from_290deg_at_center_top]">
           <div
-            className="absolute w-40 h-[100%] right-0 bg-[var(--brand-dark)] bottom-0 z-20 [mask-image:linear-gradient(to_left,white,transparent)]" />
+            className="absolute w-12 sm:w-32 md:w-40 h-full right-0 bg-[var(--brand-dark)] bottom-0 z-20 [mask-image:linear-gradient(to_left,white,transparent)]" />
           <div
-            className="absolute w-[100%] right-0 bg-[var(--brand-dark)] h-40 bottom-0 z-20 [mask-image:linear-gradient(to_top,white,transparent)]" />
+            className="absolute w-full right-0 bg-[var(--brand-dark)] h-12 sm:h-32 md:h-40 bottom-0 z-20 [mask-image:linear-gradient(to_top,white,transparent)]" />
         </motion.div>
         <div
-          className="absolute top-1/2 h-48 w-full translate-y-12 scale-x-150 bg-[var(--brand-dark)] blur-2xl"></div>
+          className="absolute top-1/2 h-16 sm:h-36 md:h-48 w-full translate-y-12 bg-[var(--brand-dark)] blur-2xl"></div>
         <div
-          className="absolute top-1/2 z-50 h-48 w-full bg-transparent opacity-10 backdrop-blur-md"></div>
+          className="absolute top-1/2 z-50 h-16 sm:h-36 md:h-48 w-full bg-transparent opacity-10 backdrop-blur-md"></div>
         <div
-          className="absolute inset-auto z-50 h-36 w-[28rem] -translate-y-1/2 rounded-full bg-[var(--brand-accent)] opacity-50 blur-3xl"></div>
+          className="absolute inset-auto z-50 h-10 sm:h-28 md:h-36 w-[6rem] sm:w-[18rem] md:w-[28rem] -translate-y-1/2 rounded-full bg-[var(--brand-accent)] opacity-50 blur-3xl"></div>
         <motion.div
-          initial={{ width: "8rem" }}
-          whileInView={{ width: "16rem" }}
+          initial={{ width: "2rem" }}
+          whileInView={{ width: "4rem" }}
           transition={{
             delay: 0.3,
             duration: 0.8,
             ease: "easeInOut",
           }}
-          className="absolute inset-auto z-30 h-36 w-64 -translate-y-[6rem] rounded-full bg-[var(--brand-accent)]/80 blur-2xl"></motion.div>
+          className="absolute inset-auto z-30 h-10 sm:h-28 md:h-36 w-16 sm:w-48 md:w-64 -translate-y-[2.5rem] sm:-translate-y-[5rem] md:-translate-y-[6rem] rounded-full bg-[var(--brand-accent)]/80 blur-2xl"></motion.div>
         <motion.div
-          initial={{ width: "15rem" }}
-          whileInView={{ width: "30rem" }}
+          initial={{ width: "5rem" }}
+          whileInView={{ width: "8rem" }}
           transition={{
             delay: 0.3,
             duration: 0.8,
             ease: "easeInOut",
           }}
-          className="absolute inset-auto z-50 h-0.5 w-[30rem] -translate-y-[7rem] bg-[var(--brand-accent)]"></motion.div>
+          className="absolute inset-auto z-50 h-0.5 w-[8rem] sm:w-[20rem] md:w-[30rem] -translate-y-[3rem] sm:-translate-y-[6rem] md:-translate-y-[7rem] bg-[var(--brand-accent)]"></motion.div>
 
         <div
-          className="absolute inset-auto z-40 h-44 w-full -translate-y-[12.5rem] bg-[var(--brand-dark)]"></div>
+          className="absolute inset-auto z-40 h-16 sm:h-36 md:h-44 w-full -translate-y-[5rem] sm:-translate-y-[10rem] md:-translate-y-[12.5rem] bg-[var(--brand-dark)]"></div>
       </div>
-      <div className="relative z-50 flex -translate-y-64 flex-col items-center px-5">
+      <div className="relative z-50 flex -translate-y-16 sm:-translate-y-48 md:-translate-y-64 flex-col items-center px-4 sm:px-5 w-full max-w-[100vw]">
         {children}
       </div>
     </div>

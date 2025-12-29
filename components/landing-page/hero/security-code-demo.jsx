@@ -175,7 +175,7 @@ export const SecurityCodeDemo = () => {
         // We only care about high-level syntax highlighting for the demo
         const lines = text.split('\n');
         return lines.map((line, i) => (
-            <div key={i} className="leading-[22px] min-h-[22px]">
+            <div key={i} className="leading-[18px] sm:leading-[22px] min-h-[18px] sm:min-h-[22px]">
                 {line.split(/(\s+|[(){}[\].,:;'"=])/g).map((token, j) => {
                     if (!token) return null;
                     if (/^\s+$/.test(token)) return <span key={j}>{token}</span>;
@@ -217,14 +217,14 @@ export const SecurityCodeDemo = () => {
 
     return (
         <div id="security-demo-container" 
-             className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 px-0 sm:p-4"
+             className="w-full font-sans max-w-5xl mx-auto select-none relative z-10 px-0 sm:px-4"
              style={{
                  '--line-height': '22px', 
                  '--line-height-xs': '20px', 
                  '--line-height-mobile': '18px'
              }}
         >
-            <div className="rounded-xl bg-[var(--brand-primary)] shadow-2xl overflow-hidden ring-1 ring-[var(--brand-accent)]/20 relative backdrop-blur-sm h-[400px] xs:h-[450px] sm:h-[500px] md:h-[600px] flex flex-col">
+            <div className="rounded-xl bg-[var(--brand-primary)] shadow-2xl overflow-hidden ring-1 ring-[var(--brand-accent)]/20 relative backdrop-blur-sm min-h-[300px] h-auto sm:h-[450px] md:h-[550px] lg:h-[600px] flex flex-col">
 
                 {/* --- Window Header --- */}
                 <div className="flex items-center justify-between px-4 h-12 bg-[var(--brand-dark)]">
@@ -242,10 +242,10 @@ export const SecurityCodeDemo = () => {
                 </div>
 
                 {/* --- Editor Area --- */}
-                <div className="relative flex-1 font-mono text-[11px] sm:text-[12px] overflow-hidden bg-[var(--brand-primary)]/90 flex">
-                    <div className="w-12 flex flex-col items-end pr-3 pt-4 text-slate-500 bg-[var(--brand-primary)]/90 z-10 shrink-0 select-none border-r border-white/5" aria-hidden="true">
+                <div className="relative flex-1 font-mono text-[9px] xs:text-[10px] sm:text-[12px] overflow-hidden bg-[var(--brand-primary)]/90 flex">
+                    <div className="w-8 sm:w-12 flex flex-col items-end pr-2 sm:pr-3 pt-4 text-slate-400 bg-[var(--brand-primary)]/90 z-10 shrink-0 select-none border-r border-white/5" aria-hidden="true">
                         {Array.from({ length: 24 }).map((_, i) => (
-                            <div key={i} className="leading-[22px] h-[22px]">{i + 1}</div>
+                            <div key={i} className="leading-[18px] sm:leading-[22px] h-[18px] sm:h-[22px]">{i + 1}</div>
                         ))}
                     </div>
 
@@ -299,13 +299,14 @@ export const SecurityCodeDemo = () => {
                         </AnimatePresence>
 
                         {/* Text Renderer */}
-                        <div className="whitespace-pre relative z-10 leading-[22px]">
+                        <div className="whitespace-pre relative z-10 leading-[18px] sm:leading-[22px] overflow-x-auto">
                             <AnimatePresence mode='wait'>
                                 <motion.div
                                     key={step >= 5 ? 'patched' : 'vulnerable'}
                                     initial={{ opacity: 0.8 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.4 }}
+                                    className="min-w-max"
                                 >
                                     {codeContent && renderCode(codeContent)}
                                     {/* Cursor - simplified animation to avoid layout shifts */}
@@ -353,7 +354,7 @@ export const SecurityCodeDemo = () => {
                 </AnimatePresence>
 
                 {/* --- Footer --- */}
-                <div className="h-8 bg-[var(--brand-dark)] border-t border-slate-800 flex items-center justify-between px-4 text-[10px] text-slate-500 font-medium z-40">
+                <div className="h-8 bg-[var(--brand-dark)] border-t border-slate-800 flex items-center justify-between px-4 text-[10px] text-slate-400 font-medium z-40">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer">
                             <GitBranch size={10} />
@@ -386,9 +387,9 @@ export const SecurityCodeDemo = () => {
                             initial={{ opacity: 0, scale: 0.9, x: 50 }}
                             animate={{ opacity: 1, scale: 1, x: 0 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="absolute top-20 right-8 z-50"
+                            className="absolute top-16 sm:top-20 right-2 sm:right-8 z-50"
                         >
-                            <div className="w-64 rounded-lg border border-orange-500/20 bg-[var(--brand-primary)]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
+                            <div className="w-48 sm:w-64 rounded-lg border border-orange-500/20 bg-[var(--brand-primary)]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
                                 <div className="bg-orange-500/5 px-4 py-2 border-b border-orange-500/10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Database size={14} className="text-orange-400" />
@@ -423,9 +424,9 @@ export const SecurityCodeDemo = () => {
                             initial={{ opacity: 0, y: 10, x: 20 }}
                             animate={{ opacity: 1, y: 0, x: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute top-[240px] right-8 z-50"
+                            className="absolute top-[180px] sm:top-[240px] right-2 sm:right-8 z-50"
                         >
-                            <div className="w-72 rounded-lg border border-red-500/30 bg-[var(--brand-primary)]/95 shadow-[0_0_30px_rgba(239,68,68,0.2)] backdrop-blur-xl">
+                            <div className="w-56 sm:w-72 rounded-lg border border-red-500/30 bg-[var(--brand-primary)]/95 shadow-[0_0_30px_rgba(239,68,68,0.2)] backdrop-blur-xl">
                                 <div className="p-4">
                                     <div className="flex items-start gap-3 mb-2">
                                         <div className="p-2 rounded bg-red-500/10 text-red-500">
@@ -452,9 +453,9 @@ export const SecurityCodeDemo = () => {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="absolute top-[240px] right-8 z-50"
+                            className="absolute top-[180px] sm:top-[240px] right-2 sm:right-8 z-50"
                         >
-                            <div className="bg-emerald-900/90 border border-emerald-500/30 p-3 rounded-lg shadow-2xl flex items-center gap-3 backdrop-blur-md">
+                            <div className="bg-emerald-900/90 border border-emerald-500/30 p-2 sm:p-3 rounded-lg shadow-2xl flex items-center gap-2 sm:gap-3 backdrop-blur-md">
                                 <div className="relative p-1.5 bg-emerald-500 rounded-full text-emerald-950">
                                     <FileCode size={16} />
                                 </div>
@@ -474,9 +475,9 @@ export const SecurityCodeDemo = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="absolute top-20 right-8 z-50"
+                            className="absolute top-16 sm:top-20 right-2 sm:right-8 z-50"
                         >
-                            <div className="w-72 rounded-lg border border-cyan-500/20 bg-[var(--brand-primary)]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
+                            <div className="w-56 sm:w-72 rounded-lg border border-cyan-500/20 bg-[var(--brand-primary)]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
                                 <div className="bg-cyan-950/30 px-4 py-2 border-b border-cyan-500/10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Zap size={14} className="text-cyan-400" />
@@ -515,12 +516,12 @@ export const SecurityCodeDemo = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px]"
+                            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4"
                         >
                             <motion.div
                                 initial={{ scale: 0.9, y: 20 }}
                                 animate={{ scale: 1, y: 0 }}
-                                className="w-72 bg-[var(--brand-primary)] border border-orange-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10"
+                                className="w-full max-w-[280px] sm:w-72 bg-[var(--brand-primary)] border border-orange-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10"
                             >
                                 <div className="relative h-20 bg-gradient-to-br from-orange-600 to-amber-800 flex items-center justify-center overflow-hidden">
                                     <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>

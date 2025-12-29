@@ -1,7 +1,23 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
+
+// Memoized pointer component to prevent rerenders
+const Pointer = ({ className, ...props }) => {
+    return (
+        <svg
+            strokeWidth="1.5"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+            className={className}
+            {...props}
+        >
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+        </svg>
+    );
+};
 
 export function PointerHighlight({
                                      children,
@@ -12,31 +28,59 @@ export function PointerHighlight({
     const containerRef = useRef(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [isVisible, setIsVisible] = useState(false);
+    const rafIdRef = useRef(null);
+
+    // Debounced dimension update to avoid layout thrashing
+    const updateDimensions = useCallback((width, height) => {
+        if (rafIdRef.current) {
+            cancelAnimationFrame(rafIdRef.current);
+        }
+        rafIdRef.current = requestAnimationFrame(() => {
+            setDimensions({ width, height });
+        });
+    }, []);
 
     useEffect(() => {
-        if (containerRef.current) {
-            const { width, height } = containerRef.current.getBoundingClientRect();
-            setDimensions({ width, height });
-            setIsVisible(true);
-        }
+        const element = containerRef.current;
+        if (!element) return;
 
+        // Use IntersectionObserver to only measure when visible
+        const intersectionObserver = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting && !isVisible) {
+                    // Defer measurement to next frame
+                    requestAnimationFrame(() => {
+                        if (containerRef.current) {
+                            const { width, height } = containerRef.current.getBoundingClientRect();
+                            setDimensions({ width, height });
+                            setIsVisible(true);
+                        }
+                    });
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        intersectionObserver.observe(element);
+
+        // ResizeObserver for dimension changes - uses contentRect which doesn't cause reflow
         const resizeObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                const { width, height } = entry.contentRect;
-                setDimensions({ width, height });
+            const entry = entries[0];
+            if (entry) {
+                updateDimensions(entry.contentRect.width, entry.contentRect.height);
             }
         });
 
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current);
-        }
+        resizeObserver.observe(element);
 
         return () => {
-            if (containerRef.current) {
-                resizeObserver.unobserve(containerRef.current);
+            if (rafIdRef.current) {
+                cancelAnimationFrame(rafIdRef.current);
             }
+            intersectionObserver.disconnect();
+            resizeObserver.disconnect();
         };
-    }, []);
+    }, [updateDimensions, isVisible]);
 
     return (
         <span
@@ -104,18 +148,3 @@ export function PointerHighlight({
     </span>
     );
 }
-
-const Pointer = ({ className, ...props }) => {
-    return (
-        <svg
-            strokeWidth="1.5"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
-            className={className}
-            {...props}
-        >
-            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
-        </svg>
-    );
-};

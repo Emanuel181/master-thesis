@@ -5,7 +5,7 @@ import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 
 export default function InfiniteMovingCardsDemo() {
   return (
-    <div className="h-[25rem] sm:h-[40rem] rounded-md flex flex-col antialiased items-center justify-center relative overflow-hidden">
+    <div className="min-h-[24rem] xs:min-h-[26rem] sm:min-h-[28rem] md:min-h-[32rem] lg:min-h-[40rem] rounded-md flex flex-col antialiased items-center justify-center relative w-full max-w-full py-4">
       <InfiniteMovingCards
         items={testimonials}
         direction="right"

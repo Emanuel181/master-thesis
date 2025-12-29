@@ -1,13 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 const PromptsContext = createContext();
 
+// Public routes that don't need prompts data
+const PUBLIC_ROUTES = ['/', '/login', '/about', '/privacy', '/terms', '/changelog'];
+
 export function PromptsProvider({ children }) {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const pathname = usePathname();
     const [prompts, setPrompts] = useState({});
     const [selectedPrompts, setSelectedPrompts] = useState({
@@ -18,15 +21,32 @@ export function PromptsProvider({ children }) {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const fetchInProgress = useRef(false);
 
     const fetchPrompts = async () => {
-        // Don't fetch if not authenticated or if on login pages
-        if (!session?.user || pathname?.startsWith('/login')) {
+        // Don't fetch if already in progress (deduplication)
+        if (fetchInProgress.current) return;
+        
+        // Don't fetch if session is still loading
+        if (status === 'loading') return;
+        
+        // Don't fetch on public routes
+        const isPublicRoute = PUBLIC_ROUTES.some(route => 
+            pathname === route || pathname?.startsWith('/login')
+        );
+        if (isPublicRoute) {
+            setLoading(false);
+            return;
+        }
+        
+        // Don't fetch if not authenticated
+        if (!session?.user) {
             setLoading(false);
             return;
         }
 
         try {
+            fetchInProgress.current = true;
             setLoading(true);
             const response = await fetch("/api/prompts");
             if (response.ok) {
@@ -40,13 +60,25 @@ export function PromptsProvider({ children }) {
             setError('Error loading prompts');
         } finally {
             setLoading(false);
+            fetchInProgress.current = false;
         }
     };
 
-    // Fetch prompts on mount
+    // Fetch prompts on mount - debounced with idle callback for better performance
     useEffect(() => {
-        fetchPrompts();
-    }, [session, pathname]);
+        // Use requestIdleCallback for non-critical initial fetch
+        const scheduleId = typeof requestIdleCallback !== 'undefined'
+            ? requestIdleCallback(() => fetchPrompts(), { timeout: 2000 })
+            : setTimeout(() => fetchPrompts(), 100);
+        
+        return () => {
+            if (typeof cancelIdleCallback !== 'undefined') {
+                cancelIdleCallback(scheduleId);
+            } else {
+                clearTimeout(scheduleId);
+            }
+        };
+    }, [session, pathname, status]);
 
     const handlePromptChange = (agent, promptId) => {
         setSelectedPrompts(prev => {

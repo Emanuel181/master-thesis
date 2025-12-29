@@ -5,6 +5,28 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
+   PERFORMANCE-OPTIMIZED CSS ANIMATIONS
+   ============================================ */
+
+/* Fade in up animation - GPU accelerated, avoids reflow */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+  animation-fill-mode: both;
+  will-change: opacity, transform;
+}
+
+/* ============================================
    RESPONSIVE UTILITIES
    ============================================ */
 
@@ -12,11 +34,38 @@
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  width: 100%;
+  position: relative;
+}
+
+/* Fix Radix ScrollArea viewport to not cause horizontal overflow */
+[data-radix-scroll-area-viewport] {
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100vw !important;
 }
 
 /* Enable smooth scrolling for anchor links */
 html {
   scroll-behavior: smooth;
+}
+
+/* Mobile viewport height fix for dynamic address bars */
+@supports (height: 100svh) {
+  .min-h-screen-mobile {
+    min-height: 100svh;
+  }
+}
+
+@supports not (height: 100svh) {
+  .min-h-screen-mobile {
+    min-height: 100vh;
+  }
 }
 
 /* Safe area insets for mobile devices with notches */
@@ -135,6 +184,49 @@ html {
   .xs\:text-sm {
     font-size: 0.875rem !important;
     line-height: 1.25rem !important;
+  }
+  .xs\:text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+  .xs\:text-base {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+  }
+  .xs\:text-lg {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+  }
+  .xs\:text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .xs\:text-2xl {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+  .xs\:text-3xl {
+    font-size: 1.875rem !important;
+    line-height: 2.25rem !important;
+  }
+  .xs\:h-8 {
+    height: 2rem !important;
+  }
+  .xs\:w-8 {
+    width: 2rem !important;
+  }
+  .xs\:px-3 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .xs\:h-40 {
+    height: 10rem !important;
+  }
+  .xs\:min-h-\[220px\] {
+    min-height: 220px !important;
+  }
+  .xs\:min-h-\[120px\] {
+    min-height: 120px !important;
   }
 }
 

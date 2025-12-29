@@ -1,26 +1,46 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 const UseCasesContext = createContext();
 
+// Public routes that don't need use cases data
+const PUBLIC_ROUTES = ['/', '/login', '/about', '/privacy', '/terms', '/changelog'];
+
 export function UseCasesProvider({ children }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const [useCases, setUseCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchInProgress = useRef(false);
 
   const fetchUseCases = useCallback(async () => {
-    // Don't fetch if not authenticated or if on login pages
-    if (!session?.user?.id || pathname?.startsWith('/login')) {
+    // Don't fetch if already in progress (deduplication)
+    if (fetchInProgress.current) return;
+    
+    // Don't fetch if not authenticated or session is still loading
+    if (status === 'loading') return;
+    
+    // Don't fetch on public routes
+    const isPublicRoute = PUBLIC_ROUTES.some(route => 
+      pathname === route || pathname?.startsWith('/login')
+    );
+    if (isPublicRoute) {
+      setLoading(false);
+      return;
+    }
+    
+    // Don't fetch if not authenticated
+    if (!session?.user?.id) {
       setLoading(false);
       return;
     }
 
     try {
+      fetchInProgress.current = true;
       setLoading(true);
       setError(null);
       const response = await fetch('/api/use-cases');
@@ -53,11 +73,23 @@ export function UseCasesProvider({ children }) {
       console.error('Error fetching use cases:', err);
     } finally {
       setLoading(false);
+      fetchInProgress.current = false;
     }
-  }, [session, pathname]);
+  }, [session, pathname, status]);
 
   useEffect(() => {
-    fetchUseCases();
+    // Use requestIdleCallback for non-critical initial fetch
+    const scheduleId = typeof requestIdleCallback !== 'undefined'
+      ? requestIdleCallback(() => fetchUseCases(), { timeout: 2000 })
+      : setTimeout(() => fetchUseCases(), 100);
+    
+    return () => {
+      if (typeof cancelIdleCallback !== 'undefined') {
+        cancelIdleCallback(scheduleId);
+      } else {
+        clearTimeout(scheduleId);
+      }
+    };
   }, [fetchUseCases]);
 
   const refresh = async () => {
