@@ -1,7 +1,7 @@
 'use client'
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -12,12 +12,36 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function LoginPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
+    const [serviceStatus, setServiceStatus] = useState("checking") // checking, operational, partial, down
 
     useEffect(() => {
         if (status === 'authenticated') {
             router.push('/dashboard')
         }
     }, [status, router])
+
+    useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                const response = await fetch("/api/health", { 
+                    method: "GET",
+                    cache: "no-store" 
+                });
+                if (response.ok) {
+                    const text = await response.text();
+                    setServiceStatus(text === "ok" ? "operational" : "partial");
+                } else {
+                    setServiceStatus("partial");
+                }
+            } catch {
+                setServiceStatus("down");
+            }
+        };
+
+        checkHealth();
+        const interval = setInterval(checkHealth, 60000);
+        return () => clearInterval(interval);
+    }, []);
 
     if (status === 'loading') {
         return null // Or a loading spinner
@@ -38,7 +62,33 @@ export default function LoginPage() {
                         />
                         <span className="text-lg font-semibold">VulnIQ</span>
                     </Link>
-                    <ThemeToggle />
+                    <div className="flex items-center gap-3">
+                        <a
+                            href="https://status.vulniq.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <span className="relative flex h-2 w-2">
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                    serviceStatus === "operational" ? "bg-green-400" : 
+                                    serviceStatus === "partial" ? "bg-yellow-400" : 
+                                    serviceStatus === "down" ? "bg-red-400" : "bg-gray-400"
+                                }`} />
+                                <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                                    serviceStatus === "operational" ? "bg-green-500" : 
+                                    serviceStatus === "partial" ? "bg-yellow-500" : 
+                                    serviceStatus === "down" ? "bg-red-500" : "bg-gray-500"
+                                }`} />
+                            </span>
+                            <span className="hidden sm:inline">
+                                {serviceStatus === "operational" ? "Services are operational" : 
+                                 serviceStatus === "partial" ? "Services partially operational" : 
+                                 serviceStatus === "down" ? "Services not operational" : "Checking..."}
+                            </span>
+                        </a>
+                        <ThemeToggle />
+                    </div>
                 </div>
                 <div className="flex flex-1 items-center justify-center">
                     <motion.div

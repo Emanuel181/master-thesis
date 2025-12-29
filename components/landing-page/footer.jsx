@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const containerVariants = {
@@ -31,6 +31,30 @@ export function Footer({ onScrollToTop }) {
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState("idle"); // idle, loading, success, error
     const [message, setMessage] = useState("");
+    const [serviceStatus, setServiceStatus] = useState("checking"); // checking, operational, partial, down
+
+    useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                const response = await fetch("/api/health", { 
+                    method: "GET",
+                    cache: "no-store" 
+                });
+                if (response.ok) {
+                    const text = await response.text();
+                    setServiceStatus(text === "ok" ? "operational" : "partial");
+                } else {
+                    setServiceStatus("partial");
+                }
+            } catch {
+                setServiceStatus("down");
+            }
+        };
+
+        checkHealth();
+        const interval = setInterval(checkHealth, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, []);
 
     const handleSubscribe = async (e) => {
         e.preventDefault();
@@ -107,6 +131,13 @@ export function Footer({ onScrollToTop }) {
                                 <FileText className="w-4 h-4" />
                                 Changelog
                             </Link>
+                            <Link
+                                href="/site-map"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1 -ml-1 pl-1 rounded touch-target"
+                            >
+                                <Map className="w-4 h-4" />
+                                Sitemap
+                            </Link>
                             <motion.a
                                 href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
                                 target="_blank"
@@ -128,10 +159,34 @@ export function Footer({ onScrollToTop }) {
                                 <Linkedin className="w-4 h-4" />
                                 Connect on LinkedIn
                             </motion.a>
+                            <motion.a
+                                href="https://status.vulniq.org"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1 -ml-1 pl-1 rounded touch-target"
+                                whileHover={{ x: 2 }}
+                                aria-label="View system status (opens in new tab)"
+                            >
+                                <span className="relative flex h-2.5 w-2.5">
+                                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                        serviceStatus === "operational" ? "bg-green-400" : 
+                                        serviceStatus === "partial" ? "bg-yellow-400" : 
+                                        serviceStatus === "down" ? "bg-red-400" : "bg-gray-400"
+                                    }`} />
+                                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                                        serviceStatus === "operational" ? "bg-green-500" : 
+                                        serviceStatus === "partial" ? "bg-yellow-500" : 
+                                        serviceStatus === "down" ? "bg-red-500" : "bg-gray-500"
+                                    }`} />
+                                </span>
+                                {serviceStatus === "operational" ? "Services are operational" : 
+                                 serviceStatus === "partial" ? "Services partially operational" : 
+                                 serviceStatus === "down" ? "Services not operational" : "Checking status..."}
+                            </motion.a>
                         </div>
                     </motion.div>
 
-                    {/* Column 3: Newsletter */}
+                    {/* Column 3: Newsletter & Product Hunt */}
                     <motion.div variants={itemVariants} className="space-y-4 md:col-span-2 lg:col-span-1">
                         <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm sm:text-base">Stay updated</h4>
                         <p className="text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
@@ -182,6 +237,31 @@ export function Footer({ onScrollToTop }) {
                                 </motion.p>
                             )}
                         </form>
+
+                        {/* Product Hunt Card */}
+                        <div className="mt-6 p-4 rounded-xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 bg-[var(--brand-white)] dark:bg-[var(--brand-primary)]/50 max-w-md">
+                            <div className="flex items-center gap-3 mb-3">
+                                <Image 
+                                    src="/web-app-manifest-512x512.png" 
+                                    alt="VulnIQ" 
+                                    width={48} 
+                                    height={48} 
+                                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <h5 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm leading-tight truncate">VulnIQ</h5>
+                                    <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 mt-0.5 line-clamp-2">Security remediation without hallucinations</p>
+                                </div>
+                            </div>
+                            <a 
+                                href="https://www.producthunt.com/products/vulniq?embed=true&utm_source=embed&utm_medium=post_embed" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF6154] hover:bg-[#e5574b] text-white text-xs font-semibold rounded-lg transition-colors"
+                            >
+                                Check it out on Product Hunt →
+                            </a>
+                        </div>
                     </motion.div>
 
                 </div>

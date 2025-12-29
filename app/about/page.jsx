@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, Shield, Target, Zap, Lock, ChevronUp, Users, Globe, Award, Sparkles } from "lucide-react";
+import { ArrowLeft, Shield, Target, Zap, Lock, Users, Globe, Award, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef } from "react";
@@ -46,12 +46,6 @@ const techLogos = [
 
 export default function AboutPage() {
     const scrollRef = useRef(null);
-
-    const scrollToTop = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
 
     return (
         <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
@@ -272,15 +266,7 @@ export default function AboutPage() {
 
                 </main>
 
-                {/* Back to top button */}
-                <div className="flex justify-center py-8">
-                    <Button variant="outline" onClick={scrollToTop}>
-                        <ChevronUp className="mr-2 h-4 w-4" />
-                        Back to top
-                    </Button>
-                </div>
-
-                <Footer />
+                <Footer onScrollToTop={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} />
             </ScrollArea>
         </div>
     );

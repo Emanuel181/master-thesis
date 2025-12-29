@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, FileText, Shield, Lock, Globe, Cookie, Users, Database, Mail, Eye, Server, Scale, ChevronUp } from "lucide-react";
+import { ArrowLeft, FileText, Shield, Lock, Globe, Cookie, Users, Database, Mail, Eye, Server, Scale } from "lucide-react";
+import { Footer } from "@/components/landing-page/footer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef } from "react";
@@ -45,12 +46,6 @@ export default function PrivacyPage() {
     ];
 
     const scrollRef = useRef(null);
-
-    const scrollToTop = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
 
     return (
         <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
@@ -503,30 +498,10 @@ export default function PrivacyPage() {
                         </Section>
                     </div>
 
-                    {/* Back to top button */}
-                    <div className="mt-12 flex justify-center">
-                        <Button variant="outline" onClick={scrollToTop}>
-                            <ChevronUp className="mr-2 h-4 w-4" />
-                            Back to top
-                        </Button>
-                    </div>
                 </motion.div>
             </main>
 
-            {/* Footer */}
-            <footer className="border-t border-border bg-muted/30 py-8">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
-                    <p>© {new Date().getFullYear()} VulnIQ. All rights reserved.</p>
-                    <div className="mt-2 flex justify-center gap-4">
-                        <Link href="/privacy" className="hover:text-white dark:hover:text-white transition-colors">
-                            Privacy Policy
-                        </Link>
-                        <Link href="/terms" className="hover:text-white dark:hover:text-white transition-colors">
-                            Terms & Conditions
-                        </Link>
-                    </div>
-                </div>
-            </footer>
+            <Footer onScrollToTop={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} />
             </ScrollArea>
         </div>
     );
