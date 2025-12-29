@@ -46,7 +46,8 @@ COPY package.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-# Generate Prisma client (required for migrate deploy)
+# Dummy DATABASE_URL for prisma generate (real one injected at runtime)
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN npx prisma generate
 
 # DATABASE_URL is injected at runtime by ECS
