@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
+import { usePathname } from "next/navigation"
 import {
     Card,
     CardContent,
@@ -37,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { useProject } from "@/contexts/projectContext"
 import { usePrompts } from "@/contexts/promptsContext"
+import { useDemo, DEMO_GITHUB_REPOS, DEMO_GITLAB_REPOS, DEMO_PROJECTS } from "@/contexts/demoContext"
 import { useRouter } from "next/navigation"
 import { fetchRepoTree } from "@/lib/github-api"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -195,6 +197,11 @@ export function HomePage() {
     const { data: session, status } = useSession()
     const { setProjectStructure, setViewMode, setCurrentRepo, currentRepo, clearProject } = useProject()
     const router = useRouter()
+    const pathname = usePathname()
+    
+    // Demo mode detection
+    const isDemoMode = pathname?.startsWith('/demo')
+    const { switchDemoProject } = useDemo()
 
     const {
         prompts,
@@ -410,26 +417,48 @@ export function HomePage() {
     // ---------------------------
     const handleRefreshRepos = async () => {
         setIsRefreshingRepos(true)
-        await fetchRepos(true)
+        if (isDemoMode) {
+            // Fake refresh for demo mode
+            await new Promise(resolve => setTimeout(resolve, 800))
+            setRepos([...DEMO_GITHUB_REPOS]) // Trigger re-render
+        } else {
+            await fetchRepos(true)
+        }
         setIsRefreshingRepos(false)
         toast.success("GitHub repositories refreshed!")
     }
 
     const handleRefreshGitlabRepos = async () => {
         setIsRefreshingGitlabRepos(true)
-        await fetchGitlabRepos(true)
+        if (isDemoMode) {
+            // Fake refresh for demo mode
+            await new Promise(resolve => setTimeout(resolve, 800))
+            setGitlabRepos([...DEMO_GITLAB_REPOS]) // Trigger re-render
+        } else {
+            await fetchGitlabRepos(true)
+        }
         setIsRefreshingGitlabRepos(false)
         toast.success("GitLab repositories refreshed!")
     }
 
     const handleRefreshPrompts = async () => {
         setIsRefreshingPrompts(true)
-        await refreshPrompts()
+        if (isDemoMode) {
+            // Fake delay for demo mode, then reset to original prompts
+            await new Promise(resolve => setTimeout(resolve, 600))
+            await refreshPrompts() // This resets to DEMO_PROMPTS in demo mode
+        } else {
+            await refreshPrompts()
+        }
         setIsRefreshingPrompts(false)
-        toast.success("Prompts refreshed!")
+        toast.success("Prompts refreshed successfully!")
     }
 
     const refreshLinkedProviders = async () => {
+        if (isDemoMode) {
+            // In demo mode, always show as connected
+            return { githubLinked: true, gitlabLinked: true }
+        }
         try {
             const res = await fetch('/api/providers/linked', { cache: 'no-store' })
             const data = await res.json()
@@ -455,6 +484,13 @@ export function HomePage() {
     // Disconnect GitHub
     // ---------------------------
     const handleDisconnectGitHub = async () => {
+        if (isDemoMode) {
+            // Demo mode: just clear state locally
+            setIsGithubConnected(false);
+            setRepos([]);
+            toast.success("Disconnected from GitHub!");
+            return;
+        }
         try {
             await fetch('/api/auth/disconnect?provider=github', { method: 'POST' });
         } catch (err) {
@@ -467,6 +503,13 @@ export function HomePage() {
     }
 
     const handleDisconnectGitlab = async () => {
+        if (isDemoMode) {
+            // Demo mode: just clear state locally
+            setIsGitlabConnected(false);
+            setGitlabRepos([]);
+            toast.success("Disconnected from GitLab!");
+            return;
+        }
         try {
             await fetch('/api/auth/disconnect?provider=gitlab', { method: 'POST' });
         } catch (err) {
@@ -479,9 +522,45 @@ export function HomePage() {
     }
 
     // ---------------------------
-    // Only fetch if authenticated AND repos not loaded
+    // Demo mode: Connect handlers (fake sign-in)
+    // ---------------------------
+    const handleDemoConnectGithub = async () => {
+        setIsLoadingRepos(true);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
+        setRepos(DEMO_GITHUB_REPOS);
+        setIsGithubConnected(true);
+        setIsLoadingRepos(false);
+        toast.success("Connected to GitHub!");
+    }
+
+    const handleDemoConnectGitlab = async () => {
+        setIsLoadingGitlabRepos(true);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
+        setGitlabRepos(DEMO_GITLAB_REPOS);
+        setIsGitlabConnected(true);
+        setIsLoadingGitlabRepos(false);
+        toast.success("Connected to GitLab!");
+    }
+
+    // ---------------------------
+    // Demo mode: Load mock repos
     // ---------------------------
     useEffect(() => {
+        if (isDemoMode) {
+            setRepos(DEMO_GITHUB_REPOS);
+            setGitlabRepos(DEMO_GITLAB_REPOS);
+            setIsGithubConnected(true);
+            setIsGitlabConnected(true);
+            setIsLoadingRepos(false);
+            setIsLoadingGitlabRepos(false);
+        }
+    }, [isDemoMode]);
+
+    // ---------------------------
+    // Only fetch if authenticated AND repos not loaded (skip in demo mode)
+    // ---------------------------
+    useEffect(() => {
+        if (isDemoMode) return; // Skip in demo mode
         console.log('[HomePage] useEffect triggered:', { status, session: !!session, reposLength: repos.length, gitlabReposLength: gitlabRepos.length });
         if (status === "authenticated" && session) {
             ;(async () => {
@@ -496,28 +575,30 @@ export function HomePage() {
                 }
             })()
         }
-    }, [status, session, session?.user?.id, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
+    }, [isDemoMode, status, session, session?.user?.id, repos.length, gitlabRepos.length, isGithubConnected, isGitlabConnected]);
 
     useEffect(() => {
+        if (isDemoMode) return; // Skip in demo mode
         if (status !== 'authenticated') return
         const interval = setInterval(() => {
             refreshLinkedProviders()
         }, 30000) // Reduced from 5s to 30s for better performance
         return () => clearInterval(interval)
-    }, [status])
+    }, [isDemoMode, status])
 
 
     // ---------------------------
-    // Clear GitHub state when logged out
+    // Clear GitHub state when logged out (skip in demo mode)
     // ---------------------------
     useEffect(() => {
+        if (isDemoMode) return; // Skip in demo mode
         if (status === "unauthenticated") {
             setIsGithubConnected(false);
             setRepos([]);
             setIsGitlabConnected(false);
             setGitlabRepos([]);
         }
-    }, [status]);
+    }, [isDemoMode, status]);
 
     // ---------------------------
     // Prompt CRUD handlers
@@ -657,8 +738,17 @@ export function HomePage() {
                 status: 'Fetching repository structure...'
             }))
 
-            // Step 3: Fetch tree structure
-            const structure = await fetchRepoTree(owner, repoName, repo.provider)
+            // Step 3: Fetch tree structure (use demo data in demo mode)
+            let structure;
+            if (isDemoMode) {
+                // Use demo project structure
+                await new Promise(resolve => setTimeout(resolve, 400))
+                structure = DEMO_PROJECTS[repo.full_name] || DEMO_PROJECTS["demo-org/vulnerable-express-app"];
+                // Also update demo context
+                switchDemoProject(repo.full_name);
+            } else {
+                structure = await fetchRepoTree(owner, repoName, repo.provider)
+            }
             setImportingRepo(prev => ({
                 ...prev,
                 progress: 70,
@@ -670,9 +760,10 @@ export function HomePage() {
             setProjectStructure(structure)
             setCurrentRepo({ owner, repo: repoName, provider: repo.provider })
             setViewMode("project")
-            // Clear any existing code state so the editor starts fresh
+            // Clear any existing code state so the editor starts fresh (mode-specific)
             try {
-                localStorage.removeItem('vulniq_code_state')
+                const codeStateKey = isDemoMode ? 'vulniq_demo_code_state' : 'vulniq_code_state'
+                localStorage.removeItem(codeStateKey)
             } catch (err) {
                 console.error("Error clearing code state:", err)
             }
@@ -695,7 +786,13 @@ export function HomePage() {
 
             toast.success(`Repository "${repo.full_name}" imported successfully!`)
             setImportingRepo(null)
-            router.push("/dashboard?active=Code%20input")
+            
+            // Navigate to code input (use demo route in demo mode)
+            if (isDemoMode) {
+                router.push("/demo/code-input")
+            } else {
+                router.push("/dashboard?active=Code%20input")
+            }
         } catch (err) {
             setImportingRepo(prev => ({
                 ...prev,
@@ -826,7 +923,7 @@ export function HomePage() {
                     </CardHeader>
 
                     <CardContent className="flex-1 min-h-0 overflow-hidden pt-2 pb-6 px-2.5 sm:px-4">
-                        {status === "loading" ? (
+                        {status === "loading" && !isDemoMode ? (
                             <p className="text-[10px] sm:text-xs text-muted-foreground">Loading...</p>
                         ) : !isGithubConnected ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-3 sm:p-4">
@@ -837,7 +934,7 @@ export function HomePage() {
                                 <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
                                     Import your repositories for security analysis
                                 </p>
-                                <Button onClick={() => { signIn("github", { callbackUrl: "/dashboard" }); }} className="gap-2">
+                                <Button onClick={() => { isDemoMode ? handleDemoConnectGithub() : signIn("github", { callbackUrl: "/dashboard" }); }} className="gap-2">
                                     <Github className="h-4 w-4" />
                                     Connect GitHub
                                 </Button>
@@ -1004,9 +1101,9 @@ export function HomePage() {
                     </CardHeader>
 
                     <CardContent className="flex-1 min-h-0 overflow-hidden pt-2 pb-6 px-2.5 sm:px-4">
-                        {status === "loading" ? (
+                        {status === "loading" && !isDemoMode ? (
                             <p className="text-[10px] sm:text-xs text-muted-foreground">Loading...</p>
-                        ) : status === "unauthenticated" ? (
+                        ) : status === "unauthenticated" && !isDemoMode ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-3 sm:p-4">
                                 <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center mb-4 border border-border/50">
                                     <GitlabIcon className="h-7 w-7 text-muted-foreground/60" />
@@ -1025,7 +1122,7 @@ export function HomePage() {
                                 <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
                                     Import your repositories for security analysis
                                 </p>
-                                <Button onClick={() => { signIn("gitlab", { callbackUrl: "/dashboard" }); }} className="gap-2">
+                                <Button onClick={() => { isDemoMode ? handleDemoConnectGitlab() : signIn("gitlab", { callbackUrl: "/dashboard" }); }} className="gap-2">
                                     <GitlabIcon className="h-4 w-4" />
                                     Connect GitLab
                                 </Button>
@@ -1397,7 +1494,7 @@ export function HomePage() {
                                         variant="outline"
                                         size="sm"
                                         className="flex-1 h-8 transition-colors"
-                                        onClick={() => router.push("/dashboard?active=Code%20input")}
+                                        onClick={() => router.push(isDemoMode ? "/demo/code-input" : "/dashboard?active=Code%20input")}
                                     >
                                         <FolderOpen className="h-3 w-3 mr-2" />
                                         Open in Editor

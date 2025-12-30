@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { fetchFileContent as apiFetchFileContent } from '@/lib/github-api';
 import { detectLanguageFromContent } from '../constants/language-config';
 import { toast } from 'sonner';
 
-const TABS_STORAGE_KEY = 'vulniq_editor_tabs';
+// SECURITY: Mode-aware storage key prefixes
+const TABS_STORAGE_KEY_PROD = 'vulniq_editor_tabs';
+const TABS_STORAGE_KEY_DEMO = 'vulniq_demo_editor_tabs';
 
 // Predefined group colors
 const GROUP_COLORS = [
@@ -19,12 +21,40 @@ const GROUP_COLORS = [
     { name: 'red', bg: 'bg-red-500/20', border: 'border-red-500', text: 'text-red-500' },
 ];
 
+// Helper to find file content from project structure by path
+const findFileContentInStructure = (structure, targetPath) => {
+    if (!structure || !targetPath) return null;
+    
+    const pathParts = targetPath.split('/').filter(Boolean);
+    
+    const searchInNodes = (nodes, remainingPath) => {
+        if (!nodes || !Array.isArray(nodes)) return null;
+        
+        for (const node of nodes) {
+            if (remainingPath.length === 1 && node.name === remainingPath[0]) {
+                // Found the file
+                return node.content || null;
+            }
+            
+            if (node.type === 'directory' && node.children && node.name === remainingPath[0]) {
+                // Descend into directory
+                return searchInNodes(node.children, remainingPath.slice(1));
+            }
+        }
+        return null;
+    };
+    
+    // Handle both array and object with children
+    const children = Array.isArray(structure) ? structure : structure.children;
+    return searchInNodes(children, pathParts);
+};
+
 /**
  * Custom hook for managing editor tabs with grouping support
  * @param {Object} options - Hook options
  * @returns {Object} Tab state and handlers
  */
-export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMode }) {
+export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMode, isDemoMode = false, projectStructure = null }) {
     const [openTabs, setOpenTabs] = useState([]);
     const [activeTabId, setActiveTabId] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -37,11 +67,17 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
 
     // Use ref to prevent race conditions with concurrent file loads
     const loadingPathsRef = useRef(new Set());
+    
+    // SECURITY: Derive storage key from demo mode
+    const STORAGE_KEY = useMemo(() => 
+        isDemoMode ? TABS_STORAGE_KEY_DEMO : TABS_STORAGE_KEY_PROD, 
+        [isDemoMode]
+    );
 
     // Load tabs from localStorage on mount
     useEffect(() => {
         try {
-            const saved = localStorage.getItem(TABS_STORAGE_KEY);
+            const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed.openTabs && Array.isArray(parsed.openTabs)) {
@@ -61,7 +97,7 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
             console.error("Error loading editor tabs from localStorage:", err);
         }
         setIsHydrated(true);
-    }, []);
+    }, [STORAGE_KEY]);
 
     // Save tabs to localStorage when they change
     useEffect(() => {
@@ -73,11 +109,11 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
                 tabGroups,
                 activeGroupId,
             };
-            localStorage.setItem(TABS_STORAGE_KEY, JSON.stringify(state));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         } catch (err) {
             console.error("Error saving editor tabs to localStorage:", err);
         }
-    }, [openTabs, activeTabId, tabGroups, activeGroupId, isHydrated]);
+    }, [openTabs, activeTabId, tabGroups, activeGroupId, isHydrated, STORAGE_KEY]);
 
     // Get active tab
     const activeTab = openTabs.find(t => t.id === activeTabId);
@@ -272,15 +308,40 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
         setLoadingFilePath(node.path);
 
         try {
-            const fileWithContent = await apiFetchFileContent(
-                currentRepo.owner,
-                currentRepo.repo,
-                node.path,
-                currentRepo.provider
-            );
+            let fileContent;
+            
+            // In demo mode, get content from project structure
+            if (isDemoMode && projectStructure) {
+                // Check if node already has content directly (from demo structure spread)
+                if (node.content !== undefined) {
+                    fileContent = node.content;
+                } else if (node._orig?.content !== undefined) {
+                    // Fallback: check _orig if content was stored there
+                    fileContent = node._orig.content;
+                } else {
+                    // Try to find content by path in project structure
+                    fileContent = findFileContentInStructure(projectStructure, node.path);
+                }
+                
+                if (fileContent === null || fileContent === undefined) {
+                    throw new Error('File content not found in demo project');
+                }
+                
+                // Simulate slight delay for realism
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } else {
+                // Regular mode: fetch from API
+                const fileWithContent = await apiFetchFileContent(
+                    currentRepo.owner,
+                    currentRepo.repo,
+                    node.path,
+                    currentRepo.provider
+                );
+                fileContent = fileWithContent.content;
+            }
 
             // Use node.name for detection to ensure we have the full filename with extension
-            const lang = detectLanguageFromContent(node.name, fileWithContent.content) || 'javascript';
+            const lang = detectLanguageFromContent(node.name, fileContent);
 
             // Double-check tab doesn't exist after async operation (handles race condition)
             setOpenTabs(prev => {
@@ -293,7 +354,7 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
                     id: tabId,
                     name: node.name,
                     path: node.path,
-                    content: fileWithContent.content,
+                    content: fileContent,
                     language: lang
                 };
                 return [...prev, newTab];
@@ -309,7 +370,7 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
             loadingPathsRef.current.delete(node.path);
             setLoadingFilePath(null);
         }
-    }, [currentRepo, openTabs, setViewMode]);
+    }, [currentRepo, openTabs, setViewMode, isDemoMode, projectStructure]);
 
     // Close a tab
     const closeTab = useCallback((tabId) => {

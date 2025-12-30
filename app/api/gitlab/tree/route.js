@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { securityHeaders, getClientIp } from '@/lib/api-security';
 import { rateLimit } from '@/lib/rate-limit';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 function buildHierarchyTree(items, repo) {
     const root = {
@@ -35,6 +36,11 @@ function buildHierarchyTree(items, repo) {
 
 export async function GET(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    
+    // SECURITY: Block demo mode from accessing production GitLab tree API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
+    
     const { searchParams } = new URL(request.url);
     const owner = searchParams.get('owner');
     const repo = searchParams.get('repo');

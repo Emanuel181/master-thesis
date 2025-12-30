@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 // Normalize text to prevent XSS - defense-in-depth
 const normalizeText = (value) => {
@@ -51,7 +52,11 @@ function truncateByWords(text, maxWords = 20) {
 }
 
 // GET - Fetch all use cases for the current user
-export async function GET() {
+export async function GET(request) {
+    // SECURITY: Block demo mode from accessing production use-cases API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth(); // ⬅ replaces getServerSession
 
@@ -114,6 +119,10 @@ export async function GET() {
 
 // POST - Create a new use case
 export async function POST(request) {
+    // SECURITY: Block demo mode from accessing production use-cases API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
 

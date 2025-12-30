@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { securityHeaders, getClientIp } from '@/lib/api-security';
 import { rateLimit } from '@/lib/rate-limit';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 function maskToken(token) {
     if (!token) return null;
@@ -47,6 +48,11 @@ async function refreshGitLabToken(refreshToken) {
 
 export async function GET(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    
+    // SECURITY: Block demo mode from accessing production GitLab API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
+    
     const start = Date.now();
     try {
         const session = await auth();

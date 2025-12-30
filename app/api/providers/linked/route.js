@@ -3,9 +3,14 @@ import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
-export async function GET() {
+export async function GET(request) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  
+  // SECURITY: Block demo mode from accessing production providers API
+  const demoBlock = requireProductionMode(request, { requestId });
+  if (demoBlock) return demoBlock;
 
   try {
     const session = await auth();

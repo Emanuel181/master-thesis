@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 // CUID validation pattern (starts with 'c', 25 chars, lowercase alphanumeric)
 const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid ID format');
@@ -22,6 +23,11 @@ const createFolderSchema = z.object({
 export async function GET(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const headers = { ...securityHeaders, 'x-request-id': requestId };
+    
+    // SECURITY: Block demo mode from accessing production folders API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -110,6 +116,11 @@ export async function GET(request) {
 export async function POST(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const headers = { ...securityHeaders, 'x-request-id': requestId };
+    
+    // SECURITY: Block demo mode from accessing production folders API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {

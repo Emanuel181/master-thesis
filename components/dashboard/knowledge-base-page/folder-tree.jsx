@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { Tree } from "react-arborist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DEMO_DOCUMENTS } from "@/contexts/demoContext";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -188,6 +190,9 @@ const FolderTree = forwardRef(function FolderTree({
     onFileSelect,
     onRefresh,
 }, ref) {
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
+    
     const [treeData, setTreeData] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -273,6 +278,47 @@ const FolderTree = forwardRef(function FolderTree({
 
         setIsLoading(true);
         try {
+            // Demo mode - use mock data from DEMO_DOCUMENTS
+            if (isDemoMode) {
+                const documents = DEMO_DOCUMENTS[useCaseId] || [];
+                
+                // Group documents by folder
+                const folders = {};
+                const rootDocs = [];
+                
+                documents.forEach(doc => {
+                    if (doc.folder) {
+                        if (!folders[doc.folder]) {
+                            folders[doc.folder] = {
+                                id: `folder-${doc.folder.toLowerCase().replace(/\s+/g, '-')}`,
+                                name: doc.folder,
+                                type: "folder",
+                                children: []
+                            };
+                        }
+                        folders[doc.folder].children.push({
+                            id: doc.id,
+                            name: doc.name,
+                            type: "file",
+                            size: doc.size,
+                        });
+                    } else {
+                        rootDocs.push({
+                            id: doc.id,
+                            name: doc.name,
+                            type: "file",
+                            size: doc.size,
+                        });
+                    }
+                });
+                
+                // Combine folders and root docs
+                const mockTreeData = [...Object.values(folders), ...rootDocs];
+                setTreeData(mockTreeData);
+                setIsLoading(false);
+                return;
+            }
+            
             const response = await fetch(`/api/folders?useCaseId=${useCaseId}`);
             if (!response.ok) throw new Error("Failed to fetch folders");
 
@@ -284,7 +330,7 @@ const FolderTree = forwardRef(function FolderTree({
         } finally {
             setIsLoading(false);
         }
-    }, [useCaseId]);
+    }, [useCaseId, isDemoMode]);
 
     useEffect(() => {
         fetchFolders();
@@ -435,6 +481,39 @@ const FolderTree = forwardRef(function FolderTree({
             return;
         }
 
+        // Demo mode - mock folder creation locally
+        if (isDemoMode) {
+            const newFolder = {
+                id: `demo-folder-${Date.now()}`,
+                name: newFolderName.trim(),
+                type: "folder",
+                children: [],
+            };
+            
+            setTreeData(prev => {
+                if (parentFolderId) {
+                    // Add to specific parent folder
+                    const addToParent = (nodes) => nodes.map(node => {
+                        if (node.id === parentFolderId) {
+                            return { ...node, children: [...(node.children || []), newFolder] };
+                        }
+                        if (node.children) {
+                            return { ...node, children: addToParent(node.children) };
+                        }
+                        return node;
+                    });
+                    return addToParent(prev);
+                } else {
+                    return [...prev, newFolder];
+                }
+            });
+            
+            toast.success("Folder created successfully (demo)");
+            setCreateFolderDialogOpen(false);
+            setNewFolderName("");
+            return;
+        }
+
         try {
             const response = await fetch("/api/folders", {
                 method: "POST",
@@ -465,6 +544,28 @@ const FolderTree = forwardRef(function FolderTree({
     const handleRename = async () => {
         if (!newName.trim() || !itemToRename) {
             toast.error("Please enter a name");
+            return;
+        }
+
+        // Demo mode - mock rename locally
+        if (isDemoMode) {
+            setTreeData(prev => {
+                const updateName = (nodes) => nodes.map(node => {
+                    if (node.id === itemToRename.id) {
+                        return { ...node, name: newName.trim(), title: newName.trim() };
+                    }
+                    if (node.children) {
+                        return { ...node, children: updateName(node.children) };
+                    }
+                    return node;
+                });
+                return updateName(prev);
+            });
+            
+            toast.success("Renamed successfully (demo)");
+            setRenameDialogOpen(false);
+            setItemToRename(null);
+            setNewName("");
             return;
         }
 
@@ -499,6 +600,27 @@ const FolderTree = forwardRef(function FolderTree({
     const handleDelete = async () => {
         if (!itemToDelete) return;
 
+        // Demo mode - mock delete locally
+        if (isDemoMode) {
+            setTreeData(prev => {
+                const removeItem = (nodes) => nodes.filter(node => {
+                    if (node.id === itemToDelete.id) {
+                        return false;
+                    }
+                    if (node.children) {
+                        node.children = removeItem(node.children);
+                    }
+                    return true;
+                });
+                return removeItem(prev);
+            });
+            
+            toast.success("Deleted successfully (demo)");
+            setDeleteDialogOpen(false);
+            setItemToDelete(null);
+            return;
+        }
+
         try {
             const endpoint = itemToDelete.type === "folder"
                 ? `/api/folders/${itemToDelete.id}`
@@ -520,6 +642,50 @@ const FolderTree = forwardRef(function FolderTree({
 
     // Handle drag and drop reordering
     const handleMove = async ({ dragIds, parentId, index }) => {
+        // Demo mode - mock reorder locally
+        if (isDemoMode) {
+            setTreeData(prev => {
+                // Remove dragged items from their current locations
+                let draggedItems = [];
+                const removeItems = (nodes) => nodes.filter(node => {
+                    if (dragIds.includes(node.id)) {
+                        draggedItems.push(node);
+                        return false;
+                    }
+                    if (node.children) {
+                        node.children = removeItems(node.children);
+                    }
+                    return true;
+                });
+                
+                let newTree = removeItems([...prev]);
+                
+                // Add items to new location
+                if (parentId === null) {
+                    // Add to root
+                    newTree.splice(index, 0, ...draggedItems);
+                } else {
+                    // Add to specific parent
+                    const addToParent = (nodes) => nodes.map(node => {
+                        if (node.id === parentId) {
+                            const children = [...(node.children || [])];
+                            children.splice(index, 0, ...draggedItems);
+                            return { ...node, children };
+                        }
+                        if (node.children) {
+                            return { ...node, children: addToParent(node.children) };
+                        }
+                        return node;
+                    });
+                    newTree = addToParent(newTree);
+                }
+                
+                return newTree;
+            });
+            toast.success("Items reordered (demo)");
+            return;
+        }
+        
         try {
             // Build the items array with updated order
             const items = dragIds.map((id, idx) => {
@@ -593,6 +759,27 @@ const FolderTree = forwardRef(function FolderTree({
     // Bulk delete handler (handles both folders and PDFs)
     const handleBulkDelete = async () => {
         if (selectedItems.size === 0) return;
+
+        // Demo mode - mock bulk delete locally
+        if (isDemoMode) {
+            setTreeData(prev => {
+                const removeItems = (nodes) => nodes.filter(node => {
+                    if (selectedItems.has(node.id)) {
+                        return false;
+                    }
+                    if (node.children) {
+                        node.children = removeItems(node.children);
+                    }
+                    return true;
+                });
+                return removeItems([...prev]);
+            });
+            
+            toast.success(`${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} deleted successfully (demo)`);
+            setSelectedItems(new Set());
+            setBulkDeleteDialogOpen(false);
+            return;
+        }
 
         try {
             // Find all selected items and their types

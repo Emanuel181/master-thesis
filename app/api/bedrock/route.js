@@ -3,12 +3,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 const bedrockClient = new BedrockClient({
     region: process.env.AWS_REGION || "us-east-1",
 });
 
-export async function GET() {
+export async function GET(request) {
+    // SECURITY: Block demo mode from accessing production AWS Bedrock API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {

@@ -6,6 +6,18 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+// Demo profile data
+const DEMO_PROFILE = {
+    firstName: 'Demo',
+    lastName: 'User',
+    email: 'demo@vulniq.com',
+    phone: '+1 (555) 123-4567',
+    jobTitle: 'Security Engineer',
+    company: 'VulnIQ Demo Inc.',
+    bio: 'This is a demo account showcasing VulnIQ\'s profile management features. In production, you can update your personal information, upload a profile picture, and manage your account settings.',
+    location: 'San Francisco, CA',
+};
+
 /**
  * Sanitizes user input to prevent potential security issues.
  * Removes null bytes and trims whitespace.
@@ -42,8 +54,8 @@ const getSafeErrorMessage = (errorMessage) => {
     return 'An error occurred. Please try again.';
 };
 
-export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavingState, onCancel, onImageUpload }) {
-    const [profile, setProfile] = useState({
+export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavingState, onCancel, onImageUpload, isDemo = false }) {
+    const [profile, setProfile] = useState(isDemo ? DEMO_PROFILE : {
         firstName: '',
         lastName: '',
         email: '',
@@ -54,7 +66,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
         bio: '',
         location: '',
     });
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(!isDemo);
 
     // Track if component is mounted to prevent state updates after unmount
     const isMountedRef = useRef(true);
@@ -102,8 +114,10 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
         }
     }, []);
 
-    // Fetch profile data on component mount
+    // Fetch profile data on component mount (skip in demo mode)
     useEffect(() => {
+        if (isDemo) return; // Skip fetching in demo mode
+        
         isMountedRef.current = true;
         const currentFetchId = ++fetchIdRef.current;
         setIsLoading(true);
@@ -112,15 +126,22 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
         return () => {
             isMountedRef.current = false;
         };
-    }, [fetchProfile]);
+    }, [fetchProfile, isDemo]);
 
     // When edit mode is cancelled (isEditing turns false externally), revert data to what is in DB
     useEffect(() => {
+        if (isDemo) {
+            // In demo mode, just reset to demo profile
+            if (!isEditing) {
+                setProfile(DEMO_PROFILE);
+            }
+            return;
+        }
         if (!isEditing && isMountedRef.current) {
             const currentFetchId = ++fetchIdRef.current;
             fetchProfile(currentFetchId);
         }
-    }, [isEditing, fetchProfile]);
+    }, [isEditing, fetchProfile, isDemo]);
 
     // Connect the onImageUpload prop to our handler
     useEffect(() => {
@@ -144,6 +165,14 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
 
         // Notify parent that saving started
         if (onUpdateSavingState) onUpdateSavingState(true);
+
+        // In demo mode, just mock the save
+        if (isDemo) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast.success('Demo: Profile changes saved (not persisted)');
+            if (onSaveSuccess) onSaveSuccess();
+            return;
+        }
 
         try {
             // Sanitize all profile data before sending

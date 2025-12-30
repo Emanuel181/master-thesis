@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
 import { z } from "zod";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 const bedrockAgentClient = new BedrockAgentClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -24,7 +25,11 @@ const createAgentSchema = z.object({
 const headers = securityHeaders;
 
 // GET - List all agents
-export async function GET() {
+export async function GET(request) {
+    // SECURITY: Block demo mode from accessing production Bedrock agents API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -79,6 +84,10 @@ export async function GET() {
 
 // POST - Create a new agent
 export async function POST(request) {
+    // SECURITY: Block demo mode from accessing production Bedrock agents API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {

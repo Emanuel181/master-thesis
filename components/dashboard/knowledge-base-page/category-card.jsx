@@ -1,10 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DescriptionDialog } from "./description-dialog";
-import { Edit, Trash2, Eye, FileText } from "lucide-react";
+import { Edit, Trash2, Eye, FileText, RefreshCw } from "lucide-react";
 import { getCategoryColorClasses } from "./add-category-dialog";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,7 @@ const truncateDescription = (text, maxWords = MAX_DESC_WORDS) => {
     return `${words.slice(0, maxWords).join(" ")}...`;
 };
 
-export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete }) {
+export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, onRefresh, isRefreshing }) {
     // Use backend-provided shortDescription if available, otherwise truncate
     const fullDescription = useCase.fullDescription || useCase.description || '';
     const displayDescription = useCase.shortDescription || truncateDescription(fullDescription);
@@ -47,6 +48,11 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete }
         onDelete(useCase);
     };
 
+    const handleRefresh = (e) => {
+        e.stopPropagation();
+        onRefresh?.(useCase);
+    };
+
     return (
         <Card
             className={cn(
@@ -71,6 +77,16 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete }
                         <CardTitle className="text-sm font-medium">{useCase.name}</CardTitle>
                     </div>
                     <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="action-button h-6 w-6 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            title="Refresh documents from S3"
+                        >
+                            <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"

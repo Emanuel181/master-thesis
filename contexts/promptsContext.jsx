@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { DEMO_PROMPTS } from './demoContext';
 
 const PromptsContext = createContext();
 
@@ -22,8 +23,23 @@ export function PromptsProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const fetchInProgress = useRef(false);
+    const isDemoMode = pathname?.startsWith('/demo');
 
-    const fetchPrompts = async () => {
+    const fetchPrompts = useCallback(async () => {
+        // In demo mode, use demo data instead of fetching
+        if (isDemoMode) {
+            setPrompts(DEMO_PROMPTS);
+            // Pre-select first prompt in each category (single select)
+            setSelectedPrompts({
+                reviewer: DEMO_PROMPTS.reviewer?.[0]?.id ? [DEMO_PROMPTS.reviewer[0].id] : [],
+                implementation: DEMO_PROMPTS.implementation?.[0]?.id ? [DEMO_PROMPTS.implementation[0].id] : [],
+                tester: DEMO_PROMPTS.tester?.[0]?.id ? [DEMO_PROMPTS.tester[0].id] : [],
+                report: DEMO_PROMPTS.report?.[0]?.id ? [DEMO_PROMPTS.report[0].id] : [],
+            });
+            setLoading(false);
+            return;
+        }
+
         // Don't fetch if already in progress (deduplication)
         if (fetchInProgress.current) return;
         
@@ -62,7 +78,7 @@ export function PromptsProvider({ children }) {
             setLoading(false);
             fetchInProgress.current = false;
         }
-    };
+    }, [isDemoMode, status, pathname, session?.user]);
 
     // Fetch prompts on mount - debounced with idle callback for better performance
     useEffect(() => {
@@ -84,14 +100,16 @@ export function PromptsProvider({ children }) {
         setSelectedPrompts(prev => {
             const current = prev[agent] || [];
             if (current.includes(promptId)) {
+                // Deselect - clear the selection for this agent
                 return {
                     ...prev,
-                    [agent]: current.filter(id => id !== promptId)
+                    [agent]: []
                 };
             } else {
+                // Single select - replace with only this prompt
                 return {
                     ...prev,
-                    [agent]: [...current, promptId]
+                    [agent]: [promptId]
                 };
             }
         });
@@ -105,6 +123,21 @@ export function PromptsProvider({ children }) {
     };
 
     const addPrompt = async (agent, promptData) => {
+        // In demo mode, add locally with generated ID
+        if (isDemoMode) {
+            const newPrompt = {
+                id: `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                title: promptData.title,
+                text: promptData.text,
+                order: (prompts[agent] || []).length
+            };
+            setPrompts(prev => ({
+                ...prev,
+                [agent]: [...(prev[agent] || []), newPrompt]
+            }));
+            return { success: true };
+        }
+
         try {
             const response = await fetch('/api/prompts', {
                 method: 'POST',
@@ -149,6 +182,19 @@ export function PromptsProvider({ children }) {
     };
 
     const deletePrompt = async (agent, promptId) => {
+        // In demo mode, just remove from local state
+        if (isDemoMode) {
+            setPrompts(prev => ({
+                ...prev,
+                [agent]: (prev[agent] || []).filter(p => p.id !== promptId)
+            }));
+            setSelectedPrompts(prev => ({
+                ...prev,
+                [agent]: (prev[agent] || []).filter(id => id !== promptId)
+            }));
+            return { success: true };
+        }
+
         try {
             const response = await fetch(`/api/prompts/${promptId}`, {
                 method: 'DELETE'
@@ -175,6 +221,26 @@ export function PromptsProvider({ children }) {
     const bulkDeletePrompts = async (promptIds) => {
         const ids = Array.from(new Set((promptIds || []).filter(Boolean)));
         if (ids.length === 0) return { success: true, deletedIds: [], missingIds: [], s3Failed: [] };
+
+        // In demo mode, just remove from local state
+        if (isDemoMode) {
+            const deletedSet = new Set(ids);
+            setPrompts(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(agent => {
+                    next[agent] = (next[agent] || []).filter(p => !deletedSet.has(p.id));
+                });
+                return next;
+            });
+            setSelectedPrompts(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(agent => {
+                    next[agent] = (next[agent] || []).filter(id => !deletedSet.has(id));
+                });
+                return next;
+            });
+            return { success: true, deletedIds: ids, missingIds: [], s3Failed: [] };
+        }
 
         try {
             const response = await fetch('/api/prompts/bulk-delete', {
@@ -212,6 +278,15 @@ export function PromptsProvider({ children }) {
     };
 
     const editPrompt = async (agent, promptId, promptData) => {
+        // In demo mode, just update local state
+        if (isDemoMode) {
+            setPrompts(prev => ({
+                ...prev,
+                [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, title: promptData.title, text: promptData.text } : p)
+            }));
+            return { success: true };
+        }
+
         try {
             console.log('Editing prompt:', { agent, promptId, promptData });
             const response = await fetch(`/api/prompts/${promptId}`, {
@@ -251,6 +326,11 @@ export function PromptsProvider({ children }) {
             ...prev,
             [agent]: reorderedPrompts
         }));
+
+        // In demo mode, just return success (local state already updated)
+        if (isDemoMode) {
+            return { success: true };
+        }
 
         try {
             const response = await fetch('/api/prompts/reorder', {

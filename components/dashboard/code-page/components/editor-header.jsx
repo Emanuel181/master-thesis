@@ -29,6 +29,7 @@ import {
     FolderPlus,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 /**
  * Editor Header component with actions and configuration
@@ -64,6 +65,8 @@ export function EditorHeader({
     // Tab group props
     onCreateGroup,
     hasOpenTabs = false,
+    // Demo mode
+    isDemoMode = false,
 }) {
     return (
         <CardHeader className="py-2 px-2 sm:py-2.5 sm:px-4 shrink-0 border-b bg-card/50">
@@ -161,10 +164,19 @@ export function EditorHeader({
                                                 className="h-6 w-6 hover:bg-background/80"
                                                 onClick={async () => {
                                                     setIsRefreshing(true);
-                                                    try { await refreshUseCases(); }
-                                                    finally { setIsRefreshing(false); }
+                                                    try {
+                                                        if (isDemoMode) {
+                                                            await new Promise(resolve => setTimeout(resolve, 800));
+                                                        }
+                                                        await refreshUseCases();
+                                                        toast.success("Use cases refreshed successfully!");
+                                                    } catch (err) {
+                                                        toast.error("Failed to refresh use cases");
+                                                    } finally {
+                                                        setIsRefreshing(false);
+                                                    }
                                                 }}
-                                                disabled={isRefreshing}
+                                                disabled={isRefreshing || isLocked}
                                             >
                                                 <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
                                             </Button>
@@ -382,10 +394,19 @@ export function EditorHeader({
                                 <DropdownMenuItem
                                     onClick={async () => {
                                         setIsRefreshing(true);
-                                        try { await refreshUseCases(); }
-                                        finally { setIsRefreshing(false); }
+                                        try {
+                                            if (isDemoMode) {
+                                                await new Promise(resolve => setTimeout(resolve, 800));
+                                            }
+                                            await refreshUseCases();
+                                            toast.success("Use cases refreshed successfully!");
+                                        } catch (err) {
+                                            toast.error("Failed to refresh use cases");
+                                        } finally {
+                                            setIsRefreshing(false);
+                                        }
                                     }}
-                                    disabled={isRefreshing}
+                                    disabled={isRefreshing || isLocked}
                                     className="text-xs"
                                 >
                                     <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />

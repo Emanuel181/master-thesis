@@ -25,7 +25,7 @@ import {
   Bell,
   FolderOpen,
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 
 import { cn } from "@/lib/utils"
@@ -294,6 +294,10 @@ function CommandPaletteProvider({
   // Get settings from context
   const { settings, updateSettings } = useSettings()
   const router = useRouter()
+  const pathname = usePathname()
+  
+  // Detect demo mode
+  const isDemo = pathname?.startsWith('/demo')
 
   // Get current theme from settings
   const currentTheme = settings?.mode || "light"
@@ -370,7 +374,7 @@ function CommandPaletteProvider({
       category: "Navigation",
       shortcut: "mod+5",
       aliases: ["profile", "account", "user", "me", "gp"],
-      action: () => router.push("/profile"),
+      action: () => router.push(isDemo ? "/demo/profile" : "/profile"),
     },
     // Actions
     {
@@ -522,9 +526,15 @@ function CommandPaletteProvider({
       category: "Session",
       shortcut: "mod+shift+q",
       aliases: ["logout", "signout", "exit", "quit"],
-      action: () => signOut({ callbackUrl: "/login" }),
+      action: () => {
+        if (isDemo) {
+          router.push('/')
+        } else {
+          signOut({ callbackUrl: "/login" })
+        }
+      },
     },
-  ], [currentTheme, settings, updateSettings, onNavigate, isCodeLocked, router])
+  ], [currentTheme, settings, updateSettings, onNavigate, isCodeLocked, router, isDemo])
 
   // Filter commands based on context
   const contextCommands = React.useMemo(() => {
@@ -617,13 +627,15 @@ function CommandPaletteProvider({
   const updateSettingsRef = React.useRef(updateSettings)
   const onNavigateRef = React.useRef(onNavigate)
   const routerRef = React.useRef(router)
+  const isDemoRef = React.useRef(isDemo)
 
   React.useEffect(() => {
     settingsRef.current = settings
     updateSettingsRef.current = updateSettings
     onNavigateRef.current = onNavigate
     routerRef.current = router
-  }, [settings, updateSettings, onNavigate, router])
+    isDemoRef.current = isDemo
+  }, [settings, updateSettings, onNavigate, router, isDemo])
 
   // Global shortcut to open command palette and other shortcuts
   React.useEffect(() => {
@@ -736,7 +748,11 @@ function CommandPaletteProvider({
       if (isMod && e.shiftKey && !e.altKey && e.key.toLowerCase() === "q") {
         e.preventDefault()
         e.stopPropagation()
-        signOut({ callbackUrl: "/login" })
+        if (isDemoRef.current) {
+          routerRef.current?.push('/')
+        } else {
+          signOut({ callbackUrl: "/login" })
+        }
         return
       }
 
@@ -770,7 +786,7 @@ function CommandPaletteProvider({
         if (e.key === "5") {
           e.preventDefault()
           e.stopPropagation()
-          routerRef.current?.push("/profile")
+          routerRef.current?.push(isDemoRef.current ? "/demo/profile" : "/profile")
           return
         }
       }

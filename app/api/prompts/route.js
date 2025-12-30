@@ -5,6 +5,7 @@ import { uploadTextToS3, generatePromptS3Key } from '@/lib/s3';
 import { z } from 'zod';
 import { rateLimit } from '@/lib/rate-limit';
 import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 // Input validation schemas
 const VALID_AGENTS = ["reviewer", "implementation", "tester", "report"];
@@ -17,7 +18,11 @@ const createPromptSchema = z.object({
         .max(50000, 'Text must be less than 50000 characters'),
 });
 
-export async function GET() {
+export async function GET(request) {
+    // SECURITY: Block demo mode from accessing production prompts API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -79,6 +84,10 @@ export async function GET() {
 }
 
 export async function POST(request) {
+    // SECURITY: Block demo mode from accessing production prompts API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {

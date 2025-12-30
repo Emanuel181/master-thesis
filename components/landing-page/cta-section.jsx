@@ -1,20 +1,9 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, LayoutDashboard, Send, Loader2, CheckCircle2, Mail, User, Building2 } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
 import { useSession } from "next-auth/react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 // Animated particle/branch component
 const AnimatedBranches = ({ className = "" }) => {
@@ -202,32 +191,6 @@ const AnimatedBranches = ({ className = "" }) => {
 export function CTASection() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated" && !!session;
-  const [isOpen, setIsOpen] = useState(false);
-  const [formStatus, setFormStatus] = useState("idle"); // idle, loading, success, error
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    message: "",
-  });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormStatus("loading");
-    
-    // Simulate API call - replace with actual endpoint
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setFormStatus("success");
-      setTimeout(() => {
-        setIsOpen(false);
-        setFormStatus("idle");
-        setFormData({ name: "", email: "", company: "", message: "" });
-      }, 2000);
-    } catch {
-      setFormStatus("error");
-    }
-  };
 
   return (
     <section className="relative z-10 py-12 sm:py-16 md:py-20 lg:py-24 px-3 sm:px-4 md:px-6 lg:px-8">
@@ -295,114 +258,16 @@ export function CTASection() {
                   </a>
                 </Button>
               ) : (
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="lg"
-                      className="rounded-lg font-semibold text-base bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/90 text-white px-8"
-                    >
-                      View demo
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl font-bold">Request a Demo</DialogTitle>
-                      <DialogDescription>
-                        Fill out the form below and we'll get back to you within 24 hours.
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    {formStatus === "success" ? (
-                      <div className="flex flex-col items-center justify-center py-8 gap-4">
-                        <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                          <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="text-center">
-                          <p className="font-semibold text-foreground">Thank you!</p>
-                          <p className="text-sm text-muted-foreground mt-1">We'll be in touch soon.</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name" className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            Name
-                          </Label>
-                          <Input
-                            id="name"
-                            placeholder="Your name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                            disabled={formStatus === "loading"}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            Email
-                          </Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="you@company.com"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            required
-                            disabled={formStatus === "loading"}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="company" className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-muted-foreground" />
-                            Company <span className="text-muted-foreground text-xs">(optional)</span>
-                          </Label>
-                          <Input
-                            id="company"
-                            placeholder="Your company"
-                            value={formData.company}
-                            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                            disabled={formStatus === "loading"}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="message">Message <span className="text-muted-foreground text-xs">(optional)</span></Label>
-                          <Textarea
-                            id="message"
-                            placeholder="Tell us about your security needs..."
-                            value={formData.message}
-                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                            rows={3}
-                            disabled={formStatus === "loading"}
-                          />
-                        </div>
-                        
-                        <Button
-                          type="submit"
-                          className="w-full"
-                          disabled={formStatus === "loading"}
-                        >
-                          {formStatus === "loading" ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Sending...
-                            </>
-                          ) : (
-                            <>
-                              <Send className="w-4 h-4 mr-2" />
-                              Submit Request
-                            </>
-                          )}
-                        </Button>
-                      </form>
-                    )}
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-lg font-semibold text-base bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/90 text-white px-8"
+                >
+                  <a href="/demo" className="flex items-center justify-center gap-2">
+                    Try Interactive Demo
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                </Button>
               )}
               
               {!isAuthenticated && (

@@ -27,31 +27,53 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import { toast } from "sonner"
+import { clearDemoStorage, isDemoPath } from "@/lib/demo-mode"
 
-// Clear all app state from localStorage on logout
-const clearAllAppState = () => {
+// SECURITY: Clear all app state from localStorage on logout
+// Clears only production keys - demo state is handled separately
+const clearAllAppState = (isDemo = false) => {
     try {
-        localStorage.removeItem('vulniq_project_state');
-        localStorage.removeItem('vulniq_code_state');
-        localStorage.removeItem('vulniq_editor_tabs');
-        localStorage.removeItem('vulniq_editor_language');
-        localStorage.removeItem('app-settings');
+        if (isDemo) {
+            // In demo mode, use the centralized demo cleanup
+            clearDemoStorage();
+        } else {
+            // Production mode: clear production keys only
+            localStorage.removeItem('vulniq_project_state');
+            localStorage.removeItem('vulniq_code_state');
+            localStorage.removeItem('vulniq_editor_tabs');
+            localStorage.removeItem('vulniq_editor_language');
+            localStorage.removeItem('app-settings');
+        }
     } catch (err) {
         console.error("Error clearing app state on logout:", err);
     }
 };
 
 const handleLogout = () => {
-    clearAllAppState();
+    clearAllAppState(false); // Production logout
     signOut({ callbackUrl: "/login" });
 };
 
 export function NavUser({
                             user,
+                            isDemo = false,
                         }){
     const { isMobile } = useSidebar()
     const router = useRouter()
+    const pathname = usePathname()
+    
+    // SECURITY: Derive demo mode from pathname for reliable detection
+    const inDemoMode = isDemo || isDemoPath(pathname)
+
+    const handleDemoLogout = () => {
+        clearAllAppState(true); // Demo logout
+        toast.success('Demo logout successful! Redirecting...');
+        setTimeout(() => {
+            router.push('/');
+        }, 1000);
+    };
 
     return (
         <SidebarMenu>
@@ -97,13 +119,13 @@ export function NavUser({
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={() => router.push("/profile")}>
+                            <DropdownMenuItem onClick={() => router.push(isDemo ? "/demo/profile" : "/profile")}>
                                 <IconUserCircle />
                                 Account
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout}>
+                        <DropdownMenuItem onClick={isDemo ? handleDemoLogout : handleLogout}>
                             <IconLogout />
                             Log out
                         </DropdownMenuItem>

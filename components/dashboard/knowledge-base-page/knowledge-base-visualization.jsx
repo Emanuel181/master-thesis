@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react"
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import { CategoryCard } from "./category-card";
 import { FolderTree } from "./folder-tree";
 import { CategoryCardSkeleton, DocumentListSkeleton } from "@/components/ui/loading-skeletons";
 import { NoCategoriesEmptyState, NoDocumentsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-states";
+import { DEMO_USE_CASES, DEMO_DOCUMENTS } from "@/contexts/demoContext";
 
 // Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
 const PdfViewerDialog = dynamic(
@@ -39,6 +41,9 @@ const PdfViewerDialog = dynamic(
 );
 
 export default function KnowledgeBaseVisualization() {
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
+    
     const [useCases, setUseCases] = useState([]);
     const [selectedUseCase, setSelectedUseCase] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -99,11 +104,14 @@ export default function KnowledgeBaseVisualization() {
     // Track selected documents for bulk actions
     const [selectedDocs, setSelectedDocs] = useState(new Set());
 
+    // Track refreshing use cases
+    const [refreshingUseCases, setRefreshingUseCases] = useState(new Set());
+
     // Fetch use cases from database on mount
     useEffect(() => {
         fetchUseCases();
         // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchUseCases only needed on mount
-    }, []);
+    }, [isDemoMode]);
 
     // Reset document page and selection when use case changes
     useEffect(() => {
@@ -114,6 +122,25 @@ export default function KnowledgeBaseVisualization() {
     const fetchUseCases = async () => {
         try {
             setIsLoading(true);
+            
+            // In demo mode, use demo data instead of fetching
+            if (isDemoMode) {
+                const transformedUseCases = DEMO_USE_CASES.map(uc => ({
+                    id: uc.id,
+                    name: uc.name,
+                    description: uc.description,
+                    fullDescription: uc.fullDescription,
+                    shortDescription: uc.shortDescription,
+                    icon: uc.icon,
+                    pdfCount: uc.pdfCount,
+                    formattedTotalSize: uc.formattedTotalSize,
+                }));
+                setUseCases(transformedUseCases);
+                setDocuments(DEMO_DOCUMENTS);
+                setIsLoading(false);
+                return;
+            }
+
             const response = await fetch("/api/use-cases");
             if (!response.ok) {
                 throw new Error("Failed to fetch use cases");
@@ -470,6 +497,51 @@ export default function KnowledgeBaseVisualization() {
         setDeleteUseCaseDialogOpen(true);
     };
 
+    // Handle refresh use case (sync documents from S3)
+    const handleRefreshUseCase = async (useCase) => {
+        if (refreshingUseCases.has(useCase.id)) return;
+        
+        setRefreshingUseCases(prev => new Set(prev).add(useCase.id));
+        
+        try {
+            // Demo mode - mock refresh
+            if (isDemoMode) {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                toast.success(`"${useCase.name}" synced successfully! ${useCase.count || 0} documents found. (demo)`);
+                setRefreshingUseCases(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(useCase.id);
+                    return newSet;
+                });
+                return;
+            }
+            
+            // Production mode - actually sync from S3
+            const response = await fetch(`/api/use-cases/${useCase.id}/sync`, {
+                method: "POST",
+            });
+            
+            if (!response.ok) {
+                throw new Error("Failed to sync documents");
+            }
+            
+            const data = await response.json();
+            toast.success(`"${useCase.name}" synced successfully! ${data.documentsFound || 0} documents found.`);
+            
+            // Refresh the documents list
+            fetchDocuments(useCase.id);
+        } catch (error) {
+            console.error("Error syncing use case:", error);
+            toast.error(`Failed to sync "${useCase.name}"`);
+        } finally {
+            setRefreshingUseCases(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(useCase.id);
+                return newSet;
+            });
+        }
+    };
+
     // Handle actual deletion after confirmation
     const handleConfirmedDelete = async () => {
         if (!documentToDelete) return;
@@ -516,6 +588,18 @@ export default function KnowledgeBaseVisualization() {
 
     const openPdfViewer = async (doc) => {
         try {
+            // Demo mode - show a placeholder PDF view
+            if (isDemoMode) {
+                setSelectedPdf({ 
+                    url: null, 
+                    name: doc.name || doc.title,
+                    isDemo: true 
+                });
+                setPdfViewerOpen(true);
+                toast.info("Opening demo PDF viewer...", { duration: 2000 });
+                return;
+            }
+            
             // Fetch a fresh presigned URL from the API
             const response = await fetch(`/api/pdfs/${doc.id}`);
             if (!response.ok) {
@@ -720,6 +804,8 @@ export default function KnowledgeBaseVisualization() {
                                     isSelected={selectedUseCase === useCase.id}
                                     onEdit={handleEditUseCase}
                                     onDelete={handleDeleteUseCase}
+                                    onRefresh={handleRefreshUseCase}
+                                    isRefreshing={refreshingUseCases.has(useCase.id)}
                                 />
                             ))
                         ) : (
@@ -859,6 +945,7 @@ export default function KnowledgeBaseVisualization() {
             onOpenChange={setPdfViewerOpen}
             pdfUrl={selectedPdf.url}
             fileName={selectedPdf.name}
+            isDemo={selectedPdf.isDemo || false}
         />
 
         {/* PDF Name Dialog */}

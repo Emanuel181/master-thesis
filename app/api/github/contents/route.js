@@ -4,9 +4,15 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 export async function GET(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    
+    // SECURITY: Block demo mode from accessing production GitHub contents API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
+    
     const { searchParams } = new URL(request.url);
     const owner = searchParams.get('owner');
     const repo = searchParams.get('repo');

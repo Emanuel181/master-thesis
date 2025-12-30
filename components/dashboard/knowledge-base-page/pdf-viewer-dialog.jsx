@@ -11,14 +11,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, FileText, Lock } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
 // Configure PDF.js worker - use unpkg with the exact version from react-pdf's pdfjs
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
+export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName, isDemo = false }) {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [scale, setScale] = useState(1.0);
@@ -193,7 +193,9 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
                         {fileName || "PDF Document"}
                     </DialogTitle>
                     <DialogDescription className="text-sm text-muted-foreground">
-                        {numPages ? `Page ${pageNumber} of ${numPages} • Use Ctrl+Scroll to zoom` : "Loading..."}
+                        {isDemo 
+                            ? "Demo Mode • This is a preview placeholder" 
+                            : (numPages ? `Page ${pageNumber} of ${numPages} • Use Ctrl+Scroll to zoom` : "Loading...")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -204,34 +206,34 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
                             variant="outline"
                             size="sm"
                             onClick={goToPreviousPage}
-                            disabled={pageNumber <= 1}
+                            disabled={isDemo || pageNumber <= 1}
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <div className="text-sm font-medium min-w-[100px] text-center">
-                            {pageNumber} / {numPages || "..."}
+                            {isDemo ? "1 / 1" : `${pageNumber} / ${numPages || "..."}`}
                         </div>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={goToNextPage}
-                            disabled={pageNumber >= (numPages || 1)}
+                            disabled={isDemo || pageNumber >= (numPages || 1)}
                         >
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={zoomOut}>
+                        <Button variant="outline" size="sm" onClick={zoomOut} disabled={isDemo}>
                             <ZoomOut className="h-4 w-4" />
                         </Button>
                         <div className="text-sm font-medium min-w-[60px] text-center">
                             {Math.round(scale * 100)}%
                         </div>
-                        <Button variant="outline" size="sm" onClick={zoomIn}>
+                        <Button variant="outline" size="sm" onClick={zoomIn} disabled={isDemo}>
                             <ZoomIn className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={handleDownload}>
+                        <Button variant="outline" size="sm" onClick={handleDownload} disabled={isDemo}>
                             <Download className="h-4 w-4 mr-2" />
                             Download
                         </Button>
@@ -250,7 +252,56 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName }) {
                 >
                     <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
                         <div className="p-6 bg-muted/20 min-h-full">
-                            {pdfUrl ? (
+                            {isDemo ? (
+                                /* Demo mode placeholder */
+                                <div className="flex flex-col items-center justify-center py-10 space-y-6">
+                                    <div className="relative w-[500px] max-w-full h-[650px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border flex flex-col overflow-hidden">
+                                        {/* Mock PDF Header */}
+                                        <div className="p-6 border-b shrink-0">
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="h-8 w-8 text-red-500" />
+                                                <div>
+                                                    <h3 className="font-semibold text-lg text-foreground">{fileName || "Document.pdf"}</h3>
+                                                    <p className="text-sm text-muted-foreground">Security Documentation</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Mock PDF Content */}
+                                        <div className="flex-1 p-6 space-y-4 overflow-hidden">
+                                            <div className="space-y-2">
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                                            </div>
+                                            <div className="space-y-2 pt-4">
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                                            </div>
+                                            <div className="space-y-2 pt-4">
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                                            </div>
+                                            <div className="space-y-2 pt-4">
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Demo Overlay */}
+                                        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center z-10">
+                                            <Lock className="h-16 w-16 text-gray-400 dark:text-gray-500 mb-4" />
+                                            <h3 className="text-2xl font-semibold mb-2 text-foreground">Demo Mode Preview</h3>
+                                            <p className="text-muted-foreground text-center max-w-sm px-4">
+                                                Full PDF viewing is available with a VulnIQ account. Sign up to access your security documentation.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : pdfUrl ? (
                                 <div className="inline-block min-w-full">
                                     <Document
                                         file={pdfUrl}

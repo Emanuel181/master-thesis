@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { DEMO_USE_CASES } from './demoContext';
 
 const UseCasesContext = createContext();
 
@@ -16,8 +17,27 @@ export function UseCasesProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fetchInProgress = useRef(false);
+  const isDemoMode = pathname?.startsWith('/demo');
 
   const fetchUseCases = useCallback(async () => {
+    // In demo mode, use demo data instead of fetching
+    if (isDemoMode) {
+      // Transform demo use cases to match expected format
+      const transformedDemoUseCases = DEMO_USE_CASES.map(uc => ({
+        id: uc.id,
+        title: uc.name,
+        content: uc.description,
+        shortDescription: uc.shortDescription,
+        fullContent: uc.fullDescription,
+        icon: uc.icon,
+        pdfCount: uc.pdfCount,
+        formattedTotalSize: uc.formattedTotalSize,
+      }));
+      setUseCases(transformedDemoUseCases);
+      setLoading(false);
+      return;
+    }
+
     // Don't fetch if already in progress (deduplication)
     if (fetchInProgress.current) return;
     
@@ -75,7 +95,7 @@ export function UseCasesProvider({ children }) {
       setLoading(false);
       fetchInProgress.current = false;
     }
-  }, [session, pathname, status]);
+  }, [session, pathname, status, isDemoMode]);
 
   useEffect(() => {
     // Use requestIdleCallback for non-critical initial fetch

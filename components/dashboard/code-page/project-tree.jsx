@@ -179,7 +179,8 @@ export default function ProjectTree({
     // Handle file click with mobile sheet close
     const handleFileClick = useCallback((item) => {
         if (!item.children) {
-            onFileClick(item._orig);
+            // Pass the item with path (id) and original content
+            onFileClick({ ...item._orig, path: item.id, name: item.name });
             if (isMobile) {
                 setMobileSheetOpen(false);
             }
@@ -297,7 +298,7 @@ export default function ProjectTree({
                                 No files match &ldquo;{searchTerm}&rdquo;
                             </div>
                         ) : (
-                            <TreeView ref={controlsRef} data={filteredTreeData} onItemClick={(i) => !i.children && onFileClick(i._orig)} />
+                            <TreeView ref={controlsRef} data={filteredTreeData} onItemClick={(i) => !i.children && onFileClick({ ...i._orig, path: i.id, name: i.name })} />
                         )}
                     </div>
                 ) : (

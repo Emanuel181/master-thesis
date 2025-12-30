@@ -3,6 +3,7 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -110,11 +111,15 @@ export function AgentNode({ data }) {
                             <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent>
-                            {data.models.map((model, idx) => (
-                                <SelectItem key={`${data.id}-model-${idx}`} value={model} className="text-xs">
-                                    {model}
-                                </SelectItem>
-                            ))}
+                            <div onWheelCapture={(e) => e.stopPropagation()}>
+                                <ScrollArea className="h-[200px]">
+                                    {data.models.map((model, idx) => (
+                                        <SelectItem key={`${data.id}-model-${idx}`} value={model} className="text-xs">
+                                            {model}
+                                        </SelectItem>
+                                    ))}
+                                </ScrollArea>
+                            </div>
                         </SelectContent>
                     </Select>
                 </CardContent>

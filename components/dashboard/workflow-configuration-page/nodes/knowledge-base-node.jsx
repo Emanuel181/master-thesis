@@ -140,8 +140,9 @@ export function KnowledgeBaseNode({ data }) {
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Knowledge Bases</p>
                             </div>
-                            <ScrollArea className="h-[300px]">
-                                <div className="p-2">
+                            <div onWheelCapture={(e) => e.stopPropagation()}>
+                                <ScrollArea className="h-[300px]">
+                                    <div className="p-2">
                                 {data.knowledgeBases.map((kb) => {
                                     const IconComponent = LucideIcons[kb.icon];
                                     const isSelected = data.selectedKnowledgeBases?.includes(kb.id);
@@ -176,8 +177,9 @@ export function KnowledgeBaseNode({ data }) {
                                         </div>
                                     );
                                 })}
-                                </div>
-                            </ScrollArea>
+                                    </div>
+                                </ScrollArea>
+                            </div>
                         </PopoverContent>
                     </Popover>
                 </CardContent>

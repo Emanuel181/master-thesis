@@ -215,25 +215,25 @@ export default function ProfilePage() {
                                     settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
                                 }`}>
 
-                                {/* 3. Pass state and handlers to Header */}
-                                <ProfileHeader
-                                    user={session?.user}
-                                    isEditing={isEditing}
-                                    onEdit={handleEditStart}
-                                    onCancel={handleEditCancel}
-                                    isSaving={isSaving}
-                                    onImageUpload={handleImageUpload}
-                                />
+                                    {/* 3. Pass state and handlers to Header */}
+                                    <ProfileHeader
+                                        user={session?.user}
+                                        isEditing={isEditing}
+                                        onEdit={handleEditStart}
+                                        onCancel={handleEditCancel}
+                                        isSaving={isSaving}
+                                        onImageUpload={handleImageUpload}
+                                    />
 
-                                {/* 4. Pass state and handlers to Content */}
-                                <ProfileContent
-                                    isEditing={isEditing}
-                                    onCancel={handleEditCancel}
-                                    onUpdateSavingState={setIsSaving}
-                                    onSaveSuccess={handleSaveSuccess}
-                                    onImageUpload={handleImageUpload}
-                                />
-                            </div>
+                                    {/* 4. Pass state and handlers to Content */}
+                                    <ProfileContent
+                                        isEditing={isEditing}
+                                        onCancel={handleEditCancel}
+                                        onUpdateSavingState={setIsSaving}
+                                        onSaveSuccess={handleSaveSuccess}
+                                        onImageUpload={handleImageUpload}
+                                    />
+                                </div>
                             </ScrollArea>
                         </div>
                     </SidebarInset>

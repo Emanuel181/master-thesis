@@ -124,19 +124,44 @@ export const extensionToLanguageMap = {
     'bash': 'shell',
     'zsh': 'shell',
     'ps1': 'powershell',
+    
+    // Plain text / Config files (unsupported for review)
+    'txt': 'plaintext',
+    'text': 'plaintext',
+    'log': 'plaintext',
+    'ini': 'plaintext',
+    'cfg': 'plaintext',
+    'conf': 'plaintext',
+    'env': 'plaintext',
+    'gitignore': 'plaintext',
+    'dockerignore': 'plaintext',
+    'editorconfig': 'plaintext',
+    'properties': 'plaintext',
+    'toml': 'plaintext',
+    'lock': 'plaintext',
 };
 
 /**
  * Detect language from filename and content
  * @param {string} filename - The filename
  * @param {string} content - The file content
- * @returns {string|null} The detected language or null
+ * @returns {string} The detected language or 'unsupported'
  */
 export const detectLanguageFromContent = (filename, content) => {
-    if (!filename) return null;
+    if (!filename) return 'unsupported';
 
     const ext = filename.split('.').pop()?.toLowerCase();
-    if (!ext) return null;
+    
+    // Handle files without extension (like Dockerfile, Makefile, etc.)
+    if (!ext || ext === filename.toLowerCase()) {
+        // Check for known extensionless files
+        const baseName = filename.toLowerCase();
+        if (['dockerfile', 'makefile', 'jenkinsfile', 'vagrantfile'].includes(baseName)) {
+            return 'plaintext';
+        }
+        if (baseName === 'requirements') return 'plaintext';
+        return 'unsupported';
+    }
 
     if (extensionToLanguageMap[ext]) {
         return extensionToLanguageMap[ext];
@@ -154,6 +179,6 @@ export const detectLanguageFromContent = (filename, content) => {
         if (content.includes('using System;') || content.includes('namespace ')) return 'csharp';
     }
 
-    return null;
+    return 'unsupported';
 };
 

@@ -5,6 +5,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Calendar, Mail, MapPin, Pencil, X, Check, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
+// Demo user data
+const DEMO_USER = {
+    id: 'demo-user',
+    name: 'Demo User',
+    email: 'demo@vulniq.com',
+    image: null,
+    title: 'Security Engineer',
+    location: 'San Francisco, CA',
+    joinedDate: 'January 2024',
+};
 
 export default function ProfileHeader({
                                           user,
@@ -12,10 +24,14 @@ export default function ProfileHeader({
                                           onEdit,
                                           onCancel,
                                           isSaving,
-                                          onImageUpload
+                                          onImageUpload,
+                                          isDemo = false
                                       }) {
-    const initials = user?.name
-        ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    // Use demo user data when in demo mode
+    const displayUser = isDemo ? DEMO_USER : user;
+    
+    const initials = displayUser?.name
+        ? displayUser.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : 'U';
 
     const [resolvedImageUrl, setResolvedImageUrl] = useState('');
@@ -24,7 +40,7 @@ export default function ProfileHeader({
     const refreshTimerRef = useRef(null);
     const retriedRef = useRef(false);
 
-    const rawImage = typeof user?.image === 'string' ? user.image : '';
+    const rawImage = typeof displayUser?.image === 'string' ? displayUser.image : '';
     const isHttpsUrl = rawImage.startsWith('https://');
     const isS3Key = rawImage.startsWith('users/');
 
@@ -149,26 +165,26 @@ export default function ProfileHeader({
                     {/* User Info */}
                     <div className="flex-1 space-y-2 text-center sm:text-left w-full">
                         <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                            <h1 className="text-xl sm:text-2xl font-bold">{user?.name || "User"}</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold">{displayUser?.name || "User"}</h1>
                         </div>
-                        <p className="text-muted-foreground text-sm sm:text-base">{user?.title || ""}</p>
+                        <p className="text-muted-foreground text-sm sm:text-base">{displayUser?.title || ""}</p>
                         <div className="text-muted-foreground flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm">
-                            {user?.email && (
+                            {displayUser?.email && (
                                 <div className="flex items-center gap-1">
                                     <Mail className="size-3 sm:size-4 flex-shrink-0" />
-                                    <span className="truncate max-w-[150px] sm:max-w-none">{user.email}</span>
+                                    <span className="truncate max-w-[150px] sm:max-w-none">{displayUser.email}</span>
                                 </div>
                             )}
-                            {user?.location && (
+                            {displayUser?.location && (
                                 <div className="flex items-center gap-1">
                                     <MapPin className="size-3 sm:size-4 flex-shrink-0" />
-                                    {user.location}
+                                    {displayUser.location}
                                 </div>
                             )}
-                            {user?.joinedDate && (
+                            {displayUser?.joinedDate && (
                                 <div className="flex items-center gap-1">
                                     <Calendar className="size-3 sm:size-4 flex-shrink-0" />
-                                    Joined {user.joinedDate}
+                                    Joined {displayUser.joinedDate}
                                 </div>
                             )}
                         </div>

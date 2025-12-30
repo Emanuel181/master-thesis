@@ -12,12 +12,34 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-export const FeedbackDialog = ({ open, onOpenChange }) => {
+export const FeedbackDialog = ({ open, onOpenChange, isDemo = false }) => {
   const [feedback, setFeedback] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef(null);
 
   const handleSubmit = async () => {
+    if (!feedback.trim()) {
+      toast.error("Please enter some feedback");
+      return;
+    }
+
+    // Demo mode - mock the submission
+    if (isDemo) {
+      setIsSubmitting(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      toast.success("Feedback submitted successfully! (Demo Mode)");
+      setFeedback("");
+      if (textareaRef.current) {
+        textareaRef.current.textContent = "";
+      }
+      setIsSubmitting(false);
+      onOpenChange(false);
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -26,6 +48,9 @@ export const FeedbackDialog = ({ open, onOpenChange }) => {
       if (response.ok) {
         toast.success("Feedback submitted successfully!");
         setFeedback("");
+        if (textareaRef.current) {
+          textareaRef.current.textContent = "";
+        }
         onOpenChange(false);
       } else {
         const errorData = await response.json();
@@ -33,6 +58,8 @@ export const FeedbackDialog = ({ open, onOpenChange }) => {
       }
     } catch (error) {
       toast.error("Error submitting feedback");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -70,11 +97,12 @@ export const FeedbackDialog = ({ open, onOpenChange }) => {
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="button" onClick={handleSubmit}>
-            Submit Feedback
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Feedback"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 import "@/lib/monaco-config"; // Must be imported before Editor
 import "prismjs/themes/prism.css";
 import "@/app/github-theme.css";
@@ -112,6 +113,10 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const [detectedLanguage, setDetectedLanguage] = useState("javascript");
     const [, setIsLanguageSupported] = useState(true);
 
+    // --- Demo Mode Detection ---
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
+
     // --- Contexts ---
     const { useCases, refresh: refreshUseCases } = useUseCases();
     const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo, clearProject } = useProject();
@@ -144,7 +149,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         closeGroupTabs,
         getGroupColorClasses,
         GROUP_COLORS,
-    } = useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMode });
+    } = useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMode, isDemoMode, projectStructure });
 
     // --- Provider Connection Hook ---
     const {
@@ -260,9 +265,11 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                 } else {
                     setCode(formattedCode);
                 }
+                toast.success("Code formatted successfully!");
             }
         } catch (error) {
             console.error(error);
+            toast.error("Failed to format code");
         } finally {
             setIsFormatting(false);
         }
@@ -494,6 +501,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         // Tab group props
                         onCreateGroup={() => setNewGroupDialogOpen(true)}
                         hasOpenTabs={openTabs.length > 0}
+                        // Demo mode
+                        isDemoMode={isDemoMode}
                     />
 
                     {/* Content Body */}

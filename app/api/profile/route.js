@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { securityHeaders, getClientIp, isSameOrigin, readJsonBody } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 // Normalize and validate human-entered text fields.
 // - Removes NUL and most control chars
@@ -52,6 +53,10 @@ const updateProfileSchema = z.object({
 }).strict();
 
 export async function GET(request) {
+  // SECURITY: Block demo mode from accessing production profile API
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
+  
   try {
     const session = await auth();
 
@@ -116,6 +121,10 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
+  // SECURITY: Block demo mode from accessing production profile API
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
+  
   try {
     const session = await auth();
 

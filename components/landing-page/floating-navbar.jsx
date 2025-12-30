@@ -254,7 +254,7 @@ export const FloatingNavbar = () => {
                     <AccessibilityButton />
                     <ThemeToggle />
                     <Button asChild variant="outline" size="sm" className="hidden md:flex rounded-full text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 border-[var(--brand-accent)]/50 text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]">
-                        <a href="#" aria-label="View Demo">
+                        <a href="/demo" aria-label="View Demo">
                             Demo
                         </a>
                     </Button>
@@ -336,7 +336,7 @@ export const FloatingNavbar = () => {
                             ))}
                             {/* Demo button in mobile menu */}
                             <motion.a
-                                href="#"
+                                href="/demo"
                                 onClick={() => setMobileMenuOpen(false)}
                                 className="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target border border-[var(--brand-accent)]/30"
                                 initial={{ opacity: 0, x: -20 }}

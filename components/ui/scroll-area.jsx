@@ -10,18 +10,20 @@ function ScrollArea({
   children,
   orientation = "vertical",
   viewportRef,
+  type = "hover",
   ...props
 }) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
       className={cn("relative overflow-hidden w-full max-w-[100vw]", className)}
+      type={type}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
         ref={viewportRef}
         data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 h-full w-full max-w-[100vw] rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&>div]:!block">
+        className="focus-visible:ring-ring/50 h-full w-full max-w-[100vw] rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&>div]:!block overscroll-contain">
         {children}
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar orientation={orientation} />

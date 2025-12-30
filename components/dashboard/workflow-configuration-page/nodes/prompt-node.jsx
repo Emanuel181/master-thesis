@@ -108,8 +108,9 @@ export function PromptNode({ data }) {
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Prompts for {data.agent}</p>
                             </div>
-                            <ScrollArea className="h-[300px]">
-                                <div className="p-2">
+                            <div onWheelCapture={(e) => e.stopPropagation()}>
+                                <ScrollArea className="h-[300px]">
+                                    <div className="p-2">
                                 {data.prompts.map((prompt) => {
                                     const isSelected = data.selectedPrompts?.includes(prompt.id);
 
@@ -138,8 +139,9 @@ export function PromptNode({ data }) {
                                         </div>
                                     );
                                 })}
-                                </div>
-                            </ScrollArea>
+                                    </div>
+                                </ScrollArea>
+                            </div>
                         </PopoverContent>
                     </Popover>
                 </CardContent>

@@ -18,10 +18,11 @@ import {
 import { Label } from "@/components/ui/label"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, ChevronDown, ChevronRight, Folder, File } from "lucide-react"
 import { AIWorkflowVisualization } from "./ai-workflow-visualization"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUseCases } from "@/contexts/useCasesContext"
+import { DEMO_DOCUMENTS } from "@/contexts/demoContext"
 import * as LucideIcons from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { usePrompts } from "@/contexts/promptsContext"
@@ -36,9 +37,29 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import { usePathname } from "next/navigation"
+
+// Demo mode mock models
+const DEMO_MODELS = [
+    "Claude 3.5 Sonnet",
+    "Claude 3 Opus",
+    "Claude 3 Haiku",
+    "GPT-4 Turbo",
+    "GPT-4o",
+    "GPT-4o Mini",
+    "Gemini 1.5 Pro",
+    "Gemini 1.5 Flash",
+    "Llama 3.1 70B",
+    "Llama 3.1 8B",
+    "Mistral Large",
+    "Mistral Medium",
+];
 
 export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
     const { status } = useSession();
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
+    
     const [reviewerModel, setReviewerModel] = React.useState("");
     const [implementationModel, setImplementationModel] = React.useState("");
     const [testerModel, setTesterModel] = React.useState("");
@@ -49,8 +70,24 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     const [isRefreshingUseCases, setIsRefreshingUseCases] = React.useState(false);
     const [viewPrompt, setViewPrompt] = React.useState(null);
     const [currentPage, setCurrentPage] = React.useState({});
+    const [agentPage, setAgentPage] = React.useState(0);
+    const [kbDocumentCounts, setKbDocumentCounts] = React.useState({});
+    const [isRefreshingKb, setIsRefreshingKb] = React.useState({});
+    const [expandedKb, setExpandedKb] = React.useState(null);
 
     const { useCases, refresh: refreshUseCases } = useUseCases();
+
+    // Initialize document counts for demo mode from DEMO_DOCUMENTS
+    React.useEffect(() => {
+        if (isDemoMode && useCases.length > 0 && Object.keys(kbDocumentCounts).length === 0) {
+            const mockCounts = {};
+            useCases.forEach(kb => {
+                // Use actual DEMO_DOCUMENTS count if available
+                mockCounts[kb.id] = (DEMO_DOCUMENTS[kb.id] || []).length;
+            });
+            setKbDocumentCounts(mockCounts);
+        }
+    }, [isDemoMode, useCases, kbDocumentCounts]);
 
     const {
         prompts,
@@ -107,6 +144,16 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
 
     const handleRefreshModels = async () => {
         setIsRefreshingModels(true);
+        
+        // Demo mode - simulate refresh with animation
+        if (isDemoMode) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            _setModels(DEMO_MODELS);
+            toast.success("Models refreshed successfully!");
+            setIsRefreshingModels(false);
+            return;
+        }
+        
         try {
             const response = await fetch('/api/bedrock');
             if (response.ok) {
@@ -129,6 +176,15 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
 
     const handleRefreshUseCases = async () => {
         setIsRefreshingUseCases(true);
+        
+        // Demo mode - simulate refresh with animation
+        if (isDemoMode) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            toast.success("Knowledge bases refreshed successfully!");
+            setIsRefreshingUseCases(false);
+            return;
+        }
+        
         try {
             await refreshUseCases();
             toast.success("Knowledge bases refreshed successfully!");
@@ -160,18 +216,35 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     };
 
     const handleRefreshKnowledgeBase = async (kbId, kbTitle) => {
+        setIsRefreshingKb(prev => ({ ...prev, [kbId]: true }));
         try {
-            // Simulate API call to refresh specific knowledge base
+            // Simulate API call to refresh documents in specific knowledge base
             await new Promise(resolve => setTimeout(resolve, 1500));
-            toast.success(`"${kbTitle}" knowledge base refreshed successfully!`);
+            
+            // In demo mode, show the actual document count from DEMO_DOCUMENTS
+            if (isDemoMode) {
+                const docCount = (DEMO_DOCUMENTS[kbId] || []).length;
+                const addedDocs = Math.floor(Math.random() * 3); // Simulate 0-2 new docs found
+                toast.success(`"${kbTitle}" refreshed! ${docCount} documents indexed${addedDocs > 0 ? `, ${addedDocs} new document(s) found.` : '.'}`);
+            } else {
+                toast.success(`"${kbTitle}" documents refreshed successfully!`);
+            }
         } catch (error) {
-            toast.error(`Failed to refresh "${kbTitle}" knowledge base`);
+            toast.error(`Failed to refresh "${kbTitle}" documents`);
+        } finally {
+            setIsRefreshingKb(prev => ({ ...prev, [kbId]: false }));
         }
     };
 
     // Fetch models from AWS Bedrock on component mount
     React.useEffect(() => {
         if (status === "loading") return;
+
+        // Demo mode - use mock models
+        if (isDemoMode) {
+            _setModels(DEMO_MODELS);
+            return;
+        }
 
         if (status === "unauthenticated") {
             _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
@@ -200,7 +273,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         };
 
         fetchAgents();
-    }, [status]);
+    }, [status, isDemoMode]);
 
     const [selectedSystemPrompts, setSelectedSystemPrompts] = React.useState({
         reviewer: "",
@@ -319,31 +392,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model, idx) => (
-                                                                    <SelectItem key={`reviewer-model-${idx}`} value={model}>{model}</SelectItem>
-                                                                ))}
+                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                    <ScrollArea className="h-[200px]">
+                                                                        {models.map((model, idx) => (
+                                                                            <SelectItem key={`reviewer-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                        ))}
+                                                                    </ScrollArea>
+                                                                </div>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
                                                     <div>
                                                         <Label htmlFor="reviewer-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
-                                                        <Select
-                                                            id="reviewer-system-prompt"
-                                                            value={selectedSystemPrompts.reviewer}
-                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, reviewer: value }))}
-                                                        >
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select prompt" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="none">No prompt</SelectItem>
-                                                                {(prompts.reviewer || []).map((prompt) => (
-                                                                    <SelectItem key={`reviewer-prompt-${prompt.id}`} value={prompt.id}>
-                                                                        {prompt.title || "Untitled"}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <div className="flex items-center gap-1">
+                                                            <Select
+                                                                id="reviewer-system-prompt"
+                                                                value={selectedSystemPrompts.reviewer}
+                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, reviewer: value }))}
+                                                            >
+                                                                <SelectTrigger className="h-8 flex-1">
+                                                                    <SelectValue placeholder="Select prompt" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                        <ScrollArea className="h-[200px]">
+                                                                            <SelectItem value="none">No prompt</SelectItem>
+                                                                            {(prompts.reviewer || []).map((prompt) => (
+                                                                                <SelectItem key={`reviewer-prompt-${prompt.id}`} value={prompt.id}>
+                                                                                    {prompt.title || "Untitled"}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </ScrollArea>
+                                                                    </div>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0"
+                                                                onClick={() => handleRefreshAgentPrompts('reviewer')}
+                                                                disabled={isRefreshingPrompts.reviewer}
+                                                                title="Refresh prompts"
+                                                            >
+                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.reviewer ? 'animate-spin' : ''}`} />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
@@ -367,31 +460,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model, idx) => (
-                                                                    <SelectItem key={`implementation-model-${idx}`} value={model}>{model}</SelectItem>
-                                                                ))}
+                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                    <ScrollArea className="h-[200px]">
+                                                                        {models.map((model, idx) => (
+                                                                            <SelectItem key={`implementation-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                        ))}
+                                                                    </ScrollArea>
+                                                                </div>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
                                                     <div>
                                                         <Label htmlFor="implementation-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
-                                                        <Select
-                                                            id="implementation-system-prompt"
-                                                            value={selectedSystemPrompts.implementation}
-                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, implementation: value }))}
-                                                        >
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select prompt" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="none">No prompt</SelectItem>
-                                                                {(prompts.implementation || []).map((prompt) => (
-                                                                    <SelectItem key={`implementation-prompt-${prompt.id}`} value={prompt.id}>
-                                                                        {prompt.title || "Untitled"}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <div className="flex items-center gap-1">
+                                                            <Select
+                                                                id="implementation-system-prompt"
+                                                                value={selectedSystemPrompts.implementation}
+                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, implementation: value }))}
+                                                            >
+                                                                <SelectTrigger className="h-8 flex-1">
+                                                                    <SelectValue placeholder="Select prompt" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                        <ScrollArea className="h-[200px]">
+                                                                            <SelectItem value="none">No prompt</SelectItem>
+                                                                            {(prompts.implementation || []).map((prompt) => (
+                                                                                <SelectItem key={`implementation-prompt-${prompt.id}`} value={prompt.id}>
+                                                                                    {prompt.title || "Untitled"}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </ScrollArea>
+                                                                    </div>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0"
+                                                                onClick={() => handleRefreshAgentPrompts('implementation')}
+                                                                disabled={isRefreshingPrompts.implementation}
+                                                                title="Refresh prompts"
+                                                            >
+                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.implementation ? 'animate-spin' : ''}`} />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
@@ -415,31 +528,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model, idx) => (
-                                                                    <SelectItem key={`tester-model-${idx}`} value={model}>{model}</SelectItem>
-                                                                ))}
+                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                    <ScrollArea className="h-[200px]">
+                                                                        {models.map((model, idx) => (
+                                                                            <SelectItem key={`tester-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                        ))}
+                                                                    </ScrollArea>
+                                                                </div>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
                                                     <div>
                                                         <Label htmlFor="tester-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
-                                                        <Select
-                                                            id="tester-system-prompt"
-                                                            value={selectedSystemPrompts.tester}
-                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, tester: value }))}
-                                                        >
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select prompt" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="none">No prompt</SelectItem>
-                                                                {(prompts.tester || []).map((prompt) => (
-                                                                    <SelectItem key={`tester-prompt-${prompt.id}`} value={prompt.id}>
-                                                                        {prompt.title || "Untitled"}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <div className="flex items-center gap-1">
+                                                            <Select
+                                                                id="tester-system-prompt"
+                                                                value={selectedSystemPrompts.tester}
+                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, tester: value }))}
+                                                            >
+                                                                <SelectTrigger className="h-8 flex-1">
+                                                                    <SelectValue placeholder="Select prompt" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                        <ScrollArea className="h-[200px]">
+                                                                            <SelectItem value="none">No prompt</SelectItem>
+                                                                            {(prompts.tester || []).map((prompt) => (
+                                                                                <SelectItem key={`tester-prompt-${prompt.id}`} value={prompt.id}>
+                                                                                    {prompt.title || "Untitled"}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </ScrollArea>
+                                                                    </div>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0"
+                                                                onClick={() => handleRefreshAgentPrompts('tester')}
+                                                                disabled={isRefreshingPrompts.tester}
+                                                                title="Refresh prompts"
+                                                            >
+                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.tester ? 'animate-spin' : ''}`} />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
@@ -463,31 +596,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {models.map((model, idx) => (
-                                                                    <SelectItem key={`report-model-${idx}`} value={model}>{model}</SelectItem>
-                                                                ))}
+                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                    <ScrollArea className="h-[200px]">
+                                                                        {models.map((model, idx) => (
+                                                                            <SelectItem key={`report-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                        ))}
+                                                                    </ScrollArea>
+                                                                </div>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
                                                     <div>
                                                         <Label htmlFor="report-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
-                                                        <Select
-                                                            id="report-system-prompt"
-                                                            value={selectedSystemPrompts.report}
-                                                            onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, report: value }))}
-                                                        >
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select prompt" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="none">No prompt</SelectItem>
-                                                                {(prompts.report || []).map((prompt) => (
-                                                                    <SelectItem key={`report-prompt-${prompt.id}`} value={prompt.id}>
-                                                                        {prompt.title || "Untitled"}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <div className="flex items-center gap-1">
+                                                            <Select
+                                                                id="report-system-prompt"
+                                                                value={selectedSystemPrompts.report}
+                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, report: value }))}
+                                                            >
+                                                                <SelectTrigger className="h-8 flex-1">
+                                                                    <SelectValue placeholder="Select prompt" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
+                                                                        <ScrollArea className="h-[200px]">
+                                                                            <SelectItem value="none">No prompt</SelectItem>
+                                                                            {(prompts.report || []).map((prompt) => (
+                                                                                <SelectItem key={`report-prompt-${prompt.id}`} value={prompt.id}>
+                                                                                    {prompt.title || "Untitled"}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </ScrollArea>
+                                                                    </div>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 shrink-0"
+                                                                onClick={() => handleRefreshAgentPrompts('report')}
+                                                                disabled={isRefreshingPrompts.report}
+                                                                title="Refresh prompts"
+                                                            >
+                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.report ? 'animate-spin' : ''}`} />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
@@ -513,105 +666,154 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                             </TabsContent>
 
                             <TabsContent value="prompts" className="mt-0">
-                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
-                                    <div className="space-y-4 pr-4">
-                                        <div className="text-sm text-muted-foreground mb-4">
-                                            Configure the prompts used by each AI agent. You can customize the prompts or use the default ones.
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-sm text-muted-foreground">
+                                            Configure the prompts used by each AI agent. Select one prompt per agent.
                                         </div>
+                                    </div>
 
-                                        {Object.entries(prompts).map(([agent, agentPrompts]) => (
-                                            <div key={agent} className="pb-4 border-b last:border-b-0">
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                                                    <h4 className="text-lg font-semibold capitalize">{agent} Agent</h4>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleRefreshAgentPrompts(agent)}
-                                                        title={`Refresh ${agent} prompts`}
-                                                        disabled={isRefreshingPrompts[agent]}
-                                                    >
-                                                        {isRefreshingPrompts[agent] ? (
-                                                            <>
-                                                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                                <span className="hidden sm:inline">Refreshing...</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <RefreshCw className="h-4 w-4 sm:mr-2" />
-                                                                <span className="hidden sm:inline">Refresh Prompts</span>
-                                                            </>
-                                                        )}
-                                                    </Button>
-                                                </div>
+                                    {(() => {
+                                        const agentEntries = Object.entries(prompts);
+                                        const agentsPerPage = 2;
+                                        const totalAgentPages = Math.ceil(agentEntries.length / agentsPerPage);
+                                        const visibleAgents = agentEntries.slice(agentPage * agentsPerPage, (agentPage + 1) * agentsPerPage);
 
-                                            {(!agentPrompts || agentPrompts.length === 0) ? (
-                                                <div className="text-sm text-muted-foreground italic">
-                                                    No prompts configured.
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    {(() => {
+                                        return (
+                                            <>
+                                                <div className="grid md:grid-cols-2 gap-4">
+                                                    {visibleAgents.map(([agent, agentPrompts]) => {
+                                                        const agentConfig = {
+                                                            reviewer: { icon: ScanSearch, color: "text-blue-500", bg: "bg-blue-500" },
+                                                            implementation: { icon: Wrench, color: "text-green-500", bg: "bg-green-500" },
+                                                            tester: { icon: BugPlay, color: "text-orange-500", bg: "bg-orange-500" },
+                                                            report: { icon: FileText, color: "text-purple-500", bg: "bg-purple-500" },
+                                                        };
+                                                        const config = agentConfig[agent] || { icon: ScanSearch, color: "text-gray-500", bg: "bg-gray-500" };
+                                                        const AgentIcon = config.icon;
                                                         const page = currentPage[agent] || 0;
-                                                        const visiblePrompts = agentPrompts.slice(page * 5, (page + 1) * 5);
+                                                        const pageSize = 3;
+                                                        const totalPages = Math.ceil((agentPrompts?.length || 0) / pageSize);
+                                                        const visiblePrompts = agentPrompts?.slice(page * pageSize, (page + 1) * pageSize) || [];
+                                                        
                                                         return (
-                                                            <>
-                                                                <div className="flex gap-4 overflow-x-auto">
-                                                                    {visiblePrompts.map((prompt) => (
-                                                                        <div key={prompt.id} className="flex-1 min-w-[200px] p-3 rounded-lg border bg-muted flex flex-col items-center justify-between">
-                                                                            <div className="text-center mb-2">
-                                                                                <p className="text-sm font-medium">{prompt.title || "Untitled"}</p>
-                                                                                <p className="text-xs text-muted-foreground">{truncateText(prompt.text, 30)}</p>
-                                                                            </div>
-                                                                            <div className="flex gap-2">
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    onClick={() => setViewPrompt(prompt)}
-
-                                                                                >
-                                                                                    View Full
-                                                                                </Button>
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    onClick={() => handlePromptChange(agent, prompt.id)}
-                                                                                >
-                                                                                    {selectedPrompts[agent]?.includes(prompt.id) ? 'Deselect' : 'Select'}
-                                                                                </Button>
-                                                                            </div>
+                                                            <Card key={agent}>
+                                                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <AgentIcon className={`w-5 h-5 ${config.color}`} />
+                                                                        <CardTitle className="text-lg font-medium capitalize">{agent} Agent</CardTitle>
+                                                                    </div>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() => handleRefreshAgentPrompts(agent)}
+                                                                        title={`Refresh ${agent} prompts`}
+                                                                        disabled={isRefreshingPrompts[agent]}
+                                                                    >
+                                                                        <RefreshCw className={`h-4 w-4 ${isRefreshingPrompts[agent] ? 'animate-spin' : ''}`} />
+                                                                    </Button>
+                                                                </CardHeader>
+                                                                <CardContent>
+                                                                    {(!agentPrompts || agentPrompts.length === 0) ? (
+                                                                        <div className="text-sm text-muted-foreground italic py-2">
+                                                                            No prompts configured.
                                                                         </div>
-                                                                    ))}
-                                                                </div>
-                                                                <div className="flex justify-between items-center mt-4">
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) - 1 }))}
-                                                                        disabled={(currentPage[agent] || 0) === 0}
-                                                                    >
-                                                                        Previous
-                                                                    </Button>
-                                                                    <span className="text-sm">
-                                                                        Page {(currentPage[agent] || 0) + 1} of {Math.ceil(agentPrompts.length / 5)}
-                                                                    </span>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: (prev[agent] || 0) + 1 }))}
-                                                                        disabled={((currentPage[agent] || 0) + 1) * 5 >= agentPrompts.length}
-                                                                    >
-                                                                        Next
-                                                                    </Button>
-                                                                </div>
-                                                            </>
+                                                                    ) : (
+                                                                        <div className="space-y-2">
+                                                                            {visiblePrompts.map((prompt) => {
+                                                                                const isSelected = selectedPrompts[agent]?.includes(prompt.id);
+                                                                                return (
+                                                                                    <div 
+                                                                                        key={prompt.id} 
+                                                                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                                                                            isSelected 
+                                                                                                ? 'border-primary bg-primary/10' 
+                                                                                                : 'hover:border-muted-foreground/50'
+                                                                                        }`}
+                                                                                        onClick={() => handlePromptChange(agent, prompt.id)}
+                                                                                    >
+                                                                                        <div className="flex items-start justify-between gap-2">
+                                                                                            <div className="flex-1 min-w-0">
+                                                                                                <p className="text-sm font-medium truncate">{prompt.title || "Untitled"}</p>
+                                                                                                <p className="text-xs text-muted-foreground line-clamp-1">{truncateText(prompt.text, 50)}</p>
+                                                                                            </div>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                className="shrink-0 h-7"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    setViewPrompt(prompt);
+                                                                                                }}
+                                                                                            >
+                                                                                                View
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                            {totalPages > 1 && (
+                                                                                <div className="flex items-center justify-between pt-2 border-t mt-2">
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        className="h-7 px-2"
+                                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: Math.max(0, (prev[agent] || 0) - 1) }))}
+                                                                                        disabled={page === 0}
+                                                                                    >
+                                                                                        ← Prev
+                                                                                    </Button>
+                                                                                    <span className="text-xs text-muted-foreground">
+                                                                                        {page + 1} / {totalPages}
+                                                                                    </span>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        className="h-7 px-2"
+                                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: Math.min(totalPages - 1, (prev[agent] || 0) + 1) }))}
+                                                                                        disabled={page >= totalPages - 1}
+                                                                                    >
+                                                                                        Next →
+                                                                                    </Button>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </CardContent>
+                                                            </Card>
                                                         );
-                                                    })()}
+                                                    })}
                                                 </div>
-                                            )}
-                                            </div>
-                                        ))}
 
-                                        <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
+                                                {totalAgentPages > 1 && (
+                                                    <div className="flex items-center justify-center gap-4 pt-4 border-t">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setAgentPage(prev => Math.max(0, prev - 1))}
+                                                            disabled={agentPage === 0}
+                                                        >
+                                                            ← Previous Agents
+                                                        </Button>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            Agents {agentPage * agentsPerPage + 1}-{Math.min((agentPage + 1) * agentsPerPage, agentEntries.length)} of {agentEntries.length}
+                                                        </span>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setAgentPage(prev => Math.min(totalAgentPages - 1, prev + 1))}
+                                                            disabled={agentPage >= totalAgentPages - 1}
+                                                        >
+                                                            Next Agents →
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+
+                                    <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
                                         <DialogContent className="max-w-2xl">
                                             <DialogHeader>
                                                 <DialogTitle>{viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
@@ -633,7 +835,6 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                         </DialogContent>
                                     </Dialog>
                                 </div>
-                                </ScrollArea>
                             </TabsContent>
 
                             <TabsContent value="knowledge" className="mt-0">
@@ -677,19 +878,37 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                     {useCases.map((kb) => {
                                                         const IconComponent = LucideIcons[kb.icon];
                                                         const isSelected = selectedKnowledgeBases.includes(kb.id);
+                                                        const docCount = kbDocumentCounts[kb.id] || 0;
+                                                        const isRefreshing = isRefreshingKb[kb.id] || false;
+                                                        const isExpanded = expandedKb === kb.id;
+                                                        const documents = isDemoMode ? (DEMO_DOCUMENTS[kb.id] || []) : [];
+                                                        
+                                                        // Group documents by folder
+                                                        const folders = {};
+                                                        const rootDocs = [];
+                                                        documents.forEach(doc => {
+                                                            if (doc.folder) {
+                                                                if (!folders[doc.folder]) folders[doc.folder] = [];
+                                                                folders[doc.folder].push(doc);
+                                                            } else {
+                                                                rootDocs.push(doc);
+                                                            }
+                                                        });
 
                                                         return (
                                                             <Card
                                                                 key={kb.id}
-                                                                className={`cursor-pointer transition-all duration-200 ${
+                                                                className={`transition-all duration-200 ${
                                                                     isSelected
                                                                         ? 'border-cyan-500 dark:border-cyan-400 border-2 bg-cyan-50 dark:bg-cyan-950/30'
                                                                         : 'hover:border-cyan-300 dark:hover:border-cyan-600'
                                                                 }`}
-                                                                onClick={() => toggleKnowledgeBase(kb.id)}
                                                             >
                                                                 <CardContent className="p-4 sm:p-5">
-                                                                    <div className="flex items-start gap-3 sm:gap-4">
+                                                                    <div 
+                                                                        className="flex items-start gap-3 sm:gap-4 cursor-pointer"
+                                                                        onClick={() => toggleKnowledgeBase(kb.id)}
+                                                                    >
                                                                         <div className={`p-2 sm:p-3 rounded-lg shrink-0 ${
                                                                             isSelected
                                                                                 ? 'bg-cyan-500 dark:bg-cyan-500'
@@ -703,25 +922,85 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center justify-between mb-1">
-                                                                                <h3 className="font-semibold text-sm sm:text-base truncate">{kb.title}</h3>
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6 ml-2 shrink-0"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleRefreshKnowledgeBase(kb.id, kb.title);
-                                                                                    }}
-                                                                                    title={`Refresh ${kb.title}`}
-                                                                                >
-                                                                                    <RefreshCw className="h-3 w-3" />
-                                                                                </Button>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <h3 className="font-semibold text-sm sm:text-base truncate">{kb.title}</h3>
+                                                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                                                                        {docCount} docs
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-6 w-6 shrink-0"
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            setExpandedKb(isExpanded ? null : kb.id);
+                                                                                        }}
+                                                                                        title={isExpanded ? "Collapse documents" : "View documents"}
+                                                                                    >
+                                                                                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="icon"
+                                                                                        className="h-6 w-6 shrink-0"
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            handleRefreshKnowledgeBase(kb.id, kb.title);
+                                                                                        }}
+                                                                                        title={`Refresh documents in ${kb.title}`}
+                                                                                        disabled={isRefreshing}
+                                                                                    >
+                                                                                        <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                                                                    </Button>
+                                                                                </div>
                                                                             </div>
                                                                             <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                                                                                 {truncateText(kb.content, 100)}
                                                                             </p>
                                                                         </div>
                                                                     </div>
+                                                                    
+                                                                    {/* Expandable Documents Section */}
+                                                                    {isExpanded && isDemoMode && (
+                                                                        <div className="mt-4 pt-4 border-t">
+                                                                            <div className="space-y-2">
+                                                                                {/* Root documents */}
+                                                                                {rootDocs.map(doc => (
+                                                                                    <div key={doc.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
+                                                                                        <File className="h-4 w-4 text-red-500 shrink-0" />
+                                                                                        <span className="truncate flex-1">{doc.name}</span>
+                                                                                        <span className="text-xs text-muted-foreground shrink-0">{doc.size}</span>
+                                                                                    </div>
+                                                                                ))}
+                                                                                
+                                                                                {/* Folders with documents */}
+                                                                                {Object.entries(folders).map(([folderName, folderDocs]) => (
+                                                                                    <div key={folderName} className="space-y-1">
+                                                                                        <div className="flex items-center gap-2 text-sm font-medium py-1 px-2">
+                                                                                            <Folder className="h-4 w-4 text-yellow-500 shrink-0" />
+                                                                                            <span>{folderName}</span>
+                                                                                            <span className="text-xs text-muted-foreground">({folderDocs.length})</span>
+                                                                                        </div>
+                                                                                        <div className="ml-6 space-y-1">
+                                                                                            {folderDocs.map(doc => (
+                                                                                                <div key={doc.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
+                                                                                                    <File className="h-4 w-4 text-red-500 shrink-0" />
+                                                                                                    <span className="truncate flex-1">{doc.name}</span>
+                                                                                                    <span className="text-xs text-muted-foreground shrink-0">{doc.size}</span>
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                                
+                                                                                {documents.length === 0 && (
+                                                                                    <p className="text-sm text-muted-foreground italic py-2">No documents in this knowledge base.</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </CardContent>
                                                             </Card>
                                                         );

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { isDemoPath, getStorageKey, DEMO_STORAGE_PREFIX } from "@/lib/demo-mode";
 
 const ProjectContext = createContext({
     projectStructure: null,
@@ -12,11 +14,20 @@ const ProjectContext = createContext({
     clearProject: () => {},
     clearCodeState: () => {},
     projectClearCounter: 0,
+    isDemoMode: false,
 });
 
-const STORAGE_KEY = "vulniq_project_state";
+// SECURITY: Separate storage keys for demo and production modes
+const PROD_STORAGE_KEY = "vulniq_project_state";
+const DEMO_STORAGE_KEY = "vulniq_demo_project_state";
 
 export function ProjectProvider({ children }) {
+    const pathname = usePathname();
+    const isDemoMode = isDemoPath(pathname);
+    
+    // Get the appropriate storage key based on mode
+    const STORAGE_KEY = isDemoMode ? DEMO_STORAGE_KEY : PROD_STORAGE_KEY;
+    
     // Initialize with null to avoid hydration mismatch - will load from localStorage in useEffect
     const [projectStructure, setProjectStructureState] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -24,6 +35,22 @@ export function ProjectProvider({ children }) {
     const [currentRepo, setCurrentRepoState] = useState(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [projectClearCounter, setProjectClearCounter] = useState(0);
+    
+    // Track current mode to detect mode changes
+    const [prevIsDemoMode, setPrevIsDemoMode] = useState(isDemoMode);
+
+    // Clear state when switching between demo and production modes
+    useEffect(() => {
+        if (isHydrated && prevIsDemoMode !== isDemoMode) {
+            // Mode changed - clear current state to prevent cross-contamination
+            setProjectStructureState(null);
+            setCurrentRepoState(null);
+            setSelectedFile(null);
+            setViewMode("project");
+            setProjectClearCounter(prev => prev + 1);
+            setPrevIsDemoMode(isDemoMode);
+        }
+    }, [isDemoMode, prevIsDemoMode, isHydrated]);
 
     // Load state from localStorage after hydration (this pattern is intentional to avoid hydration mismatch)
     useEffect(() => {
@@ -45,7 +72,7 @@ export function ProjectProvider({ children }) {
             setViewMode(savedState.viewMode || "project");
         }
         setIsHydrated(true);
-    }, []);
+    }, [STORAGE_KEY]);
 
 
     // Save to localStorage when state changes
@@ -61,7 +88,7 @@ export function ProjectProvider({ children }) {
         } catch (err) {
             console.error("Error saving project state to localStorage:", err);
         }
-    }, [projectStructure, currentRepo, viewMode, isHydrated]);
+    }, [projectStructure, currentRepo, viewMode, isHydrated, STORAGE_KEY]);
 
     // Wrapper functions to update state
     const setProjectStructure = (structure) => {
@@ -72,6 +99,11 @@ export function ProjectProvider({ children }) {
         setCurrentRepoState(repo);
     };
 
+    // SECURITY: Get mode-specific storage keys for clearing
+    const getCodeStateKey = () => isDemoMode ? 'vulniq_demo_code_state' : 'vulniq_code_state';
+    const getEditorTabsKey = () => isDemoMode ? 'vulniq_demo_editor_tabs' : 'vulniq_editor_tabs';
+    const getEditorLanguageKey = () => isDemoMode ? 'vulniq_demo_editor_language' : 'vulniq_editor_language';
+
     // Clear project and reset state
     const clearProject = () => {
         setProjectStructureState(null);
@@ -81,12 +113,12 @@ export function ProjectProvider({ children }) {
         setProjectClearCounter(prev => prev + 1); // Notify listeners that project was cleared
         try {
             localStorage.removeItem(STORAGE_KEY);
-            // Also clear code state when project is unloaded
-            localStorage.removeItem('vulniq_code_state');
-            // Clear editor tabs
-            localStorage.removeItem('vulniq_editor_tabs');
-            // Clear language selection
-            localStorage.removeItem('vulniq_editor_language');
+            // Also clear code state when project is unloaded (mode-specific)
+            localStorage.removeItem(getCodeStateKey());
+            // Clear editor tabs (mode-specific)
+            localStorage.removeItem(getEditorTabsKey());
+            // Clear language selection (mode-specific)
+            localStorage.removeItem(getEditorLanguageKey());
         } catch (err) {
             console.error("Error clearing project state from localStorage:", err);
         }
@@ -97,11 +129,11 @@ export function ProjectProvider({ children }) {
         setSelectedFile(null);
         setProjectClearCounter(prev => prev + 1); // Notify listeners to clear code state
         try {
-            localStorage.removeItem('vulniq_code_state');
-            // Clear editor tabs
-            localStorage.removeItem('vulniq_editor_tabs');
-            // Clear language selection
-            localStorage.removeItem('vulniq_editor_language');
+            localStorage.removeItem(getCodeStateKey());
+            // Clear editor tabs (mode-specific)
+            localStorage.removeItem(getEditorTabsKey());
+            // Clear language selection (mode-specific)
+            localStorage.removeItem(getEditorLanguageKey());
         } catch (err) {
             console.error("Error clearing code state from localStorage:", err);
         }

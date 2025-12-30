@@ -5,6 +5,7 @@ import { getPresignedUploadUrl, generateS3Key } from "@/lib/s3";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
 import { z } from "zod";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 // Security constants
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
@@ -22,6 +23,10 @@ const uploadSchema = z.object({
 export async function POST(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const headers = { ...securityHeaders, 'x-request-id': requestId };
+    
+    // SECURITY: Block demo mode from accessing production PDF upload API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
 
     try {
         const session = await auth();

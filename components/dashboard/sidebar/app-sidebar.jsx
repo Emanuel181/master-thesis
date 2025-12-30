@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import {
     BookOpen,
     Bot,
@@ -37,7 +38,17 @@ const data = {
         },
 }
 
+// Demo user for demo mode
+const DEMO_USER = {
+    id: 'demo-user',
+    name: 'Demo User',
+    email: 'demo@vulniq.com',
+    image: null,
+};
+
 export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
+    const pathname = usePathname()
+    const isDemo = pathname?.startsWith('/demo')
     const { data: session, status } = useSession()
 
     // Save user name to localStorage when session is loaded
@@ -119,9 +130,9 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
                 <NavMain items={navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} badges={badges} />
             </SidebarContent>
             <SidebarFooter>
-                {status === "loading" ? (
+                {status === "loading" && !isDemo ? (
                     <div className="p-4 text-sm text-muted-foreground">Loading...</div>
-                ) : session?.user ? (
+                ) : (session?.user || isDemo) ? (
                     <>
                         <SidebarMenu>
                             <SidebarMenuItem>
@@ -149,7 +160,7 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
-                        <NavUser user={session.user}/>
+                        <NavUser user={isDemo ? DEMO_USER : session.user} isDemo={isDemo} />
                     </>
                 ) : (
                     <div className="p-4 text-sm text-muted-foreground">Not logged in</div>

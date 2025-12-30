@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 // Input validation schema - limit feedback length to prevent abuse
 const feedbackSchema = z.object({
@@ -23,6 +24,10 @@ function formatZodErrors(zodError) {
 }
 
 export async function POST(request) {
+    // SECURITY: Block demo mode from accessing production feedback API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         // Auth check
         const session = await auth();

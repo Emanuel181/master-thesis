@@ -4,6 +4,7 @@ import { Octokit } from '@octokit/rest';
 import prisma from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 function truncateDescription(description, maxLength = 50) {
     if (!description) return null;
@@ -11,8 +12,13 @@ function truncateDescription(description, maxLength = 50) {
     return description.slice(0, maxLength) + '...';
 }
 
-export async function GET() {
+export async function GET(request) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    
+    // SECURITY: Block demo mode from accessing production GitHub API
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         // SECURITY: Only log in development (avoid PII)

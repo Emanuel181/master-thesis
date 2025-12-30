@@ -15,19 +15,26 @@ import * as PluginPHP from '@prettier/plugin-php';
 
 export async function POST(request) {
     try {
-        // Auth check
+        // Check for demo mode (from referer header)
+        const referer = request.headers.get('referer') || '';
+        const isDemoMode = referer.includes('/demo');
+        
+        // Auth check - skip for demo mode
         const session = await auth();
-        if (!session?.user) {
+        if (!session?.user && !isDemoMode) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401, headers: securityHeaders }
             );
         }
 
-        // Rate limiting - 100 requests per minute
+        // Rate limiting - use IP for demo mode, user ID for authenticated users
+        const rateLimitKey = isDemoMode 
+            ? `format-code:demo:${request.headers.get('x-forwarded-for') || 'unknown'}`
+            : `format-code:${session.user.id}`;
         const rl = rateLimit({
-            key: `format-code:${session.user.id}`,
-            limit: 100,
+            key: rateLimitKey,
+            limit: isDemoMode ? 20 : 100, // Lower limit for demo mode
             windowMs: 60 * 1000
         });
         if (!rl.allowed) {
