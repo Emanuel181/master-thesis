@@ -176,7 +176,6 @@ export async function GET(request) {
 
                 // Execute with circuit breaker
                 const fetchedProjects = await withCircuitBreaker('gitlab-api', fetchProjects);
-                }
 
                 const repos = fetchedProjects.map(project => ({
                     id: project.id,
