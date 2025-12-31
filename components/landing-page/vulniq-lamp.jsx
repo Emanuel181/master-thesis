@@ -41,7 +41,7 @@ export function LampDemo() {
                 className="mt-4 sm:mt-6 md:mt-8 flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 w-full max-w-xs sm:max-w-none px-4 sm:w-auto sm:px-0"
             >
                 <Button asChild size="default" className="rounded-lg font-semibold w-full sm:w-auto text-sm sm:text-base">
-                    <a href={isAuthenticated ? "/dashboard" : "/login"} className="flex items-center justify-center gap-2">
+                    <a href={isAuthenticated ? "/dashboard" : "/login"} className="flex items-center justify-center gap-2 text-white dark:text-[var(--brand-primary)]">
                         {isAuthenticated ? "Dashboard" : "Get Started"}
                         {isAuthenticated ? <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                     </a>

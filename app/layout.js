@@ -3,6 +3,7 @@ import "./globals.css";
 // removed ThemeProvider import to avoid conflicting theme managers
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
+import { CookieConsentBanner } from "@/components/cookie-consent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -205,6 +206,7 @@ export default function RootLayout({ children }) {
         <Providers>
           {children}
           <Toaster position="top-center" closeButton />
+          <CookieConsentBanner />
         </Providers>
       </body>
     </html>

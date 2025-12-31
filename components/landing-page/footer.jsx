@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const containerVariants = {
@@ -160,6 +160,7 @@ export function Footer({ onScrollToTop }) {
                             >
                                 <FileText className="w-4 h-4" />
                                 View thesis paper
+                                <ExternalLink className="w-3 h-3" />
                             </motion.a>
                             <motion.a
                                 href="https://status.vulniq.org"
@@ -180,7 +181,10 @@ export function Footer({ onScrollToTop }) {
                                         serviceStatus === "down" ? "bg-red-500" : "bg-gray-500"
                                     }`} />
                                 </span>
-                                System status
+                                {serviceStatus === "operational" ? "Services are operational" :
+                                 serviceStatus === "partial" ? "Diagnosing issue, fixing" :
+                                 serviceStatus === "down" ? "Systems down" :
+                                 "Systems idle"}
                             </motion.a>
                         </div>
                     </motion.div>
@@ -190,7 +194,15 @@ export function Footer({ onScrollToTop }) {
                         <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master thesis</h4>
                         <div className="space-y-1.5 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
                             <p className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)]">Emanuel Rusu</p>
-                            <p>West University of Timișoara</p>
+                            <a 
+                                href="https://www.uvt.ro/en/" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors"
+                            >
+                                West University of Timișoara
+                                <ExternalLink className="w-3 h-3" />
+                            </a>
                             <p>Faculty of Computer Science</p>
                             <p>MSc Cybersecurity</p>
                         </div>
@@ -203,6 +215,7 @@ export function Footer({ onScrollToTop }) {
                         >
                             <Linkedin className="w-4 h-4" />
                             Connect on LinkedIn
+                            <ExternalLink className="w-3 h-3" />
                         </motion.a>
                     </motion.div>
 
@@ -280,6 +293,46 @@ export function Footer({ onScrollToTop }) {
                             Back to top
                         </Button>
                     </div>
+
+                    {/* Social Media Icons */}
+                    <div className="flex justify-center gap-4">
+                        <a
+                            href="https://vulniq.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            aria-label="Twitter"
+                        >
+                            <Twitter className="w-5 h-5" />
+                        </a>
+                        <a
+                            href="https://vulniq.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            aria-label="GitHub"
+                        >
+                            <Github className="w-5 h-5" />
+                        </a>
+                        <a
+                            href="https://vulniq.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            aria-label="LinkedIn"
+                        >
+                            <Linkedin className="w-5 h-5" />
+                        </a>
+                        <a
+                            href="https://vulniq.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            aria-label="Instagram"
+                        >
+                            <Instagram className="w-5 h-5" />
+                        </a>
+                    </div>
                     
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -308,9 +361,10 @@ export function Footer({ onScrollToTop }) {
                             href="https://info.uvt.ro/en/" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors underline underline-offset-2"
+                            className="hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors underline underline-offset-2 inline-flex items-center gap-1"
                         >
                             Faculty of Computer Science
+                            <ExternalLink className="w-3 h-3" />
                         </a>
                     </p>
                     </div>

@@ -18,7 +18,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 
-    const rl = rateLimit({ key: `providers:linked:${session.user.id}`, limit: 120, windowMs: 60_000 });
+    const rl = await rateLimit({ key: `providers:linked:${session.user.id}`, limit: 120, windowMs: 60_000 });
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Too many requests', requestId, retryAt: rl.resetAt },

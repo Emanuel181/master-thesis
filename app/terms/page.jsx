@@ -8,17 +8,12 @@ import { ArrowLeft, FileText, Scale, Shield, AlertTriangle, Cookie, RefreshCw, G
 import { Footer } from "@/components/landing-page/footer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 
 export default function TermsPage() {
-    const { openPanel, setForceHideFloating } = useAccessibility()
-    
-    // Hide floating button on terms page
-    useEffect(() => {
-        setForceHideFloating(true)
-        return () => setForceHideFloating(false)
-    }, [setForceHideFloating])
+    const { openPanel } = useAccessibility()
 
     const sections = [
         { id: 'general', title: 'General terms', icon: FileText },
@@ -57,6 +52,9 @@ export default function TermsPage() {
     ];
 
     const scrollRef = useRef(null);
+    
+    // Restore scroll position when returning to this page
+    useScrollRestoration(scrollRef);
 
     return (
         <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">

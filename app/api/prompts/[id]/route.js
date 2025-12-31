@@ -5,6 +5,7 @@ import { uploadTextToS3, deleteFromS3 } from '@/lib/s3';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 // Input validation schema for updates
 const updatePromptSchema = z.object({
@@ -15,6 +16,8 @@ const updatePromptSchema = z.object({
 });
 
 export async function PUT(request, { params }) {
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -30,7 +33,7 @@ export async function PUT(request, { params }) {
         }
 
         // Rate limiting - 30 updates per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `prompts:update:${session.user.id}`,
             limit: 30,
             windowMs: 60 * 60 * 1000
@@ -88,6 +91,8 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -103,7 +108,7 @@ export async function DELETE(request, { params }) {
         }
 
         // Rate limiting - 30 deletes per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `prompts:delete:${session.user.id}`,
             limit: 30,
             windowMs: 60 * 60 * 1000

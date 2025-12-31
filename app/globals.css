@@ -87,9 +87,15 @@
    RESPONSIVE UTILITIES
    ============================================ */
 
-/* Prevent horizontal overflow on mobile */
-html, body {
-  overflow-x: hidden;
+/* Prevent horizontal overflow on mobile - use clip to not break sticky */
+html {
+  overflow-x: clip;
+  max-width: 100vw;
+  width: 100%;
+}
+
+body {
+  overflow-x: clip;
   max-width: 100vw;
   width: 100%;
   position: relative;
@@ -1190,6 +1196,16 @@ body[style*="--a11y-saturation"] {
 
 .a11y-text-right * {
   text-align: right !important;
+}
+
+/* ============================================
+   VIEW TRANSITION API STYLES
+   ============================================ */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 /* Accessibility Widget Button - Always on top */

@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { isSameOrigin, securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 const ALLOWED_PROVIDERS = new Set(['github', 'google', 'gitlab', 'microsoft-entra-id']);
 
 export async function POST(request) {
+    // SECURITY: Block demo mode from accessing production auth disconnect API
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    
     try {
         const session = await auth();
         if (!session?.user?.id) {

@@ -88,13 +88,7 @@ const BlogCard = ({ post, index }) => {
   const Icon = post.icon;
   
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-      className="h-full"
-    >
+    <div className="h-full">
       <Card className="h-full pt-0 overflow-hidden group bg-card dark:bg-card/50 backdrop-blur-sm border-border/50 dark:border-[rgba(var(--brand-accent-rgb),0.15)] hover:shadow-xl hover:shadow-[rgba(var(--brand-accent-rgb),0.1)] dark:hover:shadow-[rgba(var(--brand-accent-rgb),0.15)] transition-all duration-300 hover:border-[rgba(var(--brand-accent-rgb),0.3)] dark:hover:border-[rgba(var(--brand-accent-rgb),0.4)]">
         <CardContent className="px-0 pt-0">
           <div className="relative overflow-hidden aspect-video rounded-t-xl">
@@ -168,7 +162,7 @@ const BlogCard = ({ post, index }) => {
           </Button>
         </CardFooter>
       </Card>
-    </motion.div>
+    </div>
   );
 };
 
@@ -246,13 +240,26 @@ export function BlogSection() {
         </motion.div>
         
         {/* Blog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={currentPage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`grid grid-cols-1 gap-6 lg:gap-8 ${
+              currentPosts.length === 1 
+                ? 'md:grid-cols-1 max-w-md mx-auto' 
+                : currentPosts.length === 2 
+                  ? 'md:grid-cols-2 max-w-3xl mx-auto' 
+                  : 'md:grid-cols-2 lg:grid-cols-3'
+            }`}
+          >
             {currentPosts.map((post, index) => (
-              <BlogCard key={`${currentPage}-${post.id}`} post={post} index={index} />
+              <BlogCard key={post.id} post={post} index={index} />
             ))}
-          </AnimatePresence>
-        </div>
+          </motion.div>
+        </AnimatePresence>
         
         {/* Pagination */}
         <PaginationDots

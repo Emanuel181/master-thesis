@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { getPresignedUploadUrl, generateS3Key } from "@/lib/s3";
+import { getPresignedUploadUrl, generateS3Key } from "@/lib/s3-env";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
 import { z } from "zod";
 import { requireProductionMode } from "@/lib/api-middleware";
+import { isDemoRequest } from "@/lib/demo-mode";
 
 // Security constants
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
@@ -47,7 +48,7 @@ export async function POST(request) {
         }
 
         // Rate limiting - 30 uploads per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `pdfs:upload:${session.user.id}`,
             limit: 30,
             windowMs: 60 * 60 * 1000
@@ -109,8 +110,10 @@ export async function POST(request) {
             );
         }
 
-        const s3Key = generateS3Key(user.id, useCaseId, sanitizedFileName);
-        const uploadUrl = await getPresignedUploadUrl(s3Key, ALLOWED_MIME_TYPE);
+        // Environment-aware S3 key generation
+        const env = isDemoRequest(request) ? 'demo' : 'prod';
+        const s3Key = generateS3Key(env, user.id, useCaseId, sanitizedFileName);
+        const uploadUrl = await getPresignedUploadUrl(env, s3Key, ALLOWED_MIME_TYPE);
 
         return NextResponse.json({ uploadUrl, s3Key, requestId }, { status: 200, headers });
     } catch (error) {

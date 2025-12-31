@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
+// getDemoModeUserId removed as it is not needed in production
 
 // Extension to language mapping
 const EXTENSION_LANGUAGE_MAP = {
@@ -113,7 +115,9 @@ function detectLanguage(filename, content) {
 
 export async function POST(request) {
     try {
-        // Auth check
+        const demoBlock = requireProductionMode(request);
+        if (demoBlock) return demoBlock;
+        // Auth check for Production
         const session = await auth();
         if (!session?.user) {
             return NextResponse.json(
@@ -121,10 +125,11 @@ export async function POST(request) {
                 { status: 401, headers: securityHeaders }
             );
         }
+        const userId = session.user.id;
 
         // Rate limiting - 100 requests per minute
-        const rl = rateLimit({
-            key: `detect-language:${session.user.id}`,
+        const rl = await rateLimit({
+            key: `detect-language:${userId}`,
             limit: 100,
             windowMs: 60 * 1000
         });

@@ -30,7 +30,7 @@ export async function GET(request) {
         }
 
         // Rate limiting - 60 requests per minute
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `prompts:get:${session.user.id}`,
             limit: 60,
             windowMs: 60 * 1000
@@ -103,7 +103,7 @@ export async function POST(request) {
         }
 
         // Rate limiting - 30 prompts created per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `prompts:create:${session.user.id}`,
             limit: 30,
             windowMs: 60 * 60 * 1000

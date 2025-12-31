@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useSettings } from "@/contexts/settingsContext";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { flushSync } from "react-dom";
 
-export function ThemeToggle({ className = "" }) {
+export function ThemeToggle({ className = "", duration = 400 }) {
   const { settings, updateSettings } = useSettings();
   const [mounted, setMounted] = useState(false);
+  const buttonRef = useRef(null);
 
   useEffect(() => {
     // avoid hydration mismatch: mark mounted on next tick
@@ -16,12 +18,46 @@ export function ThemeToggle({ className = "" }) {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const handleThemeToggle = useCallback(() => {
-    if (!settings) return;
+  const handleThemeToggle = useCallback(async () => {
+    if (!settings || !buttonRef.current) return;
+    
     const newMode = settings.mode === "dark" ? "light" : "dark";
-    // keep app settings in sync (persist & applySettings)
-    updateSettings({ ...settings, mode: newMode });
-  }, [settings, updateSettings]);
+    
+    // Check if View Transitions API is supported
+    if (!document.startViewTransition) {
+      // Fallback for browsers without View Transitions API
+      updateSettings({ ...settings, mode: newMode });
+      return;
+    }
+
+    await document.startViewTransition(() => {
+      flushSync(() => {
+        updateSettings({ ...settings, mode: newMode });
+      });
+    }).ready;
+
+    const { top, left, width, height } = buttonRef.current.getBoundingClientRect();
+    const x = left + width / 2;
+    const y = top + height / 2;
+    const maxRadius = Math.hypot(
+      Math.max(left, window.innerWidth - left),
+      Math.max(top, window.innerHeight - top)
+    );
+
+    document.documentElement.animate(
+      {
+        clipPath: [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${maxRadius}px at ${x}px ${y}px)`,
+        ],
+      },
+      {
+        duration,
+        easing: "ease-in-out",
+        pseudoElement: "::view-transition-new(root)",
+      }
+    );
+  }, [settings, updateSettings, duration]);
 
   if (!mounted || !settings) {
     return null;
@@ -31,6 +67,7 @@ export function ThemeToggle({ className = "" }) {
 
   return (
     <Button
+      ref={buttonRef}
       variant="outline"
       size="icon"
       onClick={handleThemeToggle}

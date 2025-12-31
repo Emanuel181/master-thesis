@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, ExternalLink, Map } from "lucide-react";
+import { ArrowLeft, ExternalLink, Map, PersonStanding } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Footer } from "@/components/landing-page/footer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRef } from "react";
+import { useAccessibility } from "@/contexts/accessibilityContext";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 
 const BASE_URL = 'https://vulniq.org';
 
@@ -43,6 +45,11 @@ function getChangefreqLabel(freq) {
 
 export default function SitemapPage() {
     const scrollRef = useRef(null);
+    const { openPanel } = useAccessibility();
+    
+    // Restore scroll position when returning to this page
+    useScrollRestoration(scrollRef);
+    
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0];
     const lastUpdated = now.toLocaleDateString('en-US', {
@@ -75,6 +82,14 @@ export default function SitemapPage() {
                                 <span className="hidden sm:inline">Back to Home</span>
                             </Link>
                         </Button>
+                        <button
+                            onClick={openPanel}
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            aria-label="Open Accessibility Menu"
+                            title="Accessibility Options"
+                        >
+                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                        </button>
                         <ThemeToggle />
                     </div>
                 </div>

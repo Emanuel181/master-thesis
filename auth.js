@@ -5,9 +5,11 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 import Gitlab from "next-auth/providers/gitlab"
 import Nodemailer from "next-auth/providers/nodemailer"
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses"
+import { randomInt } from "crypto"
 
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "@/lib/prisma";
+import { logAudit, AuditAction } from "@/lib/audit-log";
 
 // Initialize SES Client
 const ses = new SESClient({
@@ -20,7 +22,7 @@ const ses = new SESClient({
 
 // Helper to generate a random 6-digit code
 function generateRandomCode() {
-    return Math.floor(100000 + Math.random() * 900000).toString()
+    return randomInt(100000, 1000000).toString()
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -155,6 +157,17 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     callbacks: {
         async signIn({ user, account, profile }) {
+            // GDPR: Audit log successful sign-in
+            if (user?.id) {
+                // Fire-and-forget audit log (don't block sign-in)
+                logAudit({
+                    userId: user.id,
+                    action: AuditAction.LOGIN,
+                    resource: 'session',
+                    metadata: { provider: account?.provider },
+                }).catch(() => {}); // Ignore audit log failures
+            }
+
             // Update user profile with data from the OAuth provider
             if (profile && user?.id) {
                 try {

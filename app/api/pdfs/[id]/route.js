@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { deleteFromS3, getPresignedDownloadUrl } from "@/lib/s3";
+import { deleteFromS3, getPresignedDownloadUrl } from "@/lib/s3-env";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
 import { z } from "zod";
+import { requireProductionMode } from "@/lib/api-middleware";
+import { isDemoRequest } from "@/lib/demo-mode";
 
 // CUID validation pattern (starts with 'c', 25 chars, lowercase alphanumeric)
 const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid ID format');
@@ -19,6 +21,8 @@ const patchSchema = z.object({
 export async function GET(request, { params }) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const headers = { ...securityHeaders, 'x-request-id': requestId };
+  const demoBlock = requireProductionMode(request, { requestId });
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -30,7 +34,7 @@ export async function GET(request, { params }) {
     }
 
     // Rate limiting - 100 requests per minute for PDF downloads
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `pdfs:get:${session.user.id}`,
       limit: 100,
       windowMs: 60 * 1000
@@ -70,8 +74,9 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Generate a fresh presigned URL
-    const url = await getPresignedDownloadUrl(pdf.s3Key);
+    // Generate a fresh presigned URL (env-aware)
+    const env = isDemoRequest(request) ? 'demo' : 'prod';
+    const url = await getPresignedDownloadUrl(env, pdf.s3Key);
 
     return NextResponse.json({
       pdf: {
@@ -93,6 +98,8 @@ export async function GET(request, { params }) {
 export async function DELETE(request, { params }) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const headers = { ...securityHeaders, 'x-request-id': requestId };
+  const demoBlock = requireProductionMode(request, { requestId });
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -109,7 +116,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Rate limiting - 30 deletes per hour
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `pdfs:delete:${session.user.id}`,
       limit: 30,
       windowMs: 60 * 60 * 1000
@@ -154,9 +161,10 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Delete from S3
+    // Delete from S3 (env-aware)
+    const env = isDemoRequest(request) ? 'demo' : 'prod';
     try {
-      await deleteFromS3(pdf.s3Key);
+      await deleteFromS3(env, pdf.s3Key);
     } catch (s3Error) {
       console.error("Failed to delete PDF from S3:", s3Error);
       // Continue with database deletion even if S3 delete fails
@@ -181,6 +189,8 @@ export async function DELETE(request, { params }) {
 export async function PATCH(request, { params }) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const headers = { ...securityHeaders, 'x-request-id': requestId };
+  const demoBlock = requireProductionMode(request, { requestId });
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -197,7 +207,7 @@ export async function PATCH(request, { params }) {
     }
 
     // Rate limiting - 120 updates per minute
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `pdfs:patch:${session.user.id}`,
       limit: 120,
       windowMs: 60 * 1000

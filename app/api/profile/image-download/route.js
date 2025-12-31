@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getPresignedDownloadUrl } from "@/lib/s3";
+import { getPresignedDownloadUrl } from "@/lib/s3-env";
 import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders, getClientIp, isSameOrigin, readJsonBody, validateS3Key } from "@/lib/api-security";
 import { z } from "zod";
+import { requireProductionMode } from "@/lib/api-middleware";
+import { isDemoRequest } from "@/lib/demo-mode";
 
 const bodySchema = z.object({
   s3Key: z.string().min(1).max(500),
 }).strict();
 
 export async function POST(request) {
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -30,7 +34,7 @@ export async function POST(request) {
 
     // Rate limiting - 60 downloads per hour
     const clientIp = getClientIp(request);
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `profile:image-download:${session.user.id}:${clientIp}`,
       limit: 60,
       windowMs: 60 * 60 * 1000,
@@ -72,8 +76,11 @@ export async function POST(request) {
 
     const { s3Key } = validation.data;
 
-    // Only permit profile images for this user, not arbitrary user-owned objects.
-    const expectedPrefix = `users/${user.id}/profile-images/`;
+    // Environment-aware prefix validation
+    const env = isDemoRequest(request) ? 'demo' : 'prod';
+    const expectedPrefix = env === 'demo' 
+      ? `demo/users/${user.id}/profile-images/`
+      : `users/${user.id}/profile-images/`;
     const s3KeyValidation = validateS3Key(s3Key, { requiredPrefix: expectedPrefix, maxLen: 500 });
     if (!s3KeyValidation.ok) {
       const status = s3KeyValidation.error === 'Access denied' ? 403 : 400;
@@ -83,7 +90,7 @@ export async function POST(request) {
       );
     }
 
-    const downloadUrl = await getPresignedDownloadUrl(s3Key, 3600);
+    const downloadUrl = await getPresignedDownloadUrl(env, s3Key, 3600);
 
     return NextResponse.json({ downloadUrl }, { headers: securityHeaders });
   } catch (error) {

@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { securityHeaders, getClientIp } from '@/lib/api-security';
 import { rateLimit } from '@/lib/rate-limit';
 import { requireProductionMode } from '@/lib/api-middleware';
+import { withCircuitBreaker } from '@/lib/distributed-circuit-breaker';
 
 function maskToken(token) {
     if (!token) return null;
@@ -65,7 +66,7 @@ export async function GET(request) {
         }
 
         const clientIp = getClientIp(request);
-        const rl = rateLimit({ key: `gitlab:repos:${session.user.id}:${clientIp}`, limit: 60, windowMs: 60_000 });
+        const rl = await rateLimit({ key: `gitlab:repos:${session.user.id}:${clientIp}`, limit: 60, windowMs: 60_000 });
         if (!rl.allowed) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId },
@@ -110,72 +111,74 @@ export async function GET(request) {
                 let page = 1;
                 const projects = [];
 
-                while (true) {
-                    const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`;
+                // Wrap GitLab API calls in distributed circuit breaker
+                const fetchProjects = async () => {
+                    while (true) {
+                        const apiUrl = `${baseUrl}/api/v4/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`;
 
-                    let response = await fetch(apiUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${candidate.token}`
-                        }
-                    });
+                        let response = await fetch(apiUrl, {
+                            headers: {
+                                'Authorization': `Bearer ${candidate.token}`
+                            }
+                        });
 
-                    // Handle 401 Unauthorized by attempting refresh
-                    if (response.status === 401 && candidate.source === 'db' && gitlabAccount?.refresh_token) {
-                        console.log('[gitlab/repos] 401 received, attempting token refresh...');
-                        const newTokens = await refreshGitLabToken(gitlabAccount.refresh_token);
-                        
-                        if (newTokens?.access_token) {
-                            // Update database with new tokens
-                            await prisma.account.update({
-                                where: { id: gitlabAccount.id },
-                                data: {
-                                    access_token: newTokens.access_token,
-                                    refresh_token: newTokens.refresh_token || gitlabAccount.refresh_token,
-                                    expires_at: Math.floor(Date.now() / 1000) + newTokens.expires_in,
-                                    token_type: newTokens.token_type
-                                }
-                            });
+                        // Handle 401 Unauthorized by attempting refresh
+                        if (response.status === 401 && candidate.source === 'db' && gitlabAccount?.refresh_token) {
+                            console.log('[gitlab/repos] 401 received, attempting token refresh...');
+                            const newTokens = await refreshGitLabToken(gitlabAccount.refresh_token);
                             
-                            console.log('[gitlab/repos] token refreshed successfully');
-                            
-                            // Update current candidate token and retry request
-                            candidate.token = newTokens.access_token;
-                            response = await fetch(apiUrl, {
-                                headers: {
-                                    'Authorization': `Bearer ${candidate.token}`
-                                }
-                            });
+                            if (newTokens?.access_token) {
+                                // Update database with new tokens
+                                await prisma.account.update({
+                                    where: { id: gitlabAccount.id },
+                                    data: {
+                                        access_token: newTokens.access_token,
+                                        refresh_token: newTokens.refresh_token || gitlabAccount.refresh_token,
+                                        expires_at: Math.floor(Date.now() / 1000) + newTokens.expires_in,
+                                        token_type: newTokens.token_type
+                                    }
+                                });
+                                
+                                console.log('[gitlab/repos] token refreshed successfully');
+                                
+                                // Update current candidate token and retry request
+                                candidate.token = newTokens.access_token;
+                                response = await fetch(apiUrl, {
+                                    headers: {
+                                        'Authorization': `Bearer ${candidate.token}`
+                                    }
+                                });
+                            }
                         }
-                    }
 
-                    if (!response.ok) {
-                        // Avoid reflecting upstream error bodies back to clients (may include sensitive info)
-                        lastError = new Error(`GitLab API error: ${response.status}`);
-                        break;
-                    }
+                        if (!response.ok) {
+                            // Throw to trigger circuit breaker
+                            throw new Error(`GitLab API error: ${response.status}`);
+                        }
 
-                    const batch = await response.json();
-                    if (Array.isArray(batch) && batch.length > 0) {
-                        projects.push(...batch);
-                    }
+                        const batch = await response.json();
+                        if (Array.isArray(batch) && batch.length > 0) {
+                            projects.push(...batch);
+                        }
 
-                    const nextPage = response.headers.get('x-next-page');
-                    if (nextPage) {
-                        page = Number(nextPage);
-                        if (!Number.isFinite(page) || page <= 0) break;
-                        continue;
-                    }
+                        const nextPage = response.headers.get('x-next-page');
+                        if (nextPage) {
+                            page = Number(nextPage);
+                            if (!Number.isFinite(page) || page <= 0) break;
+                            continue;
+                        }
 
-                    if (!Array.isArray(batch) || batch.length < perPage) break;
-                    page += 1;
+                        if (!Array.isArray(batch) || batch.length < perPage) break;
+                        page += 1;
+                    }
+                    return projects;
+                };
+
+                // Execute with circuit breaker
+                const fetchedProjects = await withCircuitBreaker('gitlab-api', fetchProjects);
                 }
 
-                // If we broke out due to error, try next token candidate.
-                if (lastError) {
-                    continue;
-                }
-
-                const repos = projects.map(project => ({
+                const repos = fetchedProjects.map(project => ({
                     id: project.id,
                     name: project.name,
                     full_name: project.path_with_namespace,
@@ -194,11 +197,18 @@ export async function GET(request) {
                 }));
 
                 if (process.env.NODE_ENV === 'development') {
-                    console.log('[gitlab/repos] fetched projects:', projects.length, `in ${Date.now() - start}ms`, 'usedTokenFrom:', candidate.source);
+                    console.log('[gitlab/repos] fetched projects:', fetchedProjects.length, `in ${Date.now() - start}ms`, 'usedTokenFrom:', candidate.source);
                 }
 
                 return NextResponse.json(repos, { headers: { ...securityHeaders, 'x-request-id': requestId } });
             } catch (err) {
+                // Handle circuit breaker open state
+                if (err.code === 'CIRCUIT_OPEN') {
+                    return NextResponse.json(
+                        { error: 'GitLab API is temporarily unavailable. Please try again later.', retryAfter: err.retryAfter, requestId },
+                        { status: 503, headers: { ...securityHeaders, 'x-request-id': requestId, 'Retry-After': Math.ceil((err.retryAfter || 30000) / 1000) } }
+                    );
+                }
                 lastError = err;
                 if (process.env.NODE_ENV === 'development') {
                     console.error('[gitlab/repos] error with', candidate.source, err?.message || err);
@@ -212,7 +222,14 @@ export async function GET(request) {
             requestId 
         }, { status: 502, headers: { ...securityHeaders, 'x-request-id': requestId } });
     } catch (error) {
-        console.error('[gitlab/repos] Unexpected error:', error);
+        // Handle circuit breaker open state at top level
+        if (error.code === 'CIRCUIT_OPEN') {
+            return NextResponse.json(
+                { error: 'GitLab API is temporarily unavailable. Please try again later.', retryAfter: error.retryAfter, requestId },
+                { status: 503, headers: { ...securityHeaders, 'x-request-id': requestId, 'Retry-After': Math.ceil((error.retryAfter || 30000) / 1000) } }
+            );
+        }
+        console.error('[gitlab/repos] Unexpected error:', error.message);
         return NextResponse.json({ error: 'Internal server error', requestId }, { status: 500, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }
 }

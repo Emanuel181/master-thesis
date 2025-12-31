@@ -124,8 +124,15 @@ const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon, clas
 const useTypewriter = (text, start) => {
     const [displayedText, setDisplayedText] = useState('');
     const [isDone, setIsDone] = useState(false);
+    
+    // Reset displayedText immediately when start becomes false
     useEffect(() => {
-        if (!start) return;
+        if (!start) {
+            setDisplayedText('');
+            setIsDone(false);
+            return;
+        }
+        
         let i = 0;
         setIsDone(false);
         setDisplayedText('');
@@ -140,21 +147,34 @@ const useTypewriter = (text, start) => {
         }, TIMING.TYPING_SPEED);
         return () => clearInterval(timer);
     }, [text, start]);
+    
     return { displayedText, isDone, setDisplayedText };
 };
 
 export const SecurityCodeDemo = () => {
-    const [step, setStep] = useState(0);
+    const [step, setStep] = useState(-1); // Start at -1 (not rendering any code)
+    const [isReady, setIsReady] = useState(false);
     
     const { displayedText, isDone: typingFinished, setDisplayedText } = useTypewriter(VULNERABLE_CODE, step === 1);
 
+    // Delay start to ensure clean mount - start at step 0 after ready
+    useEffect(() => {
+        const readyTimer = setTimeout(() => {
+            setIsReady(true);
+            setStep(0);
+        }, 100);
+        return () => clearTimeout(readyTimer);
+    }, []);
+
     // Animation Flow Control
     useEffect(() => {
+        if (!isReady || step < 0) return;
+        
         let timeout;
         const next = (ms, nextStep) => { timeout = setTimeout(() => setStep(nextStep), ms); };
 
         switch (step) {
-            case 0: setDisplayedText(''); next(800, 1); break;
+            case 0: setDisplayedText(''); next(500, 1); break;
             case 1: if (typingFinished) next(800, 2); break;
             case 2: next(TIMING.RAG_DURATION, 3); break;
             case 3: next(TIMING.SCAN_DURATION, 4); break;
@@ -162,13 +182,25 @@ export const SecurityCodeDemo = () => {
             case 5: next(TIMING.PATCHING_DURATION, 6); break;
             case 6: next(TIMING.TESTING_DURATION, 7); break;
             case 7: next(TIMING.SUGGESTION_DURATION, 8); break;
-            case 8: next(TIMING.FINAL_PAUSE, 0); break;
+            case 8: next(TIMING.FINAL_PAUSE, -1); break; // Go to -1 to reset
             default: break;
         }
         return () => clearTimeout(timeout);
-    }, [step, typingFinished, setDisplayedText]);
+    }, [step, typingFinished, setDisplayedText, isReady]);
 
-    const codeContent = step === 1 ? displayedText : step >= 5 ? PATCHED_CODE : VULNERABLE_CODE;
+    // Reset from -1 back to 0 for loop
+    useEffect(() => {
+        if (step === -1 && isReady) {
+            const resetTimer = setTimeout(() => {
+                setDisplayedText('');
+                setStep(0);
+            }, 100);
+            return () => clearTimeout(resetTimer);
+        }
+    }, [step, isReady, setDisplayedText]);
+
+    // Step -1 and 0 show empty, step 1 shows typing animation, step >= 5 shows patched code
+    const codeContent = step <= 0 ? '' : step === 1 ? displayedText : step >= 5 ? PATCHED_CODE : VULNERABLE_CODE;
 
     const renderCode = useMemo(() => (text) => {
         // Simple manual parsing to avoid regex performance issues in main thread
@@ -301,19 +333,22 @@ export const SecurityCodeDemo = () => {
                         {/* Text Renderer */}
                         <div className="whitespace-pre relative z-10 leading-[18px] sm:leading-[22px] overflow-x-auto">
                             <AnimatePresence mode='wait'>
-                                <motion.div
-                                    key={step >= 5 ? 'patched' : 'vulnerable'}
-                                    initial={{ opacity: 0.8 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.4 }}
-                                    className="min-w-max"
-                                >
-                                    {codeContent && renderCode(codeContent)}
-                                    {/* Cursor - simplified animation to avoid layout shifts */}
-                                    {step === 1 && !typingFinished && (
-                                        <span className="inline-block w-2 h-4 align-middle bg-[var(--brand-accent)] ml-1 animate-pulse" aria-hidden="true" />
-                                    )}
-                                </motion.div>
+                                {step >= 0 && (
+                                    <motion.div
+                                        key={step >= 5 ? 'patched' : 'vulnerable'}
+                                        initial={{ opacity: 1 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="min-w-max"
+                                    >
+                                        {codeContent.length > 0 && renderCode(codeContent)}
+                                        {/* Cursor - simplified animation to avoid layout shifts */}
+                                        {step === 1 && !typingFinished && (
+                                            <span className="inline-block w-2 h-4 align-middle bg-[var(--brand-accent)] ml-1 animate-pulse" aria-hidden="true" />
+                                        )}
+                                    </motion.div>
+                                )}
                             </AnimatePresence>
                         </div>
                     </div>

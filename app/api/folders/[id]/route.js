@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 // CUID validation pattern (starts with 'c', 25 chars, lowercase alphanumeric)
 const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid ID format');
@@ -52,13 +53,15 @@ async function isDescendantBfs(db, { rootId, targetId, maxNodes = 2000 }) {
 export async function GET(request, { params }) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const headers = { ...securityHeaders, 'x-request-id': requestId };
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401, headers });
         }
 
-        const rl = rateLimit({ key: `folders:id:get:${session.user.id}`, limit: 120, windowMs: 60 * 1000 });
+        const rl = await rateLimit({ key: `folders:id:get:${session.user.id}`, limit: 120, windowMs: 60 * 1000 });
         if (!rl.allowed) {
             return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers });
         }
@@ -98,13 +101,15 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const headers = { ...securityHeaders, 'x-request-id': requestId };
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401, headers });
         }
 
-        const rl = rateLimit({ key: `folders:id:patch:${session.user.id}`, limit: 120, windowMs: 60 * 1000 });
+        const rl = await rateLimit({ key: `folders:id:patch:${session.user.id}`, limit: 120, windowMs: 60 * 1000 });
         if (!rl.allowed) {
             return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers });
         }
@@ -198,13 +203,15 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     const headers = { ...securityHeaders, 'x-request-id': requestId };
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401, headers });
         }
 
-        const rl = rateLimit({ key: `folders:id:delete:${session.user.id}`, limit: 60, windowMs: 60 * 60 * 1000 });
+        const rl = await rateLimit({ key: `folders:id:delete:${session.user.id}`, limit: 60, windowMs: 60 * 60 * 1000 });
         if (!rl.allowed) {
             return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers });
         }

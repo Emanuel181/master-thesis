@@ -67,7 +67,7 @@ export async function GET(request) {
 
     // Rate limiting - 60 requests per minute
     const clientIp = getClientIp(request);
-    const rl = rateLimit({ key: `gitlab:tree:${session.user.id}:${clientIp}`, limit: 60, windowMs: 60_000 });
+    const rl = await rateLimit({ key: `gitlab:tree:${session.user.id}:${clientIp}`, limit: 60, windowMs: 60_000 });
     if (!rl.allowed) {
         return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers: { ...securityHeaders, 'x-request-id': requestId } });
     }

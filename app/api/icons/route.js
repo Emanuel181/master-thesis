@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
+// getDemoModeUserId removed as it is not needed in production
 
 // Available icon names for use cases
 const ICON_NAMES = [
@@ -31,8 +33,10 @@ const ICON_NAMES = [
     "Zap"
 ];
 
-export async function GET() {
-    // Auth check
+export async function GET(request) {
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
+    // Auth check for Production
     const session = await auth();
     if (!session?.user) {
         return NextResponse.json(
@@ -40,10 +44,11 @@ export async function GET() {
             { status: 401, headers: securityHeaders }
         );
     }
+    const userId = session.user.id;
 
     // Rate limiting - 60 requests per minute
-    const rl = rateLimit({
-        key: `icons:${session.user.id}`,
+    const rl = await rateLimit({
+        key: `icons:${userId}`,
         limit: 60,
         windowMs: 60 * 1000
     });

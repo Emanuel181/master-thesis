@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import {
     Drawer,
     DrawerContent,
@@ -19,7 +20,21 @@ import { Label } from "@/components/ui/label"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, ChevronDown, ChevronRight, Folder, File } from "lucide-react"
-import { AIWorkflowVisualization } from "./ai-workflow-visualization"
+// Lazy-load ReactFlow visualization to reduce initial bundle size (~200KB)
+const AIWorkflowVisualization = dynamic(
+    () => import("./ai-workflow-visualization").then(mod => mod.AIWorkflowVisualization),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex items-center justify-center h-[400px] w-full bg-muted/30 rounded-lg">
+                <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="text-sm text-muted-foreground">Loading workflow...</span>
+                </div>
+            </div>
+        )
+    }
+);
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUseCases } from "@/contexts/useCasesContext"
 import { DEMO_DOCUMENTS } from "@/contexts/demoContext"

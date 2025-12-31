@@ -66,3 +66,34 @@ test('validateS3Key: rejects unsafe characters', () => {
   assert.equal(res.ok, false);
 });
 
+// ---------------------------------------------------------------------------
+// Security Headers Tests (ZAP compliance)
+// ---------------------------------------------------------------------------
+
+import { securityHeaders } from '../lib/api-security.js';
+
+test('securityHeaders: includes X-XSS-Protection', () => {
+  assert.ok(securityHeaders['X-XSS-Protection'], 'Should have X-XSS-Protection header');
+  assert.equal(securityHeaders['X-XSS-Protection'], '1; mode=block');
+});
+
+test('securityHeaders: includes X-Permitted-Cross-Domain-Policies', () => {
+  assert.ok(securityHeaders['X-Permitted-Cross-Domain-Policies'], 'Should have X-Permitted-Cross-Domain-Policies');
+  assert.equal(securityHeaders['X-Permitted-Cross-Domain-Policies'], 'none');
+});
+
+test('securityHeaders: includes Cross-Origin-Resource-Policy', () => {
+  assert.ok(securityHeaders['Cross-Origin-Resource-Policy'], 'Should have Cross-Origin-Resource-Policy');
+  assert.equal(securityHeaders['Cross-Origin-Resource-Policy'], 'same-origin');
+});
+
+test('securityHeaders: includes Cross-Origin-Opener-Policy', () => {
+  assert.ok(securityHeaders['Cross-Origin-Opener-Policy'], 'Should have Cross-Origin-Opener-Policy');
+  assert.equal(securityHeaders['Cross-Origin-Opener-Policy'], 'same-origin');
+});
+
+test('securityHeaders: includes X-Content-Type-Options', () => {
+  assert.ok(securityHeaders['X-Content-Type-Options'], 'Should have X-Content-Type-Options');
+  assert.equal(securityHeaders['X-Content-Type-Options'], 'nosniff');
+});
+

@@ -4,8 +4,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { Footer } from "@/components/landing-page/footer";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { 
     CheckCircle2, 
     GitCommit, 
@@ -218,102 +216,119 @@ const changelogData = [
 
 export default function ChangelogPage() {
     return (
-        <ScrollArea className="h-screen">
-            <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 flex flex-col relative overflow-hidden">
-                 {/* Background effects */}
-                <div className="fixed inset-0 mesh-gradient pointer-events-none" />
-                <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
+        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 relative">
+             {/* Background effects */}
+            <div className="fixed inset-0 mesh-gradient pointer-events-none" />
+            <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
 
-                <FloatingNavbar />
+            <FloatingNavbar />
 
-                <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-32 relative z-10">
-                    
-                    {/* Header */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="text-center mb-16"
-                    >
-                        <div className="flex justify-start mb-6">
-                            <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
-                                <Link href="/">
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Back to Home
-                                </Link>
-                            </Button>
-                        </div>
-                        <Badge variant="outline" className="mb-4 border-[var(--brand-accent)]/30 text-[var(--brand-accent)] bg-[var(--brand-accent)]/5 px-3 py-1">
-                            Development Journey
-                        </Badge>
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            {/* Header */}
+            <div className="border-b border-border/50">
+                <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-32 pb-6 relative z-10">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
                             Changelog
                         </h1>
-                        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                            A timeline of VulnIQ's evolution, from the initial code editor to a fully agentic security platform.
-                        </p>
-                    </motion.div>
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                            <Link href="/">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Home
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+            </div>
 
-                    {/* Timeline */}
-                    <div className="relative border-l border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 ml-4 md:ml-0 space-y-12">
-                        {changelogData.map((release, index) => (
-                            <motion.div
-                                key={release.version}
-                                initial={{ opacity: 0, x: -20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className="relative pl-8 md:pl-12"
-                            >
-                                {/* Timeline Dot */}
-                                <div className="absolute -left-[5px] top-2 w-2.5 h-2.5 rounded-full bg-[var(--brand-accent)] ring-4 ring-background" />
-
-                                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-4">
-                                    <h2 className="text-2xl font-bold text-foreground">
-                                        {release.version}
-                                    </h2>
-                                    <span className="text-sm text-muted-foreground bg-muted/50 px-2 py-0.5 rounded border border-border/50">
+            {/* Timeline */}
+            <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-10 relative z-10">
+                <div className="relative">
+                    {changelogData.map((release, index) => (
+                        <div
+                            key={release.version}
+                            className="relative flex flex-col md:flex-row gap-y-6"
+                        >
+                            {/* Left side - Date and Version (sticky) */}
+                            <div className="md:w-48 flex-shrink-0">
+                                <div className="md:sticky md:top-8 pb-10">
+                                    <time className="text-sm font-medium text-muted-foreground block mb-3">
                                         {release.date}
-                                    </span>
+                                    </time>
+                                    <div className="inline-flex relative z-10 items-center justify-center px-3 h-10 text-foreground border border-border rounded-lg text-sm font-bold bg-background">
+                                        {release.version}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right side - Content */}
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, margin: "-50px" }}
+                                transition={{ duration: 0.5, delay: index * 0.05 }}
+                                className="flex-1 md:pl-8 relative pb-10"
+                            >
+                                {/* Vertical timeline line */}
+                                <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-border">
+                                    {/* Timeline dot */}
+                                    <div className="absolute -translate-x-1/2 size-3 bg-[var(--brand-accent)] rounded-full z-10" />
                                 </div>
 
-                                <h3 className="text-lg font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] mb-2">
-                                    {release.title}
-                                </h3>
-                                <p className="text-muted-foreground mb-6 leading-relaxed">
-                                    {release.description}
-                                </p>
+                                <div className="space-y-6">
+                                    <div className="relative z-10 flex flex-col gap-2">
+                                        <h2 className="text-2xl font-semibold tracking-tight text-balance">
+                                            {release.title}
+                                        </h2>
 
-                                <div className="grid gap-4">
-                                    {release.changes.map((changeGroup, idx) => (
-                                        <div key={idx} className="bg-card/50 border border-border/50 rounded-xl p-5 hover:border-[var(--brand-accent)]/20 transition-colors">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="p-1.5 rounded-md bg-muted/50">
-                                                    {changeGroup.icon}
-                                                </div>
-                                                <h4 className="font-medium text-sm text-foreground">
-                                                    {changeGroup.category}
-                                                </h4>
-                                            </div>
-                                            <ul className="space-y-2">
-                                                {changeGroup.items.map((item, i) => (
-                                                    <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                                                        <CheckCircle2 className="w-4 h-4 text-[var(--brand-accent)] shrink-0 mt-0.5" />
-                                                        <span className="leading-relaxed">{item}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                        {/* Type badge */}
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className={`h-6 w-fit px-2 text-xs font-medium rounded-full border flex items-center justify-center ${
+                                                release.type === 'major' 
+                                                    ? 'bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30' 
+                                                    : release.type === 'minor'
+                                                    ? 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                                                    : 'bg-muted text-muted-foreground border-border'
+                                            }`}>
+                                                {release.type === 'major' ? 'Major Release' : release.type === 'minor' ? 'Minor Update' : 'Initial Release'}
+                                            </span>
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    {/* Description */}
+                                    <p className="text-muted-foreground leading-relaxed text-balance">
+                                        {release.description}
+                                    </p>
+
+                                    {/* Changes */}
+                                    <div className="space-y-4">
+                                        {release.changes.map((changeGroup, idx) => (
+                                            <div key={idx} className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-md bg-muted/50">
+                                                        {changeGroup.icon}
+                                                    </div>
+                                                    <h4 className="font-medium text-sm text-foreground">
+                                                        {changeGroup.category}
+                                                    </h4>
+                                                </div>
+                                                <ul className="list-disc space-y-1.5 pl-6 text-sm text-muted-foreground">
+                                                    {changeGroup.items.map((item, i) => (
+                                                        <li key={i} className="leading-relaxed pl-1">
+                                                            {item}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </motion.div>
-                        ))}
-                    </div>
-
-                </main>
-
-                <Footer />
+                        </div>
+                    ))}
+                </div>
             </div>
-        </ScrollArea>
+
+            <Footer />
+        </div>
     );
 }

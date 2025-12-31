@@ -102,10 +102,9 @@ export const FloatingNavbar = () => {
 
             <motion.div
                 className="fixed top-2 sm:top-3 md:top-6 inset-x-0 z-[100] flex justify-center px-2 sm:px-3 md:px-4 pointer-events-none"
-                initial={{ y: -100, opacity: 0 }}
+                initial={{ y: -100 }}
                 animate={{
-                    y: visible ? 0 : -100,
-                    opacity: visible ? 1 : 0
+                    y: visible ? 0 : -100
                 }}
                 transition={{
                     type: "spring",
@@ -114,11 +113,11 @@ export const FloatingNavbar = () => {
                 }}
             >
                 <motion.nav
-                    className={`pointer-events-auto flex items-center justify-between gap-1.5 sm:gap-2 md:gap-4 border px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-3.5 rounded-full w-full max-w-5xl transition-all duration-500 ease-in-out ${
+                    className={`pointer-events-auto flex items-center justify-between gap-1.5 sm:gap-2 md:gap-4 border px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-3.5 rounded-full w-full max-w-5xl backdrop-blur-xl ${
                         isScrolled 
-                            ? 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 backdrop-blur-xl border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10' 
-                            : 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 backdrop-blur-md border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
-                    }`}
+                            ? 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10' 
+                            : 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
+                    } transition-colors transition-shadow duration-300`}
                     layout
                 >
 

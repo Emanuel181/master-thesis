@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { getPresignedDownloadUrl } from "@/lib/s3";
+import { getPresignedDownloadUrl } from "@/lib/s3-env";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { isSameOrigin, readJsonBody, securityHeaders, validateS3Key } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
+import { isDemoRequest } from "@/lib/demo-mode";
 
 // Security constants
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
@@ -19,7 +21,7 @@ const confirmUploadSchema = z.object({
     s3Key: z.string()
         .min(1, 's3Key is required')
         .max(MAX_S3_KEY_LENGTH, `s3Key must be less than ${MAX_S3_KEY_LENGTH} characters`)
-        .regex(/^users\/[^\/]+\/use-cases\/[^\/]+\/[^\/]+$/, 'Invalid s3Key format'),
+        .regex(/^(demo\/)?users\/[^/]+\/use-cases\/[^/]+\/[^/]+$/, 'Invalid s3Key format'),
     fileName: z.string()
         .min(1, 'fileName is required')
         .max(MAX_FILENAME_LENGTH, `fileName must be less than ${MAX_FILENAME_LENGTH} characters`)
@@ -49,6 +51,8 @@ function formatZodErrors(zodError) {
 export async function POST(request) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const headers = { ...securityHeaders, 'x-request-id': requestId };
+  const demoBlock = requireProductionMode(request, { requestId });
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -65,7 +69,7 @@ export async function POST(request) {
     }
 
     // Rate limiting - 30 confirmations per hour
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `pdfs:confirm:${session.user.id}`,
       limit: 30,
       windowMs: 60 * 60 * 1000
@@ -105,8 +109,12 @@ export async function POST(request) {
 
     const { s3Key, fileName, fileSize, useCaseId, folderId } = validationResult.data;
 
-    // SECURITY: strict s3Key validation + authorization (user-scoped)
-    const keyCheck = validateS3Key(s3Key, { requiredPrefix: `users/${user.id}/use-cases/`, maxLen: MAX_S3_KEY_LENGTH });
+    // Environment-aware s3Key validation
+    const env = isDemoRequest(request) ? 'demo' : 'prod';
+    const expectedPrefix = env === 'demo'
+      ? `demo/users/${user.id}/use-cases/`
+      : `users/${user.id}/use-cases/`;
+    const keyCheck = validateS3Key(s3Key, { requiredPrefix: expectedPrefix, maxLen: MAX_S3_KEY_LENGTH });
     if (!keyCheck.ok) {
       return NextResponse.json(
         { error: keyCheck.error || 'Invalid s3Key', requestId },
@@ -155,7 +163,7 @@ export async function POST(request) {
     });
 
     if (existing) {
-      const url = await getPresignedDownloadUrl(existing.s3Key);
+      const url = await getPresignedDownloadUrl(env, existing.s3Key);
       return NextResponse.json({ pdf: { ...existing, url }, requestId }, { status: 200, headers });
     }
 
@@ -181,8 +189,8 @@ export async function POST(request) {
       (maxFolderOrderResult._max.order || 0) + 1
     );
 
-    // Generate a presigned URL for viewing the PDF
-    const url = await getPresignedDownloadUrl(s3Key);
+    // Generate a presigned URL for viewing the PDF (env-aware)
+    const url = await getPresignedDownloadUrl(env, s3Key);
 
     // Save PDF record to database
     const pdf = await prisma.pdf.create({

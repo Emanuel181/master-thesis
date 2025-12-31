@@ -264,7 +264,7 @@ export function CTASection() {
                   className="rounded-lg font-semibold text-base bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/90 text-white px-8"
                 >
                   <a href="/demo" className="flex items-center justify-center gap-2">
-                    Try Interactive Demo
+                    Try the interactive demo
                     <ArrowRight className="w-4 h-4" />
                   </a>
                 </Button>
@@ -278,7 +278,7 @@ export function CTASection() {
                   className="rounded-lg font-medium text-base border-border hover:bg-muted"
                 >
                   <a href="/about">
-                    Learn More
+                    Learn more
                   </a>
                 </Button>
               )}

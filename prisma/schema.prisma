@@ -20,12 +20,18 @@ model User {
   company       String?
   bio           String?
   location      String?
-  accounts      Account[]
-  sessions      Session[]
-  useCases      KnowledgeBaseCategory[]
-  prompts       Prompt[]
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
+  // GDPR Compliance Fields
+  gdprConsentAt     DateTime?           // When user gave GDPR consent
+  marketingConsent  Boolean             @default(false) // Explicit marketing opt-in
+  dataExportedAt    DateTime?           // Last data export request (for audit)
+  deletionRequestedAt DateTime?         // Soft delete request timestamp
+  accounts      Account[]
+  useCases      KnowledgeBaseCategory[]
+  prompts       Prompt[]
+  sessions      Session[]
+  auditLogs     AuditLog[]
 }
 
 model Account {
@@ -34,15 +40,14 @@ model Account {
   type              String?
   provider          String
   providerAccountId String
+  access_token      String?
+  expires_at        Int?
+  id_token          String?
+  refresh_token     String?
+  scope             String?
+  session_state     String?
+  token_type        String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  access_token  String?
-  expires_at    Int?
-  id_token      String?
-  refresh_token String?
-  scope         String?
-  session_state String?
-  token_type    String?
 
   @@unique([provider, providerAccountId])
 }
@@ -70,11 +75,40 @@ model KnowledgeBaseCategory {
   icon      String   @default("File")
   color     String   @default("default")
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  pdfs      Pdf[]
-  folders   Folder[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  folders   Folder[]
+  user      User     @relation(fields: [userId], references: [id])
+  pdfs      Pdf[]
+}
+
+model RateLimit {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt]) // For cleanup job efficiency
+}
+
+// GDPR Audit Log - tracks data access and modifications for compliance
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  // Nullable for system events or deleted users
+  action    String   // e.g., "login", "data_export", "profile_update", "data_delete"
+  resource  String?  // e.g., "user", "use_case", "prompt"
+  resourceId String? // ID of the affected resource
+  ipAddress String?  // Anonymized/hashed for GDPR (last octet zeroed)
+  userAgent String?  // Browser/client info (truncated)
+  metadata  String?  // JSON string for additional context (no PII)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId, createdAt]) // Composite index for user activity queries (e.g., "show my last 50 actions")
 }
 
 model Folder {
@@ -82,13 +116,13 @@ model Folder {
   name      String
   order     Int                   @default(0)
   useCaseId String
-  useCase   KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
   parentId  String?
-  parent    Folder?               @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Folder[]              @relation("FolderToFolder")
-  pdfs      Pdf[]
   createdAt DateTime              @default(now())
   updatedAt DateTime              @updatedAt
+  parent    Folder?               @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]              @relation("FolderToFolder")
+  useCase   KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
+  pdfs      Pdf[]
 
   @@index([useCaseId])
   @@index([parentId])
@@ -102,10 +136,10 @@ model Pdf {
   s3Key     String
   order     Int                   @default(0)
   useCaseId String
-  useCase   KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
   folderId  String?
-  folder    Folder?               @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt DateTime              @default(now())
+  folder    Folder?               @relation(fields: [folderId], references: [id])
+  useCase   KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
 
   @@index([useCaseId])
   @@index([folderId])
@@ -119,7 +153,22 @@ model Prompt {
   s3Key     String
   order     Int      @default(0)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt]) // For user's prompts sorted by date
+}
+
+// Distributed Circuit Breaker state (shared across ECS Fargate tasks)
+model CircuitBreaker {
+  name            String   @id                      // Unique circuit name (e.g., 'github-api')
+  state           String   @default("CLOSED")       // CLOSED, OPEN, HALF_OPEN
+  failureCount    Int      @default(0)
+  successCount    Int      @default(0)
+  lastFailureAt   DateTime?
+  lastStateChange DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([state])
 }

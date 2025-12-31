@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { securityHeaders } from '@/lib/api-security';
 import { requireProductionMode } from '@/lib/api-middleware';
+import { withCircuitBreaker } from '@/lib/distributed-circuit-breaker';
 
 function truncateDescription(description, maxLength = 50) {
     if (!description) return null;
@@ -31,7 +32,7 @@ export async function GET(request) {
         }
 
         // Rate limiting - 60 requests per minute
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `github:repos:${session.user?.id}`,
             limit: 60,
             windowMs: 60 * 1000
@@ -62,10 +63,14 @@ export async function GET(request) {
             return NextResponse.json({ error: 'GitHub account not linked', requestId }, { status: 401, headers: { ...securityHeaders, 'x-request-id': requestId } });
         }
 
+        // Use distributed circuit breaker for GitHub API calls
         const octokit = new Octokit({ auth: githubAccount.access_token });
-        const { data: repos } = await octokit.repos.listForAuthenticatedUser({
-            sort: 'updated',
-            per_page: 100,
+        const repos = await withCircuitBreaker('github-api', async () => {
+            const { data } = await octokit.repos.listForAuthenticatedUser({
+                sort: 'updated',
+                per_page: 100,
+            });
+            return data;
         });
 
         const transformedRepos = repos.map(repo => ({
@@ -75,6 +80,13 @@ export async function GET(request) {
 
         return NextResponse.json(transformedRepos, { headers: { ...securityHeaders, 'x-request-id': requestId } });
     } catch (error) {
+        // Handle circuit breaker open state
+        if (error.code === 'CIRCUIT_OPEN') {
+            return NextResponse.json(
+                { error: 'GitHub API is temporarily unavailable. Please try again later.', retryAfter: error.retryAfter, requestId },
+                { status: 503, headers: { ...securityHeaders, 'x-request-id': requestId, 'Retry-After': Math.ceil((error.retryAfter || 30000) / 1000) } }
+            );
+        }
         if (process.env.NODE_ENV === 'development') {
             console.error('[github/repos] Unexpected error:', error);
         }

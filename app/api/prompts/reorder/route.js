@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
-import { z } from 'zod';
 import { rateLimit } from '@/lib/rate-limit';
+import { z } from 'zod';
 import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 const VALID_AGENTS = ["reviewer", "implementation", "tester", "report"];
 
@@ -16,6 +17,8 @@ const reorderSchema = z.object({
 });
 
 export async function POST(request) {
+    const demoBlock = requireProductionMode(request);
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -31,7 +34,7 @@ export async function POST(request) {
         }
 
         // Rate limiting
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `prompts:reorder:${session.user.id}`,
             limit: 30,
             windowMs: 60 * 1000

@@ -5,9 +5,14 @@ import { deleteFromS3 } from '@/lib/s3';
 import { bulkDeletePrompts } from '@/lib/prompts/bulk-delete-service';
 import { rateLimit } from '@/lib/rate-limit';
 import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
+import { requireProductionMode } from '@/lib/api-middleware';
 
 export async function POST(request) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  
+  // SECURITY: Block demo mode from accessing production prompts bulk-delete API
+  const demoBlock = requireProductionMode(request, { requestId });
+  if (demoBlock) return demoBlock;
 
   try {
     const session = await auth();
@@ -23,7 +28,7 @@ export async function POST(request) {
       );
     }
 
-    const rl = rateLimit({ key: `prompts:bulk-delete:${session.user.id}`, limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit({ key: `prompts:bulk-delete:${session.user.id}`, limit: 10, windowMs: 60_000 });
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Too many requests', requestId, retryAt: rl.resetAt },

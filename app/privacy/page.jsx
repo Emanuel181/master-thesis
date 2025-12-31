@@ -8,17 +8,12 @@ import { ArrowLeft, FileText, Shield, Lock, Globe, Cookie, Users, Database, Mail
 import { Footer } from "@/components/landing-page/footer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 
 export default function PrivacyPage() {
-    const { openPanel, setForceHideFloating } = useAccessibility()
-    
-    // Hide floating button on privacy page
-    useEffect(() => {
-        setForceHideFloating(true)
-        return () => setForceHideFloating(false)
-    }, [setForceHideFloating])
+    const { openPanel } = useAccessibility()
 
     const sections = [
         { id: 'definitions', title: 'Definitions and key terms', icon: FileText },
@@ -55,6 +50,9 @@ export default function PrivacyPage() {
     ];
 
     const scrollRef = useRef(null);
+    
+    // Restore scroll position when returning to this page
+    useScrollRestoration(scrollRef);
 
     return (
         <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">

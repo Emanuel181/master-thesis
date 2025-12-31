@@ -69,7 +69,7 @@ export async function GET(request) {
 
     // Rate limiting - 60 requests per minute for profile reads
     const clientIp = getClientIp(request);
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `profile:get:${session.user.id}:${clientIp}`,
       limit: 60,
       windowMs: 60 * 1000
@@ -143,7 +143,7 @@ export async function PUT(request) {
     }
 
     const clientIp = getClientIp(request);
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `profile:put:${session.user.id}:${clientIp}`,
       limit: 20,
       windowMs: 60 * 60 * 1000

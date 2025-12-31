@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getPresignedUploadUrl } from "@/lib/s3";
+import { getPresignedUploadUrl, generateProfileImageS3Key } from "@/lib/s3-env";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders, getClientIp, isSameOrigin, readJsonBody, validateS3Key } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
+import { isDemoRequest } from "@/lib/demo-mode";
 
 // Security constants
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -32,6 +34,8 @@ function pickExtension(contentType) {
 }
 
 export async function POST(request) {
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -50,7 +54,7 @@ export async function POST(request) {
     }
 
     const clientIp = getClientIp(request);
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `profile:image-upload:${session.user.id}:${clientIp}`,
       limit: 10,
       windowMs: 60 * 60 * 1000
@@ -99,10 +103,12 @@ export async function POST(request) {
     // Server-minted, user-scoped key (client doesn't get to pick paths)
     const safeName = sanitizeFileName(fileName);
     const ext = pickExtension(contentType);
-    const timestamp = Date.now();
-    const s3Key = `users/${session.user.id}/profile-images/${timestamp}-${safeName}.${ext}`;
 
-    const expectedPrefix = `users/${session.user.id}/`;
+    // Environment-aware S3 key generation and upload
+    const env = isDemoRequest(request) ? 'demo' : 'prod';
+    const s3Key = generateProfileImageS3Key(env, session.user.id, safeName, ext);
+
+    const expectedPrefix = env === 'demo' ? `demo/users/${session.user.id}/` : `users/${session.user.id}/`;
     const s3KeyValidation = validateS3Key(s3Key, { requiredPrefix: expectedPrefix, maxLen: 500 });
     if (!s3KeyValidation.ok) {
       const status = s3KeyValidation.error === 'Access denied' ? 403 : 400;
@@ -112,7 +118,7 @@ export async function POST(request) {
       );
     }
 
-    const uploadUrl = await getPresignedUploadUrl(s3Key, contentType, 3600);
+    const uploadUrl = await getPresignedUploadUrl(env, s3Key, contentType, 3600);
 
     return NextResponse.json({ uploadUrl, s3Key }, { headers: securityHeaders });
   } catch (error) {

@@ -71,7 +71,7 @@ export async function GET(request) {
     }
 
     // Rate limiting - 60 requests per minute
-    const rl = rateLimit({
+    const rl = await rateLimit({
         key: `github:tree:${session.user?.id}`,
         limit: 60,
         windowMs: 60 * 1000

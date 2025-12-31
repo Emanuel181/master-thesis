@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 // Normalize text to prevent XSS - defense-in-depth
 const normalizeText = (value) => {
@@ -29,6 +30,8 @@ const updateUseCaseSchema = z.object({
 
 // GET - Fetch a single use case
 export async function GET(request, { params }) {
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -40,7 +43,7 @@ export async function GET(request, { params }) {
     }
 
     // Rate limiting - 60 requests per minute
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `use-cases:get:${session.user.id}`,
       limit: 60,
       windowMs: 60 * 1000
@@ -94,6 +97,8 @@ export async function GET(request, { params }) {
 
 // PUT - Update a use case
 export async function PUT(request, { params }) {
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -113,7 +118,7 @@ export async function PUT(request, { params }) {
     }
 
     // Rate limiting - 20 updates per hour
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `use-cases:update:${session.user.id}`,
       limit: 20,
       windowMs: 60 * 60 * 1000
@@ -190,6 +195,8 @@ export async function PUT(request, { params }) {
 
 // DELETE - Delete a use case and its associated PDFs from S3
 export async function DELETE(request, { params }) {
+  const demoBlock = requireProductionMode(request);
+  if (demoBlock) return demoBlock;
   try {
     const session = await auth();
 
@@ -209,7 +216,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Rate limiting - 10 deletes per hour
-    const rl = rateLimit({
+    const rl = await rateLimit({
       key: `use-cases:delete:${session.user.id}`,
       limit: 10,
       windowMs: 60 * 60 * 1000

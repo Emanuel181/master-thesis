@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 
@@ -11,26 +11,22 @@ const SecurityCodeDemo = dynamic(
   { ssr: false, loading: () => <div className="min-h-[400px] animate-pulse bg-muted/10 rounded-lg" /> }
 );
 
+// Start visible to avoid layout shift when replacing ServerHero
+// Only the SecurityCodeDemo animates in as the enhancement
 const containerVariants = {
-  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.15,
+      staggerChildren: 0,
+      delayChildren: 0,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.7,
-      ease: [0.22, 1, 0.36, 1],
-    },
   },
 };
 
@@ -55,11 +51,11 @@ export function AnimatedHero({ scrollContainerRef }) {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-12 w-full pt-16 sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-20 items-center">
-          {/* Left: Copy */}
+          {/* Left: Copy - No entrance animation to prevent layout shift */}
           <motion.div
             className="space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8 text-center md:text-left w-full"
             variants={containerVariants}
-            initial="hidden"
+            initial="visible"
             animate="visible"
           >
             <motion.div variants={itemVariants} className="flex justify-center md:justify-start gap-3">
@@ -76,9 +72,9 @@ export function AnimatedHero({ scrollContainerRef }) {
               variants={itemVariants}
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.1]"
             >
-              <span className="text-foreground">Security</span>
+              <span className="text-[var(--brand-primary)] dark:text-foreground">Security</span>
               <br />
-              <span className="text-foreground">remediation</span>
+              <span className="text-[var(--brand-primary)] dark:text-foreground">remediation</span>
               <br />
               <span className="gradient-text">without</span>
               <br />
@@ -87,7 +83,7 @@ export function AnimatedHero({ scrollContainerRef }) {
 
             <motion.p
               variants={itemVariants}
-              className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0"
+              className="text-base sm:text-lg md:text-xl text-[var(--brand-primary)]/70 dark:text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0"
             >
               Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix is{' '}
               <span className="text-[#1fb6cf] font-medium">grounded in your documentation</span> using RAG.
@@ -106,7 +102,7 @@ export function AnimatedHero({ scrollContainerRef }) {
                   aria-label="View thesis"
                 >
                   View thesis
-                  <ArrowRight className="w-4 h-4" />
+                  <ExternalLink className="w-4 h-4" />
                 </a>
               </Button>
               <Button
@@ -122,12 +118,12 @@ export function AnimatedHero({ scrollContainerRef }) {
             </motion.div>
           </motion.div>
 
-          {/* Right: Demo */}
+          {/* Right: Demo - This is the only part that animates in as an enhancement */}
           <motion.div
             className="hidden md:flex w-full justify-center"
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             <SecurityCodeDemo className="relative glow-accent w-full" />
           </motion.div>

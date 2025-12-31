@@ -40,7 +40,7 @@ export async function GET(request) {
         }
 
         // Rate limiting - 30 requests per minute
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `bedrock:agents:${session.user.id}`,
             limit: 30,
             windowMs: 60 * 1000
@@ -106,7 +106,7 @@ export async function POST(request) {
         }
 
         // Rate limiting - 10 agent creations per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `bedrock:agents:create:${session.user.id}`,
             limit: 10,
             windowMs: 60 * 60 * 1000

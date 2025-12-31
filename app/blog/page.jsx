@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { SearchIcon, ArrowRightIcon, CalendarDaysIcon, Clock } from "lucide-react";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { blogPosts, getIconComponent } from "@/lib/blog-data";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 
 // Blog Grid Component
 function BlogGrid({ posts }) {
@@ -122,6 +123,10 @@ function BlogGrid({ posts }) {
 // Main Blog Page
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const scrollRef = useRef(null);
+  
+  // Restore scroll position when returning to this page
+  useScrollRestoration(scrollRef);
   
   // Get unique categories from blog posts
   const categories = useMemo(() => {
@@ -147,7 +152,7 @@ export default function BlogPage() {
   };
 
   return (
-    <ScrollArea className="h-screen">
+    <ScrollArea className="h-screen" viewportRef={scrollRef}>
       <FloatingNavbar />
       
       {/* Landing page background patterns */}

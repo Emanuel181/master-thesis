@@ -65,7 +65,7 @@ export async function GET(request) {
         }
 
         // Rate limiting - 60 requests per minute
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `use-cases:get:${session.user.id}`,
             limit: 60,
             windowMs: 60 * 1000
@@ -77,24 +77,51 @@ export async function GET(request) {
             );
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: {
-                useCases: {
-                    include: { pdfs: true },
-                    orderBy: [{ createdAt: "desc" }],
+        // Optimized query: limit fields and add pagination to prevent N+1 at scale
+        // Only fetch essential fields and limit to 50 use cases per request
+        const useCases = await prisma.knowledgeBaseCategory.findMany({
+            where: { userId: session.user.id },
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                icon: true,
+                createdAt: true,
+                updatedAt: true,
+                // Only fetch essential PDF fields, limit to 20 per use case
+                pdfs: {
+                    select: {
+                        id: true,
+                        title: true,
+                        size: true,
+                        url: true,
+                        createdAt: true,
+                    },
+                    take: 20,
+                    orderBy: { createdAt: 'desc' },
+                },
+                // Efficient count without loading all PDFs
+                _count: {
+                    select: { pdfs: true },
                 },
             },
+            orderBy: { createdAt: 'desc' },
+            take: 50, // Pagination limit - prevents loading thousands of records
         });
 
 
-        if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 401, headers: securityHeaders });
+        if (!useCases) {
+            return NextResponse.json({ useCases: [] }, { headers: securityHeaders });
         }
 
         // Transform the response to include formatted data
-        const transformedUseCases = user.useCases.map(uc => ({
-            ...uc,
+        const transformedUseCases = useCases.map(uc => ({
+            id: uc.id,
+            title: uc.title,
+            content: uc.content,
+            icon: uc.icon,
+            createdAt: uc.createdAt,
+            updatedAt: uc.updatedAt,
             fullContent: uc.content, // Keep full content for "Show More"
             shortContent: truncateText(uc.content, 100), // Character-based truncation
             shortDescription: truncateByWords(uc.content, 20), // Word-based truncation for cards
@@ -102,7 +129,7 @@ export async function GET(request) {
                 ...pdf,
                 formattedSize: formatFileSize(pdf.size),
             })),
-            pdfCount: uc.pdfs.length,
+            pdfCount: uc._count.pdfs, // Use efficient count
             totalSize: uc.pdfs.reduce((sum, pdf) => sum + (pdf.size || 0), 0),
             formattedTotalSize: formatFileSize(uc.pdfs.reduce((sum, pdf) => sum + (pdf.size || 0), 0)),
         }));
@@ -139,7 +166,7 @@ export async function POST(request) {
         }
 
         // Rate limiting - 20 use cases per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `use-cases:create:${session.user.id}`,
             limit: 20,
             windowMs: 60 * 60 * 1000

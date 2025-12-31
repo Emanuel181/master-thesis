@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Pure CSS animated hero - no framer-motion for fast initial paint
@@ -33,9 +33,9 @@ export function StaticHero() {
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.1] animate-fade-in-up"
               style={{ animationDelay: '100ms' }}
             >
-              <span className="text-foreground">Security</span>
+              <span className="text-[var(--brand-primary)] dark:text-foreground">Security</span>
               <br />
-              <span className="text-foreground">remediation</span>
+              <span className="text-[var(--brand-primary)] dark:text-foreground">remediation</span>
               <br />
               <span className="gradient-text">without</span>
               <br />
@@ -43,7 +43,7 @@ export function StaticHero() {
             </h1>
 
             <p
-              className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 animate-fade-in-up"
+              className="text-base sm:text-lg md:text-xl text-[var(--brand-primary)]/70 dark:text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 animate-fade-in-up"
               style={{ animationDelay: '200ms' }}
             >
               Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix is{' '}
@@ -63,7 +63,7 @@ export function StaticHero() {
                   aria-label="View thesis"
                 >
                   View thesis
-                  <ArrowRight className="w-4 h-4" />
+                  <ExternalLink className="w-4 h-4" />
                 </a>
               </Button>
               <Button

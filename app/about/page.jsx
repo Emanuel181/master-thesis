@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, Shield, Target, Zap, Lock, Users, Globe, Award, Sparkles } from "lucide-react";
+import { ArrowLeft, Shield, Target, Zap, Lock, Users, Globe, Award, Sparkles, PersonStanding } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef } from "react";
 import { Footer } from "@/components/landing-page/footer";
 import dynamic from 'next/dynamic';
+import { useAccessibility } from "@/contexts/accessibilityContext";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import {
   IconNextjs,
   IconDocker,
@@ -46,6 +48,10 @@ const techLogos = [
 
 export default function AboutPage() {
     const scrollRef = useRef(null);
+    const { openPanel } = useAccessibility();
+    
+    // Restore scroll position when returning to this page
+    useScrollRestoration(scrollRef);
 
     return (
         <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
@@ -69,6 +75,14 @@ export default function AboutPage() {
                                 Back to Home
                             </Link>
                         </Button>
+                        <button
+                            onClick={openPanel}
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            aria-label="Open Accessibility Menu"
+                            title="Accessibility Options"
+                        >
+                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                        </button>
                         <ThemeToggle />
                     </div>
                 </div>

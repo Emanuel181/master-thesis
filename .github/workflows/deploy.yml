@@ -81,6 +81,14 @@ jobs:
           snyk test --severity-threshold=high || true
 
       ##################################
+      # npm Audit (additional layer)
+      ##################################
+      - name: npm Security Audit
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high
+
+      ##################################
       # AWS Authentication
       ##################################
       - name: Configure AWS Credentials

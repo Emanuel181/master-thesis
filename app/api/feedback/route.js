@@ -47,7 +47,7 @@ export async function POST(request) {
         }
 
         // Rate limiting - 5 feedback submissions per hour
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `feedback:${session.user.id}`,
             limit: 5,
             windowMs: 60 * 60 * 1000 // 1 hour

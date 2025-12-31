@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders } from "@/lib/api-security";
+import { requireProductionMode } from "@/lib/api-middleware";
 
 const bedrockAgentClient = new BedrockAgentClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -11,6 +12,8 @@ const bedrockAgentClient = new BedrockAgentClient({
 // GET - Get detailed agent information including action groups and knowledge bases
 export async function GET(request, { params }) {
     const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    const demoBlock = requireProductionMode(request, { requestId });
+    if (demoBlock) return demoBlock;
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -18,7 +21,7 @@ export async function GET(request, { params }) {
         }
 
         // Rate limiting - 60 requests per minute
-        const rl = rateLimit({
+        const rl = await rateLimit({
             key: `bedrock:agent:get:${session.user.id}`,
             limit: 60,
             windowMs: 60 * 1000
