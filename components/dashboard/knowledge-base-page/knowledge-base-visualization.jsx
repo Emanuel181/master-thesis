@@ -61,7 +61,7 @@ export default function KnowledgeBaseVisualization() {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const categoriesPerPage = 8;
+    const categoriesPerPage = 10;
 
     const [currentDocPage, setCurrentDocPage] = useState(1);
     const docsPerPage = 10;

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { toast } from "sonner";
+import { DEMO_GITHUB_REPOS, DEMO_GITLAB_REPOS } from '@/contexts/demoContext';
 
 /**
  * Custom hook for managing GitHub and GitLab provider connections
@@ -15,6 +17,8 @@ import { toast } from "sonner";
  */
 export function useProviderConnection({ currentRepo, clearProject, closeAllTabs, setCode } = {}) {
     const { data: session, status } = useSession();
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
 
     // Use refs to always have access to latest values in callbacks
     const currentRepoRef = useRef(currentRepo);
@@ -30,17 +34,61 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         setCodeRef.current = setCode;
     }, [currentRepo, clearProject, closeAllTabs, setCode]);
 
-    // Provider connection state
-    const [isGithubConnected, setIsGithubConnected] = useState(false);
-    const [isGitlabConnected, setIsGitlabConnected] = useState(false);
+    // Demo mode connected state - persisted in localStorage
+    const DEMO_GITHUB_KEY = 'vulniq_demo_github_connected';
+    const DEMO_GITLAB_KEY = 'vulniq_demo_gitlab_connected';
 
-    // Repository state
-    const [repos, setRepos] = useState([]);
-    const [gitlabRepos, setGitlabRepos] = useState([]);
+    const getInitialDemoState = (key) => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem(key) === 'true';
+        } catch {
+            return false;
+        }
+    };
+
+    // Provider connection state
+    const [isGithubConnected, setIsGithubConnected] = useState(() => 
+        isDemoMode ? getInitialDemoState(DEMO_GITHUB_KEY) : false
+    );
+    const [isGitlabConnected, setIsGitlabConnected] = useState(() => 
+        isDemoMode ? getInitialDemoState(DEMO_GITLAB_KEY) : false
+    );
+
+    // Persist demo connection state
+    useEffect(() => {
+        if (!isDemoMode) return;
+        try {
+            localStorage.setItem(DEMO_GITHUB_KEY, String(isGithubConnected));
+        } catch {}
+    }, [isDemoMode, isGithubConnected]);
+
+    useEffect(() => {
+        if (!isDemoMode) return;
+        try {
+            localStorage.setItem(DEMO_GITLAB_KEY, String(isGitlabConnected));
+        } catch {}
+    }, [isDemoMode, isGitlabConnected]);
+
+    // Repository state - use demo data when in demo mode and connected
+    const [repos, setRepos] = useState(() => 
+        isDemoMode && getInitialDemoState(DEMO_GITHUB_KEY) ? DEMO_GITHUB_REPOS : []
+    );
+    const [gitlabRepos, setGitlabRepos] = useState(() => 
+        isDemoMode && getInitialDemoState(DEMO_GITLAB_KEY) ? DEMO_GITLAB_REPOS : []
+    );
     const [isLoadingRepos, setIsLoadingRepos] = useState(false);
 
     // Load GitHub repos
     const loadRepos = useCallback(async () => {
+        if (isDemoMode) {
+            // Simulate loading delay for demo
+            setIsLoadingRepos(true);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setRepos(DEMO_GITHUB_REPOS);
+            setIsLoadingRepos(false);
+            return;
+        }
         setIsLoadingRepos(true);
         try {
             const response = await fetch('/api/github/repos');
@@ -50,10 +98,18 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         } finally {
             setIsLoadingRepos(false);
         }
-    }, []);
+    }, [isDemoMode]);
 
     // Load GitLab repos
     const loadGitlabRepos = useCallback(async () => {
+        if (isDemoMode) {
+            // Simulate loading delay for demo
+            setIsLoadingRepos(true);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setGitlabRepos(DEMO_GITLAB_REPOS);
+            setIsLoadingRepos(false);
+            return;
+        }
         setIsLoadingRepos(true);
         try {
             const response = await fetch('/api/gitlab/repos');
@@ -63,10 +119,11 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         } finally {
             setIsLoadingRepos(false);
         }
-    }, []);
+    }, [isDemoMode]);
 
-    // Refresh linked providers from API
+    // Refresh linked providers from API (skip in demo mode)
     const refreshLinkedProviders = useCallback(async () => {
+        if (isDemoMode) return; // Demo mode manages its own state
         if (!session) return;
         try {
             const res = await fetch('/api/providers/linked', { cache: 'no-store' });
@@ -95,16 +152,18 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         } catch (err) {
             console.error('Error refreshing linked providers:', err);
         }
-    }, [session, loadRepos, loadGitlabRepos]);
+    }, [isDemoMode, session, loadRepos, loadGitlabRepos]);
 
     // Initial load of provider status
     useEffect(() => {
+        if (isDemoMode) return; // Demo mode uses localStorage state
         if (status !== 'authenticated') return;
         refreshLinkedProviders();
-    }, [status, refreshLinkedProviders]);
+    }, [isDemoMode, status, refreshLinkedProviders]);
 
-    // Periodic refresh of provider status (with visibility awareness)
+    // Periodic refresh of provider status (with visibility awareness) - skip in demo mode
     useEffect(() => {
+        if (isDemoMode) return;
         if (status !== 'authenticated') return;
 
         let interval;
@@ -143,7 +202,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             stopPolling();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [status, refreshLinkedProviders]);
+    }, [isDemoMode, status, refreshLinkedProviders]);
 
     // Disconnect GitHub
     const handleDisconnectGitHub = async () => {
@@ -156,12 +215,16 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         // Check if current project is from GitHub and clear it
         const isCurrentProjectFromGitHub = repo && (!repo.provider || repo.provider === 'github');
 
-        try {
-            await fetch('/api/auth/disconnect?provider=github', { method: 'POST' });
-        } catch (err) {
-            console.error('Error disconnecting GitHub:', err);
+        if (!isDemoMode) {
+            try {
+                await fetch('/api/auth/disconnect?provider=github', { method: 'POST' });
+            } catch (err) {
+                console.error('Error disconnecting GitHub:', err);
+            }
         }
+        
         setIsGithubConnected(false);
+        setRepos([]);
 
         // Clear project if it was from GitHub
         if (isCurrentProjectFromGitHub) {
@@ -170,7 +233,8 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             if (clearProjectFn) clearProjectFn();
             // Clear code state from localStorage
             try {
-                localStorage.removeItem('vulniq_code_state');
+                const prefix = isDemoMode ? 'vulniq_demo_' : 'vulniq_';
+                localStorage.removeItem(`${prefix}code_state`);
             } catch (err) {
                 console.error('Error clearing code state from localStorage:', err);
             }
@@ -179,7 +243,9 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             toast.success("Disconnected from GitHub!");
         }
 
-        await refreshLinkedProviders();
+        if (!isDemoMode) {
+            await refreshLinkedProviders();
+        }
     };
 
     // Disconnect GitLab
@@ -193,12 +259,16 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         // Check if current project is from GitLab and clear it
         const isCurrentProjectFromGitLab = repo && repo.provider === 'gitlab';
 
-        try {
-            await fetch('/api/auth/disconnect?provider=gitlab', { method: 'POST' });
-        } catch (err) {
-            console.error('Error disconnecting GitLab:', err);
+        if (!isDemoMode) {
+            try {
+                await fetch('/api/auth/disconnect?provider=gitlab', { method: 'POST' });
+            } catch (err) {
+                console.error('Error disconnecting GitLab:', err);
+            }
         }
+        
         setIsGitlabConnected(false);
+        setGitlabRepos([]);
 
         // Clear project if it was from GitLab
         if (isCurrentProjectFromGitLab) {
@@ -207,7 +277,8 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             if (clearProjectFn) clearProjectFn();
             // Clear code state from localStorage
             try {
-                localStorage.removeItem('vulniq_code_state');
+                const prefix = isDemoMode ? 'vulniq_demo_' : 'vulniq_';
+                localStorage.removeItem(`${prefix}code_state`);
             } catch (err) {
                 console.error('Error clearing code state from localStorage:', err);
             }
@@ -216,12 +287,31 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             toast.success("Disconnected from GitLab!");
         }
 
-        await refreshLinkedProviders();
+        if (!isDemoMode) {
+            await refreshLinkedProviders();
+        }
     };
+
+    // Demo mode: Connect to GitHub (simulated)
+    const handleConnectGitHub = useCallback(() => {
+        if (!isDemoMode) return;
+        setIsGithubConnected(true);
+        setRepos(DEMO_GITHUB_REPOS);
+        toast.success("Connected to GitHub!");
+    }, [isDemoMode]);
+
+    // Demo mode: Connect to GitLab (simulated)
+    const handleConnectGitlab = useCallback(() => {
+        if (!isDemoMode) return;
+        setIsGitlabConnected(true);
+        setGitlabRepos(DEMO_GITLAB_REPOS);
+        toast.success("Connected to GitLab!");
+    }, [isDemoMode]);
 
     return {
         session,
         status,
+        isDemoMode,
         isGithubConnected,
         isGitlabConnected,
         repos,
@@ -231,6 +321,8 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         loadGitlabRepos,
         handleDisconnectGitHub,
         handleDisconnectGitlab,
+        handleConnectGitHub,
+        handleConnectGitlab,
         refreshLinkedProviders,
     };
 }
@@ -265,9 +357,11 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
             setViewMode('project');
             setIsImportDialogOpen(false);
             setSearchTerm("");
-            // Clear any existing code state so the editor starts fresh
+            // Clear any existing code state and editor tabs so the editor starts fresh
             try {
                 localStorage.removeItem('vulniq_code_state');
+                localStorage.removeItem('vulniq_editor_tabs');
+                localStorage.removeItem('vulniq_editor_language');
             } catch (err) {
                 console.error("Error clearing code state:", err);
             }
@@ -285,9 +379,11 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
             setCurrentRepo({ owner: repo.owner.login, repo: repo.name });
             setViewMode('project');
             setIsImportDialogOpen(false);
-            // Clear any existing code state so the editor starts fresh
+            // Clear any existing code state and editor tabs so the editor starts fresh
             try {
                 localStorage.removeItem('vulniq_code_state');
+                localStorage.removeItem('vulniq_editor_tabs');
+                localStorage.removeItem('vulniq_editor_language');
             } catch (err) {
                 console.error("Error clearing code state:", err);
             }
@@ -305,9 +401,11 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
             setCurrentRepo({ owner: repo.full_name.split('/')[0], repo: repo.name, provider: 'gitlab' });
             setViewMode('project');
             setIsImportDialogOpen(false);
-            // Clear any existing code state so the editor starts fresh
+            // Clear any existing code state and editor tabs so the editor starts fresh
             try {
                 localStorage.removeItem('vulniq_code_state');
+                localStorage.removeItem('vulniq_editor_tabs');
+                localStorage.removeItem('vulniq_editor_language');
             } catch (err) {
                 console.error("Error clearing code state:", err);
             }

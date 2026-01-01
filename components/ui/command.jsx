@@ -382,6 +382,7 @@ function CommandPaletteProvider({
       label: "Open Notifications",
       icon: Bell,
       category: "Actions",
+      shortcut: "mod+alt+n",
       aliases: ["notifications", "alerts", "messages"],
       action: () => window.dispatchEvent(new CustomEvent("open-notifications")),
     },
@@ -390,6 +391,7 @@ function CommandPaletteProvider({
       label: "Switch Project (GitHub/GitLab)",
       icon: FolderOpen,
       category: "Actions",
+      shortcut: "mod+shift+o",
       aliases: ["project", "switch", "open", "folder", "github", "gitlab", "import", "repo", "repository"],
       action: () => window.dispatchEvent(new CustomEvent("open-project-switcher")),
       contextOnly: "Code input",
@@ -399,7 +401,7 @@ function CommandPaletteProvider({
       label: "Open Workflow Configuration",
       icon: Workflow,
       category: "Actions",
-      shortcut: "mod+w",
+      shortcut: "mod+shift+a",
       aliases: ["workflow", "agents", "config", "ai"],
       action: () => {
         if (isCodeLocked) {
@@ -454,7 +456,7 @@ function CommandPaletteProvider({
       label: "Toggle Word Wrap",
       icon: WrapText,
       category: "Editor",
-      shortcut: "mod+shift+w",
+      shortcut: "mod+alt+w",
       aliases: ["wrap", "wordwrap", "linewrap"],
       action: () => window.dispatchEvent(new CustomEvent("editor-toggle-wordwrap")),
       contextOnly: "Code input",
@@ -680,11 +682,27 @@ function CommandPaletteProvider({
       }
 
 
-      // Ctrl+W or Cmd+W - Open workflow configuration
-      if (isMod && e.key.toLowerCase() === "w" && !e.shiftKey && !e.altKey) {
+      // Ctrl+Shift+A or Cmd+Shift+A - Open workflow configuration (agents)
+      if (isMod && e.shiftKey && !e.altKey && e.key.toLowerCase() === "a") {
         e.preventDefault()
         e.stopPropagation()
         onNavigateRef.current?.({ title: "Workflow configuration" })
+        return
+      }
+
+      // Ctrl+Shift+O or Cmd+Shift+O - Open project switcher
+      if (isMod && e.shiftKey && !e.altKey && e.key.toLowerCase() === "o") {
+        e.preventDefault()
+        e.stopPropagation()
+        window.dispatchEvent(new CustomEvent("open-project-switcher"))
+        return
+      }
+
+      // Ctrl+Alt+N or Cmd+Alt+N - Open notifications
+      if (isMod && !e.shiftKey && e.altKey && e.key.toLowerCase() === "n") {
+        e.preventDefault()
+        e.stopPropagation()
+        window.dispatchEvent(new CustomEvent("open-notifications"))
         return
       }
 
@@ -704,8 +722,8 @@ function CommandPaletteProvider({
         return
       }
 
-      // Ctrl+Shift+W or Cmd+Shift+W - Toggle word wrap
-      if (isMod && e.shiftKey && !e.altKey && e.key.toLowerCase() === "w") {
+      // Ctrl+Alt+W or Cmd+Alt+W - Toggle word wrap
+      if (isMod && !e.shiftKey && e.altKey && e.key.toLowerCase() === "w") {
         e.preventDefault()
         e.stopPropagation()
         window.dispatchEvent(new CustomEvent("editor-toggle-wordwrap"))

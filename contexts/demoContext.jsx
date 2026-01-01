@@ -403,6 +403,17 @@ Demo application with security vulnerabilities for VulnIQ.
 5. Weak Cryptography
 `,
         },
+        {
+            name: "unformatted.js",
+            type: "file",
+            content: `// This file has bad formatting - try the Format button!
+const express=require('express');const app=express();const users=[{id:1,name:'John',email:'john@example.com'},{id:2,name:'Jane',email:'jane@example.com'},{id:3,name:'Bob',email:'bob@example.com'}];
+app.get('/api/users',(req,res)=>{const{search,limit,offset}=req.query;let result=users;if(search){result=result.filter(u=>u.name.toLowerCase().includes(search.toLowerCase())||u.email.toLowerCase().includes(search.toLowerCase()));}if(limit){result=result.slice(offset||0,parseInt(limit)+(offset||0));}res.json({data:result,total:users.length,filtered:result.length});});
+app.post('/api/users',(req,res)=>{const{name,email}=req.body;if(!name||!email){return res.status(400).json({error:'Name and email required'});}const newUser={id:users.length+1,name,email};users.push(newUser);res.status(201).json(newUser);});
+app.put('/api/users/:id',(req,res)=>{const id=parseInt(req.params.id);const user=users.find(u=>u.id===id);if(!user){return res.status(404).json({error:'User not found'});}const{name,email}=req.body;if(name)user.name=name;if(email)user.email=email;res.json(user);});
+app.delete('/api/users/:id',(req,res)=>{const id=parseInt(req.params.id);const index=users.findIndex(u=>u.id===id);if(index===-1){return res.status(404).json({error:'User not found'});}users.splice(index,1);res.status(204).send();});
+app.listen(3000,()=>console.log('Server running'));`,
+        },
     ],
 };
 
@@ -546,6 +557,80 @@ requests==2.25.0`,
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)`,
+        },
+        {
+            name: "unformatted.py",
+            type: "file",
+            content: `#    This file has bad formatting - try the Format button!
+import    os
+import sys
+import      json
+from typing import Dict,List,Optional,Any,Union,Callable
+
+
+class    UserManager:
+        """Manages users in the system."""
+        def __init__(    self,db_path:str,cache_enabled   :bool=True,max_cache_size:   int=1000   ):
+                        self.db_path=db_path
+                        self.cache_enabled    =cache_enabled
+                        self.max_cache_size=    max_cache_size
+                        self.cache={       }
+                        self.stats={   'hits':0,    'misses':0}
+
+
+
+        def get_user(  self,   user_id:int  )   ->Optional[   Dict[str,Any]]:
+                        if self.cache_enabled    and     user_id in self.cache:
+                                    self.stats[   'hits']+=1
+                                    return    self.cache[user_id]
+                        self.stats['misses'   ]+=1
+                        user   =self._fetch_from_db(   user_id)
+                        if user    and self.cache_enabled:
+                                    self.cache[user_id]   =user
+                        return    user
+
+
+        def _fetch_from_db(self,user_id   :int)->   Optional[Dict[str   ,Any]]:
+                        data={   'id':user_id,'name':f'User{user_id}',
+                        'email'   :f'user{user_id}@example.com',
+                                    'active':True,'role':'user',
+                        'created_at':'2024-01-01'   }
+                        return    data
+        def create_user(   self,  name:str,email   :str,  role   :str='user'   )->Dict[str,Any]:
+                        user_id=len(   self.cache)+1
+                        user={    'id':user_id,   'name':name,'email':   email,
+'role':role,'active'   :True}
+                        self.cache[   user_id]=user
+                        return   user
+
+
+
+        def update_user( self,user_id:int,    **kwargs   )->Optional[Dict[   str,Any]]:
+                        user=self.get_user(   user_id   )
+                        if    not user:
+                                    return    None
+                        for   key,  value   in kwargs.items():
+                                    if key    in user:
+                                                user[   key]=value
+                        return   user
+        def delete_user(self   ,user_id:int   )->   bool:
+                        if user_id   in self.cache:
+                                    del    self.cache[user_id]
+                                    return   True
+                        return   False
+        def list_users(self,active_only   :bool=False)->List[   Dict[str,   Any]]:
+                        users   =list(self.cache.values(   ))
+                        if    active_only:
+                                    return[u    for u   in users   if u.get(   'active',True)]
+                        return   users
+
+
+if __name__   =='__main__':
+        manager   =UserManager(   '/tmp/users.db')
+        manager.create_user('Alice'   ,'alice@example.com')
+        manager.create_user(    'Bob','bob@example.com',   'admin')
+        users=   manager.list_users()
+        print(   json.dumps(   users,indent=2))`,
         },
     ],
 };
@@ -711,6 +796,17 @@ export const API_CONFIG = {
   }
 }`,
         },
+        {
+            name: "unformatted.tsx",
+            type: "file",
+            content: `// This file has bad formatting - try the Format button!
+import React,{useState,useEffect,useCallback,useMemo}from'react';interface User{id:number;name:string;email:string;role:'admin'|'user'|'guest';active:boolean;createdAt:Date}interface UserListProps{users:User[];onSelect:(user:User)=>void;onDelete:(id:number)=>void;showInactive?:boolean}
+const UserList:React.FC<UserListProps>=({users,onSelect,onDelete,showInactive=false})=>{const[filter,setFilter]=useState('');const[sortBy,setSortBy]=useState<keyof User>('name');const[sortDir,setSortDir]=useState<'asc'|'desc'>('asc')
+const filteredUsers=useMemo(()=>{let result=users.filter(u=>showInactive||u.active);if(filter){result=result.filter(u=>u.name.toLowerCase().includes(filter.toLowerCase())||u.email.toLowerCase().includes(filter.toLowerCase()))}return result.sort((a,b)=>{const aVal=a[sortBy];const bVal=b[sortBy];if(aVal<bVal)return sortDir==='asc'?-1:1;if(aVal>bVal)return sortDir==='asc'?1:-1;return 0})},[users,filter,sortBy,sortDir,showInactive])
+const handleSort=useCallback((field:keyof User)=>{if(sortBy===field){setSortDir(d=>d==='asc'?'desc':'asc')}else{setSortBy(field);setSortDir('asc')}},[sortBy])
+return(<div className="user-list"><input type="text"placeholder="Search users..."value={filter}onChange={e=>setFilter(e.target.value)}className="search-input"/><table><thead><tr><th onClick={()=>handleSort('name')}>Name{sortBy==='name'&&(sortDir==='asc'?'↑':'↓')}</th><th onClick={()=>handleSort('email')}>Email</th><th onClick={()=>handleSort('role')}>Role</th><th>Actions</th></tr></thead><tbody>{filteredUsers.map(user=>(<tr key={user.id}onClick={()=>onSelect(user)}className={user.active?'':'inactive'}><td>{user.name}</td><td>{user.email}</td><td>{user.role}</td><td><button onClick={e=>{e.stopPropagation();onDelete(user.id)}}>Delete</button></td></tr>))}</tbody></table></div>)}
+export default UserList`,
+        },
     ],
 };
 
@@ -795,6 +891,96 @@ const DEMO_USE_CASES = [
         pdfCount: 8,
         formattedTotalSize: "12.3 MB",
     },
+    {
+        id: "demo-crypto",
+        name: "Cryptography Guidelines",
+        description: "Encryption algorithms, key management, and cryptographic best practices for secure data handling.",
+        fullDescription: "Complete cryptography guide covering symmetric/asymmetric encryption, hashing algorithms, digital signatures, key rotation strategies, and TLS/SSL configuration.",
+        shortDescription: "Encryption algorithms, key management, and cryptographic best practices...",
+        icon: "KeyRound",
+        pdfCount: 5,
+        formattedTotalSize: "3.8 MB",
+    },
+    {
+        id: "demo-logging",
+        name: "Security Logging & Monitoring",
+        description: "Logging best practices, audit trails, intrusion detection, and security monitoring strategies.",
+        fullDescription: "Security logging and monitoring guide covering log levels, sensitive data redaction, centralized logging, SIEM integration, and alerting strategies for security events.",
+        shortDescription: "Logging best practices, audit trails, and security monitoring strategies...",
+        icon: "FileSearch",
+        pdfCount: 4,
+        formattedTotalSize: "2.9 MB",
+    },
+    {
+        id: "demo-container",
+        name: "Container Security",
+        description: "Docker and Kubernetes security hardening, image scanning, and container runtime protection.",
+        fullDescription: "Container security best practices covering Docker image hardening, Kubernetes RBAC, network policies, secrets management in containers, and vulnerability scanning pipelines.",
+        shortDescription: "Docker and Kubernetes security hardening, image scanning...",
+        icon: "Container",
+        pdfCount: 6,
+        formattedTotalSize: "5.1 MB",
+    },
+    {
+        id: "demo-cloud",
+        name: "Cloud Security Posture",
+        description: "AWS, Azure, and GCP security configurations, IAM policies, and cloud-native security controls.",
+        fullDescription: "Cloud security configuration guide covering IAM best practices, security groups, VPC design, encryption at rest/transit, and cloud security posture management (CSPM).",
+        shortDescription: "AWS, Azure, and GCP security configurations and IAM policies...",
+        icon: "Cloud",
+        pdfCount: 7,
+        formattedTotalSize: "6.4 MB",
+    },
+    {
+        id: "demo-secure-sdlc",
+        name: "Secure SDLC Practices",
+        description: "Security integration in development lifecycle, threat modeling, and security testing methodologies.",
+        fullDescription: "Secure Software Development Lifecycle practices including threat modeling, security requirements, code review processes, SAST/DAST integration, and security testing automation.",
+        shortDescription: "Security integration in development lifecycle and threat modeling...",
+        icon: "GitBranch",
+        pdfCount: 5,
+        formattedTotalSize: "4.0 MB",
+    },
+    {
+        id: "demo-mobile",
+        name: "Mobile App Security",
+        description: "iOS and Android security best practices, secure storage, certificate pinning, and mobile threat defense.",
+        fullDescription: "Mobile application security guide covering secure data storage, network security, authentication, code obfuscation, anti-tampering measures, and OWASP Mobile Top 10.",
+        shortDescription: "iOS and Android security best practices and secure storage...",
+        icon: "Smartphone",
+        pdfCount: 4,
+        formattedTotalSize: "3.2 MB",
+    },
+    {
+        id: "demo-incident",
+        name: "Incident Response",
+        description: "Security incident handling procedures, forensics basics, and breach notification requirements.",
+        fullDescription: "Incident response playbook covering detection, containment, eradication, recovery, and lessons learned. Includes forensic evidence collection and regulatory notification timelines.",
+        shortDescription: "Security incident handling procedures and forensics basics...",
+        icon: "AlertTriangle",
+        pdfCount: 3,
+        formattedTotalSize: "2.1 MB",
+    },
+    {
+        id: "demo-devsecops",
+        name: "DevSecOps Pipeline",
+        description: "CI/CD security integration, automated security testing, and pipeline hardening strategies.",
+        fullDescription: "DevSecOps implementation guide covering security gates in CI/CD, automated SAST/DAST/SCA, infrastructure as code security scanning, and secrets detection in pipelines.",
+        shortDescription: "CI/CD security integration and automated security testing...",
+        icon: "GitMerge",
+        pdfCount: 5,
+        formattedTotalSize: "4.3 MB",
+    },
+    {
+        id: "demo-access-control",
+        name: "Access Control Patterns",
+        description: "RBAC, ABAC, and authorization patterns for securing application resources and data.",
+        fullDescription: "Access control implementation guide covering role-based access control, attribute-based access control, policy engines, and least privilege principles for application security.",
+        shortDescription: "RBAC, ABAC, and authorization patterns for securing resources...",
+        icon: "Users",
+        pdfCount: 4,
+        formattedTotalSize: "3.0 MB",
+    },
 ];
 
 // =============================================
@@ -844,6 +1030,67 @@ const DEMO_DOCUMENTS = {
         { id: "doc-30", name: "GDPR Developer Guide.pdf", size: "934 KB", type: "pdf", folder: "GDPR" },
         { id: "doc-31", name: "GDPR Data Protection Checklist.pdf", size: "456 KB", type: "pdf", folder: "GDPR" },
         { id: "doc-32", name: "Security Audit Template.pdf", size: "678 KB", type: "pdf", folder: null },
+    ],
+    "demo-crypto": [
+        { id: "doc-33", name: "AES Encryption Implementation.pdf", size: "756 KB", type: "pdf", folder: null },
+        { id: "doc-34", name: "RSA Key Management Guide.pdf", size: "834 KB", type: "pdf", folder: "Keys" },
+        { id: "doc-35", name: "TLS 1.3 Configuration.pdf", size: "623 KB", type: "pdf", folder: "TLS" },
+        { id: "doc-36", name: "Hashing Algorithms Comparison.pdf", size: "512 KB", type: "pdf", folder: null },
+        { id: "doc-37", name: "Key Rotation Best Practices.pdf", size: "445 KB", type: "pdf", folder: "Keys" },
+    ],
+    "demo-logging": [
+        { id: "doc-38", name: "Security Logging Standards.pdf", size: "678 KB", type: "pdf", folder: null },
+        { id: "doc-39", name: "Audit Trail Implementation.pdf", size: "723 KB", type: "pdf", folder: null },
+        { id: "doc-40", name: "SIEM Integration Guide.pdf", size: "856 KB", type: "pdf", folder: "SIEM" },
+        { id: "doc-41", name: "Log Redaction Patterns.pdf", size: "389 KB", type: "pdf", folder: null },
+    ],
+    "demo-container": [
+        { id: "doc-42", name: "Docker Security Hardening.pdf", size: "923 KB", type: "pdf", folder: "Docker" },
+        { id: "doc-43", name: "Kubernetes RBAC Guide.pdf", size: "1.1 MB", type: "pdf", folder: "K8s" },
+        { id: "doc-44", name: "Container Image Scanning.pdf", size: "678 KB", type: "pdf", folder: null },
+        { id: "doc-45", name: "K8s Network Policies.pdf", size: "534 KB", type: "pdf", folder: "K8s" },
+        { id: "doc-46", name: "Pod Security Standards.pdf", size: "445 KB", type: "pdf", folder: "K8s" },
+        { id: "doc-47", name: "Secrets in Containers.pdf", size: "512 KB", type: "pdf", folder: null },
+    ],
+    "demo-cloud": [
+        { id: "doc-48", name: "AWS Security Best Practices.pdf", size: "1.2 MB", type: "pdf", folder: "AWS" },
+        { id: "doc-49", name: "AWS IAM Policy Guide.pdf", size: "856 KB", type: "pdf", folder: "AWS" },
+        { id: "doc-50", name: "Azure Security Center.pdf", size: "934 KB", type: "pdf", folder: "Azure" },
+        { id: "doc-51", name: "GCP Security Foundations.pdf", size: "1.1 MB", type: "pdf", folder: "GCP" },
+        { id: "doc-52", name: "VPC Security Design.pdf", size: "678 KB", type: "pdf", folder: null },
+        { id: "doc-53", name: "Cloud Encryption Guide.pdf", size: "567 KB", type: "pdf", folder: null },
+        { id: "doc-54", name: "CSPM Implementation.pdf", size: "723 KB", type: "pdf", folder: null },
+    ],
+    "demo-secure-sdlc": [
+        { id: "doc-55", name: "Threat Modeling Guide.pdf", size: "934 KB", type: "pdf", folder: null },
+        { id: "doc-56", name: "Security Requirements Template.pdf", size: "456 KB", type: "pdf", folder: null },
+        { id: "doc-57", name: "Code Review Checklist.pdf", size: "389 KB", type: "pdf", folder: "Review" },
+        { id: "doc-58", name: "SAST Tool Integration.pdf", size: "678 KB", type: "pdf", folder: "Testing" },
+        { id: "doc-59", name: "DAST Implementation Guide.pdf", size: "756 KB", type: "pdf", folder: "Testing" },
+    ],
+    "demo-mobile": [
+        { id: "doc-60", name: "iOS Keychain Security.pdf", size: "623 KB", type: "pdf", folder: "iOS" },
+        { id: "doc-61", name: "Android Secure Storage.pdf", size: "678 KB", type: "pdf", folder: "Android" },
+        { id: "doc-62", name: "Certificate Pinning Guide.pdf", size: "512 KB", type: "pdf", folder: null },
+        { id: "doc-63", name: "OWASP Mobile Top 10.pdf", size: "856 KB", type: "pdf", folder: null },
+    ],
+    "demo-incident": [
+        { id: "doc-64", name: "Incident Response Playbook.pdf", size: "934 KB", type: "pdf", folder: null },
+        { id: "doc-65", name: "Forensic Evidence Collection.pdf", size: "678 KB", type: "pdf", folder: null },
+        { id: "doc-66", name: "Breach Notification Timeline.pdf", size: "345 KB", type: "pdf", folder: null },
+    ],
+    "demo-devsecops": [
+        { id: "doc-67", name: "CI/CD Security Gates.pdf", size: "756 KB", type: "pdf", folder: null },
+        { id: "doc-68", name: "Pipeline Hardening Guide.pdf", size: "623 KB", type: "pdf", folder: null },
+        { id: "doc-69", name: "SCA Integration Tutorial.pdf", size: "534 KB", type: "pdf", folder: "Tools" },
+        { id: "doc-70", name: "Secrets Detection in Code.pdf", size: "445 KB", type: "pdf", folder: "Tools" },
+        { id: "doc-71", name: "IaC Security Scanning.pdf", size: "678 KB", type: "pdf", folder: "Tools" },
+    ],
+    "demo-access-control": [
+        { id: "doc-72", name: "RBAC Implementation Guide.pdf", size: "756 KB", type: "pdf", folder: null },
+        { id: "doc-73", name: "ABAC Policy Patterns.pdf", size: "678 KB", type: "pdf", folder: null },
+        { id: "doc-74", name: "Least Privilege Principles.pdf", size: "534 KB", type: "pdf", folder: null },
+        { id: "doc-75", name: "Policy Engine Integration.pdf", size: "623 KB", type: "pdf", folder: "Engines" },
     ],
 };
 
@@ -1004,6 +1251,9 @@ export function DemoProvider({ children }) {
     const isDemoMode = isDemoPath(pathname);
     
     const [currentDemoProject, setCurrentDemoProject] = useState("demo-org/vulnerable-express-app");
+    
+    // Shared code locked state - used to enable/disable workflow configuration
+    const [isCodeLocked, setIsCodeLocked] = useState(false);
 
     // Clean up demo storage when exiting demo mode
     useEffect(() => {
@@ -1058,6 +1308,8 @@ export function DemoProvider({ children }) {
                 disableDemoMode,
                 currentDemoProject,
                 switchDemoProject,
+                isCodeLocked,
+                setIsCodeLocked,
                 getDemoCode,
                 getDemoProjectStructure,
                 getDemoUseCases,

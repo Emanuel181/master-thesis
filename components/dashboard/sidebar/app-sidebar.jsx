@@ -26,9 +26,6 @@ import {
 } from "@/components/ui/sidebar"
 import {NavUser} from "./nav-user";
 import {useSession} from "next-auth/react";
-import { usePrompts } from "@/contexts/promptsContext"
-import { useUseCases } from "@/contexts/useCasesContext"
-import { useProject } from "@/contexts/projectContext"
 
 const data = {
     team: {
@@ -46,7 +43,7 @@ const DEMO_USER = {
     image: null,
 };
 
-export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
+export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent = "Home", ...props }) {
     const pathname = usePathname()
     const isDemo = pathname?.startsWith('/demo')
     const { data: session, status } = useSession()
@@ -57,40 +54,6 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
             localStorage.setItem("vulniq-user-name", session.user.name)
         }
     }, [session])
-
-    // Get counts from contexts for badges
-    const { prompts } = usePrompts()
-    const { useCases } = useUseCases()
-    const { projectStructure } = useProject()
-
-    // Calculate badge counts
-    const badges = React.useMemo(() => {
-        // Count total prompts
-        const promptCount = prompts ? Object.values(prompts).reduce((sum, arr) => sum + (arr?.length || 0), 0) : 0
-
-        // Count knowledge base categories
-        const kbCount = useCases?.length || 0
-
-        // Count files in project (rough count)
-        let fileCount = 0
-        const countFiles = (node) => {
-            if (!node) return
-            if (node.type === 'file') fileCount++
-            if (node.children) node.children.forEach(countFiles)
-        }
-        if (projectStructure?.children) {
-            projectStructure.children.forEach(countFiles)
-        } else if (Array.isArray(projectStructure)) {
-            projectStructure.forEach(countFiles)
-        }
-
-        return {
-            prompts: promptCount,
-            knowledgeBase: kbCount,
-            files: fileCount,
-            results: 0, // Results not implemented yet
-        }
-    }, [prompts, useCases, projectStructure])
 
     const navMain = [
         {
@@ -127,7 +90,7 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, ...props }) {
                 <TeamSwitcher team={data.team} />
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} badges={badges} />
+                <NavMain items={navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} activeComponent={activeComponent} />
             </SidebarContent>
             <SidebarFooter>
                 {status === "loading" && !isDemo ? (

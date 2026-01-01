@@ -15,6 +15,8 @@ const ProjectContext = createContext({
     clearCodeState: () => {},
     projectClearCounter: 0,
     isDemoMode: false,
+    projectUnloaded: false,
+    setProjectUnloaded: () => {},
 });
 
 // SECURITY: Separate storage keys for demo and production modes
@@ -35,6 +37,8 @@ export function ProjectProvider({ children }) {
     const [currentRepo, setCurrentRepoState] = useState(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [projectClearCounter, setProjectClearCounter] = useState(0);
+    // Track if user explicitly unloaded the project (to prevent auto-reload in demo mode)
+    const [projectUnloaded, setProjectUnloaded] = useState(false);
     
     // Track current mode to detect mode changes
     const [prevIsDemoMode, setPrevIsDemoMode] = useState(isDemoMode);
@@ -48,6 +52,7 @@ export function ProjectProvider({ children }) {
             setSelectedFile(null);
             setViewMode("project");
             setProjectClearCounter(prev => prev + 1);
+            setProjectUnloaded(false); // Reset unloaded flag on mode change
             setPrevIsDemoMode(isDemoMode);
         }
     }, [isDemoMode, prevIsDemoMode, isHydrated]);
@@ -70,6 +75,10 @@ export function ProjectProvider({ children }) {
             setProjectStructureState(savedState.projectStructure || null);
             setCurrentRepoState(savedState.currentRepo || null);
             setViewMode(savedState.viewMode || "project");
+            // Restore projectUnloaded flag - if true, project was explicitly unloaded
+            if (savedState.projectUnloaded === true) {
+                setProjectUnloaded(true);
+            }
         }
         setIsHydrated(true);
     }, [STORAGE_KEY]);
@@ -83,16 +92,21 @@ export function ProjectProvider({ children }) {
                 projectStructure,
                 currentRepo,
                 viewMode,
+                projectUnloaded, // Persist unloaded state to prevent auto-reload after refresh
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         } catch (err) {
             console.error("Error saving project state to localStorage:", err);
         }
-    }, [projectStructure, currentRepo, viewMode, isHydrated, STORAGE_KEY]);
+    }, [projectStructure, currentRepo, viewMode, projectUnloaded, isHydrated, STORAGE_KEY]);
 
     // Wrapper functions to update state
     const setProjectStructure = (structure) => {
         setProjectStructureState(structure);
+        // When a project is loaded, reset the unloaded flag
+        if (structure) {
+            setProjectUnloaded(false);
+        }
     };
 
     const setCurrentRepo = (repo) => {
@@ -111,6 +125,7 @@ export function ProjectProvider({ children }) {
         setSelectedFile(null);
         setViewMode("project");
         setProjectClearCounter(prev => prev + 1); // Notify listeners that project was cleared
+        setProjectUnloaded(true); // Mark project as explicitly unloaded
         try {
             localStorage.removeItem(STORAGE_KEY);
             // Also clear code state when project is unloaded (mode-specific)
@@ -153,6 +168,8 @@ export function ProjectProvider({ children }) {
                 clearProject,
                 clearCodeState,
                 projectClearCounter,
+                projectUnloaded,
+                setProjectUnloaded,
             }}
         >
             {children}

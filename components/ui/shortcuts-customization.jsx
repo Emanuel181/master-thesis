@@ -56,7 +56,7 @@ const DEFAULT_SHORTCUTS = {
     'format': { keys: 'mod+shift+f', label: 'Format Code', category: 'Editor' },
     'zoom-in': { keys: 'mod+=', label: 'Zoom In', category: 'Editor' },
     'zoom-out': { keys: 'mod+-', label: 'Zoom Out', category: 'Editor' },
-    'workflow': { keys: 'mod+w', label: 'Open Workflow', category: 'Actions' },
+    'workflow': { keys: 'mod+shift+a', label: 'Open Workflow', category: 'Actions' },
     'theme-toggle': { keys: 'mod+shift+l', label: 'Toggle Theme', category: 'Actions' },
     'settings': { keys: 'mod+,', label: 'Open Settings', category: 'Actions' },
     'toggle-sidebar': { keys: 'mod+b', label: 'Toggle Sidebar', category: 'View' },

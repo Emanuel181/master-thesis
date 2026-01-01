@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Footer } from '@/components/landing-page/footer';
 import { Button } from '@/components/ui/button';
 import { ChevronUp } from 'lucide-react';
+import { StickyFeedback } from '@/components/landing-page/sticky-feedback';
 
 // Lazy load the code demo to overlay on the hero after hydration
 const SecurityCodeDemo = dynamic(
@@ -45,9 +46,9 @@ const UseCasesScrollReveal = dynamic(
   { loading: () => <div className="min-h-[100vh]" /> }
 );
 
-const ThreeDHoverGallery = dynamic(
-  () => import('@/components/ui/3d-hover-gallery'),
-  { ssr: false, loading: () => <div className="min-h-screen" /> }
+const HoverExpandPanels = dynamic(
+  () => import('@/components/ui/hover-expand-panels'),
+  { ssr: false, loading: () => <div className="min-h-[400px]" /> }
 );
 
 const FlipWordsDemo = dynamic(
@@ -246,8 +247,8 @@ export function ClientLandingWrapper({ children }) {
             <UseCasesScrollReveal />
           </div>
 
-          <div className="w-full">
-            <ThreeDHoverGallery />
+          <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
+            <HoverExpandPanels defaultActive={0} activeGrow={7} />
           </div>
 
           <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-24 mb-16 sm:mb-20 md:mb-24 lg:mb-32 w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
@@ -276,6 +277,9 @@ export function ClientLandingWrapper({ children }) {
         </main>
 
       <Footer onScrollToTop={scrollToTop} />
+      
+      {/* Sticky Feedback Widget */}
+      <StickyFeedback />
     </div>
   );
 }

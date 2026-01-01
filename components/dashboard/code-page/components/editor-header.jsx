@@ -13,6 +13,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
     Play,
     Clipboard,
@@ -27,9 +29,13 @@ import {
     Code2,
     ChevronDown,
     FolderPlus,
+    FolderX,
+    FolderInput,
+    GitBranch,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { ImportDialog } from './import-dialog';
 
 /**
  * Editor Header component with actions and configuration
@@ -67,36 +73,121 @@ export function EditorHeader({
     hasOpenTabs = false,
     // Demo mode
     isDemoMode = false,
+    // Project controls (consolidated from top toolbar)
+    hasImportedProject = false,
+    currentRepo = null,
+    viewMode = 'file',
+    setViewMode,
+    onUnloadProject,
+    // Import dialog props
+    isGithubConnected = false,
+    isGitlabConnected = false,
+    isImportDialogOpen = false,
+    setIsImportDialogOpen,
+    searchTerm = '',
+    setSearchTerm,
+    repos = [],
+    gitlabRepos = [],
+    isLoadingRepos = false,
+    onSelectRepo,
+    onSelectGitlabRepo,
+    onDisconnectGitHub,
+    onDisconnectGitlab,
+    onConnectGitHub,
+    onConnectGitlab,
 }) {
     return (
         <CardHeader className="py-2 px-2 sm:py-2.5 sm:px-4 shrink-0 border-b bg-card/50">
             {/* Desktop Layout */}
-            <div className="hidden sm:flex items-center justify-between gap-4">
-                {/* Left Section: Title + Lock */}
-                <div className="flex items-center gap-3">
-                    <CardTitle className="text-base font-semibold">Code Editor</CardTitle>
-                    {!isPlaceholder && hasContent && (
-                        <>
-                            {isViewOnly ? (
-                                <span className="text-[10px] text-muted-foreground bg-muted/80 px-2 py-1 rounded-md font-medium">
-                                    View Only
-                                </span>
-                            ) : (
-                                <Button
-                                    variant={isLocked ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => onLockChange(!isLocked)}
-                                    className={`h-7 px-2.5 text-xs gap-1.5 ${isLocked ? "bg-red-500/90 hover:bg-red-600 text-white border-red-500" : "hover:bg-muted"}`}
+            <div className="hidden sm:flex items-center justify-between gap-3">
+                {/* Left Section: Title + Project Controls */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <CardTitle className="text-base font-semibold shrink-0">Code Editor</CardTitle>
+                    
+                    {/* Project Controls - only when project imported */}
+                    {hasImportedProject && currentRepo && (
+                        <div className="flex items-center gap-2 pl-2 border-l border-border/60">
+                            {/* View Mode Toggle - compact */}
+                            <div className="flex items-center gap-1 bg-muted/40 rounded px-1.5 py-0.5">
+                                <span 
+                                    onClick={() => setViewMode('project')}
+                                    className={`text-[10px] cursor-pointer transition-colors px-1 py-0.5 rounded ${viewMode === 'project' ? 'text-foreground font-medium bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
-                                    {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                                    {isLocked ? "Locked" : "Lock"}
-                                </Button>
-                            )}
-                        </>
+                                    Project
+                                </span>
+                                <span 
+                                    onClick={() => setViewMode('file')}
+                                    className={`text-[10px] cursor-pointer transition-colors px-1 py-0.5 rounded ${viewMode === 'file' ? 'text-foreground font-medium bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    File
+                                </span>
+                            </div>
+
+                            {/* Project Menu */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2 gap-1.5 text-xs"
+                                    >
+                                        <GitBranch className="h-3.5 w-3.5" />
+                                        <span className="max-w-[120px] truncate">{typeof currentRepo === 'string' ? currentRepo : currentRepo?.repo || 'Project'}</span>
+                                        <ChevronDown className="h-3 w-3 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-48">
+                                    <DropdownMenuLabel className="text-xs">Project</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {(isGithubConnected || isGitlabConnected) && (
+                                        <DropdownMenuItem
+                                            onClick={() => setIsImportDialogOpen(true)}
+                                            className="text-xs gap-2"
+                                        >
+                                            <FolderInput className="h-3.5 w-3.5" />
+                                            Switch Project
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem
+                                        onClick={onUnloadProject}
+                                        className="text-xs gap-2 text-destructive focus:text-destructive"
+                                    >
+                                        <FolderX className="h-3.5 w-3.5" />
+                                        Unload Project
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )}
+
+                    {/* Lock Button */}
+                    {!isPlaceholder && hasContent && !isViewOnly && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant={isLocked ? "default" : "ghost"}
+                                        size="sm"
+                                        onClick={() => onLockChange(!isLocked)}
+                                        className={`h-7 w-7 p-0 ${isLocked ? "bg-amber-500/90 hover:bg-amber-600 text-white" : "hover:bg-muted"}`}
+                                    >
+                                        {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {isLocked ? "Code locked for review - click to edit" : "Lock code to start review"}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                    {!isPlaceholder && hasContent && isViewOnly && (
+                        <span className="text-[10px] text-muted-foreground bg-muted/80 px-2 py-1 rounded-md font-medium">
+                            View Only
+                        </span>
                     )}
                 </div>
 
-                {/* Center Section: Configuration */}
+                {/* Center Section: Language + Use Case */}
                 {!isPlaceholder && hasContent && (
                     <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg">
                         {/* Language */}
@@ -211,21 +302,23 @@ export function EditorHeader({
                             </TooltipProvider>
                         )}
 
+                        {/* Format Button - Now labeled and prominent */}
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-7 w-7 p-0"
+                                        className="h-7 px-2.5 gap-1.5"
                                         onClick={handleFormat}
                                         disabled={isFormatting || (!isViewOnly && isLocked) || !isFormattable}
                                     >
                                         <Wand2 className="h-3.5 w-3.5" />
+                                        <span className="text-xs font-medium">Format</span>
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {!isFormattable ? "Formatting not supported" : "Format Code"}
+                                    {!isFormattable ? "Formatting not supported for this language" : "Format Code (Prettier, Ruff, etc.)"}
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
@@ -269,9 +362,52 @@ export function EditorHeader({
 
             {/* Mobile Layout */}
             <div className="flex sm:hidden items-center justify-between gap-2">
-                {/* Left: Title */}
+                {/* Left: Title + Project indicator */}
                 <div className="flex items-center gap-2 min-w-0">
-                    <CardTitle className="text-sm whitespace-nowrap">Code Editor</CardTitle>
+                    <CardTitle className="text-sm whitespace-nowrap">Editor</CardTitle>
+                    {hasImportedProject && currentRepo && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 px-1.5 gap-1 text-xs text-muted-foreground">
+                                    <GitBranch className="h-3 w-3" />
+                                    <ChevronDown className="h-2.5 w-2.5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-52">
+                                <DropdownMenuLabel className="text-xs truncate">{typeof currentRepo === 'string' ? currentRepo : currentRepo?.repo || 'Project'}</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <div className="px-2 py-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="view-mode-mobile" className="text-xs">Project</Label>
+                                        <Switch
+                                            id="view-mode-mobile"
+                                            checked={viewMode === 'file'}
+                                            onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
+                                            className="h-4 w-7"
+                                        />
+                                        <Label htmlFor="view-mode-mobile" className="text-xs">File</Label>
+                                    </div>
+                                </div>
+                                <DropdownMenuSeparator />
+                                {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
+                                    <DropdownMenuItem
+                                        onClick={() => setIsImportDialogOpen(true)}
+                                        className="text-xs gap-2"
+                                    >
+                                        <FolderInput className="h-3.5 w-3.5" />
+                                        Import Another
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                    onClick={onUnloadProject}
+                                    className="text-xs gap-2 text-destructive focus:text-destructive"
+                                >
+                                    <FolderX className="h-3.5 w-3.5" />
+                                    Unload Project
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                     {!isPlaceholder && hasContent && isViewOnly && (
                         <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
                             View Only
@@ -288,7 +424,7 @@ export function EditorHeader({
                                 variant={isLocked ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => onLockChange(!isLocked)}
-                                className={`h-7 px-2 text-xs ${isLocked ? "bg-red-500 hover:bg-red-600 text-white" : ""}`}
+                                className={`h-7 px-2 text-xs ${isLocked ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
                             >
                                 {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
                             </Button>
@@ -417,6 +553,27 @@ export function EditorHeader({
                     </div>
                 )}
             </div>
+
+            {/* Import Dialog - controlled externally, no trigger button */}
+            {isImportDialogOpen !== undefined && setIsImportDialogOpen && (
+                <ImportDialog
+                    isOpen={isImportDialogOpen}
+                    onOpenChange={setIsImportDialogOpen}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    repos={repos}
+                    gitlabRepos={gitlabRepos}
+                    isLoadingRepos={isLoadingRepos}
+                    isGithubConnected={isGithubConnected}
+                    isGitlabConnected={isGitlabConnected}
+                    onSelectRepo={onSelectRepo}
+                    onSelectGitlabRepo={onSelectGitlabRepo}
+                    onDisconnectGitHub={onDisconnectGitHub}
+                    onDisconnectGitlab={onDisconnectGitlab}
+                    onConnectGitHub={onConnectGitHub}
+                    onConnectGitlab={onConnectGitlab}
+                />
+            )}
         </CardHeader>
     );
 }

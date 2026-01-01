@@ -140,13 +140,17 @@ export async function POST(request) {
 
                 java: 'java',
                 php: 'php',
+                
+                // Additional mappings for edge cases
+                markdown: 'markdown',
+                md: 'markdown',
             };
 
             const parser = map[lang];
 
             if (!parser) {
                 return NextResponse.json(
-                    { error: `Language '${language}' is not supported.` },
+                    { error: `Language '${language}' is not supported for formatting. Supported: JavaScript, TypeScript, Python, Go, C, C++, C#, Java, PHP, CSS, HTML, JSON.` },
                     { status: 400, headers: securityHeaders }
                 );
             }

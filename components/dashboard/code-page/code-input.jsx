@@ -24,9 +24,7 @@ const Editor = dynamic(
 );
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { X, FolderX } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCode } from "@/lib/code-formatter";
 import { useUseCases } from "@/contexts/useCasesContext";
@@ -163,6 +161,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         loadGitlabRepos,
         handleDisconnectGitHub,
         handleDisconnectGitlab,
+        handleConnectGitHub,
+        handleConnectGitlab,
     } = useProviderConnection({ currentRepo, clearProject, closeAllTabs, setCode });
 
     // --- Repo Import Hook ---
@@ -238,6 +238,11 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                 setLanguage(match);
             } else if (isViewOnlyFile && tabLanguage) {
                 setLanguage({ name: tabLanguage.charAt(0).toUpperCase() + tabLanguage.slice(1), prism: tabLanguage });
+            }
+            
+            // If there's an active tab with content, we're not in placeholder mode
+            if (activeTab.content) {
+                setIsPlaceholder(false);
             }
         }
     }, [activeTab, setLanguage]);
@@ -417,56 +422,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     return (
         <div className="flex flex-col h-full w-full gap-1.5 sm:gap-2">
-            {/* Top Toolbar - Only show when project is imported */}
-            {hasImportedProject && (
-                <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 w-full">
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        {currentRepo && (
-                            <>
-                                <Label htmlFor="view-mode-switch" className="text-xs sm:text-sm whitespace-nowrap">Project</Label>
-                                <Switch
-                                    id="view-mode-switch"
-                                    checked={viewMode === 'file'}
-                                    onCheckedChange={(checked) => setViewMode(checked ? 'file' : 'project')}
-                                    className="h-4 w-7 sm:h-5 sm:w-9"
-                                />
-                                <Label htmlFor="view-mode-switch" className="text-xs sm:text-sm whitespace-nowrap">File</Label>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                        {viewMode === 'project' && (isGithubConnected || isGitlabConnected) && (
-                            <ImportDialog
-                                isOpen={isImportDialogOpen}
-                                onOpenChange={setIsImportDialogOpen}
-                                searchTerm={searchTerm}
-                                setSearchTerm={setSearchTerm}
-                                repos={repos}
-                                gitlabRepos={gitlabRepos}
-                                isLoadingRepos={isLoadingRepos}
-                                isGithubConnected={isGithubConnected}
-                                isGitlabConnected={isGitlabConnected}
-                                onSelectRepo={handleSelectRepo}
-                                onSelectGitlabRepo={handleSelectGitlabRepo}
-                                onDisconnectGitHub={handleDisconnectGitHub}
-                                onDisconnectGitlab={handleDisconnectGitlab}
-                            />
-                        )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleUnloadProject}
-                            className="gap-1.5 sm:gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
-                        >
-                            <FolderX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            <span className="hidden xs:inline">Unload Project</span>
-                            <span className="xs:hidden">Unload</span>
-                        </Button>
-                    </div>
-                </div>
-            )}
-
             {/* Main Content */}
             <div className="flex-1 min-h-0 w-full">
                 <Card className="flex flex-col h-full w-full overflow-hidden shadow-sm border-border">
@@ -503,6 +458,28 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         hasOpenTabs={openTabs.length > 0}
                         // Demo mode
                         isDemoMode={isDemoMode}
+                        // Project controls (moved from top toolbar)
+                        hasImportedProject={hasImportedProject}
+                        currentRepo={currentRepo}
+                        viewMode={viewMode}
+                        setViewMode={setViewMode}
+                        onUnloadProject={handleUnloadProject}
+                        // Import dialog props
+                        isGithubConnected={isGithubConnected}
+                        isGitlabConnected={isGitlabConnected}
+                        isImportDialogOpen={isImportDialogOpen}
+                        setIsImportDialogOpen={setIsImportDialogOpen}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        repos={repos}
+                        gitlabRepos={gitlabRepos}
+                        isLoadingRepos={isLoadingRepos}
+                        onSelectRepo={handleSelectRepo}
+                        onSelectGitlabRepo={handleSelectGitlabRepo}
+                        onDisconnectGitHub={handleDisconnectGitHub}
+                        onDisconnectGitlab={handleDisconnectGitlab}
+                        onConnectGitHub={handleConnectGitHub}
+                        onConnectGitlab={handleConnectGitlab}
                     />
 
                     {/* Content Body */}

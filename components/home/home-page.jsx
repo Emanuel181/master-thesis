@@ -195,7 +195,7 @@ const agents = ["reviewer", "implementation", "tester", "report"]
 
 export function HomePage() {
     const { data: session, status } = useSession()
-    const { setProjectStructure, setViewMode, setCurrentRepo, currentRepo, clearProject } = useProject()
+    const { setProjectStructure, setViewMode, setCurrentRepo, currentRepo, clearProject, setProjectUnloaded } = useProject()
     const router = useRouter()
     const pathname = usePathname()
     
@@ -218,9 +218,24 @@ export function HomePage() {
     const [currentAgent, setCurrentAgent] = useState("reviewer")
     const [viewFullTextPrompt, setViewFullTextPrompt] = useState(null)
 
+    // Demo mode localStorage keys (shared with use-provider-connection.js)
+    const DEMO_GITHUB_KEY = 'vulniq_demo_github_connected';
+    const DEMO_GITLAB_KEY = 'vulniq_demo_gitlab_connected';
+
+    const getInitialDemoState = (key) => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem(key) === 'true';
+        } catch {
+            return false;
+        }
+    };
+
     const [repos, setRepos] = useState([])
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
-    const [isGithubConnected, setIsGithubConnected] = useState(false)
+    const [isGithubConnected, setIsGithubConnected] = useState(() => 
+        isDemoMode ? getInitialDemoState(DEMO_GITHUB_KEY) : false
+    )
     const [isRefreshingRepos, setIsRefreshingRepos] = useState(false)
     const [githubSearchTerm, setGithubSearchTerm] = useState("")
 
@@ -229,9 +244,26 @@ export function HomePage() {
     // Add GitLab states
     const [gitlabRepos, setGitlabRepos] = useState([])
     const [isLoadingGitlabRepos, setIsLoadingGitlabRepos] = useState(false)
-    const [isGitlabConnected, setIsGitlabConnected] = useState(false)
+    const [isGitlabConnected, setIsGitlabConnected] = useState(() => 
+        isDemoMode ? getInitialDemoState(DEMO_GITLAB_KEY) : false
+    )
     const [isRefreshingGitlabRepos, setIsRefreshingGitlabRepos] = useState(false)
     const [gitlabSearchTerm, setGitlabSearchTerm] = useState("")
+
+    // Persist demo connection state to localStorage
+    useEffect(() => {
+        if (!isDemoMode) return;
+        try {
+            localStorage.setItem(DEMO_GITHUB_KEY, String(isGithubConnected));
+        } catch {}
+    }, [isDemoMode, isGithubConnected]);
+
+    useEffect(() => {
+        if (!isDemoMode) return;
+        try {
+            localStorage.setItem(DEMO_GITLAB_KEY, String(isGitlabConnected));
+        } catch {}
+    }, [isDemoMode, isGitlabConnected]);
 
     // Import progress state
     const [importingRepo, setImportingRepo] = useState(null) // { repo, progress, status }
@@ -543,18 +575,21 @@ export function HomePage() {
     }
 
     // ---------------------------
-    // Demo mode: Load mock repos
+    // Demo mode: Load mock repos based on connection state
     // ---------------------------
     useEffect(() => {
         if (isDemoMode) {
-            setRepos(DEMO_GITHUB_REPOS);
-            setGitlabRepos(DEMO_GITLAB_REPOS);
-            setIsGithubConnected(true);
-            setIsGitlabConnected(true);
+            // Load repos for already connected providers (from localStorage)
+            if (isGithubConnected) {
+                setRepos(DEMO_GITHUB_REPOS);
+            }
+            if (isGitlabConnected) {
+                setGitlabRepos(DEMO_GITLAB_REPOS);
+            }
             setIsLoadingRepos(false);
             setIsLoadingGitlabRepos(false);
         }
-    }, [isDemoMode]);
+    }, [isDemoMode, isGithubConnected, isGitlabConnected]);
 
     // ---------------------------
     // Only fetch if authenticated AND repos not loaded (skip in demo mode)
@@ -760,10 +795,15 @@ export function HomePage() {
             setProjectStructure(structure)
             setCurrentRepo({ owner, repo: repoName, provider: repo.provider })
             setViewMode("project")
-            // Clear any existing code state so the editor starts fresh (mode-specific)
+            setProjectUnloaded(false) // Reset unloaded flag when importing a new project
+            // Clear any existing code state and editor tabs so the editor starts fresh (mode-specific)
             try {
                 const codeStateKey = isDemoMode ? 'vulniq_demo_code_state' : 'vulniq_code_state'
+                const editorTabsKey = isDemoMode ? 'vulniq_demo_editor_tabs' : 'vulniq_editor_tabs'
+                const editorLanguageKey = isDemoMode ? 'vulniq_demo_editor_language' : 'vulniq_editor_language'
                 localStorage.removeItem(codeStateKey)
+                localStorage.removeItem(editorTabsKey)
+                localStorage.removeItem(editorLanguageKey)
             } catch (err) {
                 console.error("Error clearing code state:", err)
             }

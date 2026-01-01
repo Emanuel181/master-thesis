@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, BookOpen, Newspaper, GitBranch, Mail, AlertTriangle, Code, Rss } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, BookOpen, Newspaper, GitBranch, Mail, AlertTriangle, Code, Rss, MessageSquare } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 import {
@@ -37,6 +37,7 @@ export const FloatingNavbar = () => {
     const [visible, setVisible] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
     const [isAboveLamp, setIsAboveLamp] = useState(false);
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
     const isMobile = useIsMobile();
 
     const { scrollY, scrollYProgress } = useScroll();
@@ -250,6 +251,8 @@ export const FloatingNavbar = () => {
 
                 {/* RIGHT: Actions */}
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+                    {/* Feedback Button */}
+                    <FeedbackButton onClick={() => setFeedbackOpen(true)} />
                     <AccessibilityButton />
                     <ThemeToggle />
                     <Button asChild variant="outline" size="sm" className="hidden md:flex rounded-full text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 border-[var(--brand-accent)]/50 text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]">
@@ -364,9 +367,125 @@ export const FloatingNavbar = () => {
                 </motion.div>
             )}
         </AnimatePresence>
+            {/* Feedback Dialog */}
+            {feedbackOpen && <FeedbackDialogInline isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />}
         </>
     );
 };
+
+// Feedback Button for Navbar
+function FeedbackButton({ onClick }) {
+    return (
+        <motion.button
+            onClick={onClick}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="hidden sm:flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+            aria-label="Send Feedback"
+            title="Send Feedback"
+        >
+            <MessageSquare className="w-4 h-4 sm:w-4 sm:h-4 text-[var(--brand-accent)]" strokeWidth={2} />
+        </motion.button>
+    );
+}
+
+// Inline Feedback Dialog Component
+function FeedbackDialogInline({ isOpen, onClose }) {
+    const [feedback, setFeedback] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [status, setStatus] = React.useState('idle');
+    const [message, setMessage] = React.useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!feedback.trim()) {
+            setStatus('error');
+            setMessage('Please enter your feedback');
+            return;
+        }
+        setStatus('loading');
+        setMessage('');
+        try {
+            const response = await fetch('/api/feedback/public', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    feedback: feedback.trim(),
+                    email: email.trim() || undefined,
+                    page: typeof window !== 'undefined' ? window.location.pathname : 'landing'
+                }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setStatus('success');
+                setMessage('Thank you for your feedback!');
+                setFeedback('');
+                setEmail('');
+                setTimeout(() => { onClose?.(); setStatus('idle'); setMessage(''); }, 2000);
+            } else {
+                setStatus('error');
+                setMessage(data.error || 'Failed to submit feedback');
+            }
+        } catch (error) {
+            setStatus('error');
+            setMessage('An error occurred. Please try again.');
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={onClose}
+            />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+            >
+                <div className="p-4 border-b border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Send Feedback</h3>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    <input
+                        type="email"
+                        placeholder="Email (optional)"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={status === 'loading' || status === 'success'}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
+                    />
+                    <textarea
+                        placeholder="Tell us what you think..."
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        className="w-full min-h-[120px] px-3 py-2 text-sm rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
+                        disabled={status === 'loading' || status === 'success'}
+                    />
+                    {message && (
+                        <p className={`text-sm flex items-center gap-1.5 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {message}
+                        </p>
+                    )}
+                    <Button type="submit" className="w-full" disabled={status === 'loading' || status === 'success'}>
+                        {status === 'loading' ? 'Sending...' : status === 'success' ? 'Sent!' : 'Send Feedback'}
+                    </Button>
+                </form>
+            </motion.div>
+        </div>
+    );
+}
 
 // Accessibility Button for Navbar
 function AccessibilityButton() {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchFileContent as apiFetchFileContent } from '@/lib/github-api';
 import { detectLanguageFromContent } from '../constants/language-config';
 import { toast } from 'sonner';
@@ -55,48 +55,123 @@ const findFileContentInStructure = (structure, targetPath) => {
  * @returns {Object} Tab state and handlers
  */
 export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMode, isDemoMode = false, projectStructure = null }) {
-    const [openTabs, setOpenTabs] = useState([]);
-    const [activeTabId, setActiveTabId] = useState(null);
-    const [dragOverIndex, setDragOverIndex] = useState(null);
-    const [loadingFilePath, setLoadingFilePath] = useState(null);
-    const [isHydrated, setIsHydrated] = useState(false);
-
-    // Tab groups: { [groupId]: { name, color, collapsed, tabIds } }
-    const [tabGroups, setTabGroups] = useState({});
-    const [activeGroupId, setActiveGroupId] = useState(null);
-
-    // Use ref to prevent race conditions with concurrent file loads
-    const loadingPathsRef = useRef(new Set());
-    
     // SECURITY: Derive storage key from demo mode
-    const STORAGE_KEY = useMemo(() => 
-        isDemoMode ? TABS_STORAGE_KEY_DEMO : TABS_STORAGE_KEY_PROD, 
-        [isDemoMode]
-    );
+    const STORAGE_KEY = isDemoMode ? TABS_STORAGE_KEY_DEMO : TABS_STORAGE_KEY_PROD;
 
-    // Load tabs from localStorage on mount
-    useEffect(() => {
+    // Lazy initialization: load from localStorage immediately on first render
+    const [openTabs, setOpenTabs] = useState(() => {
+        if (typeof window === 'undefined') return [];
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed.openTabs && Array.isArray(parsed.openTabs)) {
-                    setOpenTabs(parsed.openTabs);
-                }
-                if (parsed.activeTabId) {
-                    setActiveTabId(parsed.activeTabId);
-                }
-                if (parsed.tabGroups) {
-                    setTabGroups(parsed.tabGroups);
-                }
-                if (parsed.activeGroupId) {
-                    setActiveGroupId(parsed.activeGroupId);
+                    return parsed.openTabs;
                 }
             }
         } catch (err) {
-            console.error("Error loading editor tabs from localStorage:", err);
+            console.error("Error loading openTabs from localStorage:", err);
         }
-        setIsHydrated(true);
+        return [];
+    });
+    
+    const [activeTabId, setActiveTabId] = useState(() => {
+        if (typeof window === 'undefined') return null;
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.activeTabId) {
+                    return parsed.activeTabId;
+                }
+            }
+        } catch (err) {
+            console.error("Error loading activeTabId from localStorage:", err);
+        }
+        return null;
+    });
+    
+    const [dragOverIndex, setDragOverIndex] = useState(null);
+    const [loadingFilePath, setLoadingFilePath] = useState(null);
+    const [isHydrated, setIsHydrated] = useState(typeof window !== 'undefined');
+
+    // Tab groups: { [groupId]: { name, color, collapsed, tabIds } }
+    const [tabGroups, setTabGroups] = useState(() => {
+        if (typeof window === 'undefined') return {};
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.tabGroups) {
+                    return parsed.tabGroups;
+                }
+            }
+        } catch (err) {
+            console.error("Error loading tabGroups from localStorage:", err);
+        }
+        return {};
+    });
+    
+    const [activeGroupId, setActiveGroupId] = useState(() => {
+        if (typeof window === 'undefined') return null;
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.activeGroupId) {
+                    return parsed.activeGroupId;
+                }
+            }
+        } catch (err) {
+            console.error("Error loading activeGroupId from localStorage:", err);
+        }
+        return null;
+    });
+
+    // Use ref to prevent race conditions with concurrent file loads
+    const loadingPathsRef = useRef(new Set());
+    
+    // Track previous STORAGE_KEY to detect mode changes and reload data
+    const prevStorageKeyRef = useRef(STORAGE_KEY);
+    
+    // Reload tabs when STORAGE_KEY changes (mode switch)
+    useEffect(() => {
+        if (prevStorageKeyRef.current !== STORAGE_KEY) {
+            prevStorageKeyRef.current = STORAGE_KEY;
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.openTabs && Array.isArray(parsed.openTabs)) {
+                        setOpenTabs(parsed.openTabs);
+                    } else {
+                        setOpenTabs([]);
+                    }
+                    if (parsed.activeTabId) {
+                        setActiveTabId(parsed.activeTabId);
+                    } else {
+                        setActiveTabId(null);
+                    }
+                    if (parsed.tabGroups) {
+                        setTabGroups(parsed.tabGroups);
+                    } else {
+                        setTabGroups({});
+                    }
+                    if (parsed.activeGroupId) {
+                        setActiveGroupId(parsed.activeGroupId);
+                    } else {
+                        setActiveGroupId(null);
+                    }
+                } else {
+                    setOpenTabs([]);
+                    setActiveTabId(null);
+                    setTabGroups({});
+                    setActiveGroupId(null);
+                }
+            } catch (err) {
+                console.error("Error reloading editor tabs from localStorage:", err);
+            }
+        }
     }, [STORAGE_KEY]);
 
     // Save tabs to localStorage when they change
@@ -400,11 +475,11 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
         setSelectedFile(null); // Clear selected file
         // Clear tabs from localStorage
         try {
-            localStorage.removeItem(TABS_STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEY);
         } catch (err) {
             console.error("Error clearing tabs from localStorage:", err);
         }
-    }, [setCode, setSelectedFile]);
+    }, [setCode, setSelectedFile, STORAGE_KEY]);
 
     // Close all tabs except the specified one
     const closeOtherTabs = useCallback((tabId) => {

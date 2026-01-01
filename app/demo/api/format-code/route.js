@@ -128,13 +128,16 @@ export async function POST(request) {
                 json: 'json',
                 java: 'java',
                 php: 'php',
+                // Additional mappings for edge cases
+                markdown: 'markdown',
+                md: 'markdown',
             };
 
             const parser = map[lang];
 
             if (!parser) {
                 return NextResponse.json(
-                    { error: `Language '${language}' is not supported.` },
+                    { error: `Language '${language}' is not supported for formatting. Supported: JavaScript, TypeScript, Python, Go, C, C++, C#, Java, PHP, CSS, HTML, JSON.` },
                     { status: 400, headers: securityHeaders }
                 );
             }
@@ -156,14 +159,24 @@ export async function POST(request) {
 
         return NextResponse.json({ success: true, formattedCode, language }, { headers: securityHeaders });
     } catch (error) {
-        // Log error details only in development
+        // Log error details in development
         if (process.env.NODE_ENV === 'development') {
             console.error('Formatting Error:', error);
         }
-        // SECURITY: Don't expose internal error details to clients
+        
+        // Provide more helpful error message for syntax errors
+        const errorMessage = error.message || 'Failed to format code';
+        const isSyntaxError = errorMessage.includes('Parsing error') || 
+                             errorMessage.includes('SyntaxError') ||
+                             errorMessage.includes('Unexpected') ||
+                             errorMessage.includes('expected');
+        
         return NextResponse.json(
             {
-                error: 'Failed to format code',
+                error: isSyntaxError 
+                    ? 'Failed to format code: The code has syntax errors. Please fix them first.'
+                    : 'Failed to format code',
+                details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
             },
             { status: 422, headers: securityHeaders }
         );

@@ -263,7 +263,7 @@ function DashboardContent({ settings, mounted }) {
                                     open={sidebarOpen}
                                     onOpenChange={setSidebarOpen}
                                 >
-                                    <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked}/>
+                                    <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked} activeComponent={activeComponent}/>
                                     <SidebarInset className="flex flex-col overflow-hidden">
                                         <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
                                             <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>

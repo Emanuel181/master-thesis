@@ -44,7 +44,9 @@ const shortcuts = [
     {
         category: "Actions",
         items: [
-            { keys: "mod+w", description: "Open workflow configuration" },
+            { keys: "mod+shift+o", description: "Switch project (GitHub/GitLab)" },
+            { keys: "mod+alt+n", description: "Open notifications" },
+            { keys: "mod+shift+a", description: "Open workflow configuration" },
             { keys: "mod+shift+l", description: "Toggle dark/light mode" },
             { keys: "mod+,", description: "Open settings" },
             { keys: "esc", description: "Close dialog/panel" },

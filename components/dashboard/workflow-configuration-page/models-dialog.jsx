@@ -89,6 +89,8 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     const [kbDocumentCounts, setKbDocumentCounts] = React.useState({});
     const [isRefreshingKb, setIsRefreshingKb] = React.useState({});
     const [expandedKb, setExpandedKb] = React.useState(null);
+    const [kbPage, setKbPage] = React.useState(0);
+    const kbPerPage = 4;
 
     const { useCases, refresh: refreshUseCases } = useUseCases();
 
@@ -853,62 +855,64 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                             </TabsContent>
 
                             <TabsContent value="knowledge" className="mt-0">
-                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
-                                    <div className="space-y-4 pr-4">
-                                        {!codeType ? (
-                                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                                <Database className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                                                <h3 className="text-lg font-semibold mb-2">Code Type Required</h3>
-                                                <p className="text-sm text-muted-foreground max-w-md">
-                                                    Please select a code type in the Code Editor first. The knowledge base selection will be automatically matched to your code type.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground mb-4">
-                                                    <span>Select one or more knowledge bases for RAG to provide context to the AI agents.</span>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={handleRefreshUseCases}
-                                                        title="Refresh knowledge bases"
-                                                        disabled={isRefreshingUseCases}
-                                                        className="shrink-0"
-                                                    >
-                                                        {isRefreshingUseCases ? (
-                                                            <>
-                                                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                                <span className="hidden sm:inline">Refreshing...</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <RefreshCw className="h-4 w-4 sm:mr-2" />
-                                                                <span className="hidden sm:inline">Refresh</span>
-                                                            </>
-                                                        )}
-                                                    </Button>
-                                                </div>
+                                {!codeType ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <Database className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                                        <h3 className="text-lg font-semibold mb-2">Code Type Required</h3>
+                                        <p className="text-sm text-muted-foreground max-w-md">
+                                            Please select a code type in the Code Editor first. The knowledge base selection will be automatically matched to your code type.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground">
+                                            <span>Select one or more knowledge bases for RAG to provide context to the AI agents.</span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleRefreshUseCases}
+                                                title="Refresh knowledge bases"
+                                                disabled={isRefreshingUseCases}
+                                                className="shrink-0"
+                                            >
+                                                {isRefreshingUseCases ? (
+                                                    <>
+                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                        <span className="hidden sm:inline">Refreshing...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <RefreshCw className="h-4 w-4 sm:mr-2" />
+                                                        <span className="hidden sm:inline">Refresh</span>
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
 
-                                                <div className="space-y-3">
-                                                    {useCases.map((kb) => {
-                                                        const IconComponent = LucideIcons[kb.icon];
-                                                        const isSelected = selectedKnowledgeBases.includes(kb.id);
-                                                        const docCount = kbDocumentCounts[kb.id] || 0;
-                                                        const isRefreshing = isRefreshingKb[kb.id] || false;
-                                                        const isExpanded = expandedKb === kb.id;
-                                                        const documents = isDemoMode ? (DEMO_DOCUMENTS[kb.id] || []) : [];
-                                                        
-                                                        // Group documents by folder
-                                                        const folders = {};
-                                                        const rootDocs = [];
-                                                        documents.forEach(doc => {
-                                                            if (doc.folder) {
-                                                                if (!folders[doc.folder]) folders[doc.folder] = [];
-                                                                folders[doc.folder].push(doc);
-                                                            } else {
-                                                                rootDocs.push(doc);
-                                                            }
-                                                        });
+                                        <ScrollArea className="h-[320px]">
+                                            <div className="space-y-2 pr-4">
+                                            {(() => {
+                                                const paginatedUseCases = useCases.slice(kbPage * kbPerPage, (kbPage + 1) * kbPerPage);
+                                                
+                                                return paginatedUseCases.map((kb) => {
+                                                    const IconComponent = LucideIcons[kb.icon];
+                                                    const isSelected = selectedKnowledgeBases.includes(kb.id);
+                                                    const docCount = kbDocumentCounts[kb.id] || 0;
+                                                    const isRefreshing = isRefreshingKb[kb.id] || false;
+                                                    const isExpanded = expandedKb === kb.id;
+                                                    const documents = isDemoMode ? (DEMO_DOCUMENTS[kb.id] || []) : [];
+                                                    
+                                                    // Group documents by folder
+                                                    const folders = {};
+                                                    const rootDocs = [];
+                                                    documents.forEach(doc => {
+                                                        if (doc.folder) {
+                                                            if (!folders[doc.folder]) folders[doc.folder] = [];
+                                                            folders[doc.folder].push(doc);
+                                                        } else {
+                                                            rootDocs.push(doc);
+                                                        }
+                                                    });
 
                                                         return (
                                                             <Card
@@ -1019,28 +1023,37 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 </CardContent>
                                                             </Card>
                                                         );
-                                                    })}
-                                                </div>
+                                                    });
+                                                })()}
+                                            </div>
+                                        </ScrollArea>
 
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-6 gap-2">
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {selectedKnowledgeBases.length} knowledge base{selectedKnowledgeBases.length !== 1 ? 's' : ''} selected
-                                                    </p>
-                                                    <div className="flex gap-2">
-                                                        <Button onClick={() => {
-                                                            onOpenChange(false);
-                                                        }} size="sm">
-                                                            Save
-                                                        </Button>
-                                                        <Button onClick={() => onOpenChange(false)} variant="outline" size="sm">
-                                                            Cancel
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </>
+                                        {/* Pagination */}
+                                        {useCases.length > kbPerPage && (
+                                            <div className="flex items-center justify-center gap-4 pt-4 border-t">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setKbPage(prev => Math.max(0, prev - 1))}
+                                                    disabled={kbPage === 0}
+                                                >
+                                                    ← Previous
+                                                </Button>
+                                                <span className="text-sm font-medium">
+                                                    Page {kbPage + 1} of {Math.ceil(useCases.length / kbPerPage)} ({useCases.length} total)
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setKbPage(prev => Math.min(Math.ceil(useCases.length / kbPerPage) - 1, prev + 1))}
+                                                    disabled={kbPage >= Math.ceil(useCases.length / kbPerPage) - 1}
+                                                >
+                                                    Next →
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
-                                </ScrollArea>
+                                )}
                             </TabsContent>
                         </Tabs>
                     </div>

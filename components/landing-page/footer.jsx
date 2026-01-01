@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const containerVariants = {
@@ -32,6 +32,7 @@ export function Footer({ onScrollToTop }) {
     const [status, setStatus] = useState("idle"); // idle, loading, success, error
     const [message, setMessage] = useState("");
     const [serviceStatus, setServiceStatus] = useState("checking"); // checking, operational, partial, down
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
 
     useEffect(() => {
         const checkHealth = async () => {
@@ -137,6 +138,13 @@ export function Footer({ onScrollToTop }) {
                     <motion.div variants={itemVariants} className="space-y-4">
                         <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Resources</h4>
                         <div className="flex flex-col gap-2.5">
+                            <button
+                                onClick={() => setFeedbackOpen(true)}
+                                className="inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline text-left"
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                Have a feedback?
+                            </button>
                             <Link
                                 href="/changelog"
                                 className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -372,6 +380,130 @@ export function Footer({ onScrollToTop }) {
                     </div>
                 </div>
             </motion.div>
+
+            {/* Feedback Dialog */}
+            {feedbackOpen && (
+                <FooterFeedbackDialog isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+            )}
         </footer>
+    );
+}
+
+// Footer Feedback Dialog Component
+function FooterFeedbackDialog({ isOpen, onClose }) {
+    const [feedback, setFeedback] = useState('');
+    const [email, setEmail] = useState('');
+    const [status, setStatus] = useState('idle');
+    const [message, setMessage] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!feedback.trim()) {
+            setStatus('error');
+            setMessage('Please enter your feedback');
+            return;
+        }
+        setStatus('loading');
+        setMessage('');
+        try {
+            const response = await fetch('/api/feedback/public', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    feedback: feedback.trim(),
+                    email: email.trim() || undefined,
+                    page: typeof window !== 'undefined' ? window.location.pathname : 'landing'
+                }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setStatus('success');
+                setMessage('Thank you for your feedback!');
+                setFeedback('');
+                setEmail('');
+                setTimeout(() => { onClose?.(); setStatus('idle'); setMessage(''); }, 2000);
+            } else {
+                setStatus('error');
+                setMessage(data.error || 'Failed to submit feedback');
+            }
+        } catch (error) {
+            setStatus('error');
+            setMessage('An error occurred. Please try again.');
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={onClose}
+            />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+            >
+                <div className="p-4 border-b border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Send Feedback</h3>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+                            <span className="sr-only">Close</span>
+                            ✕
+                        </Button>
+                    </div>
+                </div>
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    <input
+                        type="email"
+                        placeholder="Email (optional)"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={status === 'loading' || status === 'success'}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
+                    />
+                    <textarea
+                        placeholder="Tell us what you think..."
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        className="w-full min-h-[120px] px-3 py-2 text-sm rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
+                        disabled={status === 'loading' || status === 'success'}
+                    />
+                    {message && (
+                        <motion.p
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`text-sm flex items-center gap-1.5 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                        >
+                            {status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                            {message}
+                        </motion.p>
+                    )}
+                    <Button type="submit" className="w-full" disabled={status === 'loading' || status === 'success'}>
+                        {status === 'loading' ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Sending...
+                            </>
+                        ) : status === 'success' ? (
+                            <>
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                Sent!
+                            </>
+                        ) : (
+                            <>
+                                <Send className="w-4 h-4 mr-2" />
+                                Send Feedback
+                            </>
+                        )}
+                    </Button>
+                </form>
+            </motion.div>
+        </div>
     );
 }
