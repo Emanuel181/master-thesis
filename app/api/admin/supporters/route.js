@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { securityHeaders, readJsonBody } from "@/lib/api-security";
-import { isAdminEmail } from "@/lib/supporters-data";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 
@@ -10,11 +9,12 @@ const supporterSchema = z.object({
     avatarUrl: z.string().url().optional().nullable().or(z.literal('')),
     occupation: z.string().min(1, 'Occupation is required').max(100),
     company: z.string().max(100).optional().nullable().or(z.literal('')),
+    companyUrl: z.string().url().optional().nullable().or(z.literal('')),
     contributionBio: z.string().min(1, 'Contribution is required').max(500),
     personalBio: z.string().max(500).optional().nullable().or(z.literal('')),
     linkedinUrl: z.string().url().optional().nullable().or(z.literal('')),
     websiteUrl: z.string().url().optional().nullable().or(z.literal('')),
-    tier: z.enum(['sponsor', 'contributor', 'supporter']),
+    tier: z.enum(['sponsor', 'contributor', 'supporter']).optional().default('supporter'),
     featured: z.boolean().default(false),
     order: z.number().int().min(0).max(1000).default(0),
 });
@@ -74,6 +74,7 @@ export async function POST(request) {
                 avatarUrl: validation.data.avatarUrl || null,
                 occupation: validation.data.occupation,
                 company: validation.data.company || null,
+                companyUrl: validation.data.companyUrl || null,
                 contributionBio: validation.data.contributionBio,
                 personalBio: validation.data.personalBio || null,
                 linkedinUrl: validation.data.linkedinUrl || null,

@@ -1,0 +1,12 @@
+/* TEAM */
+Team: VulnIQ Development Team
+Website: https://vulniq.org
+Founded: 2025
+Location: Global (remote)
+
+/* THANKS */
+Thanks: Our users, security researchers, and contributors
+
+/* CONTACT */
+Contact: https://vulniq.org
+

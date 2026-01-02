@@ -205,14 +205,15 @@ export default function SupportersPage() {
         fetchSupporters();
     }, []);
 
-    // All supporters combined (no tier separation)
-    const allSupporters = supporters;
+    // Separate featured and regular supporters
+    const featuredSupporters = supporters.filter(s => s.featured);
+    const regularSupporters = supporters.filter(s => !s.featured);
 
-    // Pagination calculations
-    const totalPages = Math.ceil(allSupporters.length / ITEMS_PER_PAGE);
+    // Pagination calculations (only for regular supporters)
+    const totalPages = Math.ceil(regularSupporters.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const paginatedSupporters = allSupporters.slice(startIndex, endIndex);
+    const paginatedSupporters = regularSupporters.slice(startIndex, endIndex);
 
     // Reset to page 1 when supporters change
     useEffect(() => {
@@ -339,23 +340,80 @@ export default function SupportersPage() {
 
                     {/* Supporters Grid */}
                     {!loading && !error && supporters.length > 0 && (
-                        <div className="space-y-6 sm:space-y-8">
-                            {/* Paginated Grid - responsive columns */}
-                            <motion.div
-                                key={currentPage}
-                                variants={containerVariants}
-                                initial="hidden"
-                                animate="visible"
-                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-[1200px] mx-auto"
-                            >
-                                {paginatedSupporters.map(supporter => (
-                                    <div key={supporter.id} className="w-full flex justify-center">
-                                        <div className="w-full max-w-[380px]">
-                                            <SupporterCard supporter={supporter} />
-                                        </div>
+                        <div className="space-y-10 sm:space-y-16">
+                            {/* Featured Supporters Section */}
+                            {featuredSupporters.length > 0 && (
+                                <div className="space-y-6">
+                                    <div className="text-center">
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mb-4"
+                                        >
+                                            <span className="text-amber-500 text-lg">★</span>
+                                            <span className="text-sm font-medium text-amber-500">Featured Supporters</span>
+                                        </motion.div>
+                                        <p className="text-sm text-muted-foreground">
+                                            Special recognition for outstanding contributions
+                                        </p>
                                     </div>
-                                ))}
-                            </motion.div>
+                                    <motion.div
+                                        variants={containerVariants}
+                                        initial="hidden"
+                                        animate="visible"
+                                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-[1200px] mx-auto"
+                                    >
+                                        {featuredSupporters.map(supporter => (
+                                            <div key={supporter.id} className="w-full flex justify-center">
+                                                <div className="w-full max-w-[380px] relative">
+                                                    {/* Featured badge */}
+                                                    <div className="absolute -top-2 -right-2 z-10">
+                                                        <span className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30">
+                                                            <span className="text-sm">★</span>
+                                                        </span>
+                                                    </div>
+                                                    <div className="ring-2 ring-amber-500/30 rounded-2xl">
+                                                        <SupporterCard supporter={supporter} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </motion.div>
+                                </div>
+                            )}
+
+                            {/* Regular Supporters Section */}
+                            {regularSupporters.length > 0 && (
+                                <div className="space-y-6">
+                                    {featuredSupporters.length > 0 && (
+                                        <div className="text-center">
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted border border-border mb-4"
+                                            >
+                                                <Users className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm font-medium text-muted-foreground">All Supporters</span>
+                                            </motion.div>
+                                        </div>
+                                    )}
+                                    <motion.div
+                                        key={currentPage}
+                                        variants={containerVariants}
+                                        initial="hidden"
+                                        animate="visible"
+                                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-[1200px] mx-auto"
+                                    >
+                                        {paginatedSupporters.map(supporter => (
+                                            <div key={supporter.id} className="w-full flex justify-center">
+                                                <div className="w-full max-w-[380px]">
+                                                    <SupporterCard supporter={supporter} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </motion.div>
+                                </div>
+                            )}
 
                             {/* Pagination Controls */}
                             {totalPages > 1 && (
@@ -419,9 +477,9 @@ export default function SupportersPage() {
                             )}
 
                             {/* Page info */}
-                            {totalPages > 1 && (
+                            {totalPages > 1 && regularSupporters.length > 0 && (
                                 <p className="text-center text-xs sm:text-sm text-muted-foreground">
-                                    Showing {startIndex + 1}-{Math.min(endIndex, allSupporters.length)} of {allSupporters.length} supporters
+                                    Showing {startIndex + 1}-{Math.min(endIndex, regularSupporters.length)} of {regularSupporters.length} supporters
                                 </p>
                             )}
                         </div>

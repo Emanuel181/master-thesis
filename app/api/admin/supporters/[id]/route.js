@@ -9,6 +9,7 @@ const updateSupporterSchema = z.object({
     avatarUrl: z.string().url().optional().nullable().or(z.literal('')),
     occupation: z.string().min(1).max(100).optional(),
     company: z.string().max(100).optional().nullable().or(z.literal('')),
+    companyUrl: z.string().url().optional().nullable().or(z.literal('')),
     contributionBio: z.string().min(1).max(500).optional(),
     personalBio: z.string().max(500).optional().nullable().or(z.literal('')),
     linkedinUrl: z.string().url().optional().nullable().or(z.literal('')),
@@ -61,6 +62,7 @@ export async function PUT(request, { params }) {
         if (validation.data.avatarUrl !== undefined) updateData.avatarUrl = validation.data.avatarUrl || null;
         if (validation.data.occupation !== undefined) updateData.occupation = validation.data.occupation;
         if (validation.data.company !== undefined) updateData.company = validation.data.company || null;
+        if (validation.data.companyUrl !== undefined) updateData.companyUrl = validation.data.companyUrl || null;
         if (validation.data.contributionBio !== undefined) updateData.contributionBio = validation.data.contributionBio;
         if (validation.data.personalBio !== undefined) updateData.personalBio = validation.data.personalBio || null;
         if (validation.data.linkedinUrl !== undefined) updateData.linkedinUrl = validation.data.linkedinUrl || null;

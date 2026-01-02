@@ -190,6 +190,9 @@ export const FloatingNavbar = () => {
                                         <ListItem href="/supporters" title="Supporters" icon={Heart}>
                                             People who support this project.
                                         </ListItem>
+                                        <ListItem href="/security" title="Security Policy" icon={Shield}>
+                                            Vulnerability disclosure policy.
+                                        </ListItem>
                                         <ListItem href="/#connect" title="Support" icon={MessageSquare}>
                                             Get help or contact our team.
                                         </ListItem>

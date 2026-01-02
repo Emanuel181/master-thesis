@@ -120,10 +120,26 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=0, must-revalidate'
-          }
+          },
+
         ]
       },
-      // Other public pages - add security headers
+
+        {
+            source: '/admin/:path*',
+            headers: [
+                {
+                    key: 'X-Robots-Tag',
+                    value: 'noindex, nofollow',
+                },
+                {
+                    key: 'Cache-Control',
+                    value: 'private, no-cache, no-store, must-revalidate',
+                },
+            ],
+        },
+
+        // Other public pages - add security headers
       {
         source: '/(about|privacy|terms|changelog)',
         headers: [

@@ -1,0 +1,12 @@
+# https://vulniq.org llms.txt
+
+- [AI-Powered Security Remediation](https://vulniq.org): Autonomous agents detect, patch, and verify security vulnerabilities.
+- [VulnIQ Login Page](https://vulniq.org/login): Sign in to VulnIQ using various authentication methods.
+- [VulnIQ Changelog Updates](https://vulniq.org/changelog): Latest updates and features for VulnIQ software releases.
+- [VulnIQ Privacy Policy](https://vulniq.org/privacy): Learn how VulnIQ collects and protects your information.
+- [Terms and Conditions](https://vulniq.org/terms): Review VulnIQ's terms, policies, and user agreements here.
+- [Automated Program Repair](https://vulniq.org/about): Exploring LLMs for enhanced vulnerability remediation in software.
+- [Support VulnIQ Project](https://vulniq.org/supporters): Join us in supporting the development of security tools.
+- [XML Sitemap Overview](https://vulniq.org/site-map): Explore the sitemap for website indexing and navigation.
+- [VulnIQ Demo Page](https://vulniq.org/demo): Explore VulnIQ features, shortcuts, and accessibility options.
+- [Vulnerability Management Blog](https://vulniq.org/blog): Explore trends and best practices in code security.

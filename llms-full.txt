@@ -1,0 +1,2085 @@
+# https://vulniq.org llms-full.txt
+
+<|firecrawl-page-1-lllmstxt|>
+## AI-Powered Security Remediation
+[Skip to main content](https://vulniq.org/#main-content)
+
+Open beta
+
+# Security  remediation  without  hallucinations.
+
+Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix isgrounded in your documentation using RAG.
+
+[Read the paper](https://www.overleaf.com/read/vdqywdqywyhr#693113) [Try demo](https://vulniq.org/demo)
+
+AI-Powered Security
+
+auth\_service.py
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+16
+
+17
+
+18
+
+19
+
+20
+
+21
+
+22
+
+23
+
+24
+
+fromflaskimportFlask,req
+
+main
+
+PythonUTF-8Spaces: 4
+
+Vulnerability management is critical.
+
+The next frontier isagentic remediation
+
+- LOGIN
+
+
+
+AUTH
+
+
+
+API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GROUNDED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Grounded security intelligence
+
+
+
+
+
+Each agent retrieves guidance from your security knowledge bases and use-case playbooks (e.g., secure login), so fixes stay consistent with your ground truth.
+
+- GITHUB
+
+
+
+GITLAB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+INGEST
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Secure code ingestion
+
+
+
+
+
+Connect GitHub or GitLab and import repositories in minutes. VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting.
+
+- REVIEWERACTIVE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+IMPLEMENTACTIVE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TESTERACTIVE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+REPORTERACTIVE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Multi-agent security workflow
+
+
+
+
+
+A 4-agent pipeline: reviewer, implementer, tester, reporter. With per-agent specialized prompts and knowledge base for your stack and policies.
+
+- TEST SUITERUNNING
+
+
+
+
+
+auth.spec
+
+
+
+FAIL
+
+
+
+PASS
+
+
+
+
+
+
+
+csrf.spec
+
+
+
+FAIL
+
+
+
+PASS
+
+
+
+
+
+
+
+deps.spec
+
+
+
+FAIL
+
+
+
+PASS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Automated security validation
+
+
+
+
+
+After remediation, the Tester agent validates fixes with targeted security checks, confirming vulnerabilities are resolved without breaking behavior.
+
+- EVIDENCE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+KB CITED
+
+
+
+
+
+
+
+REPORTGENERATING
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Professional security reports
+
+
+
+
+
+The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes. Ready for audits.
+
+
+### Built with modern technologies
+
+- [Next.js](https://nextjs.org/)
+- [Docker](https://www.docker.com/)
+- [React](https://react.dev/)
+- [GitHub](https://github.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AWS](https://aws.amazon.com/)
+- [Node.js](https://nodejs.org/)
+
+- [Next.js](https://nextjs.org/)
+- [Docker](https://www.docker.com/)
+- [React](https://react.dev/)
+- [GitHub](https://github.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AWS](https://aws.amazon.com/)
+- [Node.js](https://nodejs.org/)
+
+- [Next.js](https://nextjs.org/)
+- [Docker](https://www.docker.com/)
+- [React](https://react.dev/)
+- [GitHub](https://github.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AWS](https://aws.amazon.com/)
+- [Node.js](https://nodejs.org/)
+
+Buildbetter
+
+apps with VulnIQ
+
+## Who Benefits from VulnIQ?
+
+From learners to enterprises, VulnIQ adapts to your workflow.
+
+### 01
+
+### Security Learners
+
+Hands-on insight with real vulnerabilities. Four agents guide you through detection, fixes, testing, and documentation.
+
+### 02
+
+### Startups
+
+Strong security without a dedicated team. Import code, run the workflow, ship fixes fast.
+
+### 03
+
+### Universities
+
+Connect theory with practice. Students learn real remediation with curriculum-aligned prompts.
+
+### 04
+
+### Open Source
+
+Transparent, community-driven security. Shared knowledge bases produce trustworthy fixes.
+
+### 05
+
+### Enterprise Teams
+
+Scale security across large codebases with specialized prompts and compliance tracking.
+
+#### Guided Learning
+
+Step-by-step remediation
+
+#### Move Fast
+
+Security at startup speed
+
+#### Academic Focus
+
+Theory meets practice
+
+#### Community Driven
+
+Transparent improvements
+
+#### Enterprise Scale
+
+Compliant & repeatable
+
+![Agentic RAG](https://vulniq.org/demo/agentic-rag.png)
+
+Agentic RAG
+
+LLMs act as central controllers orchestrating reasoning and tool interaction
+
+![Zero Hallucinations](https://vulniq.org/demo/zero-hallucinations.png)
+
+Zero Hallucinations
+
+Knowledge-grounded fixes eliminate unreliable or fabricated remediation suggestions
+
+![Security Knowledge](https://vulniq.org/demo/security-knowledge.png)
+
+Security Knowledge
+
+RAG retrieves best-practice guidelines, relevant code snippets, and historical fixes
+
+![Context-Aware](https://vulniq.org/demo/context-aware.png)
+
+Context-Aware
+
+Specialized retrieval methods yield substantial improvements over baselines
+
+## Power your agents with   state-of-the-art models
+
+Don't get locked into a single ecosystem. VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost for your specific use cases.
+
+OpenAIAnthropicGoogle GeminiLlama
+
+### Model agnostic
+
+Choose among state of the art providers to power your agents.
+
+# VulnIQ
+
+Making code security autonomous by default
+
+[Get Started](https://vulniq.org/login) [Learn More](https://vulniq.org/#features)
+
+## Frequently Asked Questions
+
+Everything you need to know about VulnIQ and how it can help secure your code.
+
+### What is VulnIQ?
+
+### How does VulnIQ differ from traditional security scanners?
+
+### What programming languages are supported?
+
+### Can I integrate VulnIQ with my CI/CD pipeline?
+
+### What AI providers does VulnIQ support?
+
+### Is there a free tier available?
+
+### How accurate is VulnIQ's vulnerability detection?
+
+Still have questions?
+
+Ask them here →
+
+## Security knowledge hub
+
+Expert insights on application security, vulnerability detection, and secure development practices from the VulnIQ team.
+
+Vulnerability Analysis
+
+December 28, 202412 min read
+
+Understanding SQL injection: detection and prevention
+
+SQL injection remains one of the most dangerous vulnerabilities in web applications. Learn how attackers exploit database queries and discover proven strategies to protect your applications.
+
+[Read Article](https://vulniq.org/blog/understanding-sql-injection-prevention)
+
+Security Testing
+
+December 25, 202415 min read
+
+Modern application security testing: SAST and DAST strategy
+
+Discover how to combine static and dynamic security testing methodologies to create a robust application security program and integrate testing into your CI/CD pipeline.
+
+[Read Article](https://vulniq.org/blog/modern-application-security-testing-strategies)
+
+Web Security
+
+December 22, 202414 min read
+
+Cross-site scripting defense: protecting your web apps
+
+Cross-site scripting vulnerabilities allow attackers to inject malicious scripts into trusted websites. Learn the different types of XSS attacks and implement effective defenses.
+
+[Read Article](https://vulniq.org/blog/cross-site-scripting-defense-guide)
+
+[View all articles](https://vulniq.org/blog)
+
+## Get to know
+
+VulnIQ
+
+You can try VulnIQ right now - no account required.Experience AI-powered code security analysis instantly.
+
+[Try the interactive demo](https://vulniq.org/demo) [Learn more](https://vulniq.org/about)
+
+Give us your feedback
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-2-lllmstxt|>
+## VulnIQ Login Page
+[Skip to main content](https://vulniq.org/login#main-content)
+
+[![Logo](https://vulniq.org/_next/image?url=%2Fweb-app-manifest-512x512.png&w=48&q=75)VulnIQ](https://vulniq.org/)
+
+[Back to Home](https://vulniq.org/) [Services are operational](https://status.vulniq.org/)
+
+Welcome
+
+Choose your preferred method to sign in to VulnIQ
+
+Github
+
+Google
+
+Microsoft
+
+GitLab
+
+Or continue with
+
+Email
+
+Sign in with email
+
+By continuing, you agree to VulnIQ's [Terms of Service](https://vulniq.org/terms) and [Privacy Policy](https://vulniq.org/privacy).
+
+# Making code security autonomous by default
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-3-lllmstxt|>
+## VulnIQ Changelog Updates
+[Skip to main content](https://vulniq.org/changelog#main-content)
+
+# Changelog
+
+[Back to Home](https://vulniq.org/)
+
+December 2025
+
+v1.2.0
+
+## Observability, mobile & Product Hunt
+
+Minor Update
+
+Enhanced system monitoring, mobile responsiveness, and public launch on Product Hunt.
+
+#### Observability
+
+- Added real-time service health monitoring with status indicators.
+- Integrated Gatus for uptime monitoring at status.vulniq.org.
+- Live status badges in footer and login page showing operational state.
+
+#### Product Hunt
+
+- Launched VulnIQ on Product Hunt for public visibility.
+- Added Product Hunt card in footer with direct link to product page.
+- Enhanced SEO with structured data for better search engine indexing.
+
+#### Mobile optimizations
+
+- Improved responsive design across all pages for mobile devices.
+- Optimized tables with horizontal scrolling for smaller screens.
+- Enhanced touch targets and navigation for mobile users.
+
+December 2025
+
+v1.1.0
+
+## Productivity & navigation
+
+Minor Update
+
+Focus on developer experience with keyboard shortcuts and a polished landing page.
+
+#### Shortcuts
+
+- Implemented browser-based keyboard shortcuts for faster navigation across the app.
+- Quick actions for navigating between Dashboard, Editor, and Settings.
+
+#### Landing page
+
+- Launched the new public-facing landing page showcasing features and use cases.
+- Integrated smooth scrolling, feature grids, and interactive demos.
+
+November 2025
+
+v1.0.0
+
+## Auth & workflow configuration
+
+Major Release
+
+A major release introducing secure authentication and the visual workflow builder.
+
+#### Authentication
+
+- Implemented Sign In page with OTP (One-Time Password) support.
+- Secure session management and user onboarding flow.
+
+#### Workflow engine
+
+- Added Visual Workflow Configurator: A drag-and-drop interface to design remediation pipelines.
+- Configure which agents (Reviewer, Fixer, Tester) to use for specific tasks.
+- Link specific Knowledge Bases and System Prompts to each agent in the chain.
+
+October 2025
+
+v0.9.0
+
+## Customization & feedback
+
+Minor Update
+
+Empowering users to personalize their experience and provide feedback.
+
+#### Customization
+
+- Page customization: Users can now toggle themes and layout preferences.
+- Code editor customization: Adjust font size, themes, and keybindings.
+- Notification system: Real-time alerts for scan completions and system updates.
+
+#### Feedback
+
+- Implemented a global feedback mechanism for reporting bugs and suggesting features.
+- User profile page added for managing account details.
+
+October 2025
+
+v0.8.0
+
+## Knowledge base & profile
+
+Major Release
+
+Building the foundation for RAG (Retrieval-Augmented Generation).
+
+#### Knowledge base
+
+- Define "Use Cases" to group related security documents.
+- Add descriptions and metadata to Use Cases for better context.
+- Import and index documents (PDFs, Markdown) relevant to each Use Case.
+
+#### User profile
+
+- Launched the User Profile page.
+- Manage personal settings and view account activity.
+
+October 2025
+
+v0.5.0
+
+## Dashboard & git integration
+
+Major Release
+
+The central hub for managing projects and repositories.
+
+#### Dashboard
+
+- Created the Home Page dashboard.
+- Overview of current imported projects and their status.
+
+#### Integrations
+
+- GitHub & GitLab Import: Directly connect and import repositories.
+- System prompts: Organize and edit system prompts for each agent type.
+
+October 2025
+
+v0.1.0
+
+## The code editor
+
+Initial Release
+
+The first milestone: Preparing code for agentic review.
+
+#### Editor
+
+- Launched the core Code Editor interface.
+- Features: Code formatting, language selection, and Use Case selection.
+- Code locking: Signal that code is ready for the agentic review pipeline.
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-4-lllmstxt|>
+## VulnIQ Privacy Policy
+[Skip to main content](https://vulniq.org/privacy#main-content)
+
+# Privacy Policy
+
+Updated at 2025-12-23
+
+VulnIQ ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by VulnIQ.
+
+This Privacy Policy applies to our website, and its associated subdomains (collectively, our "Service") alongside our application, VulnIQ. By accessing or using our Service, you signify that you have read, understood, and agree to our collection, storage, use, and disclosure of your personal information as described in this Privacy Policy and our Terms of Service.
+
+## Table of contents
+
+[1.Definitions and key terms](https://vulniq.org/privacy#definitions) [2.What information do we collect?](https://vulniq.org/privacy#collect) [3.How do we use the information?](https://vulniq.org/privacy#use) [4.End user information from third parties](https://vulniq.org/privacy#end-user) [5.Customer information from third parties](https://vulniq.org/privacy#customer) [6.Do we share information with third parties?](https://vulniq.org/privacy#share) [7.Where and when is information collected?](https://vulniq.org/privacy#where-when) [8.How do we use your email address?](https://vulniq.org/privacy#email) [9.How long do we keep your information?](https://vulniq.org/privacy#retention) [10.How do we protect your information?](https://vulniq.org/privacy#protect) [11.International data transfers](https://vulniq.org/privacy#transfer) [12.Is the information secure?](https://vulniq.org/privacy#secure) [13.Can I update or correct my information?](https://vulniq.org/privacy#update) [14.Sale of business](https://vulniq.org/privacy#sale) [15.Affiliates](https://vulniq.org/privacy#affiliates) [16.Governing law](https://vulniq.org/privacy#governing) [17.Your consent](https://vulniq.org/privacy#consent) [18.Links to other websites](https://vulniq.org/privacy#links) [19.Cookies](https://vulniq.org/privacy#cookies) [20.Blocking and disabling cookies](https://vulniq.org/privacy#blocking) [21.Kids' privacy](https://vulniq.org/privacy#kids) [22.Changes to our privacy policy](https://vulniq.org/privacy#changes) [23.Third-party services](https://vulniq.org/privacy#third-party) [24.Tracking technologies](https://vulniq.org/privacy#tracking) [25.GDPR information](https://vulniq.org/privacy#gdpr) [26.What is GDPR?](https://vulniq.org/privacy#gdpr-what) [27.What is personal data?](https://vulniq.org/privacy#personal-data) [28.Data protection principles](https://vulniq.org/privacy#data-principles) [29.Why is GDPR important?](https://vulniq.org/privacy#gdpr-important) [30.Individual data subject rights](https://vulniq.org/privacy#rights) [31.Contact us](https://vulniq.org/privacy#contact)
+
+## Definitions and key terms
+
+To help explain things as clearly as possible in this Privacy Policy, every time any of these terms are referenced, are strictly defined as:
+
+- **Cookie:** small amount of data generated by a website and saved by your web browser. It is used to identify your browser, provide analytics, remember information about you such as your language preference or login information.
+- **Company:** when this policy mentions "Company," "we," "us," or "our," it refers to VulnIQ, that is responsible for your information under this Privacy Policy.
+- **Country:** where VulnIQ or the owners/founders of VulnIQ are based, in this case is Romania.
+- **Customer:** refers to the company, organization or person that signs up to use the VulnIQ Service to manage the relationships with your consumers or service users.
+- **Device:** any internet connected device such as a phone, tablet, computer or any other device that can be used to visit VulnIQ and use the services.
+- **IP address:** Every device connected to the Internet is assigned a number known as an Internet protocol (IP) address. These numbers are usually assigned in geographic blocks. An IP address can often be used to identify the location from which a device is connecting to the Internet.
+- **Personnel:** refers to those individuals who are employed by VulnIQ or are under contract to perform a service on behalf of one of the parties.
+- **Personal Data:** any information that directly, indirectly, or in connection with other information — including a personal identification number — allows for the identification or identifiability of a natural person.
+- **Service:** refers to the service provided by VulnIQ as described in the relative terms (if available) and on this platform.
+- **Third-party service:** refers to advertisers, contest sponsors, promotional and marketing partners, and others who provide our content or whose products or services we think may interest you.
+- **Website:** VulnIQ's site.
+- **You:** a person or entity that is registered with VulnIQ to use the Services.
+
+## What information do we collect?
+
+We collect information from you when you visit our app, register on our site, place an order, subscribe to our newsletter, respond to a survey or fill out a form.
+
+- Name / Username
+- Phone Numbers
+- Email Addresses
+- Job Titles
+
+## How do we use the information we collect?
+
+Any of the information we collect from you may be used in one of the following ways:
+
+- To personalize your experience (your information helps us to better respond to your individual needs)
+- To improve our app (we continually strive to improve our app offerings based on the information and feedback we receive from you)
+- To improve customer service (your information helps us to more effectively respond to your customer service requests and support needs)
+- To process transactions
+- To administer a contest, promotion, survey or other site feature
+- To send periodic emails
+
+## When does VulnIQ use end user information from third parties?
+
+VulnIQ will collect End User Data necessary to provide the VulnIQ services to our customers.
+
+End users may voluntarily provide us with information they have made available on social media websites. If you provide us with any such information, we may collect publicly available information from the social media websites you have indicated. You can control how much of your information social media websites make public by visiting these websites and changing your privacy settings.
+
+## When does VulnIQ use customer information from third parties?
+
+We receive some information from the third parties when you contact us. For example, when you submit your email address to us to show interest in becoming a VulnIQ customer, we receive information from a third party that provides automated fraud detection services to VulnIQ.
+
+We also occasionally collect information that is made publicly available on social media websites. You can control how much of your information social media websites make public by visiting these websites and changing your privacy settings.
+
+## Where and when is information collected from customers and end users?
+
+VulnIQ will collect personal information that you submit to us. We may also receive personal information about you from third parties as described above.
+
+## How do we use your email address?
+
+By submitting your email address on this app, you agree to receive emails from us. You can cancel your participation in any of these email lists at any time by clicking on the opt-out link or other unsubscribe option that is included in the respective email. We only send emails to people who have authorized us to contact them, either directly, or through a third party. We do not send unsolicited commercial emails, because we hate spam as much as you do.
+
+By submitting your email address, you also agree to allow us to use your email address for customer audience targeting on sites like Facebook, where we display custom advertising to specific people who have opted-in to receive communications from us.
+
+Email addresses submitted only through the order processing page will be used for the sole purpose of sending you information and updates pertaining to your order. If, however, you have provided the same email to us through another method, we may use it for any of the purposes stated in this Policy.
+
+**Note:** If at any time you would like to unsubscribe from receiving future emails, we include detailed unsubscribe instructions at the bottom of each email.
+
+## How long do we keep your information?
+
+We keep your information only so long as we need it to provide VulnIQ to you and fulfill the purposes described in this policy. This is also the case for anyone that we share your information with and who carries out services on our behalf.
+
+When we no longer need to use your information and there is no need for us to keep it to comply with our legal or regulatory obligations, we'll either remove it from our systems or depersonalize it so that we can't identify you.
+
+## How do we protect your information?
+
+We implement a variety of security measures to maintain the safety of your personal information when you place an order or enter, submit, or access your personal information. We offer the use of a secure server. All supplied sensitive/credit information is transmitted via Secure Socket Layer (SSL) technology and then encrypted into our Payment gateway providers database only to be accessible by those authorized with special access rights to such systems, and are required to keep the information confidential.
+
+After a transaction, your private information (credit cards, social security numbers, financials, etc.) is never kept on file. We cannot, however, ensure or warrant the absolute security of any information you transmit to VulnIQ or guarantee that your information on the Service may not be accessed, disclosed, altered, or destroyed by a breach of any of our physical, technical, or managerial safeguards.
+
+## Could my information be transferred to other countries?
+
+VulnIQ is incorporated in Romania. Information collected via our website, through direct interactions with you, or from use of our help services may be transferred from time to time to our offices or personnel, or to third parties, located throughout the world, and may be viewed and hosted anywhere in the world, including countries that may not have laws of general applicability regulating the use and transfer of such data.
+
+To the fullest extent allowed by applicable law, by using any of the above, you voluntarily consent to the trans-border transfer and hosting of such information.
+
+## Is the information collected through the VulnIQ dervice decure?
+
+We take precautions to protect the security of your information. We have physical, electronic, and managerial procedures to help safeguard, prevent unauthorized access, maintain data security, and correctly use your information.
+
+However, neither people nor security systems are foolproof, including encryption systems. In addition, people can commit intentional crimes, make mistakes or fail to follow policies. Therefore, while we use reasonable efforts to protect your personal information, we cannot guarantee its absolute security.
+
+If applicable law imposes any non-disclaimable duty to protect your personal information, you agree that intentional misconduct will be the standards used to measure our compliance with that duty.
+
+## Can I update or correct my information?
+
+The rights you have to request updates or corrections to the information VulnIQ collects depend on your relationship with VulnIQ. Personnel may update or correct their information as detailed in our internal company employment policies.
+
+Customers have the right to request the restriction of certain uses and disclosures of personally identifiable information as follows. You can contact us in order to (1) update or correct your personally identifiable information, (2) change your preferences with respect to communications and other information you receive from us, or (3) delete the personally identifiable information maintained about you on our systems (subject to the following paragraph), by cancelling your account.
+
+Such updates, corrections, changes and deletions will have no effect on other information that we maintain, or information that we have provided to third parties in accordance with this Privacy Policy prior to such update, correction, change or deletion. To protect your privacy and security, we may take reasonable steps (such as requesting a unique password) to verify your identity before granting you profile access or making corrections. You are responsible for maintaining the secrecy of your unique password and account information at all times.
+
+You should be aware that it is not technologically possible to remove each and every record of the information you have provided to us from our system. The need to back up our systems to protect information from inadvertent loss means that a copy of your information may exist in a non-erasable form that will be difficult or impossible for us to locate. Promptly after receiving your request, all personal information stored in databases we actively use, and other readily searchable media will be updated, corrected, changed or deleted, as appropriate, as soon as and to the extent reasonably and technically practicable.
+
+If you are an end user and wish to update, delete, or receive any information we have about you, you may do so by contacting the organization of which you are a customer.
+
+## Sale of business
+
+We reserve the right to transfer information to a third party in the event of a sale, merger or other transfer of all or substantially all of the assets of VulnIQ or any of its Corporate Affiliates (as defined herein), or that portion of VulnIQ or any of its Corporate Affiliates to which the Service relates, or in the event that we discontinue our business or file a petition or have filed against us a petition in bankruptcy, reorganization or similar proceeding, provided that the third party agrees to adhere to the terms of this Privacy Policy.
+
+## Affiliates
+
+We may disclose information (including personal information) about you to our Corporate Affiliates. For purposes of this Privacy Policy, "Corporate Affiliate" means any person or entity which directly or indirectly controls, is controlled by or is under common control with VulnIQ, whether by ownership or otherwise.
+
+Any information relating to you that we provide to our Corporate Affiliates will be treated by those Corporate Affiliates in accordance with the terms of this Privacy Policy.
+
+## Governing law
+
+This Privacy Policy is governed by the laws of Romania without regard to its conflict of laws provision. You consent to the exclusive jurisdiction of the courts in connection with any action or dispute arising between the parties under or in connection with this Privacy Policy except for those individuals who may have rights to make claims under Privacy Shield, or the Swiss-US framework.
+
+The laws of Romania, excluding its conflicts of law rules, shall govern this Agreement and your use of the app. Your use of the app may also be subject to other local, state, national, or international laws.
+
+By using VulnIQ or contacting us directly, you signify your acceptance of this Privacy Policy. If you do not agree to this Privacy Policy, you should not engage with our website, or use our services. Continued use of the website, direct engagement with us, or following the posting of changes to this Privacy Policy that do not significantly affect the use or disclosure of your personal information will mean that you accept those changes.
+
+## Your consent
+
+We've updated our Privacy Policy to provide you with complete transparency into what is being set when you visit our site and how it's being used. By using our app, registering an account, or making a purchase, you hereby consent to our Privacy Policy and agree to its terms.
+
+## Links to other websites
+
+This Privacy Policy applies only to the Services. The Services may contain links to other websites not operated or controlled by VulnIQ. We are not responsible for the content, accuracy or opinions expressed in such websites, and such websites are not investigated, monitored or checked for accuracy or completeness by us.
+
+Please remember that when you use a link to go from the Services to another website, our Privacy Policy is no longer in effect. Your browsing and interaction on any other website, including those that have a link on our platform, is subject to that website's own rules and policies. Such third parties may use their own cookies or other methods to collect information about you.
+
+## Cookies
+
+VulnIQ uses "Cookies" to identify the areas of our website that you have visited. A Cookie is a small piece of data stored on your computer or mobile device by your web browser. We use Cookies to enhance the performance and functionality of our app but are non-essential to their use.
+
+However, without these cookies, certain functionality like videos may become unavailable or you would be required to enter your login details every time you visit the app as we would not be able to remember that you had logged in previously.
+
+Most web browsers can be set to disable the use of Cookies. However, if you disable Cookies, you may not be able to access functionality on our website correctly or at all. We never place Personally Identifiable Information in Cookies.
+
+## Blocking and disabling cookies and similar technologies
+
+Wherever you're located you may also set your browser to block cookies and similar technologies, but this action may block our essential cookies and prevent our website from functioning properly, and you may not be able to fully utilize all of its features and services.
+
+You should also be aware that you may also lose some saved information (e.g. saved login details, site preferences) if you block cookies on your browser. Different browsers make different controls available to you. Disabling a cookie or category of cookie does not delete the cookie from your browser, you will need to do this yourself from within your browser, you should visit your browser's help menu for more information.
+
+## Kids' privacy
+
+We do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from anyone under the age of 13. If You are a parent or guardian and You are aware that Your child has provided Us with Personal Data, please contact Us.
+
+If We become aware that We have collected Personal Data from anyone under the age of 13 without verification of parental consent, We take steps to remove that information from Our servers.
+
+## Changes to our privacy policy
+
+We may change our Service and policies, and we may need to make changes to this Privacy Policy so that they accurately reflect our Service and policies. Unless otherwise required by law, we will notify you (for example, through our Service) before we make changes to this Privacy Policy and give you an opportunity to review them before they go into effect.
+
+Then, if you continue to use the Service, you will be bound by the updated Privacy Policy. If you do not want to agree to this or any updated Privacy Policy, you can delete your account.
+
+## Third-party services
+
+We may display, include or make available third-party content (including data, information, applications and other products services) or provide links to third-party websites or services ("Third-Party Services").
+
+You acknowledge and agree that VulnIQ shall not be responsible for any Third-Party Services, including their accuracy, completeness, timeliness, validity, copyright compliance, legality, decency, quality or any other aspect thereof. VulnIQ does not assume and shall not have any liability or responsibility to you or any other person or entity for any Third-Party Services.
+
+Third-Party Services and links thereto are provided solely as a convenience to you and you access and use them entirely at your own risk and subject to such third parties' terms and conditions.
+
+## Tracking technologies
+
+### Cookies
+
+We use Cookies to enhance the performance and functionality of our app but are non-essential to their use. However, without these cookies, certain functionality like videos may become unavailable or you would be required to enter your login details every time you visit the app as we would not be able to remember that you had logged in previously.
+
+### Local Storage
+
+Local Storage sometimes known as DOM storage, provides web apps with methods and protocols for storing client-side data. Web storage supports persistent data storage, similar to cookies but with a greatly enhanced capacity and no information stored in the HTTP request header.
+
+### Sessions
+
+VulnIQ uses "Sessions" to identify the areas of our website that you have visited. A Session is a small piece of data stored on your computer or mobile device by your web browser.
+
+## Information about General Data Protection Regulation (GDPR)
+
+We may be collecting and using information from you if you are from the European Economic Area (EEA), and in this section of our Privacy Policy we are going to explain exactly how and why is this data collected, and how we maintain this data under protection from being replicated or used in the wrong way.
+
+## What is GDPR?
+
+GDPR is an EU-wide privacy and data protection law that regulates how EU residents' data is protected by companies and enhances the control the EU residents have, over their personal data.
+
+The GDPR is relevant to any globally operating company and not just the EU-based businesses and EU residents. Our customers' data is important irrespective of where they are located, which is why we have implemented GDPR controls as our baseline standard for all our operations worldwide.
+
+## What is personal data?
+
+Any data that relates to an identifiable or identified individual. GDPR covers a broad spectrum of information that could be used on its own, or in combination with other pieces of information, to identify a person. Personal data extends beyond a person's name or email address. Some examples include financial information, political opinions, genetic data, biometric data, IP addresses, physical address, sexual orientation, and ethnicity.
+
+## The data protection principles
+
+The Data Protection Principles include requirements such as:
+
+- Personal data collected must be processed in a fair, legal, and transparent way and should only be used in a way that a person would reasonably expect.
+- Personal data should only be collected to fulfil a specific purpose and it should only be used for that purpose. Organizations must specify why they need the personal data when they collect it.
+- Personal data should be held no longer than necessary to fulfil its purpose.
+- People covered by the GDPR have the right to access their own personal data. They can also request a copy of their data, and that their data be updated, deleted, restricted, or moved to another organization.
+
+## Why is GDPR important?
+
+GDPR adds some new requirements regarding how companies should protect individuals' personal data that they collect and process. It also raises the stakes for compliance by increasing enforcement and imposing greater fines for breach.
+
+Beyond these facts it's simply the right thing to do. At VulnIQ we strongly believe that your data privacy is very important and we already have solid security and privacy practices in place that go beyond the requirements of this new regulation.
+
+## Individual data subject's rights - data access, portability and deletion
+
+We are committed to helping our customers meet the data subject rights requirements of GDPR. VulnIQ processes or stores all personal data in fully vetted, DPA compliant vendors. We do store all conversation and personal data for up to 6 years unless your account is deleted. In which case, we dispose of all data in accordance with our Terms of Service and Privacy Policy, but we will not hold it longer than 60 days.
+
+We are aware that if you are working with EU customers, you need to be able to provide them with the ability to access, update, retrieve and remove personal data. We got you! We've been set up as self service from the start and have always given you access to your data and your customers data. Our customer support team is here for you to answer any questions you might have about working with the API.
+
+## Contact us
+
+Don't hesitate to contact us if you have any questions.
+
+**Via email:** [emanuel.rusu.secure@gmail.com](mailto:emanuel.rusu.secure@gmail.com)
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-5-lllmstxt|>
+## Terms and Conditions
+[Skip to main content](https://vulniq.org/terms#main-content)
+
+# Terms & Conditions
+
+Updated at 2025-12-23
+
+## Table of contents
+
+[1.General terms](https://vulniq.org/terms#general) [2.License](https://vulniq.org/terms#license) [3.Meanings](https://vulniq.org/terms#meanings) [4.Restrictions](https://vulniq.org/terms#restrictions) [5.Return and refund policy](https://vulniq.org/terms#refund) [6.Your suggestions](https://vulniq.org/terms#suggestions) [7.Your consent](https://vulniq.org/terms#consent) [8.Links to other websites](https://vulniq.org/terms#links) [9.Cookies](https://vulniq.org/terms#cookies) [10.Changes to our terms](https://vulniq.org/terms#changes) [11.Modifications to our app](https://vulniq.org/terms#modifications) [12.Updates to our app](https://vulniq.org/terms#updates) [13.Third-party services](https://vulniq.org/terms#third-party) [14.Term and termination](https://vulniq.org/terms#termination) [15.Copyright infringement](https://vulniq.org/terms#copyright) [16.Indemnification](https://vulniq.org/terms#indemnification) [17.No warranties](https://vulniq.org/terms#warranties) [18.Limitation of liability](https://vulniq.org/terms#liability) [19.Severability](https://vulniq.org/terms#severability) [20.Waiver](https://vulniq.org/terms#waiver) [21.Amendments](https://vulniq.org/terms#amendments) [22.Entire Agreement](https://vulniq.org/terms#entire) [23.Updates to our terms](https://vulniq.org/terms#updates-terms) [24.Intellectual property](https://vulniq.org/terms#intellectual) [25.Agreement to arbitrate](https://vulniq.org/terms#arbitrate) [26.Notice of dispute](https://vulniq.org/terms#dispute) [27.Binding arbitration](https://vulniq.org/terms#binding) [28.Submissions and privacy](https://vulniq.org/terms#submissions) [29.Promotions](https://vulniq.org/terms#promotions) [30.Typographical errors](https://vulniq.org/terms#errors) [31.Miscellaneous](https://vulniq.org/terms#miscellaneous) [32.Disclaimer](https://vulniq.org/terms#disclaimer) [33.Contact us](https://vulniq.org/terms#contact)
+
+## General terms
+
+By accessing and placing an order with VulnIQ, you confirm that you are in agreement with and bound by the terms of service contained in the Terms & Conditions outlined below. These terms apply to the entire website and any email or other type of communication between you and VulnIQ.
+
+Under no circumstances shall VulnIQ team be liable for any direct, indirect, special, incidental or consequential damages, including, but not limited to, loss of data or profit, arising out of the use, or the inability to use, the materials on this site, even if VulnIQ team or an authorized representative has been advised of the possibility of such damages. If your use of materials from this site results in the need for servicing, repair or correction of equipment or data, you assume any costs thereof.
+
+VulnIQ will not be responsible for any outcome that may occur during the course of usage of our resources. We reserve the rights to change prices and revise the resources usage policy in any moment.
+
+## License
+
+VulnIQ grants you a revocable, non-exclusive, non-transferable, limited license to download, install and use the app strictly in accordance with the terms of this Agreement.
+
+These Terms & Conditions are a contract between you and VulnIQ (referred to in these Terms & Conditions as "VulnIQ", "us", "we" or "our"), the provider of the VulnIQ website and the services accessible from the VulnIQ website (which are collectively referred to in these Terms & Conditions as the "VulnIQ Service").
+
+You are agreeing to be bound by these Terms & Conditions. If you do not agree to these Terms & Conditions, please do not use the VulnIQ Service. In these Terms & Conditions, "you" refers both to you as an individual and to the entity you represent. If you violate any of these Terms & Conditions, we reserve the right to cancel your account or block access to your account without notice.
+
+## Meanings
+
+For this Terms & Conditions:
+
+- **Cookie:** small amount of data generated by a website and saved by your web browser. It is used to identify your browser, provide analytics, remember information about you such as your language preference or login information.
+- **Company:** when this policy mentions "Company," "we," "us," or "our," it refers to VulnIQ, that is responsible for your information under this Terms & Conditions.
+- **Country:** where VulnIQ or the owners/founders of VulnIQ are based, in this case is Romania.
+- **Device:** any internet connected device such as a phone, tablet, computer or any other device that can be used to visit VulnIQ and use the services.
+- **Service:** refers to the service provided by VulnIQ as described in the relative terms (if available) and on this platform.
+- **Third-party service:** refers to advertisers, contest sponsors, promotional and marketing partners, and others who provide our content or whose products or services we think may interest you.
+- **Website:** VulnIQ's site.
+- **You:** a person or entity that is registered with VulnIQ to use the Services.
+
+## Restrictions
+
+You agree not to, and you will not permit others to:
+
+- License, sell, rent, lease, assign, distribute, transmit, host, outsource, disclose or otherwise commercially exploit the app or make the platform available to any third party.
+- Modify, make derivative works of, disassemble, decrypt, reverse compile or reverse engineer any part of the app.
+- Remove, alter or obscure any proprietary notice (including any notice of copyright or trademark) of VulnIQ or its affiliates, partners, suppliers or the licensors of the app.
+
+## Return and refund policy
+
+Thanks for shopping at VulnIQ. We appreciate the fact that you like to buy the stuff we build. We also want to make sure you have a rewarding experience while you're exploring, evaluating, and purchasing our products.
+
+As with any shopping experience, there are terms and conditions that apply to transactions at VulnIQ. We'll be as brief as our attorneys will allow. The main thing to remember is that by placing an order or making a purchase at VulnIQ, you agree to the terms along with VulnIQ's Privacy Policy.
+
+If, for any reason, You are not completely satisfied with any good or service that we provide, don't hesitate to contact us and we will discuss any of the issues you are going through with our product.
+
+## Your suggestions
+
+Any feedback, comments, ideas, improvements or suggestions (collectively, "Suggestions") provided by you to VulnIQ with respect to the app shall remain the sole and exclusive property of VulnIQ.
+
+VulnIQ shall be free to use, copy, modify, publish, or redistribute the Suggestions for any purpose and in any way without any credit or any compensation to you.
+
+## Your consent
+
+We've updated our Terms & Conditions to provide you with complete transparency into what is being set when you visit our site and how it's being used. By using our app, registering an account, or making a purchase, you hereby consent to our Terms & Conditions.
+
+## Links to other websites
+
+This Terms & Conditions applies only to the Services. The Services may contain links to other websites not operated or controlled by VulnIQ. We are not responsible for the content, accuracy or opinions expressed in such websites, and such websites are not investigated, monitored or checked for accuracy or completeness by us.
+
+Please remember that when you use a link to go from the Services to another website, our Terms & Conditions are no longer in effect. Your browsing and interaction on any other website, including those that have a link on our platform, is subject to that website's own rules and policies. Such third parties may use their own cookies or other methods to collect information about you.
+
+## Cookies
+
+VulnIQ uses "Cookies" to identify the areas of our website that you have visited. A Cookie is a small piece of data stored on your computer or mobile device by your web browser. We use Cookies to enhance the performance and functionality of our app but are non-essential to their use.
+
+However, without these cookies, certain functionality like videos may become unavailable or you would be required to enter your login details every time you visit the app as we would not be able to remember that you had logged in previously.
+
+Most web browsers can be set to disable the use of Cookies. However, if you disable Cookies, you may not be able to access functionality on our website correctly or at all. We never place Personally Identifiable Information in Cookies.
+
+## Changes to our terms & conditions
+
+You acknowledge and agree that VulnIQ may stop (permanently or temporarily) providing the Service (or any features within the Service) to you or to users generally at VulnIQ's sole discretion, without prior notice to you.
+
+You may stop using the Service at any time. You do not need to specifically inform VulnIQ when you stop using the Service. You acknowledge and agree that if VulnIQ disables access to your account, you may be prevented from accessing the Service, your account details or any files or other materials which is contained in your account.
+
+If we decide to change our Terms & Conditions, we will post those changes on this page, and/or update the Terms & Conditions modification date below.
+
+## Modifications to our app
+
+VulnIQ reserves the right to modify, suspend or discontinue, temporarily or permanently, the app or any service to which it connects, with or without notice and without liability to you.
+
+## Updates to our app
+
+VulnIQ may from time to time provide enhancements or improvements to the features/functionality of the app, which may include patches, bug fixes, updates, upgrades and other modifications ("Updates").
+
+Updates may modify or delete certain features and/or functionalities of the app. You agree that VulnIQ has no obligation to (i) provide any Updates, or (ii) continue to provide or enable any particular features and/or functionalities of the app to you.
+
+You further agree that all Updates will be (i) deemed to constitute an integral part of the app, and (ii) subject to the terms and conditions of this Agreement.
+
+## Third-party services
+
+We may display, include or make available third-party content (including data, information, applications and other products services) or provide links to third-party websites or services ("Third-Party Services").
+
+You acknowledge and agree that VulnIQ shall not be responsible for any Third-Party Services, including their accuracy, completeness, timeliness, validity, copyright compliance, legality, decency, quality or any other aspect thereof. VulnIQ does not assume and shall not have any liability or responsibility to you or any other person or entity for any Third-Party Services.
+
+Third-Party Services and links thereto are provided solely as a convenience to you and you access and use them entirely at your own risk and subject to such third parties' terms and conditions.
+
+## Term and termination
+
+This Agreement shall remain in effect until terminated by you or VulnIQ.
+
+VulnIQ may, in its sole discretion, at any time and for any or no reason, suspend or terminate this Agreement with or without prior notice.
+
+This Agreement will terminate immediately, without prior notice from VulnIQ, in the event that you fail to comply with any provision of this Agreement. You may also terminate this Agreement by deleting the app and all copies thereof from your computer.
+
+Upon termination of this Agreement, you shall cease all use of the app and delete all copies of the app from your computer. Termination of this Agreement will not limit any of VulnIQ's rights or remedies at law or in equity in case of breach by you (during the term of this Agreement) of any of your obligations under the present Agreement.
+
+## Copyright infringement notice
+
+If you are a copyright owner or such owner's agent and believe any material on our app constitutes an infringement on your copyright, please contact us setting forth the following information:
+
+- (a) a physical or electronic signature of the copyright owner or a person authorized to act on his behalf;
+- (b) identification of the material that is claimed to be infringing;
+- (c) your contact information, including your address, telephone number, and an email;
+- (d) a statement by you that you have a good faith belief that use of the material is not authorized by the copyright owners; and
+- (e) a statement that the information in the notification is accurate, and, under penalty of perjury you are authorized to act on behalf of the owner.
+
+## Indemnification
+
+You agree to indemnify and hold VulnIQ and its parents, subsidiaries, affiliates, officers, employees, agents, partners and licensors (if any) harmless from any claim or demand, including reasonable attorneys' fees, due to or arising out of your:
+
+- (a) use of the app;
+- (b) violation of this Agreement or any law or regulation; or
+- (c) violation of any right of a third party.
+
+## No warranties
+
+The app is provided to you "AS IS" and "AS AVAILABLE" and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, VulnIQ, on its own behalf and on behalf of its affiliates and its and their respective licensors and service providers, expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the app, including all implied warranties of merchantability, fitness for a particular purpose, title and non-infringement, and warranties that may arise out of course of dealing, course of performance, usage or trade practice.
+
+Without limitation to the foregoing, VulnIQ provides no warranty or undertaking, and makes no representation of any kind that the app will meet your requirements, achieve any intended results, be compatible or work with any other software, systems or services, operate without interruption, meet any performance or reliability standards or be error free or that any errors or defects can or will be corrected.
+
+Without limiting the foregoing, neither VulnIQ nor any VulnIQ's provider makes any representation or warranty of any kind, express or implied: (i) as to the operation or availability of the app, or the information, content, and materials or products included thereon; (ii) that the app will be uninterrupted or error-free; (iii) as to the accuracy, reliability, or currency of any information or content provided through the app; or (iv) that the app, its servers, the content, or e-mails sent from or on behalf of VulnIQ are free of viruses, scripts, trojan horses, worms, malware, timebombs or other harmful components.
+
+Some jurisdictions do not allow the exclusion of or limitations on implied warranties or the limitations on the applicable statutory rights of a consumer, so some or all of the above exclusions and limitations may not apply to you.
+
+## Limitation of liability
+
+Notwithstanding any damages that you might incur, the entire liability of VulnIQ and any of its suppliers under any provision of this Agreement and your exclusive remedy for all of the foregoing shall be limited to the amount actually paid by you for the app.
+
+To the maximum extent permitted by applicable law, in no event shall VulnIQ or its suppliers be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, for loss of data or other information, for business interruption, for personal injury, for loss of privacy arising out of or in any way related to the use of or inability to use the app, third-party software and/or third-party hardware used with the app, or otherwise in connection with any provision of this Agreement), even if VulnIQ or any supplier has been advised of the possibility of such damages and even if the remedy fails of its essential purpose.
+
+Some states/jurisdictions do not allow the exclusion or limitation of incidental or consequential damages, so the above limitation or exclusion may not apply to you.
+
+## Severability
+
+If any provision of this Agreement is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect.
+
+This Agreement, together with the Privacy Policy and any other legal notices published by VulnIQ on the Services, shall constitute the entire agreement between you and VulnIQ concerning the Services. If any provision of this Agreement is deemed invalid by a court of competent jurisdiction, the invalidity of such provision shall not affect the validity of the remaining provisions of this Agreement, which shall remain in full force and effect.
+
+No waiver of any term of this Agreement shall be deemed a further or continuing waiver of such term or any other term, and VulnIQ's failure to assert any right or provision under this Agreement shall not constitute a waiver of such right or provision.
+
+YOU AND VulnIQ AGREE THAT ANY CAUSE OF ACTION ARISING OUT OF OR RELATED TO THE SERVICES MUST COMMENCE WITHIN ONE (1) YEAR AFTER THE CAUSE OF ACTION ACCRUES. OTHERWISE, SUCH CAUSE OF ACTION IS PERMANENTLY BARRED.
+
+## Waiver
+
+Except as provided herein, the failure to exercise a right or to require performance of an obligation under this Agreement shall not effect a party's ability to exercise such right or require such performance at any time thereafter nor shall be the waiver of a breach constitute waiver of any subsequent breach.
+
+No failure to exercise, and no delay in exercising, on the part of either party, any right or any power under this Agreement shall operate as a waiver of that right or power. Nor shall any single or partial exercise of any right or power under this Agreement preclude further exercise of that or any other right granted herein.
+
+In the event of a conflict between this Agreement and any applicable purchase or other terms, the terms of this Agreement shall govern.
+
+## Amendments to this agreement
+
+VulnIQ reserves the right, at its sole discretion, to modify or replace this Agreement at any time. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
+
+By continuing to access or use our app after any revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, you are no longer authorized to use VulnIQ.
+
+## Entire agreement
+
+The Agreement constitutes the entire agreement between you and VulnIQ regarding your use of the app and supersedes all prior and contemporaneous written or oral agreements between you and VulnIQ.
+
+You may be subject to additional terms and conditions that apply when you use or purchase other VulnIQ's services, which VulnIQ will provide to you at the time of such use or purchase.
+
+## Updates to our terms
+
+We may change our Service and policies, and we may need to make changes to these Terms so that they accurately reflect our Service and policies. Unless otherwise required by law, we will notify you (for example, through our Service) before we make changes to these Terms and give you an opportunity to review them before they go into effect.
+
+Then, if you continue to use the Service, you will be bound by the updated Terms. If you do not want to agree to these or any updated Terms, you can delete your account.
+
+## Intellectual property
+
+The app and its entire contents, features and functionality (including but not limited to all information, software, text, displays, images, video and audio, and the design, selection and arrangement thereof), are owned by VulnIQ, its licensors or other providers of such material and are protected by Romania and international copyright, trademark, patent, trade secret and other intellectual property or proprietary rights laws.
+
+The material may not be copied, modified, reproduced, downloaded or distributed in any way, in whole or in part, without the express prior written permission of VulnIQ, unless and except as is expressly provided in these Terms & Conditions. Any unauthorized use of the material is prohibited.
+
+## Agreement to arbitrate
+
+This section applies to any dispute EXCEPT IT DOESN'T INCLUDE A DISPUTE RELATING TO CLAIMS FOR INJUNCTIVE OR EQUITABLE RELIEF REGARDING THE ENFORCEMENT OR VALIDITY OF YOUR OR VulnIQ's INTELLECTUAL PROPERTY RIGHTS.
+
+The term "dispute" means any dispute, action, or other controversy between you and VulnIQ concerning the Services or this agreement, whether in contract, warranty, tort, statute, regulation, ordinance, or any other legal or equitable basis. "Dispute" will be given the broadest possible meaning allowable under law.
+
+## Notice of dispute
+
+In the event of a dispute, you or VulnIQ must give the other a Notice of Dispute, which is a written statement that sets forth the name, address, and contact information of the party giving it, the facts giving rise to the dispute, and the relief requested.
+
+You must send any Notice of Dispute via email to: [emanuel.rusu03@e-uvt.ro](mailto:emanuel.rusu03@e-uvt.ro). VulnIQ will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address.
+
+You and VulnIQ will attempt to resolve any dispute through informal negotiation within sixty (60) days from the date the Notice of Dispute is sent. After sixty (60) days, you or VulnIQ may commence arbitration.
+
+## Binding arbitration
+
+If you and VulnIQ don't resolve any dispute by informal negotiation, any other effort to resolve the dispute will be conducted exclusively by binding arbitration as described in this section. You are giving up the right to litigate (or participate in as a party or class member) all disputes in court before a judge or jury.
+
+The dispute shall be settled by binding arbitration in accordance with the commercial arbitration rules of the American Arbitration Association. Either party may seek any interim or preliminary injunctive relief from any court of competent jurisdiction, as necessary to protect the party's rights or property pending the completion of arbitration.
+
+Any and all legal, accounting, and other costs, fees, and expenses incurred by the prevailing party shall be borne by the non-prevailing party.
+
+## Submissions and privacy
+
+In the event that you submit or post any ideas, creative suggestions, designs, photographs, information, advertisements, data or proposals, including ideas for new or improved products, services, features, technologies or promotions, you expressly agree that such submissions will automatically be treated as non-confidential and non-proprietary and will become the sole property of VulnIQ without any compensation or credit to you whatsoever.
+
+VulnIQ and its affiliates shall have no obligations with respect to such submissions or posts and may use the ideas contained in such submissions or posts for any purposes in any medium in perpetuity, including, but not limited to, developing, manufacturing, and marketing products and services using such ideas.
+
+## Promotions
+
+VulnIQ may, from time to time, include contests, promotions, sweepstakes, or other activities ("Promotions") that require you to submit material or information concerning yourself. Please note that all Promotions may be governed by separate rules that may contain certain eligibility requirements, such as restrictions as to age and geographic location.
+
+You are responsible to read all Promotions rules to determine whether or not you are eligible to participate. If you enter any Promotion, you agree to abide by and to comply with all Promotions Rules.
+
+Additional terms and conditions may apply to purchases of goods or services on or through the Services, which terms and conditions are made a part of this Agreement by this reference.
+
+## Typographical errors
+
+In the event a product and/or service is listed at an incorrect price or with incorrect information due to typographical error, we shall have the right to refuse or cancel any orders placed for the product and/or service listed at the incorrect price.
+
+We shall have the right to refuse or cancel any such order whether or not the order has been confirmed and your credit card charged. If your credit card has already been charged for the purchase and your order is canceled, we shall immediately issue a credit to your credit card account or other payment account in the amount of the charge.
+
+## Miscellaneous
+
+If for any reason a court of competent jurisdiction finds any provision or portion of these Terms & Conditions to be unenforceable, the remainder of these Terms & Conditions will continue in full force and effect. Any waiver of any provision of these Terms & Conditions will be effective only if in writing and signed by an authorized representative of VulnIQ.
+
+VulnIQ will be entitled to injunctive or other equitable relief (without the obligations of posting any bond or surety) in the event of any breach or anticipatory breach by you. VulnIQ operates and controls the VulnIQ Service from its offices in Romania. The Service is not intended for distribution to or use by any person or entity in any jurisdiction or country where such distribution or use would be contrary to law or regulation.
+
+Accordingly, those persons who choose to access the VulnIQ Service from other locations do so on their own initiative and are solely responsible for compliance with local laws, if and to the extent local laws are applicable.
+
+These Terms & Conditions (which include and incorporate the VulnIQ Privacy Policy) contains the entire understanding, and supersedes all prior understandings, between you and VulnIQ concerning its subject matter, and cannot be changed or modified by you. The section headings used in this Agreement are for convenience only and will not be given any legal import.
+
+## Disclaimer
+
+VulnIQ is not responsible for any content, code or any other imprecision.
+
+VulnIQ does not provide warranties or guarantees.
+
+In no event shall VulnIQ be liable for any special, direct, indirect, consequential, or incidental damages or any damages whatsoever, whether in an action of contract, negligence or other tort, arising out of or in connection with the use of the Service or the contents of the Service. VulnIQ reserves the right to make additions, deletions, or modifications to the contents on the Service at any time without prior notice.
+
+The VulnIQ Service and its contents are provided "as is" and "as available" without any warranty or representations of any kind, whether express or implied. VulnIQ is a distributor and not a publisher of the content supplied by third parties; as such, VulnIQ exercises no editorial control over such content and makes no warranty or representation as to the accuracy, reliability or currency of any information, content, service or merchandise provided through or accessible via the VulnIQ Service.
+
+Without limiting the foregoing, VulnIQ specifically disclaims all warranties and representations in any content transmitted on or in connection with the VulnIQ Service or on sites that may appear as links on the VulnIQ Service, or in the products provided as a part of, or otherwise in connection with, the VulnIQ Service, including without limitation any warranties of merchantability, fitness for a particular purpose or non-infringement of third party rights.
+
+No oral advice or written information given by VulnIQ or any of its affiliates, employees, officers, directors, agents, or the like will create a warranty. Price and availability information is subject to change without notice. Without limiting the foregoing, VulnIQ does not warrant that the VulnIQ Service will be uninterrupted, uncorrupted, timely, or error-free.
+
+## Contact us
+
+Don't hesitate to contact us if you have any questions.
+
+**Via Email:** [emanuel.rusu03@e-uvt.ro](mailto:emanuel.rusu03@e-uvt.ro)
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-6-lllmstxt|>
+## Automated Program Repair
+[Skip to main content](https://vulniq.org/about#main-content)
+
+# Agentic RAG for automated program repair
+
+A Master's thesis project investigating the efficacy of LLM-based agents augmented with specialized security knowledge for vulnerability remediation.
+
+### Problem statement
+
+Large Language Models (LLMs) are increasingly applied to Automated Program Repair (APR), but often struggle due to insufficient domain knowledge and a tendency to produce "hallucinations" or unreliable fixes.
+
+## Limitations of current approaches
+
+Without grounded context, even advanced models rely on probabilistic generation rather than verified security practices. This limitation hinders the practical application of LLMs in critical security infrastructure where precision is paramount.
+
+## Proposed methodology
+
+This research proposes an agentic system leveraging Retrieval-Augmented Generation (RAG) to enhance the reliability and precision of source code vulnerability remediation.
+
+The framework positions LLMs as central controllers orchestrating reasoning and tool interaction. By utilizing RAG, we augment the LLM's context with retrieved external security knowledge, such as best-practice guidelines, relevant code snippets, and historical fixes.
+
+### System architecture
+
+- Specialized retrieval methods for code security
+- Distilled security knowledge injection
+- Orchestrated tool interaction & verification
+
+## Research contributions
+
+Results from the scientific community demonstrate that this knowledge-driven, structured approach significantly boosts performance in software security tasks. Tailoring the RAG context with distilled security knowledge yields substantial improvements in secure code generation metrics over state-of-the-art baselines.
+
+The proposed agentic RAG system provides a robust, context-aware, and knowledge-grounded framework for automated vulnerability repair, a crucial step toward creating reliable, high-quality APR solutions essential for modern software security.
+
+## Research objectives
+
+### Contextual precision
+
+Implementing a RAG pipeline that ensures every remediation suggestion is contextually accurate to the specific codebase architecture.
+
+### Automated reasoning
+
+Developing agentic workflows that can autonomously analyze, reason about, and repair vulnerabilities with minimal human intervention.
+
+## About the research
+
+This project is part of a Master's thesis focused on advancing the field of Automated Program Repair through the integration of modern LLMs and knowledge retrieval systems.
+
+[View Prototype](https://vulniq.org/login)
+
+### Built with modern technologies
+
+- [Next.js](https://nextjs.org/)
+- [Docker](https://www.docker.com/)
+- [React](https://react.dev/)
+- [GitHub](https://github.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AWS](https://aws.amazon.com/)
+- [WebStorm](https://www.jetbrains.com/webstorm/)
+- [Node.js](https://nodejs.org/)
+- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+- [CSS3](https://developer.mozilla.org/en-US/docs/Web/CSS)
+- [Shadcn UI](https://ui.shadcn.com/)
+
+- [Next.js](https://nextjs.org/)
+- [Docker](https://www.docker.com/)
+- [React](https://react.dev/)
+- [GitHub](https://github.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AWS](https://aws.amazon.com/)
+- [WebStorm](https://www.jetbrains.com/webstorm/)
+- [Node.js](https://nodejs.org/)
+- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+- [CSS3](https://developer.mozilla.org/en-US/docs/Web/CSS)
+- [Shadcn UI](https://ui.shadcn.com/)
+
+- [Next.js](https://nextjs.org/)
+- [Docker](https://www.docker.com/)
+- [React](https://react.dev/)
+- [GitHub](https://github.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AWS](https://aws.amazon.com/)
+- [WebStorm](https://www.jetbrains.com/webstorm/)
+- [Node.js](https://nodejs.org/)
+- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+- [CSS3](https://developer.mozilla.org/en-US/docs/Web/CSS)
+- [Shadcn UI](https://ui.shadcn.com/)
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-7-lllmstxt|>
+## Support VulnIQ Project
+[Skip to main content](https://vulniq.org/supporters#main-content)
+
+# People whosupported
+
+A heartfelt thank you to everyone who has supported this project.
+
+### No supporters yet
+
+Be the first to support this project!
+
+### Want to Support VulnIQ?
+
+Your support helps us continue developing cutting-edge security tools. Leave us a message to learn how you can contribute to the project.
+
+Email (optional)
+
+Message \*
+
+Leave a Message
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-8-lllmstxt|>
+## XML Sitemap Overview
+[Skip to main content](https://vulniq.org/site-map#main-content)
+
+# XML Sitemap
+
+This sitemap helps search engines like Google crawl and index pages on this website. Learn more about [XML Sitemaps](https://www.sitemaps.org/).
+
+7
+
+Total URLs
+
+January 2, 2026 at 06:25 AM
+
+Last Updated
+
+[View Raw XML](https://vulniq.org/sitemap.xml)
+
+| URL | Priority | Frequency | Modified |
+| --- | --- | --- | --- |
+| [https://vulniq.org/](https://vulniq.org/) | 1.00 | Weekly | 2024-12-29 |
+| [https://vulniq.org/login](https://vulniq.org/login) | 0.80 | Monthly | 2024-12-29 |
+| [https://vulniq.org/changelog](https://vulniq.org/changelog) | 0.80 | Weekly | 2024-12-29 |
+| [https://vulniq.org/privacy](https://vulniq.org/privacy) | 0.80 | Yearly | 2024-12-29 |
+| [https://vulniq.org/terms](https://vulniq.org/terms) | 0.80 | Yearly | 2024-12-29 |
+| [https://vulniq.org/about](https://vulniq.org/about) | 0.64 | Monthly | 2024-12-29 |
+| [https://vulniq.org/supporters](https://vulniq.org/supporters) | 0.64 | Weekly | 2026-01-01 |
+
+High (≥0.8)
+
+Medium (≥0.5)
+
+Low (<0.5)
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-9-lllmstxt|>
+## VulnIQ Demo Page
+[Skip to main content](https://vulniq.org/demo#main-content)
+
+- ![](https://vulniq.org/_next/image?url=%2Fweb-app-manifest-512x512.png&w=64&q=75)
+VulnIQAgentic
+
+
+Navigation
+
+- Home
+- Code input
+- Workflow configuration
+- Knowledge base
+- Results
+
+- Feedback
+- Shortcuts
+`⌘K`
+
+- CN
+Demo Userdemo@vulniq.com
+
+
+## Keyboard Shortcuts
+
+Quick access to common actions
+
+## Command Palette
+
+Search for a command to run...
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+
+<|firecrawl-page-10-lllmstxt|>
+## Vulnerability Management Blog
+[Skip to main content](https://vulniq.org/blog#main-content)
+
+Blog
+
+Stay informed with the latest trends, best practices, in code security and vulnerability management.
+
+AllVulnerability AnalysisSecurity TestingWeb SecurityAPI SecurityDevSecOps
+
+Featured
+
+December 28, 2025
+
+Vulnerability Analysis
+
+### Understanding SQL injection: a complete guide to detection and prevention
+
+SQL injection remains one of the most dangerous vulnerabilities in web applications. Learn how attackers exploit database queries and discover proven strategies to protect your applications from this persistent threat.
+
+VulnIQ security12 min read
+
+Read more: Understanding SQL injection: a complete guide to detection and prevention
+
+December 25, 2025
+
+Security Testing
+
+### Modern application security testing: building a comprehensive SAST and DAST strategy
+
+Discover how to combine static and dynamic security testing methodologies to create a robust application security program. Learn best practices for integrating security testing into your CI/CD pipeline.
+
+VulnIQ security15 min read
+
+Read more: Modern application security testing: building a comprehensive SAST and DAST strategy
+
+December 22, 2025
+
+Web Security
+
+### Cross-site scripting defense: protecting your web applications from XSS attacks
+
+Cross-site scripting vulnerabilities allow attackers to inject malicious scripts into trusted websites. Learn the different types of XSS attacks and implement effective defenses to protect your users.
+
+VulnIQ security14 min read
+
+Read more: Cross-site scripting defense: protecting your web applications from XSS attacks
+
+December 19, 2025
+
+API Security
+
+### Secure API development: best practices for building resilient and protected APIs
+
+APIs are the backbone of modern applications but also prime targets for attackers. Learn essential security practices for authentication, authorization, input validation, and rate limiting in API development.
+
+VulnIQ security16 min read
+
+Read more: Secure API development: best practices for building resilient and protected APIs
+
+December 15, 2025
+
+DevSecOps
+
+### Secrets management in modern development: protecting API keys, credentials, and sensitive data
+
+Hard-coded secrets in source code are a leading cause of security breaches. Learn how to properly manage API keys, database credentials, and other sensitive configuration data throughout your development lifecycle.
+
+VulnIQ security13 min read
+
+Read more: Secrets management in modern development: protecting API keys, credentials, and sensitive data
+
+## Cookie Preferences
+
+We use cookies to enhance your experience. Essential cookies are required for the site to function. You can choose which optional cookies to allow.
+
+Accept AllEssential OnlyCustomize
+
+By continuing to use this site, you agree to our [Privacy Policy](https://vulniq.org/privacy) and [Terms of Service](https://vulniq.org/terms).
+
+## Accessibility
+
+Reset
+
+ContentColorTools
+
+### Font Size
+
+100%
+
+### Line Height
+
+100%
+
+### Letter Spacing
+
+0px
+
+### Word Spacing
+
+0px
+
+Bold Text
+
+Make all text bolder
+
+Dyslexia Friendly Font
+
+Use OpenDyslexic font
+
+### Text Alignment
+
+Default
+
+Accessibility by VulnIQ ❤️
+

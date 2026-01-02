@@ -1,10 +1,9 @@
 export default function robots() {
-  return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/private/', '/api/'],
-    },
-    sitemap: 'https://vulniq.org/sitemap.xml',
-  }
+    return {
+        rules: {
+            userAgent: '*',
+            disallow: ['/private/', '/api/', '/admin/'],
+        },
+        sitemap: 'https://vulniq.org/sitemap.xml',
+    }
 }

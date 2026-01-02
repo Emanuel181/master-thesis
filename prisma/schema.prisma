@@ -204,6 +204,7 @@ model Supporter {
   avatarUrl       String?
   occupation      String
   company         String?
+  companyUrl      String? // Link to company website
   contributionBio String // What they helped with
   personalBio     String? // Short bio about the person
   linkedinUrl     String?

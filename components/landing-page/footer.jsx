@@ -368,6 +368,13 @@ export function Footer({ onScrollToTop }) {
                             >
                                 Terms & Conditions
                             </Link>
+                            <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30 text-xs">•</span>
+                            <Link
+                                href="/security"
+                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1"
+                            >
+                                Vulnerability Disclosure Policy
+                            </Link>
                         </div>
                     </div>
                     <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
