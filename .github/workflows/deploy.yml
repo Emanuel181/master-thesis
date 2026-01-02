@@ -245,6 +245,32 @@ jobs:
             sed "s|\${TASK_ROLE_ARN}|${{ secrets.ECS_TASK_ROLE_ARN }}|g" | \
             sed "s|\${DATABASE_URL_SECRET_ARN}|${{ secrets.DATABASE_URL_SECRET_ARN }}|g" | \
             sed "s|\${NEXTAUTH_SECRET_ARN}|${{ secrets.NEXTAUTH_SECRET_ARN }}|g" | \
+            sed "s|\${AUTH_SECRET_ARN}|${{ secrets.AUTH_SECRET_ARN }}|g" | \
+            sed "s|\${AUTH_GITHUB_ID_ARN}|${{ secrets.AUTH_GITHUB_ID_ARN }}|g" | \
+            sed "s|\${AUTH_GITHUB_SECRET_ARN}|${{ secrets.AUTH_GITHUB_SECRET_ARN }}|g" | \
+            sed "s|\${AUTH_GOOGLE_ID_ARN}|${{ secrets.AUTH_GOOGLE_ID_ARN }}|g" | \
+            sed "s|\${AUTH_GOOGLE_SECRET_ARN}|${{ secrets.AUTH_GOOGLE_SECRET_ARN }}|g" | \
+            sed "s|\${AUTH_GITLAB_ID_ARN}|${{ secrets.AUTH_GITLAB_ID_ARN }}|g" | \
+            sed "s|\${AUTH_GITLAB_SECRET_ARN}|${{ secrets.AUTH_GITLAB_SECRET_ARN }}|g" | \
+            sed "s|\${AUTH_MICROSOFT_ENTRA_ID_ID_ARN}|${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID_ARN }}|g" | \
+            sed "s|\${AUTH_MICROSOFT_ENTRA_ID_SECRET_ARN}|${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET_ARN }}|g" | \
+            sed "s|\${AUTH_MICROSOFT_ENTRA_ID_ISSUER_ARN}|${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ISSUER_ARN }}|g" | \
+            sed "s|\${AWS_ACCESS_KEY_ID_ARN}|${{ secrets.AWS_ACCESS_KEY_ID_ARN }}|g" | \
+            sed "s|\${AWS_SECRET_ACCESS_KEY_ARN}|${{ secrets.AWS_SECRET_ACCESS_KEY_ARN }}|g" | \
+            sed "s|\${AWS_REGION_ARN}|${{ secrets.AWS_REGION_ARN }}|g" | \
+            sed "s|\${AWS_S3_BUCKET_NAME_ARN}|${{ secrets.AWS_S3_BUCKET_NAME_ARN }}|g" | \
+            sed "s|\${BREVO_API_KEY_ARN}|${{ secrets.BREVO_API_KEY_ARN }}|g" | \
+            sed "s|\${EMAIL_FROM_ARN}|${{ secrets.EMAIL_FROM_ARN }}|g" | \
+            sed "s|\${EMAIL_SERVER_HOST_ARN}|${{ secrets.EMAIL_SERVER_HOST_ARN }}|g" | \
+            sed "s|\${EMAIL_SERVER_PORT_ARN}|${{ secrets.EMAIL_SERVER_PORT_ARN }}|g" | \
+            sed "s|\${EMAIL_SERVER_USER_ARN}|${{ secrets.EMAIL_SERVER_USER_ARN }}|g" | \
+            sed "s|\${EMAIL_SERVER_PASSWORD_ARN}|${{ secrets.EMAIL_SERVER_PASSWORD_ARN }}|g" | \
+            sed "s|\${ADMIN_EMAIL_ARN}|${{ secrets.ADMIN_EMAIL_ARN }}|g" | \
+            sed "s|\${MASTER_USERNAME_ARN}|${{ secrets.MASTER_USERNAME_ARN }}|g" | \
+            sed "s|\${MASTER_PASSWORD_ARN}|${{ secrets.MASTER_PASSWORD_ARN }}|g" | \
+            sed "s|\${FEEDBACK_SPREADSHEET_ID_ARN}|${{ secrets.FEEDBACK_SPREADSHEET_ID_ARN }}|g" | \
+            sed "s|\${GOOGLE_SERVICE_ACCOUNT_KEY_ARN}|${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_ARN }}|g" | \
+            sed "s|\${SMTP_AWS_IAM_USERNAME_ARN}|${{ secrets.SMTP_AWS_IAM_USERNAME_ARN }}|g" | \
             sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g" > /tmp/task-def-app.json
           
           echo "Task definition:"
