@@ -8,11 +8,11 @@ import prisma from "@/lib/prisma";
 // GET - Fetch all visible supporters (public endpoint)
 export async function GET(request) {
     try {
-        // Rate limiting - 100 requests per minute (generous for public endpoint)
+        // Rate limiting - 200 requests per minute (generous for public read-only endpoint)
         const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
         const rl = await rateLimit({
             key: `supporters:get:${clientIp}`,
-            limit: 100,
+            limit: 400,
             windowMs: 60 * 1000
         });
         if (!rl.allowed) {

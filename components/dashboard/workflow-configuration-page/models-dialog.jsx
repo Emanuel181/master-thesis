@@ -624,7 +624,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             <SelectTrigger className="h-8">
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
+                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                     <div className="p-2 border-b">
                                                                         <Input
@@ -686,7 +686,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectTrigger className="h-8 flex-1">
                                                                     <SelectValue placeholder="Select prompt" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                         <div className="p-2 border-b">
                                                                             <Input
@@ -772,7 +772,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             <SelectTrigger className="h-8">
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
+                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                     <div className="p-2 border-b">
                                                                         <Input
@@ -834,7 +834,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectTrigger className="h-8 flex-1">
                                                                     <SelectValue placeholder="Select prompt" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                         <div className="p-2 border-b">
                                                                             <Input
@@ -920,7 +920,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             <SelectTrigger className="h-8">
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
+                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                     <div className="p-2 border-b">
                                                                         <Input
@@ -982,7 +982,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectTrigger className="h-8 flex-1">
                                                                     <SelectValue placeholder="Select prompt" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                         <div className="p-2 border-b">
                                                                             <Input
@@ -1068,7 +1068,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             <SelectTrigger className="h-8">
                                                                 <SelectValue placeholder="Select model" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
+                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                     <div className="p-2 border-b">
                                                                         <Input
@@ -1132,7 +1132,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <SelectTrigger className="h-8 flex-1">
                                                                     <SelectValue placeholder="Select prompt" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
                                                                         <div className="p-2 border-b">
                                                                             <Input

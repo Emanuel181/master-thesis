@@ -29,11 +29,30 @@ import { NotificationProvider, NotificationCenter } from "@/components/ui/notifi
 import { CommandPaletteProvider, useCommandPalette } from "@/components/ui/command"
 import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog"
 import { Button } from "@/components/ui/button"
-import { Keyboard } from "lucide-react"
+import { Keyboard, PersonStanding } from "lucide-react"
+import { useAccessibility } from "@/contexts/accessibilityContext"
+import { useIsMobile } from "@/hooks/use-mobile"
+
+// Accessibility button for mobile in header
+function AccessibilityTrigger() {
+    const { openPanel } = useAccessibility()
+
+    return (
+        <Button
+            variant="outline"
+            size="icon"
+            onClick={openPanel}
+            title="Accessibility Options"
+        >
+            <PersonStanding className="h-5 w-5" />
+        </Button>
+    )
+}
 
 // Header buttons component that can use the command palette context
 function HeaderButtons() {
     const { setOpen } = useCommandPalette()
+    const isMobile = useIsMobile()
 
     return (
         <div className="flex items-center gap-2">
@@ -46,6 +65,8 @@ function HeaderButtons() {
                 <Keyboard className="h-5 w-5" />
             </Button>
             <NotificationCenter />
+            {/* Show accessibility trigger on mobile in header */}
+            {isMobile && <AccessibilityTrigger />}
             <CustomizationDialog showEditorTabs={false} />
             <ThemeToggle />
         </div>
@@ -56,11 +77,21 @@ export default function ProfilePage() {
     const { settings, mounted } = useSettings()
     const { data: session } = useSession()
     const router = useRouter()
+    const isMobile = useIsMobile()
+    const { setForceHideFloating } = useAccessibility()
 
     // 1. Add State Management here
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+    // Hide floating accessibility button on mobile (use header icon instead)
+    useEffect(() => {
+        if (isMobile) {
+            setForceHideFloating(true);
+            return () => setForceHideFloating(false);
+        }
+    }, [isMobile, setForceHideFloating]);
 
     // Listen for open-feedback event (from command palette shortcut)
     useEffect(() => {
@@ -211,8 +242,8 @@ export default function ProfilePage() {
                         </header>
                         <div className="flex-1 overflow-hidden">
                             <ScrollArea className="h-full">
-                                <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 ${
-                                    settings.contentLayout === 'centered' ? 'max-w-5xl' : ''
+                                <div className={`container mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4 py-6 sm:py-10 pb-safe ${
+                                    settings.contentLayout === 'centered' ? 'max-w-full sm:max-w-5xl' : ''
                                 }`}>
 
                                     {/* 3. Pass state and handlers to Header */}

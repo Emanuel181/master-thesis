@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { MessageSquare, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const PROMPTS_PER_PAGE = 4;
@@ -121,23 +121,41 @@ export function PromptNode({ data }) {
                                 <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[250px] sm:w-[320px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                        <PopoverContent
+                            className="w-[250px] sm:w-[320px] p-0"
+                            align="start"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onPointerDownOutside={(e) => e.stopPropagation()}
+                            onInteractOutside={(e) => e.stopPropagation()}
+                        >
                             <div className="p-3 border-b">
                                 <p className="text-sm font-medium">Select Prompts for {data.agent}</p>
                             </div>
-                            <div onWheelCapture={(e) => e.stopPropagation()}>
-                                <div className="p-2 border-b">
+                            <div
+                                onWheelCapture={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                className="touch-pan-y"
+                            >
+                                <div className="p-2 border-b relative">
                                     <Input
                                         placeholder="Search prompts..."
-                                        className="h-7 text-xs"
+                                        className="h-7 text-xs pr-7"
                                         value={promptSearchTerm}
                                         onChange={(e) => {
                                             setPromptSearchTerm(e.target.value);
                                             setPromptPage(0);
                                         }}
                                     />
+                                    {promptSearchTerm && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setPromptSearchTerm(""); }}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm"
+                                        >
+                                            <X className="h-3 w-3 text-muted-foreground" />
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="p-2">
+                                <div className="p-2 max-h-[50vh] overflow-y-auto touch-pan-y">
                                     {paginatedPrompts.map((prompt) => {
                                         const isSelected = data.selectedPrompts?.includes(prompt.id);
 

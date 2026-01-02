@@ -309,8 +309,10 @@ function DashboardContent({ settings, mounted }) {
                                             </div>
                                         </header>
                                         <div id="main-content" className={`flex-1 flex flex-col overflow-hidden w-full ${
-                                            settings.contentLayout === 'centered' && activeComponent !== 'Home' ? 'mx-auto max-w-5xl px-2 sm:px-3 md:px-4' : 'px-2 sm:px-3 md:px-4'
-                                        }`}>
+                                            settings.contentLayout === 'centered' && activeComponent !== 'Home' 
+                                                ? 'mx-auto max-w-full sm:max-w-5xl px-2 sm:px-3 md:px-4' 
+                                                : 'px-2 sm:px-3 md:px-4'
+                                        } pb-safe`}>
                                             {renderComponent()}
                                         </div>
                                     </SidebarInset>

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 // --- tiny helpers ---
 function clampIndex(idx, len) {
@@ -64,7 +65,7 @@ export function HoverExpandPanels({
   activeGrow = 6,
   animateOnlyActive = false,
   className,
-  heightClassName = "h-[340px] md:h-[380px]",
+  heightClassName = "h-auto md:h-[380px]",
   entryAnimationDelay = 80, // ms between each step during entry animation
 }) {
   const containerRef = React.useRef(null)
@@ -73,6 +74,7 @@ export function HoverExpandPanels({
   // Start with first panel fully expanded (looks like one rectangle)
   const [active, setActive] = React.useState(0)
   const [isAnimating, setIsAnimating] = React.useState(true) // Start in animating state
+  const isMobile = useIsMobile()
 
   // Check reduced motion preference once on mount
   const [reduceMotion, setReduceMotion] = React.useState(false)
@@ -140,9 +142,14 @@ export function HoverExpandPanels({
   }, [reduceMotion, items.length, entryAnimationDelay])
 
   // Animate the GRID track sizes instead of using Framer Motion
-  const gridTemplateColumns = items
-    .map((_, i) => (i === active ? `${activeGrow}fr` : "1fr"))
-    .join(" ")
+  // On mobile, use rows instead of columns
+  const gridTemplateColumns = isMobile
+    ? "1fr"
+    : items.map((_, i) => (i === active ? `${activeGrow}fr` : "1fr")).join(" ")
+
+  const gridTemplateRows = isMobile
+    ? items.map(() => "1fr").join(" ")
+    : undefined
 
   // Handle hover - only when not animating
   const handleMouseEnter = (index) => {
@@ -163,10 +170,13 @@ export function HoverExpandPanels({
       )}
     >
       <div
-        className="relative z-10 grid h-full w-full gap-4"
+        className={cn(
+          "relative z-10 h-full w-full gap-4",
+          isMobile ? "flex flex-col" : "grid"
+        )}
         role="tablist"
         aria-label="Hover-expand gradient panels"
-        style={{
+        style={isMobile ? undefined : {
           gridTemplateColumns,
           transition: reduceMotion ? undefined : "grid-template-columns 220ms cubic-bezier(0, 0, 0.2, 1)",
         }}
@@ -184,12 +194,15 @@ export function HoverExpandPanels({
               role="tabpanel"
               aria-label={item.title}
               onMouseEnter={() => handleMouseEnter(i)}
+              onClick={() => isMobile && setActive(i)}
               className={cn(
-                "relative h-full min-w-0 overflow-hidden rounded-2xl",
+                "relative min-w-0 overflow-hidden rounded-2xl",
                 "bg-white/5",
                 "outline-none",
                 "transition-all duration-300 ease-out",
-                !isAnimating && isActive && "-translate-y-1 shadow-2xl shadow-black/30 scale-[1.02]"
+                isMobile ? "h-[200px]" : "h-full",
+                !isAnimating && isActive && !isMobile && "-translate-y-1 shadow-2xl shadow-black/30 scale-[1.02]",
+                isMobile && isActive && "ring-2 ring-[var(--brand-accent)] shadow-xl"
               )}
             >
               {/* Gradient background */}
@@ -240,12 +253,12 @@ export function HoverExpandPanels({
                   className={cn(
                     "max-w-[50ch] text-white",
                     "transition-all duration-200 ease-out motion-reduce:transition-none",
-                    isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                    isMobile ? "opacity-100 translate-y-0" : (isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2")
                   )}
                 >
-                  <div className="text-lg md:text-xl font-semibold leading-tight">{item.title}</div>
+                  <div className="text-base md:text-xl font-semibold leading-tight">{item.title}</div>
                   {item.description && (
-                    <div className="mt-1 text-sm md:text-[15px] text-white/85">{item.description}</div>
+                    <div className="mt-1 text-xs md:text-[15px] text-white/85 line-clamp-2">{item.description}</div>
                   )}
                 </div>
               </div>

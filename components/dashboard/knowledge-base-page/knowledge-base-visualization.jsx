@@ -1117,8 +1117,17 @@ export default function KnowledgeBaseVisualization() {
                             placeholder="Search categories..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-8 bg-background h-9 sm:h-10"
+                            className="w-full pl-8 pr-8 bg-background h-9 sm:h-10"
                         />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm transition-colors"
+                                title="Clear search"
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        )}
                     </div>
                     <div className="flex items-center gap-2 justify-end">
                         <Button

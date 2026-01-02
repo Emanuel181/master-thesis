@@ -3,7 +3,6 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const MODELS_PER_PAGE = 5;
 
@@ -97,7 +96,7 @@ export function AgentNode({ data }) {
                 title="Prompt Instructions"
             />
 
-            <Card className={`w-[200px] sm:w-[240px] shadow-lg border-2 ${borderColor}`}>
+            <Card className={`w-full max-w-[200px] sm:max-w-[240px] shadow-lg border-2 ${borderColor}`}>
                 <CardContent className="p-2 sm:p-4">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                         <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg}`}>
@@ -128,12 +127,15 @@ export function AgentNode({ data }) {
                         <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
                             <SelectValue placeholder="Select model" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <div onWheelCapture={(e) => e.stopPropagation()}>
-                                <div className="p-2 border-b">
+                        <SelectContent
+                            onPointerDownOutside={(e) => e.stopPropagation()}
+                            onInteractOutside={(e) => e.stopPropagation()}
+                        >
+                            <div onWheelCapture={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                                <div className="p-2 border-b relative">
                                     <Input
                                         placeholder="Search models..."
-                                        className="h-7 text-xs"
+                                        className="h-7 text-xs pr-7"
                                         value={modelSearchTerm}
                                         onChange={(e) => {
                                             setModelSearchTerm(e.target.value);
@@ -142,6 +144,14 @@ export function AgentNode({ data }) {
                                         onClick={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => e.stopPropagation()}
                                     />
+                                    {modelSearchTerm && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setModelSearchTerm(""); }}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm"
+                                        >
+                                            <X className="h-3 w-3 text-muted-foreground" />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="max-h-[180px]">
                                     {paginatedModels.length > 0 ? (

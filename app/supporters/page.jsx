@@ -227,41 +227,39 @@ export default function SupportersPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-4">
-                        <Link href="/" className="flex items-center gap-2 font-semibold group">
-                            <Image
-                                src="/web-app-manifest-512x512.png"
-                                alt="Logo"
-                                className="h-8 w-8 rounded-lg"
-                                width={32}
-                                height={32}
-                            />
-                            <span className="font-bold text-foreground tracking-tight text-xl">VulnIQ</span>
-                        </Link>
-                    </div>
-                    <div className="flex items-center gap-2">
+                <div className="flex h-14 items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+                    <Link href="/" className="flex items-center gap-1.5 sm:gap-2 font-semibold group shrink-0">
+                        <Image
+                            src="/web-app-manifest-512x512.png"
+                            alt="Logo"
+                            className="h-7 w-7 rounded-lg"
+                            width={28}
+                            height={28}
+                        />
+                        <span className="font-bold text-foreground tracking-tight text-base sm:text-lg">VulnIQ</span>
+                    </Link>
+                    <div className="flex items-center gap-1">
                         <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             asChild
-                            className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]"
+                            className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]"
                         >
                             <Link href="/">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                <span className="hidden sm:inline">Back to Home</span>
+                                <ArrowLeft className="h-4 w-4" />
+                                <span className="sr-only">Back to Home</span>
                             </Link>
                         </Button>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
-                                        variant="outline"
+                                        variant="ghost"
                                         size="icon"
                                         onClick={openPanel}
-                                        className="text-[var(--brand-primary)] dark:text-[var(--brand-light)] hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300"
+                                        className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]"
                                     >
-                                        <PersonStanding className="h-5 w-5" />
+                                        <PersonStanding className="h-4 w-4" />
                                         <span className="sr-only">Accessibility Options</span>
                                     </Button>
                                 </TooltipTrigger>
@@ -277,38 +275,38 @@ export default function SupportersPage() {
 
             {/* Main Content */}
             <ScrollArea className="flex-1" viewportRef={scrollRef}>
-                <main className="relative z-10 container py-12 sm:py-20 px-4 sm:px-6 lg:px-8">
+                <main className="relative z-10 container py-8 sm:py-12 lg:py-20 px-4 sm:px-6 lg:px-8">
                     {/* Hero Section */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7 }}
-                        className="mx-auto max-w-3xl text-center mb-16"
+                        className="mx-auto max-w-3xl text-center mb-8 sm:mb-16"
                     >
                         <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand-accent)]/20 to-[var(--brand-primary)]/20"
+                            className="mx-auto mb-4 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand-accent)]/20 to-[var(--brand-primary)]/20"
                         >
-                            <Heart className="h-10 w-10 text-[var(--brand-accent)]" />
+                            <Heart className="h-8 w-8 sm:h-10 sm:w-10 text-[var(--brand-accent)]" />
                         </motion.div>
 
-                        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-4">
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight mb-3 sm:mb-4">
                             People who{' '}
                             <span className="bg-gradient-to-r from-[var(--brand-accent)] via-[var(--brand-primary)] to-pink-500 bg-clip-text text-transparent">
                                 supported
                             </span>
                         </h1>
 
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
                             A heartfelt thank you to everyone who has supported this project.
                         </p>
                     </motion.div>
 
                     {/* Loading State */}
                     {loading && (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="flex flex-col items-center justify-center py-12 sm:py-20 gap-4">
                             <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
                             <p className="text-sm text-muted-foreground">Loading supporters...</p>
                         </div>
@@ -317,9 +315,9 @@ export default function SupportersPage() {
                     {/* Error State */}
                     {error && !loading && (
                         <Card className="max-w-md mx-auto">
-                            <CardContent className="pt-6 text-center">
-                                <p className="text-destructive mb-4">{error}</p>
-                                <Button onClick={() => window.location.reload()}>
+                            <CardContent className="pt-6 text-center px-4 sm:px-6">
+                                <p className="text-destructive mb-4 text-sm sm:text-base">{error}</p>
+                                <Button onClick={() => window.location.reload()} size="sm">
                                     Try Again
                                 </Button>
                             </CardContent>
@@ -329,10 +327,10 @@ export default function SupportersPage() {
                     {/* Empty State */}
                     {!loading && !error && supporters.length === 0 && (
                         <Card className="max-w-md mx-auto">
-                            <CardContent className="pt-6 text-center">
-                                <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                                <h3 className="text-lg font-semibold mb-2">No supporters yet</h3>
-                                <p className="text-sm text-muted-foreground">
+                            <CardContent className="pt-6 text-center px-4 sm:px-6">
+                                <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground/50 mb-4" />
+                                <h3 className="text-base sm:text-lg font-semibold mb-2">No supporters yet</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground">
                                     Be the first to support this project!
                                 </p>
                             </CardContent>
@@ -341,52 +339,70 @@ export default function SupportersPage() {
 
                     {/* Supporters Grid */}
                     {!loading && !error && supporters.length > 0 && (
-                        <div className="space-y-8">
-                            {/* Paginated Grid - up to 3 per row, centered */}
+                        <div className="space-y-6 sm:space-y-8">
+                            {/* Paginated Grid - responsive columns */}
                             <motion.div
                                 key={currentPage}
                                 variants={containerVariants}
                                 initial="hidden"
                                 animate="visible"
-                                className="flex flex-wrap justify-center gap-6"
+                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-[1200px] mx-auto"
                             >
                                 {paginatedSupporters.map(supporter => (
-                                    <div key={supporter.id} className="w-[380px] max-w-full shrink-0">
-                                        <SupporterCard supporter={supporter} />
+                                    <div key={supporter.id} className="w-full flex justify-center">
+                                        <div className="w-full max-w-[380px]">
+                                            <SupporterCard supporter={supporter} />
+                                        </div>
                                     </div>
                                 ))}
                             </motion.div>
 
                             {/* Pagination Controls */}
                             {totalPages > 1 && (
-                                <div className="flex items-center justify-center gap-2 pt-8">
+                                <div className="flex items-center justify-center gap-1 sm:gap-2 pt-6 sm:pt-8">
                                     <Button
                                         variant="outline"
                                         size="icon"
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
-                                        className="h-10 w-10 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 disabled:opacity-50"
+                                        className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 disabled:opacity-50"
                                     >
-                                        <ChevronLeft className="h-5 w-5" />
+                                        <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                                         <span className="sr-only">Previous page</span>
                                     </Button>
 
                                     <div className="flex items-center gap-1">
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                            <Button
-                                                key={page}
-                                                variant={currentPage === page ? "default" : "outline"}
-                                                size="icon"
-                                                onClick={() => setCurrentPage(page)}
-                                                className={`h-10 w-10 ${
-                                                    currentPage === page 
-                                                        ? 'bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white' 
-                                                        : 'hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50'
-                                                }`}
-                                            >
-                                                {page}
-                                            </Button>
-                                        ))}
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                                            // On mobile, show limited page numbers
+                                            const showPage = totalPages <= 5 ||
+                                                page === 1 ||
+                                                page === totalPages ||
+                                                Math.abs(page - currentPage) <= 1;
+
+                                            if (!showPage) {
+                                                // Show ellipsis for skipped pages
+                                                if (page === 2 || page === totalPages - 1) {
+                                                    return <span key={page} className="px-1 text-muted-foreground">...</span>;
+                                                }
+                                                return null;
+                                            }
+
+                                            return (
+                                                <Button
+                                                    key={page}
+                                                    variant={currentPage === page ? "default" : "outline"}
+                                                    size="icon"
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={`h-8 w-8 sm:h-10 sm:w-10 text-xs sm:text-sm ${
+                                                        currentPage === page 
+                                                            ? 'bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white' 
+                                                            : 'hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50'
+                                                    }`}
+                                                >
+                                                    {page}
+                                                </Button>
+                                            );
+                                        })}
                                     </div>
 
                                     <Button
@@ -394,9 +410,9 @@ export default function SupportersPage() {
                                         size="icon"
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
-                                        className="h-10 w-10 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 disabled:opacity-50"
+                                        className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 disabled:opacity-50"
                                     >
-                                        <ChevronRight className="h-5 w-5" />
+                                        <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                                         <span className="sr-only">Next page</span>
                                     </Button>
                                 </div>
@@ -404,7 +420,7 @@ export default function SupportersPage() {
 
                             {/* Page info */}
                             {totalPages > 1 && (
-                                <p className="text-center text-sm text-muted-foreground">
+                                <p className="text-center text-xs sm:text-sm text-muted-foreground">
                                     Showing {startIndex + 1}-{Math.min(endIndex, allSupporters.length)} of {allSupporters.length} supporters
                                 </p>
                             )}
@@ -416,16 +432,17 @@ export default function SupportersPage() {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="mt-20"
+                        className="mt-12 sm:mt-20 px-2"
                     >
                         <Card className="max-w-2xl mx-auto border-[var(--brand-accent)]/20 bg-gradient-to-br from-[var(--brand-accent)]/5 to-transparent">
-                            <CardContent className="pt-6 text-center">
-                                <h3 className="text-2xl font-semibold tracking-tight mb-2">
+                            <CardContent className="p-4 sm:pt-6 sm:p-6 text-center">
+                                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-2">
                                     Want to Support VulnIQ?
                                 </h3>
-                                <p className="text-muted-foreground mb-6">
-                                    Your support helps us continue developing cutting-edge security tools.
-                                    Leave us a message to learn how you can contribute to the project.
+                                <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
+                                    If you find VulnIQ useful, consider becoming a supporter. You can support the project by writing blogs,
+                                    contribute with feedback, testing, or help spread the word.
+                                    Have another ideas? Leave a message to explore how you can contribute to the project.
                                 </p>
                                 <MessageForm />
                             </CardContent>

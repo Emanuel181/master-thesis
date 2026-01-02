@@ -588,7 +588,10 @@ export function UseCaseGroupsPanel({
                                     </CollapsibleTrigger>
 
                                     <button
-                                        onClick={() => onSelectGroup(group.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onSelectGroup(group.id);
+                                        }}
                                         className={cn(
                                             "flex-1 flex items-center gap-2 py-1.5 pr-1 text-sm transition-all",
                                             isSelected ? "text-primary" : "",
@@ -654,7 +657,8 @@ export function UseCaseGroupsPanel({
                                                 return (
                                                     <button
                                                         key={uc.id}
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             // Select this group and then select the use case
                                                             onSelectGroup(group.id)
                                                             onSelectUseCase?.(uc.id)

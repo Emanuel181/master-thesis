@@ -89,7 +89,7 @@ export function Footer({ onScrollToTop }) {
     };
 
     return (
-        <footer ref={ref} className="relative py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 bg-[var(--brand-dark)] dark:bg-[var(--brand-dark)] w-full">
+        <footer ref={ref} className="relative py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 bg-[var(--brand-dark)] dark:bg-[var(--brand-dark)] w-full pb-safe">
             <motion.div
                 className="max-w-7xl mx-auto"
                 variants={containerVariants}
@@ -354,17 +354,17 @@ export function Footer({ onScrollToTop }) {
                         <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
                             © 2025 VulnIQ. All rights reserved.
                         </p>
-                        <div className="flex items-center justify-center sm:justify-start gap-3">
+                        <div className="flex items-center justify-center sm:justify-start gap-2">
                             <Link
                                 href="/privacy"
-                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
+                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1"
                             >
                                 Privacy Policy
                             </Link>
-                            <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30">•</span>
+                            <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30 text-xs">•</span>
                             <Link
                                 href="/terms"
-                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1 px-2 -mx-2 rounded touch-target"
+                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1"
                             >
                                 Terms & Conditions
                             </Link>

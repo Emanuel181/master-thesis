@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Accessibility,
   Type,
@@ -49,13 +50,14 @@ export function AccessibilityWidget() {
     forceHideFloating,
   } = useAccessibility();
 
+  const isMobile = useIsMobile();
   const [isDragging, setIsDragging] = useState(false);
   const buttonRef = useRef(null);
   const hasMoved = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const initialPos = useRef({ x: 0, y: 0 });
 
-  // Dragging logic
+  // Dragging logic for mouse
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
     setIsDragging(true);
@@ -105,6 +107,66 @@ export function AccessibilityWidget() {
     document.addEventListener("mouseup", handleMouseUp);
   }, [setPosition, savePosition]);
 
+  // Touch event handlers for mobile drag support
+  const handleTouchStart = useCallback((e) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    hasMoved.current = false;
+    dragStart.current = { x: touch.clientX, y: touch.clientY };
+
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) {
+      initialPos.current = { x: rect.left, y: rect.top };
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - dragStart.current.x;
+    const dy = touch.clientY - dragStart.current.y;
+
+    if (!hasMoved.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      hasMoved.current = true;
+    }
+
+    if (hasMoved.current) {
+      e.preventDefault(); // Prevent scrolling while dragging
+      let newX = initialPos.current.x + dx;
+      let newY = initialPos.current.y + dy;
+
+      // Bounds
+      newX = Math.max(0, Math.min(newX, window.innerWidth - 60));
+      newY = Math.max(0, Math.min(newY, window.innerHeight - 60));
+
+      setPosition({ x: newX, y: newY, bottom: null });
+    }
+  }, [isDragging, setPosition]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+
+    if (hasMoved.current) {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (rect) {
+        const newPos = { x: rect.left, y: rect.top, bottom: null };
+        savePosition(newPos);
+      }
+    }
+  }, [savePosition]);
+
+  // Add/remove touch event listeners
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (!button) return;
+
+    button.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      button.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [handleTouchMove]);
+
   const handleClick = useCallback((e) => {
     if (hasMoved.current) {
       e.preventDefault();
@@ -133,6 +195,8 @@ export function AccessibilityWidget() {
         <button
           ref={buttonRef}
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           onClick={handleClick}
           className={cn(
             "fixed w-14 h-14 rounded-full overflow-hidden",
@@ -141,7 +205,8 @@ export function AccessibilityWidget() {
             "cursor-grab active:cursor-grabbing",
             "flex items-center justify-center",
             "focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2",
-            "a11y-widget-button"
+            "a11y-widget-button",
+            "touch-none" // Prevent default touch behavior while dragging
           )}
           style={{ 
             ...buttonStyle, 
@@ -149,7 +214,7 @@ export function AccessibilityWidget() {
             background: "linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)"
           }}
           aria-label="Open Accessibility Menu"
-          title="Accessibility Options (Drag to move)"
+          title={isMobile ? "Accessibility Options (Touch and drag to move)" : "Accessibility Options (Drag to move)"}
         >
           <PersonStanding className="w-7 h-7 text-white" strokeWidth={2.5} />
         </button>
@@ -457,10 +522,9 @@ export function AccessibilityWidget() {
         </ScrollArea>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-muted/50 text-center">
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-muted/50 text-center safe-area-bottom">
           <p className="text-xs text-muted-foreground">
-            Accessibility by{" "}
-            <span className="font-semibold text-[var(--brand-accent)]">VulnIQ</span> ❤️
+            Settings are saved automatically
           </p>
         </div>
       </div>
