@@ -234,43 +234,76 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          # Pass secrets as environment variables to avoid sed escaping issues
+          SECRET_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          SECRET_AUTH_GITHUB_ID: ${{ secrets.AUTH_GITHUB_ID }}
+          SECRET_AUTH_GITHUB_SECRET: ${{ secrets.AUTH_GITHUB_SECRET }}
+          SECRET_AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
+          SECRET_AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+          SECRET_AUTH_GITLAB_ID: ${{ secrets.AUTH_GITLAB_ID }}
+          SECRET_AUTH_GITLAB_SECRET: ${{ secrets.AUTH_GITLAB_SECRET }}
+          SECRET_AUTH_MICROSOFT_ENTRA_ID_ID: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
+          SECRET_AUTH_MICROSOFT_ENTRA_ID_SECRET: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
+          SECRET_AUTH_MICROSOFT_ENTRA_ID_ISSUER: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ISSUER }}
+          SECRET_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          SECRET_AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          SECRET_AWS_REGION: ${{ secrets.AWS_REGION }}
+          SECRET_BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          SECRET_EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SECRET_EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
+          SECRET_EMAIL_SERVER_PORT: ${{ secrets.EMAIL_SERVER_PORT }}
+          SECRET_EMAIL_SERVER_USER: ${{ secrets.EMAIL_SERVER_USER }}
+          SECRET_EMAIL_SERVER_PASSWORD: ${{ secrets.EMAIL_SERVER_PASSWORD }}
+          SECRET_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          SECRET_MASTER_USERNAME: ${{ secrets.MASTER_USERNAME }}
+          SECRET_MASTER_PASSWORD: ${{ secrets.MASTER_PASSWORD }}
+          SECRET_FEEDBACK_SPREADSHEET_ID: ${{ secrets.FEEDBACK_SPREADSHEET_ID }}
+          SECRET_GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          SECRET_SMTP_AWS_IAM_USERNAME: ${{ secrets.SMTP_AWS_IAM_USERNAME }}
+          SECRET_NEXTAUTH_SECRET_ARN: ${{ secrets.NEXTAUTH_SECRET_ARN }}
+          SECRET_ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
+          SECRET_ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
         run: |
           APP_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "Deploying image: $APP_IMAGE"
           
-          # Build task definition from template and write to temp file
-          cat .aws/task-definition-app.json | \
-            sed "s|\${IMAGE}|$APP_IMAGE|g" | \
-            sed "s|\${EXECUTION_ROLE_ARN}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}|g" | \
-            sed "s|\${TASK_ROLE_ARN}|${{ secrets.ECS_TASK_ROLE_ARN }}|g" | \
-            sed "s|\${NEXTAUTH_SECRET_ARN}|${{ secrets.NEXTAUTH_SECRET_ARN }}|g" | \
-            sed "s|\${DATABASE_URL}|${{ secrets.DATABASE_URL }}|g" | \
-            sed "s|\${AUTH_SECRET}|${{ secrets.AUTH_SECRET }}|g" | \
-            sed "s|\${AUTH_GITHUB_ID}|${{ secrets.AUTH_GITHUB_ID }}|g" | \
-            sed "s|\${AUTH_GITHUB_SECRET}|${{ secrets.AUTH_GITHUB_SECRET }}|g" | \
-            sed "s|\${AUTH_GOOGLE_ID}|${{ secrets.AUTH_GOOGLE_ID }}|g" | \
-            sed "s|\${AUTH_GOOGLE_SECRET}|${{ secrets.AUTH_GOOGLE_SECRET }}|g" | \
-            sed "s|\${AUTH_GITLAB_ID}|${{ secrets.AUTH_GITLAB_ID }}|g" | \
-            sed "s|\${AUTH_GITLAB_SECRET}|${{ secrets.AUTH_GITLAB_SECRET }}|g" | \
-            sed "s|\${AUTH_MICROSOFT_ENTRA_ID_ID}|${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}|g" | \
-            sed "s|\${AUTH_MICROSOFT_ENTRA_ID_SECRET}|${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}|g" | \
-            sed "s|\${AUTH_MICROSOFT_ENTRA_ID_ISSUER}|${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ISSUER }}|g" | \
-            sed "s|\${AWS_ACCESS_KEY_ID}|${{ secrets.AWS_ACCESS_KEY_ID }}|g" | \
-            sed "s|\${AWS_SECRET_ACCESS_KEY}|${{ secrets.AWS_SECRET_ACCESS_KEY }}|g" | \
-            sed "s|\${AWS_S3_BUCKET_NAME}|${{ secrets.AWS_S3_BUCKET_NAME }}|g" | \
-            sed "s|\${BREVO_API_KEY}|${{ secrets.BREVO_API_KEY }}|g" | \
-            sed "s|\${EMAIL_FROM}|${{ secrets.EMAIL_FROM }}|g" | \
-            sed "s|\${EMAIL_SERVER_HOST}|${{ secrets.EMAIL_SERVER_HOST }}|g" | \
-            sed "s|\${EMAIL_SERVER_PORT}|${{ secrets.EMAIL_SERVER_PORT }}|g" | \
-            sed "s|\${EMAIL_SERVER_USER}|${{ secrets.EMAIL_SERVER_USER }}|g" | \
-            sed "s|\${EMAIL_SERVER_PASSWORD}|${{ secrets.EMAIL_SERVER_PASSWORD }}|g" | \
-            sed "s|\${ADMIN_EMAIL}|${{ secrets.ADMIN_EMAIL }}|g" | \
-            sed "s|\${MASTER_USERNAME}|${{ secrets.MASTER_USERNAME }}|g" | \
-            sed "s|\${MASTER_PASSWORD}|${{ secrets.MASTER_PASSWORD }}|g" | \
-            sed "s|\${FEEDBACK_SPREADSHEET_ID}|${{ secrets.FEEDBACK_SPREADSHEET_ID }}|g" | \
-            sed "s|\${GOOGLE_SERVICE_ACCOUNT_KEY}|${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}|g" | \
-            sed "s|\${SMTP_AWS_IAM_USERNAME}|${{ secrets.SMTP_AWS_IAM_USERNAME }}|g" | \
-            sed "s|\${AWS_REGION}|${{ secrets.AWS_REGION }}|g" > /tmp/task-def-app.json
+          # Use envsubst for safe variable substitution (handles special characters)
+          export IMAGE="$APP_IMAGE"
+          export EXECUTION_ROLE_ARN="$SECRET_ECS_EXECUTION_ROLE_ARN"
+          export TASK_ROLE_ARN="$SECRET_ECS_TASK_ROLE_ARN"
+          export NEXTAUTH_SECRET_ARN="$SECRET_NEXTAUTH_SECRET_ARN"
+          export DATABASE_URL="$SECRET_DATABASE_URL"
+          export AUTH_SECRET="$SECRET_AUTH_SECRET"
+          export AUTH_GITHUB_ID="$SECRET_AUTH_GITHUB_ID"
+          export AUTH_GITHUB_SECRET="$SECRET_AUTH_GITHUB_SECRET"
+          export AUTH_GOOGLE_ID="$SECRET_AUTH_GOOGLE_ID"
+          export AUTH_GOOGLE_SECRET="$SECRET_AUTH_GOOGLE_SECRET"
+          export AUTH_GITLAB_ID="$SECRET_AUTH_GITLAB_ID"
+          export AUTH_GITLAB_SECRET="$SECRET_AUTH_GITLAB_SECRET"
+          export AUTH_MICROSOFT_ENTRA_ID_ID="$SECRET_AUTH_MICROSOFT_ENTRA_ID_ID"
+          export AUTH_MICROSOFT_ENTRA_ID_SECRET="$SECRET_AUTH_MICROSOFT_ENTRA_ID_SECRET"
+          export AUTH_MICROSOFT_ENTRA_ID_ISSUER="$SECRET_AUTH_MICROSOFT_ENTRA_ID_ISSUER"
+          export AWS_ACCESS_KEY_ID="$SECRET_AWS_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$SECRET_AWS_SECRET_ACCESS_KEY"
+          export AWS_S3_BUCKET_NAME="$SECRET_AWS_S3_BUCKET_NAME"
+          export AWS_REGION="$SECRET_AWS_REGION"
+          export BREVO_API_KEY="$SECRET_BREVO_API_KEY"
+          export EMAIL_FROM="$SECRET_EMAIL_FROM"
+          export EMAIL_SERVER_HOST="$SECRET_EMAIL_SERVER_HOST"
+          export EMAIL_SERVER_PORT="$SECRET_EMAIL_SERVER_PORT"
+          export EMAIL_SERVER_USER="$SECRET_EMAIL_SERVER_USER"
+          export EMAIL_SERVER_PASSWORD="$SECRET_EMAIL_SERVER_PASSWORD"
+          export ADMIN_EMAIL="$SECRET_ADMIN_EMAIL"
+          export MASTER_USERNAME="$SECRET_MASTER_USERNAME"
+          export MASTER_PASSWORD="$SECRET_MASTER_PASSWORD"
+          export FEEDBACK_SPREADSHEET_ID="$SECRET_FEEDBACK_SPREADSHEET_ID"
+          export GOOGLE_SERVICE_ACCOUNT_KEY="$SECRET_GOOGLE_SERVICE_ACCOUNT_KEY"
+          export SMTP_AWS_IAM_USERNAME="$SECRET_SMTP_AWS_IAM_USERNAME"
+          
+          # Use envsubst for substitution (safer than sed for special characters)
+          envsubst < .aws/task-definition-app.json > /tmp/task-def-app.json
           
           echo "Task definition:"
           cat /tmp/task-def-app.json
