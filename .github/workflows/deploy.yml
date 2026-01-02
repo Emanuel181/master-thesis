@@ -234,7 +234,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          # Pass secrets as environment variables to avoid sed escaping issues
+          # Pass secrets as environment variables
           SECRET_DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           SECRET_AUTH_GITHUB_ID: ${{ secrets.AUTH_GITHUB_ID }}
@@ -269,44 +269,105 @@ jobs:
           APP_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "Deploying image: $APP_IMAGE"
           
-          # Use envsubst for safe variable substitution (handles special characters)
-          export IMAGE="$APP_IMAGE"
-          export EXECUTION_ROLE_ARN="$SECRET_ECS_EXECUTION_ROLE_ARN"
-          export TASK_ROLE_ARN="$SECRET_ECS_TASK_ROLE_ARN"
-          export NEXTAUTH_SECRET_ARN="$SECRET_NEXTAUTH_SECRET_ARN"
-          export DATABASE_URL="$SECRET_DATABASE_URL"
-          export AUTH_SECRET="$SECRET_AUTH_SECRET"
-          export AUTH_GITHUB_ID="$SECRET_AUTH_GITHUB_ID"
-          export AUTH_GITHUB_SECRET="$SECRET_AUTH_GITHUB_SECRET"
-          export AUTH_GOOGLE_ID="$SECRET_AUTH_GOOGLE_ID"
-          export AUTH_GOOGLE_SECRET="$SECRET_AUTH_GOOGLE_SECRET"
-          export AUTH_GITLAB_ID="$SECRET_AUTH_GITLAB_ID"
-          export AUTH_GITLAB_SECRET="$SECRET_AUTH_GITLAB_SECRET"
-          export AUTH_MICROSOFT_ENTRA_ID_ID="$SECRET_AUTH_MICROSOFT_ENTRA_ID_ID"
-          export AUTH_MICROSOFT_ENTRA_ID_SECRET="$SECRET_AUTH_MICROSOFT_ENTRA_ID_SECRET"
-          export AUTH_MICROSOFT_ENTRA_ID_ISSUER="$SECRET_AUTH_MICROSOFT_ENTRA_ID_ISSUER"
-          export AWS_ACCESS_KEY_ID="$SECRET_AWS_ACCESS_KEY_ID"
-          export AWS_SECRET_ACCESS_KEY="$SECRET_AWS_SECRET_ACCESS_KEY"
-          export AWS_S3_BUCKET_NAME="$SECRET_AWS_S3_BUCKET_NAME"
-          export AWS_REGION="$SECRET_AWS_REGION"
-          export BREVO_API_KEY="$SECRET_BREVO_API_KEY"
-          export EMAIL_FROM="$SECRET_EMAIL_FROM"
-          export EMAIL_SERVER_HOST="$SECRET_EMAIL_SERVER_HOST"
-          export EMAIL_SERVER_PORT="$SECRET_EMAIL_SERVER_PORT"
-          export EMAIL_SERVER_USER="$SECRET_EMAIL_SERVER_USER"
-          export EMAIL_SERVER_PASSWORD="$SECRET_EMAIL_SERVER_PASSWORD"
-          export ADMIN_EMAIL="$SECRET_ADMIN_EMAIL"
-          export MASTER_USERNAME="$SECRET_MASTER_USERNAME"
-          export MASTER_PASSWORD="$SECRET_MASTER_PASSWORD"
-          export FEEDBACK_SPREADSHEET_ID="$SECRET_FEEDBACK_SPREADSHEET_ID"
-          export GOOGLE_SERVICE_ACCOUNT_KEY="$SECRET_GOOGLE_SERVICE_ACCOUNT_KEY"
-          export SMTP_AWS_IAM_USERNAME="$SECRET_SMTP_AWS_IAM_USERNAME"
+          # Use jq to safely build JSON with proper escaping
+          jq -n \
+            --arg image "$APP_IMAGE" \
+            --arg exec_role "$SECRET_ECS_EXECUTION_ROLE_ARN" \
+            --arg task_role "$SECRET_ECS_TASK_ROLE_ARN" \
+            --arg nextauth_arn "$SECRET_NEXTAUTH_SECRET_ARN" \
+            --arg database_url "$SECRET_DATABASE_URL" \
+            --arg auth_secret "$SECRET_AUTH_SECRET" \
+            --arg auth_github_id "$SECRET_AUTH_GITHUB_ID" \
+            --arg auth_github_secret "$SECRET_AUTH_GITHUB_SECRET" \
+            --arg auth_google_id "$SECRET_AUTH_GOOGLE_ID" \
+            --arg auth_google_secret "$SECRET_AUTH_GOOGLE_SECRET" \
+            --arg auth_gitlab_id "$SECRET_AUTH_GITLAB_ID" \
+            --arg auth_gitlab_secret "$SECRET_AUTH_GITLAB_SECRET" \
+            --arg auth_ms_id "$SECRET_AUTH_MICROSOFT_ENTRA_ID_ID" \
+            --arg auth_ms_secret "$SECRET_AUTH_MICROSOFT_ENTRA_ID_SECRET" \
+            --arg auth_ms_issuer "$SECRET_AUTH_MICROSOFT_ENTRA_ID_ISSUER" \
+            --arg aws_key "$SECRET_AWS_ACCESS_KEY_ID" \
+            --arg aws_secret "$SECRET_AWS_SECRET_ACCESS_KEY" \
+            --arg aws_region "$SECRET_AWS_REGION" \
+            --arg aws_bucket "$SECRET_AWS_S3_BUCKET_NAME" \
+            --arg brevo_key "$SECRET_BREVO_API_KEY" \
+            --arg email_from "$SECRET_EMAIL_FROM" \
+            --arg email_host "$SECRET_EMAIL_SERVER_HOST" \
+            --arg email_port "$SECRET_EMAIL_SERVER_PORT" \
+            --arg email_user "$SECRET_EMAIL_SERVER_USER" \
+            --arg email_pass "$SECRET_EMAIL_SERVER_PASSWORD" \
+            --arg admin_email "$SECRET_ADMIN_EMAIL" \
+            --arg master_user "$SECRET_MASTER_USERNAME" \
+            --arg master_pass "$SECRET_MASTER_PASSWORD" \
+            --arg feedback_id "$SECRET_FEEDBACK_SPREADSHEET_ID" \
+            --arg google_svc "$SECRET_GOOGLE_SERVICE_ACCOUNT_KEY" \
+            --arg smtp_user "$SECRET_SMTP_AWS_IAM_USERNAME" \
+            '{
+              family: "vulniq-td",
+              networkMode: "awsvpc",
+              requiresCompatibilities: ["FARGATE"],
+              cpu: "512",
+              memory: "1024",
+              executionRoleArn: $exec_role,
+              taskRoleArn: $task_role,
+              containerDefinitions: [{
+                name: "vulniq-container",
+                image: $image,
+                essential: true,
+                portMappings: [{containerPort: 3000, protocol: "tcp"}],
+                environment: [
+                  {name: "NODE_ENV", value: "production"},
+                  {name: "PORT", value: "3000"},
+                  {name: "NEXTAUTH_URL", value: "https://vulniq.org"},
+                  {name: "DATABASE_URL", value: $database_url},
+                  {name: "AUTH_SECRET", value: $auth_secret},
+                  {name: "AUTH_GITHUB_ID", value: $auth_github_id},
+                  {name: "AUTH_GITHUB_SECRET", value: $auth_github_secret},
+                  {name: "AUTH_GOOGLE_ID", value: $auth_google_id},
+                  {name: "AUTH_GOOGLE_SECRET", value: $auth_google_secret},
+                  {name: "AUTH_GITLAB_ID", value: $auth_gitlab_id},
+                  {name: "AUTH_GITLAB_SECRET", value: $auth_gitlab_secret},
+                  {name: "AUTH_MICROSOFT_ENTRA_ID_ID", value: $auth_ms_id},
+                  {name: "AUTH_MICROSOFT_ENTRA_ID_SECRET", value: $auth_ms_secret},
+                  {name: "AUTH_MICROSOFT_ENTRA_ID_ISSUER", value: $auth_ms_issuer},
+                  {name: "AWS_ACCESS_KEY_ID", value: $aws_key},
+                  {name: "AWS_SECRET_ACCESS_KEY", value: $aws_secret},
+                  {name: "AWS_REGION", value: $aws_region},
+                  {name: "AWS_S3_BUCKET_NAME", value: $aws_bucket},
+                  {name: "BREVO_API_KEY", value: $brevo_key},
+                  {name: "EMAIL_FROM", value: $email_from},
+                  {name: "EMAIL_SERVER_HOST", value: $email_host},
+                  {name: "EMAIL_SERVER_PORT", value: $email_port},
+                  {name: "EMAIL_SERVER_USER", value: $email_user},
+                  {name: "EMAIL_SERVER_PASSWORD", value: $email_pass},
+                  {name: "ADMIN_EMAIL", value: $admin_email},
+                  {name: "MASTER_USERNAME", value: $master_user},
+                  {name: "MASTER_PASSWORD", value: $master_pass},
+                  {name: "FEEDBACK_SPREADSHEET_ID", value: $feedback_id},
+                  {name: "GOOGLE_SERVICE_ACCOUNT_KEY", value: $google_svc},
+                  {name: "SMTP_AWS_IAM_USERNAME", value: $smtp_user}
+                ],
+                secrets: [{name: "NEXTAUTH_SECRET", valueFrom: $nextauth_arn}],
+                logConfiguration: {
+                  logDriver: "awslogs",
+                  options: {
+                    "awslogs-group": "/ecs/vulniq",
+                    "awslogs-region": $aws_region,
+                    "awslogs-stream-prefix": "ecs",
+                    "awslogs-create-group": "true"
+                  }
+                },
+                healthCheck: {
+                  command: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"],
+                  interval: 30,
+                  timeout: 5,
+                  retries: 3,
+                  startPeriod: 60
+                }
+              }]
+            }' > /tmp/task-def-app.json
           
-          # Use envsubst for substitution (safer than sed for special characters)
-          envsubst < .aws/task-definition-app.json > /tmp/task-def-app.json
-          
-          echo "Task definition:"
-          cat /tmp/task-def-app.json
+          echo "Task definition created"
           
           echo "Registering app task definition..."
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
