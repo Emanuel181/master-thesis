@@ -352,7 +352,7 @@ export function Footer({ onScrollToTop }) {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
-                            © 2025 VulnIQ. All rights reserved.
+                            © 2026 VulnIQ. All rights reserved.
                         </p>
                         <div className="flex items-center justify-center sm:justify-start gap-2">
                             <Link

@@ -4,3 +4,8 @@ export const metadata = {
         follow: false,
     },
 };
+
+export default function AdminLayout({ children }) {
+    return children;
+}
+
