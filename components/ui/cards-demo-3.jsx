@@ -113,7 +113,7 @@ const Skeleton = () => {
     }, []);
 
     return (
-        <div className="p-4 sm:p-8 overflow-hidden h-full relative flex items-center justify-center">
+        <div className="p-4 sm:p-8 overflow-hidden h-full w-full relative flex items-center justify-center">
             <div className="flex flex-row shrink-0 justify-center items-center gap-1 sm:gap-2">
                 <Container className="h-6 w-6 sm:h-8 sm:w-8 circle-1">
                     <ClaudeLogo className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -233,7 +233,7 @@ export const CardSkeletonContainer = ({
     return (
         <div
             className={cn(
-                "h-[15rem] md:h-[20rem] rounded-xl z-40",
+                "h-[15rem] md:h-[20rem] rounded-xl z-40 flex items-center justify-center",
                 className,
                 showGradient &&
                 "bg-[var(--brand-light)]/20 dark:bg-[var(--brand-dark)]/50 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"

@@ -319,75 +319,105 @@ export const FloatingNavbar = () => {
         <AnimatePresence>
             {mobileMenuOpen && (
                 <motion.div
-                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className="fixed top-12 xs:top-14 sm:top-16 md:top-20 inset-x-0 z-[99] flex justify-center px-2 sm:px-3 md:px-4 md:hidden"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="fixed top-16 xs:top-18 sm:top-20 inset-x-0 z-[99] flex justify-center px-3 sm:px-4 md:hidden"
                 >
-                    <div className="bg-card/95 backdrop-blur-xl border border-border/30 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm p-2 sm:p-3 overflow-hidden max-h-[70vh] overflow-y-auto">
-                        <div className="flex flex-col gap-1">
-                            {/* Group items by section */}
-                            {['Product', 'Resources', 'Company'].map((section, sectionIdx) => (
-                                <div key={section}>
-                                    <div className="px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                                        {section}
+                    <div className="bg-card/98 backdrop-blur-xl border border-border/40 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        {/* Scrollable content */}
+                        <div className="max-h-[65vh] overflow-y-auto p-4">
+                            {/* Navigation Grid */}
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                {/* Product Section */}
+                                <div className="col-span-1">
+                                    <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-2 px-1">
+                                        Product
                                     </div>
                                     {navItems
-                                        .filter(item => item.section === section)
-                                        .map((item, idx) => (
-                                            <motion.a
+                                        .filter(item => item.section === 'Product')
+                                        .map((item) => (
+                                            <a
                                                 key={item.name}
                                                 href={item.link}
                                                 onClick={() => setMobileMenuOpen(false)}
-                                                className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target"
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: (sectionIdx * 3 + idx) * 0.03 }}
-                                                whileHover={{ x: 4 }}
-                                                whileTap={{ scale: 0.98 }}
+                                                className="block px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
                                             >
                                                 {item.name}
-                                                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50" />
-                                            </motion.a>
+                                            </a>
                                         ))}
-                                    {sectionIdx < 2 && <div className="border-b border-border/20 my-1.5" />}
                                 </div>
-                            ))}
 
-                            {/* Demo button in mobile menu */}
-                            <motion.a
+                                {/* Resources Section */}
+                                <div className="col-span-1">
+                                    <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-2 px-1">
+                                        Resources
+                                    </div>
+                                    {navItems
+                                        .filter(item => item.section === 'Resources')
+                                        .map((item) => (
+                                            <a
+                                                key={item.name}
+                                                href={item.link}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className="block px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                                            >
+                                                {item.name}
+                                            </a>
+                                        ))}
+                                </div>
+                            </div>
+
+                            {/* Company Section - Full Width */}
+                            <div className="mt-3 pt-3 border-t border-border/30">
+                                <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-2 px-1">
+                                    Company
+                                </div>
+                                <div className="grid grid-cols-3 gap-1">
+                                    {navItems
+                                        .filter(item => item.section === 'Company')
+                                        .map((item) => (
+                                            <a
+                                                key={item.name}
+                                                href={item.link}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className="px-2 py-2 text-sm text-center text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                                            >
+                                                {item.name}
+                                            </a>
+                                        ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Fixed bottom actions */}
+                        <div className="border-t border-border/40 p-3 bg-muted/30 flex gap-2">
+                            <a
                                 href="/demo"
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="mx-1 mt-1 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target border border-[var(--brand-accent)]/30"
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: navItems.length * 0.03 }}
-                                whileHover={{ x: 4 }}
-                                whileTap={{ scale: 0.98 }}
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-center text-[var(--brand-accent)] border border-[var(--brand-accent)]/40 rounded-xl hover:bg-[var(--brand-accent)]/10 transition-colors"
                             >
                                 Try Demo
-                                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-accent)]/50" />
-                            </motion.a>
+                            </a>
+                            <a
+                                href={isAuthenticated ? "/dashboard" : "/login"}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-center text-white bg-[var(--brand-accent)] rounded-xl hover:bg-[var(--brand-accent)]/90 transition-colors flex items-center justify-center gap-1.5"
+                            >
+                                {isAuthenticated ? (
+                                    <>
+                                        <LayoutDashboard className="w-4 h-4" />
+                                        Dashboard
+                                    </>
+                                ) : (
+                                    <>
+                                        Get Started
+                                        <ArrowRight className="w-4 h-4" />
+                                    </>
+                                )}
+                            </a>
                         </div>
-                        <motion.div
-                            className="border-t border-border/30 mt-2 pt-2 sm:pt-3"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <Button asChild className="w-full rounded-lg sm:rounded-xl touch-target min-h-[44px]" size="sm">
-                                <a
-                                    href={isAuthenticated ? "/dashboard" : "/login"}
-                                    aria-label={isAuthenticated ? "Go to Dashboard" : "Get started"}
-                                    className="flex items-center justify-center gap-2"
-                                >
-                                    {isAuthenticated && <LayoutDashboard className="w-4 h-4" aria-hidden="true" />}
-                                    {isAuthenticated ? "Dashboard" : "Get started"}
-                                    {!isAuthenticated && <ArrowRight className="w-4 h-4" aria-hidden="true" />}
-                                </a>
-                            </Button>
-                        </motion.div>
                     </div>
                 </motion.div>
             )}
