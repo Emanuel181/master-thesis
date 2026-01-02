@@ -43,6 +43,7 @@ export const FeedbackDialog = ({ open, onOpenChange, isDemo = false }) => {
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ feedback }),
       });
       if (response.ok) {

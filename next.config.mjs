@@ -8,6 +8,16 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Target modern browsers only - avoids legacy polyfills
   transpilePackages: [],
+  // Configure allowed image domains
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'media.licdn.com',
+        pathname: '/**',
+      },
+    ],
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

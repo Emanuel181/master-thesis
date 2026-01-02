@@ -74,13 +74,23 @@ function TreeNode({ node, style, dragHandle }) {
     const isOpen = node.isOpen;
     const isSelected = node.data.isChecked;
 
+    // Drag-and-drop state indicators from react-arborist
+    const isDragging = node.state.isDragging;
+    const willReceiveDrop = node.state.willReceiveDrop;
+
     return (
         <div
             ref={dragHandle}
             style={style}
-            className={`relative flex items-center gap-1 py-0.5 px-1 rounded-md cursor-pointer hover:bg-accent/50 group ${
-                node.isSelected ? "bg-accent" : ""
-            } ${isSelected ? "bg-accent/30" : ""}`}
+            className={`relative flex items-center gap-1 py-0.5 px-1 rounded-md cursor-pointer group transition-colors duration-200 ${
+                node.isSelected ? "bg-accent" : "hover:bg-accent/50"
+            } ${isSelected ? "bg-accent/30" : ""} ${
+                isDragging ? "opacity-40 cursor-grabbing" : ""
+            } ${
+                willReceiveDrop && isFolder 
+                    ? "bg-primary/10 border border-dashed border-primary shadow-sm" 
+                    : "border border-transparent"
+            }`}
             onClick={() => {
                 if (isFolder) {
                     node.toggle();
@@ -113,12 +123,16 @@ function TreeNode({ node, style, dragHandle }) {
             {/* Icon */}
             {isFolder ? (
                 isOpen ? (
-                    <FolderOpen className="h-4 w-4 text-blue-500 shrink-0" />
+                    <FolderOpen className={`h-4 w-4 shrink-0 transition-colors duration-200 ${
+                        willReceiveDrop ? "text-primary" : "text-blue-500"
+                    }`} />
                 ) : (
-                    <Folder className="h-4 w-4 text-blue-500 shrink-0" />
+                    <Folder className={`h-4 w-4 shrink-0 transition-colors duration-200 ${
+                        willReceiveDrop ? "text-primary" : "text-blue-500"
+                    }`} />
                 )
             ) : (
-                <File className="h-4 w-4 text-red-500 shrink-0" />
+                <File className={`h-4 w-4 text-red-500 shrink-0 transition-opacity ${isDragging ? "opacity-40" : ""}`} />
             )}
 
             {/* Name */}
@@ -518,6 +532,7 @@ const FolderTree = forwardRef(function FolderTree({
             const response = await fetch("/api/folders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({
                     name: newFolderName.trim(),
                     useCaseId,

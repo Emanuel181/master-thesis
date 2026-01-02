@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink, MessageSquare } from "lucide-react";
+import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink, MessageSquare, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const containerVariants = {
@@ -158,6 +158,13 @@ export function Footer({ onScrollToTop }) {
                             >
                                 <Map className="w-4 h-4" />
                                 Sitemap
+                            </Link>
+                            <Link
+                                href="/supporters"
+                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <Heart className="w-4 h-4" />
+                                Supporters
                             </Link>
                             <motion.a
                                 href="https://www.overleaf.com/read/vdqywdqywyhr#693113"

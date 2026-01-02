@@ -19,7 +19,7 @@ import {
 import { Label } from "@/components/ui/label"
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, ChevronDown, ChevronRight, Folder, File } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, Folder, File, Search } from "lucide-react"
 // Lazy-load ReactFlow visualization to reduce initial bundle size (~200KB)
 const AIWorkflowVisualization = dynamic(
     () => import("./ai-workflow-visualization").then(mod => mod.AIWorkflowVisualization),
@@ -40,6 +40,7 @@ import { useUseCases } from "@/contexts/useCasesContext"
 import { DEMO_DOCUMENTS } from "@/contexts/demoContext"
 import * as LucideIcons from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { usePrompts } from "@/contexts/promptsContext"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -90,7 +91,37 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     const [isRefreshingKb, setIsRefreshingKb] = React.useState({});
     const [expandedKb, setExpandedKb] = React.useState(null);
     const [kbPage, setKbPage] = React.useState(0);
+    const [kbSearchTerm, setKbSearchTerm] = React.useState("");
     const kbPerPage = 4;
+    
+    // Pagination state for Agents Configuration dropdowns
+    const [modelDropdownPage, setModelDropdownPage] = React.useState({
+        reviewer: 0,
+        implementation: 0,
+        tester: 0,
+        report: 0,
+    });
+    const [promptDropdownPage, setPromptDropdownPage] = React.useState({
+        reviewer: 0,
+        implementation: 0,
+        tester: 0,
+        report: 0,
+    });
+    // Search state for dropdowns
+    const [modelSearchTerm, setModelSearchTerm] = React.useState({
+        reviewer: "",
+        implementation: "",
+        tester: "",
+        report: "",
+    });
+    const [promptSearchTerm, setPromptSearchTerm] = React.useState({
+        reviewer: "",
+        implementation: "",
+        tester: "",
+        report: "",
+    });
+    const MODELS_PER_PAGE = 5;
+    const PROMPTS_PER_PAGE = 5;
 
     const { useCases, refresh: refreshUseCases } = useUseCases();
 
@@ -122,6 +153,36 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
     // Models list - will be populated from database/API
     // TODO: Fetch models from AWS backend
     const [models, _setModels] = React.useState([]);
+
+    // Helper functions for pagination in Agents Configuration with search
+    const getFilteredModels = (agent) => {
+        const searchTerm = modelSearchTerm[agent] || "";
+        if (!searchTerm) return models;
+        return models.filter(model => model.toLowerCase().includes(searchTerm.toLowerCase()));
+    };
+    
+    const getPaginatedModels = (agent) => {
+        const filtered = getFilteredModels(agent);
+        const page = modelDropdownPage[agent] || 0;
+        return filtered.slice(page * MODELS_PER_PAGE, (page + 1) * MODELS_PER_PAGE);
+    };
+    
+    const getTotalModelPages = (agent) => Math.ceil(getFilteredModels(agent).length / MODELS_PER_PAGE);
+    
+    const getFilteredPrompts = (agent) => {
+        const searchTerm = promptSearchTerm[agent] || "";
+        const agentPrompts = prompts[agent] || [];
+        if (!searchTerm) return agentPrompts;
+        return agentPrompts.filter(p => (p.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
+    };
+    
+    const getPaginatedPrompts = (agent) => {
+        const filtered = getFilteredPrompts(agent);
+        const page = promptDropdownPage[agent] || 0;
+        return filtered.slice(page * PROMPTS_PER_PAGE, (page + 1) * PROMPTS_PER_PAGE);
+    };
+    
+    const getTotalPromptPages = (agent) => Math.ceil(getFilteredPrompts(agent).length / PROMPTS_PER_PAGE);
 
     const toggleKnowledgeBase = (kbId) => {
         setSelectedKnowledgeBases(prev => {
@@ -217,7 +278,139 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         return text.substring(0, maxLength) + '...';
     };
 
+    const [isRefreshingAll, setIsRefreshingAll] = React.useState(false);
     const [isRefreshingPrompts, setIsRefreshingPrompts] = React.useState({});
+    const [isRefreshingAllPrompts, setIsRefreshingAllPrompts] = React.useState(false);
+
+    const handleRefreshAll = async () => {
+        setIsRefreshingAll(true);
+        // Activate all individual refresh animations
+        setIsRefreshingModels(true);
+        setIsRefreshingUseCases(true);
+        const agents = Object.keys(prompts);
+        agents.forEach(agent => {
+            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
+        });
+        // Activate all individual KB refresh animations
+        useCases.forEach(kb => {
+            setIsRefreshingKb(prev => ({ ...prev, [kb.id]: true }));
+        });
+        
+        try {
+            // Refresh all: models, knowledge bases, and prompts
+            await Promise.all([
+                (async () => {
+                    if (isDemoMode) {
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                        _setModels(DEMO_MODELS);
+                    } else {
+                        const response = await fetch('/api/bedrock');
+                        if (response.ok) {
+                            const data = await response.json();
+                            _setModels(data.models.map(model => model.name));
+                        }
+                    }
+                })(),
+                (async () => {
+                    if (isDemoMode) {
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    } else {
+                        await refreshUseCases();
+                    }
+                })(),
+                new Promise(resolve => setTimeout(resolve, 800)),
+            ]);
+            toast.success("All configurations refreshed successfully!");
+        } catch (error) {
+            toast.error("Failed to refresh some configurations");
+        } finally {
+            setIsRefreshingAll(false);
+            setIsRefreshingModels(false);
+            setIsRefreshingUseCases(false);
+            agents.forEach(agent => {
+                setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
+            });
+            useCases.forEach(kb => {
+                setIsRefreshingKb(prev => ({ ...prev, [kb.id]: false }));
+            });
+        }
+    };
+
+    const handleRefreshAllAgents = async () => {
+        setIsRefreshingModels(true);
+        const agents = Object.keys(prompts);
+        // Activate all individual agent prompt refresh animations
+        agents.forEach(agent => {
+            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
+        });
+        
+        try {
+            // Refresh models
+            if (isDemoMode) {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                _setModels(DEMO_MODELS);
+            } else {
+                const response = await fetch('/api/bedrock');
+                if (response.ok) {
+                    const data = await response.json();
+                    _setModels(data.models.map(model => model.name));
+                }
+            }
+            toast.success("All agent configurations refreshed successfully!");
+        } catch (error) {
+            toast.error("Failed to refresh agent configurations");
+        } finally {
+            setIsRefreshingModels(false);
+            agents.forEach(agent => {
+                setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
+            });
+        }
+    };
+
+    const handleRefreshAllPrompts = async () => {
+        setIsRefreshingAllPrompts(true);
+        const agents = Object.keys(prompts);
+        // Activate all individual prompt refresh animations
+        agents.forEach(agent => {
+            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
+        });
+        
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            toast.success("All prompts refreshed successfully!");
+        } catch (error) {
+            toast.error("Failed to refresh prompts");
+        } finally {
+            setIsRefreshingAllPrompts(false);
+            agents.forEach(agent => {
+                setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
+            });
+        }
+    };
+
+    const handleRefreshAllKnowledgeBases = async () => {
+        setIsRefreshingUseCases(true);
+        // Activate all individual KB refresh animations
+        useCases.forEach(kb => {
+            setIsRefreshingKb(prev => ({ ...prev, [kb.id]: true }));
+        });
+        
+        try {
+            if (isDemoMode) {
+                await new Promise(resolve => setTimeout(resolve, 800));
+            } else {
+                await refreshUseCases();
+            }
+            toast.success("All knowledge bases refreshed successfully!");
+        } catch (error) {
+            toast.error("Failed to refresh knowledge bases");
+        } finally {
+            setIsRefreshingUseCases(false);
+            useCases.forEach(kb => {
+                setIsRefreshingKb(prev => ({ ...prev, [kb.id]: false }));
+            });
+        }
+    };
 
     const handleRefreshAgentPrompts = async (agent) => {
         setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
@@ -331,10 +524,31 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                             </TabsList>
 
                             <TabsContent value="workflow" className="mt-0">
-                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
+                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
                                     <div className="space-y-4 pr-4">
-                                        <div className="text-sm text-muted-foreground mb-4">
-                                            Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-sm text-muted-foreground">
+                                                Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleRefreshAll}
+                                                disabled={isRefreshingAll}
+                                                className="shrink-0 ml-4 text-foreground"
+                                            >
+                                                {isRefreshingAll ? (
+                                                    <>
+                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                        Refreshing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                                        Refresh All
+                                                    </>
+                                                )}
+                                            </Button>
                                         </div>
                                         <AIWorkflowVisualization
                                             models={models}
@@ -355,6 +569,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             selectedPrompts={selectedPrompts}
                                             selectedSystemPrompts={selectedSystemPrompts}
                                             onPromptChange={handlePromptChange}
+                                            isRefreshingAll={isRefreshingAll}
                                             onSave={() => {
                                                 // Here you would typically save the configuration
                                                 onOpenChange(false);
@@ -366,7 +581,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                             </TabsContent>
 
                             <TabsContent value="models" className="mt-0">
-                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)]">
+                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
                                     <div className="pr-4">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                                             <div>
@@ -376,19 +591,20 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                title="Refresh available models"
-                                                onClick={handleRefreshModels}
+                                                title="Refresh all agent configurations"
+                                                onClick={handleRefreshAllAgents}
                                                 disabled={isRefreshingModels}
+                                                className="shrink-0 text-foreground"
                                             >
                                                 {isRefreshingModels ? (
                                                     <>
                                                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                        <span className="hidden sm:inline">Refreshing...</span>
+                                                        Refreshing...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <RefreshCw className="h-4 w-4 sm:mr-2" />
-                                                        <span className="hidden sm:inline">Refresh Models</span>
+                                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                                        Refresh All
                                                     </>
                                                 )}
                                             </Button>
@@ -410,11 +626,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <ScrollArea className="h-[200px]">
-                                                                        {models.map((model, idx) => (
-                                                                            <SelectItem key={`reviewer-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                    <div className="p-2 border-b">
+                                                                        <Input
+                                                                            placeholder="Search models..."
+                                                                            value={modelSearchTerm.reviewer}
+                                                                            onChange={(e) => {
+                                                                                setModelSearchTerm(p => ({ ...p, reviewer: e.target.value }));
+                                                                                setModelDropdownPage(p => ({ ...p, reviewer: 0 }));
+                                                                            }}
+                                                                            className="h-7 text-xs"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="max-h-[150px] overflow-y-auto">
+                                                                        {getPaginatedModels('reviewer').map((model, idx) => (
+                                                                            <SelectItem key={`reviewer-model-${modelDropdownPage.reviewer}-${idx}`} value={model}>{model}</SelectItem>
                                                                         ))}
-                                                                    </ScrollArea>
+                                                                        {getPaginatedModels('reviewer').length === 0 && (
+                                                                            <div className="p-2 text-xs text-muted-foreground text-center">No models found</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {getTotalModelPages('reviewer') > 1 && (
+                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, reviewer: Math.max(0, p.reviewer - 1) })); }}
+                                                                                disabled={modelDropdownPage.reviewer === 0}
+                                                                            >
+                                                                                <ChevronLeft className="h-3 w-3" />
+                                                                            </Button>
+                                                                            <span className="text-[10px] text-muted-foreground">
+                                                                                {modelDropdownPage.reviewer + 1} / {getTotalModelPages('reviewer')}
+                                                                            </span>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, reviewer: Math.min(getTotalModelPages('reviewer') - 1, p.reviewer + 1) })); }}
+                                                                                disabled={modelDropdownPage.reviewer >= getTotalModelPages('reviewer') - 1}
+                                                                            >
+                                                                                <ChevronRight className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </SelectContent>
                                                         </Select>
@@ -432,14 +688,54 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <ScrollArea className="h-[200px]">
+                                                                        <div className="p-2 border-b">
+                                                                            <Input
+                                                                                placeholder="Search prompts..."
+                                                                                value={promptSearchTerm.reviewer}
+                                                                                onChange={(e) => {
+                                                                                    setPromptSearchTerm(p => ({ ...p, reviewer: e.target.value }));
+                                                                                    setPromptDropdownPage(p => ({ ...p, reviewer: 0 }));
+                                                                                }}
+                                                                                className="h-7 text-xs"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="max-h-[150px] overflow-y-auto">
                                                                             <SelectItem value="none">No prompt</SelectItem>
-                                                                            {(prompts.reviewer || []).map((prompt) => (
-                                                                                <SelectItem key={`reviewer-prompt-${prompt.id}`} value={prompt.id}>
+                                                                            {getPaginatedPrompts('reviewer').map((prompt) => (
+                                                                                <SelectItem key={`reviewer-prompt-${promptDropdownPage.reviewer}-${prompt.id}`} value={prompt.id}>
                                                                                     {prompt.title || "Untitled"}
                                                                                 </SelectItem>
                                                                             ))}
-                                                                        </ScrollArea>
+                                                                            {getPaginatedPrompts('reviewer').length === 0 && promptSearchTerm.reviewer && (
+                                                                                <div className="p-2 text-xs text-muted-foreground text-center">No prompts found</div>
+                                                                            )}
+                                                                        </div>
+                                                                        {getTotalPromptPages('reviewer') > 1 && (
+                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, reviewer: Math.max(0, p.reviewer - 1) })); }}
+                                                                                    disabled={promptDropdownPage.reviewer === 0}
+                                                                                >
+                                                                                    <ChevronLeft className="h-3 w-3" />
+                                                                                </Button>
+                                                                                <span className="text-[10px] text-muted-foreground">
+                                                                                    {promptDropdownPage.reviewer + 1} / {getTotalPromptPages('reviewer')}
+                                                                                </span>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, reviewer: Math.min(getTotalPromptPages('reviewer') - 1, p.reviewer + 1) })); }}
+                                                                                    disabled={promptDropdownPage.reviewer >= getTotalPromptPages('reviewer') - 1}
+                                                                                >
+                                                                                    <ChevronRight className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </SelectContent>
                                                             </Select>
@@ -478,11 +774,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <ScrollArea className="h-[200px]">
-                                                                        {models.map((model, idx) => (
-                                                                            <SelectItem key={`implementation-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                    <div className="p-2 border-b">
+                                                                        <Input
+                                                                            placeholder="Search models..."
+                                                                            value={modelSearchTerm.implementation}
+                                                                            onChange={(e) => {
+                                                                                setModelSearchTerm(p => ({ ...p, implementation: e.target.value }));
+                                                                                setModelDropdownPage(p => ({ ...p, implementation: 0 }));
+                                                                            }}
+                                                                            className="h-7 text-xs"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="max-h-[150px] overflow-y-auto">
+                                                                        {getPaginatedModels('implementation').map((model, idx) => (
+                                                                            <SelectItem key={`implementation-model-${modelDropdownPage.implementation}-${idx}`} value={model}>{model}</SelectItem>
                                                                         ))}
-                                                                    </ScrollArea>
+                                                                        {getPaginatedModels('implementation').length === 0 && (
+                                                                            <div className="p-2 text-xs text-muted-foreground text-center">No models found</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {getTotalModelPages('implementation') > 1 && (
+                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, implementation: Math.max(0, p.implementation - 1) })); }}
+                                                                                disabled={modelDropdownPage.implementation === 0}
+                                                                            >
+                                                                                <ChevronLeft className="h-3 w-3" />
+                                                                            </Button>
+                                                                            <span className="text-[10px] text-muted-foreground">
+                                                                                {modelDropdownPage.implementation + 1} / {getTotalModelPages('implementation')}
+                                                                            </span>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, implementation: Math.min(getTotalModelPages('implementation') - 1, p.implementation + 1) })); }}
+                                                                                disabled={modelDropdownPage.implementation >= getTotalModelPages('implementation') - 1}
+                                                                            >
+                                                                                <ChevronRight className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </SelectContent>
                                                         </Select>
@@ -500,14 +836,54 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <ScrollArea className="h-[200px]">
+                                                                        <div className="p-2 border-b">
+                                                                            <Input
+                                                                                placeholder="Search prompts..."
+                                                                                value={promptSearchTerm.implementation}
+                                                                                onChange={(e) => {
+                                                                                    setPromptSearchTerm(p => ({ ...p, implementation: e.target.value }));
+                                                                                    setPromptDropdownPage(p => ({ ...p, implementation: 0 }));
+                                                                                }}
+                                                                                className="h-7 text-xs"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="max-h-[150px] overflow-y-auto">
                                                                             <SelectItem value="none">No prompt</SelectItem>
-                                                                            {(prompts.implementation || []).map((prompt) => (
-                                                                                <SelectItem key={`implementation-prompt-${prompt.id}`} value={prompt.id}>
+                                                                            {getPaginatedPrompts('implementation').map((prompt) => (
+                                                                                <SelectItem key={`implementation-prompt-${promptDropdownPage.implementation}-${prompt.id}`} value={prompt.id}>
                                                                                     {prompt.title || "Untitled"}
                                                                                 </SelectItem>
                                                                             ))}
-                                                                        </ScrollArea>
+                                                                            {getPaginatedPrompts('implementation').length === 0 && promptSearchTerm.implementation && (
+                                                                                <div className="p-2 text-xs text-muted-foreground text-center">No prompts found</div>
+                                                                            )}
+                                                                        </div>
+                                                                        {getTotalPromptPages('implementation') > 1 && (
+                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, implementation: Math.max(0, p.implementation - 1) })); }}
+                                                                                    disabled={promptDropdownPage.implementation === 0}
+                                                                                >
+                                                                                    <ChevronLeft className="h-3 w-3" />
+                                                                                </Button>
+                                                                                <span className="text-[10px] text-muted-foreground">
+                                                                                    {promptDropdownPage.implementation + 1} / {getTotalPromptPages('implementation')}
+                                                                                </span>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, implementation: Math.min(getTotalPromptPages('implementation') - 1, p.implementation + 1) })); }}
+                                                                                    disabled={promptDropdownPage.implementation >= getTotalPromptPages('implementation') - 1}
+                                                                                >
+                                                                                    <ChevronRight className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </SelectContent>
                                                             </Select>
@@ -546,11 +922,51 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <ScrollArea className="h-[200px]">
-                                                                        {models.map((model, idx) => (
-                                                                            <SelectItem key={`tester-model-${idx}`} value={model}>{model}</SelectItem>
+                                                                    <div className="p-2 border-b">
+                                                                        <Input
+                                                                            placeholder="Search models..."
+                                                                            value={modelSearchTerm.tester}
+                                                                            onChange={(e) => {
+                                                                                setModelSearchTerm(p => ({ ...p, tester: e.target.value }));
+                                                                                setModelDropdownPage(p => ({ ...p, tester: 0 }));
+                                                                            }}
+                                                                            className="h-7 text-xs"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="max-h-[150px] overflow-y-auto">
+                                                                        {getPaginatedModels('tester').map((model, idx) => (
+                                                                            <SelectItem key={`tester-model-${modelDropdownPage.tester}-${idx}`} value={model}>{model}</SelectItem>
                                                                         ))}
-                                                                    </ScrollArea>
+                                                                        {getPaginatedModels('tester').length === 0 && (
+                                                                            <div className="p-2 text-xs text-muted-foreground text-center">No models found</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {getTotalModelPages('tester') > 1 && (
+                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, tester: Math.max(0, p.tester - 1) })); }}
+                                                                                disabled={modelDropdownPage.tester === 0}
+                                                                            >
+                                                                                <ChevronLeft className="h-3 w-3" />
+                                                                            </Button>
+                                                                            <span className="text-[10px] text-muted-foreground">
+                                                                                {modelDropdownPage.tester + 1} / {getTotalModelPages('tester')}
+                                                                            </span>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, tester: Math.min(getTotalModelPages('tester') - 1, p.tester + 1) })); }}
+                                                                                disabled={modelDropdownPage.tester >= getTotalModelPages('tester') - 1}
+                                                                            >
+                                                                                <ChevronRight className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </SelectContent>
                                                         </Select>
@@ -568,14 +984,54 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <ScrollArea className="h-[200px]">
+                                                                        <div className="p-2 border-b">
+                                                                            <Input
+                                                                                placeholder="Search prompts..."
+                                                                                value={promptSearchTerm.tester}
+                                                                                onChange={(e) => {
+                                                                                    setPromptSearchTerm(p => ({ ...p, tester: e.target.value }));
+                                                                                    setPromptDropdownPage(p => ({ ...p, tester: 0 }));
+                                                                                }}
+                                                                                className="h-7 text-xs"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="max-h-[150px] overflow-y-auto">
                                                                             <SelectItem value="none">No prompt</SelectItem>
-                                                                            {(prompts.tester || []).map((prompt) => (
-                                                                                <SelectItem key={`tester-prompt-${prompt.id}`} value={prompt.id}>
+                                                                            {getPaginatedPrompts('tester').map((prompt) => (
+                                                                                <SelectItem key={`tester-prompt-${promptDropdownPage.tester}-${prompt.id}`} value={prompt.id}>
                                                                                     {prompt.title || "Untitled"}
                                                                                 </SelectItem>
                                                                             ))}
-                                                                        </ScrollArea>
+                                                                            {getPaginatedPrompts('tester').length === 0 && promptSearchTerm.tester && (
+                                                                                <div className="p-2 text-xs text-muted-foreground text-center">No prompts found</div>
+                                                                            )}
+                                                                        </div>
+                                                                        {getTotalPromptPages('tester') > 1 && (
+                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, tester: Math.max(0, p.tester - 1) })); }}
+                                                                                    disabled={promptDropdownPage.tester === 0}
+                                                                                >
+                                                                                    <ChevronLeft className="h-3 w-3" />
+                                                                                </Button>
+                                                                                <span className="text-[10px] text-muted-foreground">
+                                                                                    {promptDropdownPage.tester + 1} / {getTotalPromptPages('tester')}
+                                                                                </span>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, tester: Math.min(getTotalPromptPages('tester') - 1, p.tester + 1) })); }}
+                                                                                    disabled={promptDropdownPage.tester >= getTotalPromptPages('tester') - 1}
+                                                                                >
+                                                                                    <ChevronRight className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </SelectContent>
                                                             </Select>
@@ -614,11 +1070,53 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <ScrollArea className="h-[200px]">
-                                                                        {models.map((model, idx) => (
-                                                                            <SelectItem key={`report-model-${idx}`} value={model}>{model}</SelectItem>
-                                                                        ))}
-                                                                    </ScrollArea>
+                                                                    <div className="p-2 border-b">
+                                                                        <Input
+                                                                            placeholder="Search models..."
+                                                                            className="h-7 text-xs"
+                                                                            value={modelSearchTerm.report}
+                                                                            onChange={(e) => {
+                                                                                setModelSearchTerm(p => ({ ...p, report: e.target.value }));
+                                                                                setModelDropdownPage(p => ({ ...p, report: 0 }));
+                                                                            }}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            onKeyDown={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="max-h-[180px]">
+                                                                        {getPaginatedModels('report').length > 0 ? (
+                                                                            getPaginatedModels('report').map((model, idx) => (
+                                                                                <SelectItem key={`report-model-${modelDropdownPage.report}-${idx}`} value={model}>{model}</SelectItem>
+                                                                            ))
+                                                                        ) : (
+                                                                            <div className="py-2 px-3 text-xs text-muted-foreground text-center">No models found</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {getTotalModelPages('report') > 1 && (
+                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, report: Math.max(0, p.report - 1) })); }}
+                                                                                disabled={modelDropdownPage.report === 0}
+                                                                            >
+                                                                                <ChevronLeft className="h-3 w-3" />
+                                                                            </Button>
+                                                                            <span className="text-[10px] text-muted-foreground">
+                                                                                {modelDropdownPage.report + 1} / {getTotalModelPages('report')}
+                                                                            </span>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, report: Math.min(getTotalModelPages('report') - 1, p.report + 1) })); }}
+                                                                                disabled={modelDropdownPage.report >= getTotalModelPages('report') - 1}
+                                                                            >
+                                                                                <ChevronRight className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </SelectContent>
                                                         </Select>
@@ -636,14 +1134,56 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <ScrollArea className="h-[200px]">
+                                                                        <div className="p-2 border-b">
+                                                                            <Input
+                                                                                placeholder="Search prompts..."
+                                                                                className="h-7 text-xs"
+                                                                                value={promptSearchTerm.report}
+                                                                                onChange={(e) => {
+                                                                                    setPromptSearchTerm(p => ({ ...p, report: e.target.value }));
+                                                                                    setPromptDropdownPage(p => ({ ...p, report: 0 }));
+                                                                                }}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                onKeyDown={(e) => e.stopPropagation()}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="max-h-[180px]">
                                                                             <SelectItem value="none">No prompt</SelectItem>
-                                                                            {(prompts.report || []).map((prompt) => (
-                                                                                <SelectItem key={`report-prompt-${prompt.id}`} value={prompt.id}>
-                                                                                    {prompt.title || "Untitled"}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </ScrollArea>
+                                                                            {getPaginatedPrompts('report').length > 0 ? (
+                                                                                getPaginatedPrompts('report').map((prompt) => (
+                                                                                    <SelectItem key={`report-prompt-${promptDropdownPage.report}-${prompt.id}`} value={prompt.id}>
+                                                                                        {prompt.title || "Untitled"}
+                                                                                    </SelectItem>
+                                                                                ))
+                                                                            ) : (
+                                                                                <div className="py-2 px-3 text-xs text-muted-foreground text-center">No prompts found</div>
+                                                                            )}
+                                                                        </div>
+                                                                        {getTotalPromptPages('report') > 1 && (
+                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, report: Math.max(0, p.report - 1) })); }}
+                                                                                    disabled={promptDropdownPage.report === 0}
+                                                                                >
+                                                                                    <ChevronLeft className="h-3 w-3" />
+                                                                                </Button>
+                                                                                <span className="text-[10px] text-muted-foreground">
+                                                                                    {promptDropdownPage.report + 1} / {getTotalPromptPages('report')}
+                                                                                </span>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6"
+                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, report: Math.min(getTotalPromptPages('report') - 1, p.report + 1) })); }}
+                                                                                    disabled={promptDropdownPage.report >= getTotalPromptPages('report') - 1}
+                                                                                >
+                                                                                    <ChevronRight className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </SelectContent>
                                                             </Select>
@@ -683,11 +1223,30 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                             </TabsContent>
 
                             <TabsContent value="prompts" className="mt-0">
-                                <div className="space-y-4">
+                                <div className="space-y-4 bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
                                     <div className="flex items-center justify-between">
                                         <div className="text-sm text-muted-foreground">
                                             Configure the prompts used by each AI agent. Select one prompt per agent.
                                         </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleRefreshAllPrompts}
+                                            disabled={isRefreshingAllPrompts}
+                                            className="shrink-0 ml-4 text-foreground"
+                                        >
+                                            {isRefreshingAllPrompts ? (
+                                                <>
+                                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                                    Refreshing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                                    Refresh All
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
 
                                     {(() => {
@@ -870,29 +1429,57 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={handleRefreshUseCases}
-                                                title="Refresh knowledge bases"
+                                                onClick={handleRefreshAllKnowledgeBases}
+                                                title="Refresh all knowledge bases"
                                                 disabled={isRefreshingUseCases}
-                                                className="shrink-0"
+                                                className="shrink-0 text-foreground"
                                             >
                                                 {isRefreshingUseCases ? (
                                                     <>
                                                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                        <span className="hidden sm:inline">Refreshing...</span>
+                                                        Refreshing...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <RefreshCw className="h-4 w-4 sm:mr-2" />
-                                                        <span className="hidden sm:inline">Refresh</span>
+                                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                                        Refresh All
                                                     </>
                                                 )}
                                             </Button>
                                         </div>
 
-                                        <ScrollArea className="h-[320px]">
+                                        {/* Search input */}
+                                        <div className="relative max-w-xs">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Search knowledge bases..."
+                                                value={kbSearchTerm}
+                                                onChange={(e) => {
+                                                    setKbSearchTerm(e.target.value);
+                                                    setKbPage(0); // Reset to first page on search
+                                                }}
+                                                className="pl-9 h-9"
+                                            />
+                                        </div>
+
+                                        <ScrollArea className="h-[280px] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
                                             <div className="space-y-2 pr-4">
                                             {(() => {
-                                                const paginatedUseCases = useCases.slice(kbPage * kbPerPage, (kbPage + 1) * kbPerPage);
+                                                // Filter use cases by search term
+                                                const filteredUseCases = useCases.filter(kb => 
+                                                    kb.title?.toLowerCase().includes(kbSearchTerm.toLowerCase()) ||
+                                                    kb.content?.toLowerCase().includes(kbSearchTerm.toLowerCase())
+                                                );
+                                                const paginatedUseCases = filteredUseCases.slice(kbPage * kbPerPage, (kbPage + 1) * kbPerPage);
+                                                
+                                                if (filteredUseCases.length === 0) {
+                                                    return (
+                                                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                                                            <Search className="h-10 w-10 text-muted-foreground/50 mb-2" />
+                                                            <p className="text-sm text-muted-foreground">No knowledge bases found matching "{kbSearchTerm}"</p>
+                                                        </div>
+                                                    );
+                                                }
                                                 
                                                 return paginatedUseCases.map((kb) => {
                                                     const IconComponent = LucideIcons[kb.icon];
@@ -1029,29 +1616,39 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                         </ScrollArea>
 
                                         {/* Pagination */}
-                                        {useCases.length > kbPerPage && (
-                                            <div className="flex items-center justify-center gap-4 pt-4 border-t">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setKbPage(prev => Math.max(0, prev - 1))}
-                                                    disabled={kbPage === 0}
-                                                >
-                                                    ← Previous
-                                                </Button>
-                                                <span className="text-sm font-medium">
-                                                    Page {kbPage + 1} of {Math.ceil(useCases.length / kbPerPage)} ({useCases.length} total)
-                                                </span>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setKbPage(prev => Math.min(Math.ceil(useCases.length / kbPerPage) - 1, prev + 1))}
-                                                    disabled={kbPage >= Math.ceil(useCases.length / kbPerPage) - 1}
-                                                >
-                                                    Next →
-                                                </Button>
-                                            </div>
-                                        )}
+                                        {(() => {
+                                            const filteredUseCases = useCases.filter(kb => 
+                                                kb.title?.toLowerCase().includes(kbSearchTerm.toLowerCase()) ||
+                                                kb.content?.toLowerCase().includes(kbSearchTerm.toLowerCase())
+                                            );
+                                            const totalPages = Math.ceil(filteredUseCases.length / kbPerPage);
+                                            
+                                            if (filteredUseCases.length <= kbPerPage) return null;
+                                            
+                                            return (
+                                                <div className="flex items-center justify-center gap-4 pt-4 border-t">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setKbPage(prev => Math.max(0, prev - 1))}
+                                                        disabled={kbPage === 0}
+                                                    >
+                                                        ← Previous
+                                                    </Button>
+                                                    <span className="text-sm font-medium">
+                                                        Page {kbPage + 1} of {totalPages} ({filteredUseCases.length} total)
+                                                    </span>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setKbPage(prev => Math.min(totalPages - 1, prev + 1))}
+                                                        disabled={kbPage >= totalPages - 1}
+                                                    >
+                                                        Next →
+                                                    </Button>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             </TabsContent>

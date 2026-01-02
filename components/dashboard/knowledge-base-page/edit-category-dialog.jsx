@@ -14,42 +14,26 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2 } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import * as LucideIcons from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Loader2, Check, Folder } from "lucide-react"
+import { IconPicker } from "./icon-picker"
+import { categoryColors } from "./add-category-dialog"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
-const iconNames = [
-  "Activity", "Airplay", "AlarmClock", "AlertCircle", "Anchor", "Archive",
-  "AtSign", "Award", "BarChart", "BatteryCharging", "Bell", "Bluetooth",
-  "BookOpen", "Box", "Briefcase", "Calendar", "Camera", "Cast",
-  "CheckCircle", "Clipboard", "Clock", "Cloud", "Codepen", "Compass",
-  "Copy", "CreditCard", "Database", "Delete", "Disc", "Download",
-  "Edit", "ExternalLink", "Eye", "Facebook", "FastForward", "Feather",
-  "File", "FileText", "Film", "Filter", "Flag", "Folder",
-  "Gift", "GitBranch", "GitCommit", "Github", "Globe", "Grid",
-  "HardDrive", "Hash", "Headphones", "Heart", "HelpCircle", "Home",
-  "Image", "Inbox", "Info", "Instagram", "Key", "Layers",
-  "Layout", "Link", "Linkedin", "List", "Loader", "Lock",
-  "LogIn", "LogOut", "Mail", "Map", "MapPin", "Maximize",
-  "Menu", "MessageCircle", "Mic", "Minimize", "Monitor", "Moon",
-  "MousePointer", "Music", "Navigation", "Package", "Paperclip", "Pause",
-  "PenTool", "Percent", "Phone", "PieChart", "Play", "Pocket",
-  "Power", "Printer", "Radio", "RefreshCw", "Repeat", "Rewind",
-  "Save", "Scissors", "Search", "Send", "Settings", "Share",
-  "Shield", "ShoppingCart", "Sidebar", "Slack", "Sliders", "Smartphone",
-  "Smile", "Speaker", "Star", "Sun", "Sunrise", "Sunset",
-  "Table", "Tablet", "Tag", "Target", "Terminal", "ThumbsUp",
-  "ToggleLeft", "Trash", "TrendingUp", "Truck", "Twitter", "Type",
-  "Umbrella", "Underline", "Unlock", "Upload", "User", "Video",
-  "Voicemail", "Volume2", "Watch", "Wifi", "Wind", "Youtube",
-  "Zap"
-];
 
-export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate }) {
+export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate, groups = [] }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [icon, setIcon] = useState("File")
+  const [color, setColor] = useState("default")
+  const [groupId, setGroupId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   // Update form when useCase changes
@@ -59,6 +43,8 @@ export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate }) {
       // Use fullDescription if available for editing
       setDescription(useCase.fullDescription || useCase.description || "")
       setIcon(useCase.icon || "File")
+      setColor(useCase.color || "default")
+      setGroupId(useCase.groupId || "")
     }
   }, [useCase])
 
@@ -75,10 +61,13 @@ export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate }) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           title: name,
           content: description,
           icon,
+          color,
+          groupId: groupId || null,
         }),
       })
 
@@ -95,6 +84,8 @@ export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate }) {
         name: updatedUseCase.title,
         description: updatedUseCase.content,
         icon: updatedUseCase.icon,
+        color: updatedUseCase.color,
+        groupId: updatedUseCase.groupId,
       })
 
       toast.success("Use case updated successfully!")
@@ -113,6 +104,8 @@ export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate }) {
       setName(useCase.name || "")
       setDescription(useCase.fullDescription || useCase.description || "")
       setIcon(useCase.icon || "File")
+      setColor(useCase.color || "default")
+      setGroupId(useCase.groupId || "")
     }
     onOpenChange(false)
   }
@@ -160,27 +153,68 @@ export function EditCategoryDialog({ useCase, open, onOpenChange, onUpdate }) {
             <Label htmlFor="edit-icon" className="text-right">
               Icon
             </Label>
-            <Select onValueChange={setIcon} value={icon}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select an icon" />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="grid grid-cols-3 gap-1 p-1">
-                  {iconNames.map(iconName => {
-                    const IconComponent = LucideIcons[iconName];
-                    return (
-                      <SelectItem key={iconName} value={iconName}>
-                        <div className="flex items-center gap-2">
-                          {IconComponent && <IconComponent className="h-4 w-4" />}
-                          <span className="truncate">{iconName}</span>
-                        </div>
-                      </SelectItem>
-                    )
-                  })}
-                </div>
-              </SelectContent>
-            </Select>
+            <IconPicker
+              value={icon}
+              onValueChange={setIcon}
+              className="col-span-3"
+            />
           </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right pt-2">
+              Color
+            </Label>
+            <div className="col-span-3">
+              <div className="flex flex-wrap gap-2">
+                {categoryColors.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => setColor(c.name)}
+                    className={cn(
+                      "h-7 w-7 rounded-full border-2 flex items-center justify-center transition-all",
+                      c.class,
+                      color === c.name ? "border-foreground scale-110" : "border-transparent hover:scale-105"
+                    )}
+                    title={c.label}
+                  >
+                    {color === c.name && <Check className="h-3 w-3" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {groups.length > 0 && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-group" className="text-right">
+                Group
+              </Label>
+              <Select value={groupId || "none"} onValueChange={(val) => setGroupId(val === "none" ? "" : val)}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="No group (ungrouped)">
+                    {groupId ? (
+                      <span className="flex items-center gap-2">
+                        <Folder className="h-4 w-4" />
+                        {groups.find(g => g.id === groupId)?.name || "Unknown"}
+                      </span>
+                    ) : (
+                      "No group (ungrouped)"
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No group (ungrouped)</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      <span className="flex items-center gap-2">
+                        <Folder className="h-4 w-4" />
+                        {group.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel} disabled={isLoading}>

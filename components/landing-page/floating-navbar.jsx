@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, BookOpen, Newspaper, GitBranch, Mail, AlertTriangle, Code, Rss, MessageSquare } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, BookOpen, Newspaper, GitBranch, Mail, AlertTriangle, Code, Rss, MessageSquare, Heart } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 import {
@@ -187,6 +187,12 @@ export const FloatingNavbar = () => {
                                         <ListItem href="/about" title="About Us" icon={BookOpen}>
                                             Learn about our mission and team.
                                         </ListItem>
+                                        <ListItem href="/supporters" title="Supporters" icon={Heart}>
+                                            People who support this project.
+                                        </ListItem>
+                                        <ListItem href="/#connect" title="Support" icon={MessageSquare}>
+                                            Get help or contact our team.
+                                        </ListItem>
                                     </ul>
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
@@ -251,8 +257,6 @@ export const FloatingNavbar = () => {
 
                 {/* RIGHT: Actions */}
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-                    {/* Feedback Button */}
-                    <FeedbackButton onClick={() => setFeedbackOpen(true)} />
                     <AccessibilityButton />
                     <ThemeToggle />
                     <Button asChild variant="outline" size="sm" className="hidden md:flex rounded-full text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 border-[var(--brand-accent)]/50 text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]">
@@ -260,14 +264,23 @@ export const FloatingNavbar = () => {
                             Demo
                         </a>
                     </Button>
-                    <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)]">
-                        <a href={isAuthenticated ? "/dashboard" : "/login"} className="flex items-center gap-0.5 xs:gap-1 sm:gap-1.5" aria-label={isAuthenticated ? "Go to Dashboard" : "Get started - Sign in or create an account"} suppressHydrationWarning>
-                            <span className="hidden xs:inline">{isAuthenticated ? "Dashboard" : "Get started"}</span>
-                            <span className="xs:hidden" aria-hidden="true">{isAuthenticated ? "Go" : "Go"}</span>
-                            <span className="sr-only xs:hidden">{isAuthenticated ? "Dashboard" : "Get started"}</span>
-                            {isAuthenticated ? <LayoutDashboard className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" /> : <ArrowRight className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />}
-                        </a>
-                    </Button>
+                    {isAuthenticated ? (
+                        <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white">
+                            <a href="/dashboard" className="flex items-center gap-1 xs:gap-1.5 sm:gap-2" aria-label="Go to Dashboard">
+                                <LayoutDashboard className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
+                                <span className="hidden xs:inline">Dashboard</span>
+                            </a>
+                        </Button>
+                    ) : (
+                        <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)]">
+                            <a href="/login" className="flex items-center gap-0.5 xs:gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account">
+                                <span className="hidden xs:inline">Get started</span>
+                                <span className="xs:hidden" aria-hidden="true">Go</span>
+                                <span className="sr-only xs:hidden">Get started</span>
+                                <ArrowRight className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                            </a>
+                        </Button>
+                    )}
                     {/* Mobile menu button */}
                     <motion.div whileTap={{ scale: 0.9 }}>
                         <Button
@@ -358,8 +371,14 @@ export const FloatingNavbar = () => {
                             transition={{ delay: 0.2 }}
                         >
                             <Button asChild className="w-full rounded-lg sm:rounded-xl touch-target min-h-[44px]" size="sm">
-                                <a href={isAuthenticated ? "/dashboard" : "/login"} aria-label={isAuthenticated ? "Dashboard" : "Get started"} suppressHydrationWarning>
+                                <a
+                                    href={isAuthenticated ? "/dashboard" : "/login"}
+                                    aria-label={isAuthenticated ? "Go to Dashboard" : "Get started"}
+                                    className="flex items-center justify-center gap-2"
+                                >
+                                    {isAuthenticated && <LayoutDashboard className="w-4 h-4" aria-hidden="true" />}
                                     {isAuthenticated ? "Dashboard" : "Get started"}
+                                    {!isAuthenticated && <ArrowRight className="w-4 h-4" aria-hidden="true" />}
                                 </a>
                             </Button>
                         </motion.div>

@@ -18,6 +18,7 @@ const uploadSchema = z.object({
     fileName: z.string().min(1).max(MAX_FILENAME_LENGTH),
     fileSize: z.number().finite().positive().max(MAX_FILE_SIZE),
     useCaseId: z.string().min(1).max(50),
+    folderId: z.string().max(50).nullable().optional(),
 }).strict();
 
 // POST - Generate presigned URL for PDF upload

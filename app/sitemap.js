@@ -39,6 +39,12 @@ export default async function sitemap() {
             priority: 0.64,
         },
         {
+            url: `${BASE_URL}/supporters`,
+            lastModified: new Date(),
+            changeFrequency: 'weekly',
+            priority: 0.64,
+        },
+        {
             url: `${BASE_URL}/site-map`,
             lastModified: new Date(),
             changeFrequency: 'monthly',

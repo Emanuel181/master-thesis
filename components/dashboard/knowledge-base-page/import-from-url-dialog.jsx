@@ -87,6 +87,7 @@ export function ImportFromUrlDialog({ open, onOpenChange, useCaseId, onSuccess }
             const response = await fetch("/api/pdfs/import-url", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({
                     url: url.trim(),
                     useCaseId,

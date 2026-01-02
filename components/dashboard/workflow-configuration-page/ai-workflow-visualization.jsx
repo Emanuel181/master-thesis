@@ -3,7 +3,6 @@
 import React from "react";
 import {
     ReactFlow,
-    Controls,
     useNodesState,
     useEdgesState,
     MarkerType,
@@ -58,6 +57,7 @@ export function AIWorkflowVisualization({
     onSave,
     onCancel,
     isCodeLocked = false,
+    isRefreshingAll = false,
 }) {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
     const [hasPositionChanges, setHasPositionChanges] = React.useState(false);
@@ -165,6 +165,7 @@ export function AIWorkflowVisualization({
                     onCodeTypeChange,
                     useCases,
                     isCodeLocked,
+                    isRefreshingAll,
                 },
             },
             {
@@ -190,6 +191,7 @@ export function AIWorkflowVisualization({
                     prompts: prompts.reviewer || [],
                     selectedPrompts: selectedPrompts.reviewer || [],
                     onPromptChange,
+                    isRefreshingAll,
                 },
             },
             {
@@ -205,6 +207,7 @@ export function AIWorkflowVisualization({
                     model: agentModels.reviewer,
                     models,
                     onModelChange,
+                    isRefreshingAll,
                 },
             },
 
@@ -221,6 +224,7 @@ export function AIWorkflowVisualization({
                     prompts: prompts.implementation || [],
                     selectedPrompts: selectedPrompts.implementation || [],
                     onPromptChange,
+                    isRefreshingAll,
                 },
             },
             {
@@ -236,6 +240,7 @@ export function AIWorkflowVisualization({
                     model: agentModels.implementation,
                     models,
                     onModelChange,
+                    isRefreshingAll,
                 },
             },
 
@@ -252,6 +257,7 @@ export function AIWorkflowVisualization({
                     prompts: prompts.tester || [],
                     selectedPrompts: selectedPrompts.tester || [],
                     onPromptChange,
+                    isRefreshingAll,
                 },
             },
             {
@@ -267,6 +273,7 @@ export function AIWorkflowVisualization({
                     model: agentModels.tester,
                     models,
                     onModelChange,
+                    isRefreshingAll,
                 },
             },
 
@@ -283,6 +290,7 @@ export function AIWorkflowVisualization({
                     prompts: prompts.report || [],
                     selectedPrompts: selectedPrompts.report || [],
                     onPromptChange,
+                    isRefreshingAll,
                 },
             },
             {
@@ -298,10 +306,11 @@ export function AIWorkflowVisualization({
                     model: agentModels.report,
                     models,
                     onModelChange,
+                    isRefreshingAll,
                 },
             },
         ],
-        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, prompts, selectedPrompts, onPromptChange, isCodeLocked, getNodePosition]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, prompts, selectedPrompts, onPromptChange, isCodeLocked, isRefreshingAll, getNodePosition]
     );
 
     const initialEdges = React.useMemo(
@@ -463,68 +472,83 @@ export function AIWorkflowVisualization({
 
     return (
         <div className="w-full">
-            <div className="border rounded-lg bg-background shadow-sm flex flex-col">
+            <div className="border rounded-lg bg-background shadow-sm flex flex-col overflow-hidden">
                 {/* Header - responsive layout */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2 sm:py-3 border-b gap-2 sm:gap-3">
-                    <div className="text-sm font-medium text-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-muted/30 gap-2 sm:gap-3">
+                    <div className="text-sm font-semibold text-foreground">
                         AI Workflow Configuration
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {/* Zoom controls */}
-                        <div className="flex items-center gap-1">
-                            <Button type="button" size="icon" variant="outline" onClick={handleZoomOut} className="h-8 w-8 sm:h-9 sm:w-9" title="Zoom out">
-                                <ZoomOut className="w-4 h-4" />
+                        <div className="flex items-center gap-1 bg-background/50 rounded-md p-0.5">
+                            <Button type="button" size="icon" variant="ghost" onClick={handleZoomOut} className="h-7 w-7 sm:h-8 sm:w-8" title="Zoom out">
+                                <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
-                            <Button type="button" size="icon" variant="outline" onClick={handleZoomIn} className="h-8 w-8 sm:h-9 sm:w-9" title="Zoom in">
-                                <ZoomIn className="w-4 h-4" />
+                            <div className="w-px h-4 bg-border" />
+                            <Button type="button" size="icon" variant="ghost" onClick={handleZoomIn} className="h-7 w-7 sm:h-8 sm:w-8" title="Zoom in">
+                                <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                         </div>
+
+                        {/* Divider */}
+                        <div className="hidden sm:block w-px h-6 bg-border/60" />
+
                         {/* Layout controls */}
                         <div className="flex items-center gap-1">
                             <Button
                                 type="button"
                                 size="sm"
-                                variant={hasPositionChanges ? "default" : "outline"}
+                                variant={hasPositionChanges ? "default" : "ghost"}
                                 onClick={handleSavePositions}
-                                className="h-8 sm:h-9 text-xs sm:text-sm"
+                                className={`h-7 sm:h-8 text-xs px-2 sm:px-3 ${hasPositionChanges ? '' : 'text-muted-foreground'}`}
                                 title="Save current layout"
                             >
-                                <Save className="w-4 h-4 sm:mr-1" />
+                                <Save className="w-3.5 h-3.5 sm:mr-1.5" />
                                 <span className="hidden sm:inline">Save Layout</span>
                             </Button>
                             <Button
                                 type="button"
                                 size="icon"
-                                variant="outline"
+                                variant="ghost"
                                 onClick={handleResetPositions}
-                                className="h-8 w-8 sm:h-9 sm:w-9"
+                                className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground"
                                 title="Reset to default layout"
                             >
-                                <RotateCcw className="w-4 h-4" />
+                                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                         </div>
+
+                        {/* Divider */}
+                        <div className="hidden sm:block w-px h-6 bg-border/60" />
+
                         {/* Config save/cancel */}
-                        <div className="flex items-center gap-2 ml-auto sm:ml-0">
-                            <Button type="button" onClick={onSave} size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
-                                Save
-                                <span className="hidden sm:inline ml-1">Config</span>
-                            </Button>
-                            <Button type="button" onClick={onCancel} variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                        <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+                            <Button type="button" onClick={onCancel} variant="ghost" size="sm" className="text-xs h-7 sm:h-8 px-2 sm:px-3 text-muted-foreground">
                                 Cancel
+                            </Button>
+                            <Button type="button" onClick={onSave} size="sm" className="text-xs h-7 sm:h-8 px-3 sm:px-4">
+                                Save
                             </Button>
                         </div>
                     </div>
                 </div>
 
                 {/* Mobile hint */}
-                <div className="sm:hidden px-3 py-2 bg-muted/50 border-b">
-                    <p className="text-xs text-muted-foreground text-center">
-                        Drag nodes to rearrange • Pinch to zoom • Save layout to persist
+                <div className="sm:hidden px-3 py-1.5 bg-muted/30 border-b">
+                    <p className="text-[10px] text-muted-foreground text-center">
+                        Drag nodes to rearrange • Pinch to zoom
                     </p>
                 </div>
 
                 {/* ReactFlow container - responsive height */}
-                <div className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px]">
+                <div
+                    className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px]"
+                    style={{
+                        backgroundColor: isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)',
+                        backgroundImage: `radial-gradient(circle, ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} 1px, transparent 1px)`,
+                        backgroundSize: '20px 20px',
+                    }}
+                >
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -546,9 +570,8 @@ export function AIWorkflowVisualization({
                         panOnScroll
                         panOnDrag
                         zoomOnPinch
-                    >
-                        <Controls className="!bg-card !border-border !left-2 !bottom-2 sm:!left-4 sm:!bottom-4" showInteractive={false} />
-                    </ReactFlow>
+                        style={{ background: 'transparent' }}
+                    />
                 </div>
             </div>
         </div>

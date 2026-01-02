@@ -169,7 +169,7 @@ export function EditorHeader({
                                         variant={isLocked ? "default" : "ghost"}
                                         size="sm"
                                         onClick={() => onLockChange(!isLocked)}
-                                        className={`h-7 w-7 p-0 ${isLocked ? "bg-amber-500/90 hover:bg-amber-600 text-white" : "hover:bg-muted"}`}
+                                        className={`h-7 w-7 p-0 ${isLocked ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "hover:bg-muted"}`}
                                     >
                                         {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
                                     </Button>
@@ -424,7 +424,7 @@ export function EditorHeader({
                                 variant={isLocked ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => onLockChange(!isLocked)}
-                                className={`h-7 px-2 text-xs ${isLocked ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
+                                className={`h-7 px-2 text-xs ${isLocked ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}`}
                             >
                                 {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
                             </Button>

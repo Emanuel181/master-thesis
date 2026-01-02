@@ -8,30 +8,30 @@ datasource db {
 }
 
 model User {
-  id            String                  @id @default(cuid())
-  name          String?
-  email         String?                 @unique
-  image         String?
-  emailVerified DateTime?
-  firstName     String?
-  lastName      String?
-  phone         String?
-  jobTitle      String?
-  company       String?
-  bio           String?
-  location      String?
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
+  id                  String                  @id @default(cuid())
+  name                String?
+  email               String?                 @unique
+  image               String?
+  emailVerified       DateTime?
+  firstName           String?
+  lastName            String?
+  phone               String?
+  jobTitle            String?
+  company             String?
+  bio                 String?
+  location            String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
   // GDPR Compliance Fields
-  gdprConsentAt     DateTime?           // When user gave GDPR consent
-  marketingConsent  Boolean             @default(false) // Explicit marketing opt-in
-  dataExportedAt    DateTime?           // Last data export request (for audit)
-  deletionRequestedAt DateTime?         // Soft delete request timestamp
-  accounts      Account[]
-  useCases      KnowledgeBaseCategory[]
-  prompts       Prompt[]
-  sessions      Session[]
-  auditLogs     AuditLog[]
+  gdprConsentAt       DateTime? // When user gave GDPR consent
+  marketingConsent    Boolean                 @default(false) // Explicit marketing opt-in
+  dataExportedAt      DateTime? // Last data export request (for audit)
+  deletionRequestedAt DateTime? // Soft delete request timestamp
+  accounts            Account[]
+  useCases            KnowledgeBaseCategory[]
+  prompts             Prompt[]
+  sessions            Session[]
+  auditLogs           AuditLog[]
 }
 
 model Account {
@@ -69,17 +69,41 @@ model VerificationToken {
 }
 
 model KnowledgeBaseCategory {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   title     String
   content   String
-  icon      String   @default("File")
-  color     String   @default("default")
+  icon      String        @default("File")
+  color     String        @default("default")
   userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  groupId   String? // Optional: which group this use case belongs to
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   folders   Folder[]
-  user      User     @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  group     UseCaseGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   pdfs      Pdf[]
+
+  @@index([groupId])
+}
+
+// Groups/Folders for organizing use cases
+model UseCaseGroup {
+  id        String                  @id @default(cuid())
+  name      String
+  icon      String                  @default("Folder")
+  color     String                  @default("default")
+  order     Int                     @default(0)
+  userId    String
+  parentId  String? // For nested groups
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  useCases  KnowledgeBaseCategory[]
+  parent    UseCaseGroup?           @relation("GroupToGroup", fields: [parentId], references: [id], onDelete: Cascade)
+  children  UseCaseGroup[]          @relation("GroupToGroup")
+
+  @@index([userId])
+  @@index([parentId])
 }
 
 model RateLimit {
@@ -94,16 +118,16 @@ model RateLimit {
 
 // GDPR Audit Log - tracks data access and modifications for compliance
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?  // Nullable for system events or deleted users
-  action    String   // e.g., "login", "data_export", "profile_update", "data_delete"
-  resource  String?  // e.g., "user", "use_case", "prompt"
+  id         String   @id @default(cuid())
+  userId     String? // Nullable for system events or deleted users
+  action     String // e.g., "login", "data_export", "profile_update", "data_delete"
+  resource   String? // e.g., "user", "use_case", "prompt"
   resourceId String? // ID of the affected resource
-  ipAddress String?  // Anonymized/hashed for GDPR (last octet zeroed)
-  userAgent String?  // Browser/client info (truncated)
-  metadata  String?  // JSON string for additional context (no PII)
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ipAddress  String? // Anonymized/hashed for GDPR (last octet zeroed)
+  userAgent  String? // Browser/client info (truncated)
+  metadata   String? // JSON string for additional context (no PII)
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])
@@ -162,13 +186,36 @@ model Prompt {
 
 // Distributed Circuit Breaker state (shared across ECS Fargate tasks)
 model CircuitBreaker {
-  name            String   @id                      // Unique circuit name (e.g., 'github-api')
-  state           String   @default("CLOSED")       // CLOSED, OPEN, HALF_OPEN
-  failureCount    Int      @default(0)
-  successCount    Int      @default(0)
+  name            String    @id // Unique circuit name (e.g., 'github-api')
+  state           String    @default("CLOSED") // CLOSED, OPEN, HALF_OPEN
+  failureCount    Int       @default(0)
+  successCount    Int       @default(0)
   lastFailureAt   DateTime?
-  lastStateChange DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  lastStateChange DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([state])
+}
+
+// Project Supporters - people who contributed to the project
+model Supporter {
+  id              String   @id @default(cuid())
+  name            String
+  avatarUrl       String?
+  occupation      String
+  company         String?
+  contributionBio String // What they helped with
+  personalBio     String? // Short bio about the person
+  linkedinUrl     String?
+  websiteUrl      String?
+  tier            String   @default("supporter") // sponsor, contributor, supporter
+  featured        Boolean  @default(false)
+  order           Int      @default(0)
+  visible         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tier])
+  @@index([visible])
+  @@index([order])
 }

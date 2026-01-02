@@ -25,6 +25,8 @@ const createUseCaseSchema = z.object({
         .max(10000, 'Content must be less than 10000 characters')
         .transform(normalizeText),
     icon: z.string().max(50).optional(),
+    color: z.string().max(50).optional(),
+    groupId: z.string().max(50).nullable().optional(),
 });
 
 // Helper to format file size
@@ -86,6 +88,9 @@ export async function GET(request) {
                 title: true,
                 content: true,
                 icon: true,
+                color: true,
+                groupId: true,
+                order: true,
                 createdAt: true,
                 updatedAt: true,
                 // Only fetch essential PDF fields, limit to 20 per use case
@@ -105,7 +110,7 @@ export async function GET(request) {
                     select: { pdfs: true },
                 },
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
             take: 50, // Pagination limit - prevents loading thousands of records
         });
 
@@ -120,25 +125,34 @@ export async function GET(request) {
             title: uc.title,
             content: uc.content,
             icon: uc.icon,
+            color: uc.color,
+            groupId: uc.groupId || null,
+            group: null, // Will be populated if needed
+            order: uc.order || 0,
             createdAt: uc.createdAt,
             updatedAt: uc.updatedAt,
             fullContent: uc.content, // Keep full content for "Show More"
             shortContent: truncateText(uc.content, 100), // Character-based truncation
             shortDescription: truncateByWords(uc.content, 20), // Word-based truncation for cards
-            pdfs: uc.pdfs.map(pdf => ({
+            pdfs: (uc.pdfs || []).map(pdf => ({
                 ...pdf,
                 formattedSize: formatFileSize(pdf.size),
             })),
-            pdfCount: uc._count.pdfs, // Use efficient count
-            totalSize: uc.pdfs.reduce((sum, pdf) => sum + (pdf.size || 0), 0),
-            formattedTotalSize: formatFileSize(uc.pdfs.reduce((sum, pdf) => sum + (pdf.size || 0), 0)),
+            pdfCount: uc._count?.pdfs || 0, // Use efficient count
+            totalSize: (uc.pdfs || []).reduce((sum, pdf) => sum + (pdf.size || 0), 0),
+            formattedTotalSize: formatFileSize((uc.pdfs || []).reduce((sum, pdf) => sum + (pdf.size || 0), 0)),
         }));
 
         return NextResponse.json({ useCases: transformedUseCases }, { headers: securityHeaders });
     } catch (error) {
         console.error("Error fetching use cases:", error);
+        console.error("Error details:", {
+            message: error.message,
+            name: error.name,
+            stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+        });
         return NextResponse.json(
-            { error: "Failed to fetch use cases" },
+            { error: "Failed to fetch use cases", details: process.env.NODE_ENV === 'development' ? error.message : undefined },
             { status: 500, headers: securityHeaders }
         );
     }
@@ -153,7 +167,17 @@ export async function POST(request) {
     try {
         const session = await auth();
 
+        // Debug logging in development
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[use-cases POST] Session check:', {
+                hasSession: !!session,
+                hasUser: !!session?.user,
+                hasUserId: !!session?.user?.id
+            });
+        }
+
         if (!session?.user?.id) {
+            console.warn('[use-cases POST] Unauthorized: No valid session or user ID');
             return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
         }
 
@@ -200,13 +224,15 @@ export async function POST(request) {
             );
         }
 
-        const { title, content, icon } = validationResult.data;
+        const { title, content, icon, color, groupId } = validationResult.data;
 
         const useCase = await prisma.knowledgeBaseCategory.create({
             data: {
                 title,
                 content,
                 icon: icon || "File",
+                color: color || "default",
+                groupId: groupId || null,
                 userId: user.id,
             },
         });

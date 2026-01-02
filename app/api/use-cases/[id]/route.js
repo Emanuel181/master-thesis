@@ -26,6 +26,8 @@ const updateUseCaseSchema = z.object({
         .transform(normalizeText)
         .optional(),
     icon: z.string().max(50).optional(),
+    color: z.string().max(50).optional(),
+    groupId: z.string().max(50).nullable().optional(),
 });
 
 // GET - Fetch a single use case
@@ -172,7 +174,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const { title, content, icon } = validationResult.data;
+    const { title, content, icon, color, groupId } = validationResult.data;
 
     const updatedUseCase = await prisma.knowledgeBaseCategory.update({
       where: { id },
@@ -180,6 +182,8 @@ export async function PUT(request, { params }) {
         ...(title && { title }),
         ...(content && { content }),
         ...(icon && { icon }),
+        ...(color && { color }),
+        ...(groupId !== undefined && { groupId: groupId || null }),
       },
     });
 

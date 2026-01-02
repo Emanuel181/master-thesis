@@ -12,7 +12,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+
+const MODELS_PER_PAGE = 5;
 
 /**
  * Agent Node component for the workflow visualization
@@ -29,6 +32,21 @@ export function AgentNode({ data }) {
         borderColorMap[data.iconBg] || "border-gray-300 dark:border-gray-600";
 
     const [isRefreshing, setIsRefreshing] = React.useState(false);
+    const [modelPage, setModelPage] = React.useState(0);
+    const [modelSearchTerm, setModelSearchTerm] = React.useState("");
+    
+    // Use parent's isRefreshingAll state or local isRefreshing state
+    const showRefreshAnimation = data.isRefreshingAll || isRefreshing;
+
+    // Filter and paginate models
+    const filteredModels = (data.models || []).filter(model =>
+        model.toLowerCase().includes(modelSearchTerm.toLowerCase())
+    );
+    const totalModelPages = Math.ceil(filteredModels.length / MODELS_PER_PAGE);
+    const paginatedModels = filteredModels.slice(
+        modelPage * MODELS_PER_PAGE,
+        (modelPage + 1) * MODELS_PER_PAGE
+    );
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -91,10 +109,10 @@ export function AgentNode({ data }) {
                             size="icon"
                             className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                             onClick={handleRefresh}
-                            disabled={isRefreshing}
+                            disabled={showRefreshAnimation}
                             title={`Refresh ${data.label.toLowerCase()} data`}
                         >
-                            <RefreshCw className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${showRefreshAnimation ? 'animate-spin' : ''}`} />
                         </Button>
                     </div>
                     <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
@@ -112,13 +130,55 @@ export function AgentNode({ data }) {
                         </SelectTrigger>
                         <SelectContent>
                             <div onWheelCapture={(e) => e.stopPropagation()}>
-                                <ScrollArea className="h-[200px]">
-                                    {data.models.map((model, idx) => (
-                                        <SelectItem key={`${data.id}-model-${idx}`} value={model} className="text-xs">
-                                            {model}
-                                        </SelectItem>
-                                    ))}
-                                </ScrollArea>
+                                <div className="p-2 border-b">
+                                    <Input
+                                        placeholder="Search models..."
+                                        className="h-7 text-xs"
+                                        value={modelSearchTerm}
+                                        onChange={(e) => {
+                                            setModelSearchTerm(e.target.value);
+                                            setModelPage(0);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                    />
+                                </div>
+                                <div className="max-h-[180px]">
+                                    {paginatedModels.length > 0 ? (
+                                        paginatedModels.map((model, idx) => (
+                                            <SelectItem key={`${data.id}-model-${modelPage}-${idx}`} value={model} className="text-xs">
+                                                {model}
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="py-2 px-3 text-xs text-muted-foreground text-center">No models found</div>
+                                    )}
+                                </div>
+                                {totalModelPages > 1 && (
+                                    <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={(e) => { e.stopPropagation(); setModelPage(p => Math.max(0, p - 1)); }}
+                                            disabled={modelPage === 0}
+                                        >
+                                            <ChevronLeft className="h-3 w-3" />
+                                        </Button>
+                                        <span className="text-[10px] text-muted-foreground">
+                                            {modelPage + 1} / {totalModelPages}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={(e) => { e.stopPropagation(); setModelPage(p => Math.min(totalModelPages - 1, p + 1)); }}
+                                            disabled={modelPage >= totalModelPages - 1}
+                                        >
+                                            <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </SelectContent>
                     </Select>

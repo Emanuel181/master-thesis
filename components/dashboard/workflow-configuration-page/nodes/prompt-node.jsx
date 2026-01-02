@@ -3,7 +3,6 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Popover,
     PopoverContent,
@@ -12,13 +11,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { MessageSquare, ChevronDown, RefreshCw } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+const PROMPTS_PER_PAGE = 4;
 
 /**
  * Prompt Node component for the workflow visualization
  */
 export function PromptNode({ data }) {
     const [open, setOpen] = React.useState(false);
+    const [promptPage, setPromptPage] = React.useState(0);
+    const [promptSearchTerm, setPromptSearchTerm] = React.useState("");
     const borderColorMap = {
         "bg-indigo-500": "border-indigo-500 dark:border-indigo-400",
     };
@@ -31,6 +35,19 @@ export function PromptNode({ data }) {
         .join(", ");
 
     const [isRefreshing, setIsRefreshing] = React.useState(false);
+    
+    // Use parent's isRefreshingAll state or local isRefreshing state
+    const showRefreshAnimation = data.isRefreshingAll || isRefreshing;
+
+    // Filter and paginate prompts
+    const filteredPrompts = (data.prompts || []).filter(p =>
+        (p.title || p.text || "").toLowerCase().includes(promptSearchTerm.toLowerCase())
+    );
+    const totalPromptPages = Math.ceil(filteredPrompts.length / PROMPTS_PER_PAGE);
+    const paginatedPrompts = filteredPrompts.slice(
+        promptPage * PROMPTS_PER_PAGE,
+        (promptPage + 1) * PROMPTS_PER_PAGE
+    );
 
     const handleToggle = (promptId) => {
         if (data.onPromptChange) {
@@ -74,10 +91,10 @@ export function PromptNode({ data }) {
                             size="icon"
                             className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
                             onClick={handleRefresh}
-                            disabled={isRefreshing}
+                            disabled={showRefreshAnimation}
                             title={`Refresh ${data.agent} prompts`}
                         >
-                            <RefreshCw className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${showRefreshAnimation ? 'animate-spin' : ''}`} />
                         </Button>
                     </div>
                     <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
@@ -109,38 +126,75 @@ export function PromptNode({ data }) {
                                 <p className="text-sm font-medium">Select Prompts for {data.agent}</p>
                             </div>
                             <div onWheelCapture={(e) => e.stopPropagation()}>
-                                <ScrollArea className="h-[300px]">
-                                    <div className="p-2">
-                                {data.prompts.map((prompt) => {
-                                    const isSelected = data.selectedPrompts?.includes(prompt.id);
+                                <div className="p-2 border-b">
+                                    <Input
+                                        placeholder="Search prompts..."
+                                        className="h-7 text-xs"
+                                        value={promptSearchTerm}
+                                        onChange={(e) => {
+                                            setPromptSearchTerm(e.target.value);
+                                            setPromptPage(0);
+                                        }}
+                                    />
+                                </div>
+                                <div className="p-2">
+                                    {paginatedPrompts.map((prompt) => {
+                                        const isSelected = data.selectedPrompts?.includes(prompt.id);
 
-                                    return (
-                                        <div
-                                            key={prompt.id}
-                                            className={cn(
-                                                "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
-                                                "hover:bg-accent",
-                                                isSelected && "bg-indigo-5 dark:bg-indigo-950/30"
-                                            )}
-                                            onClick={() => handleToggle(prompt.id)}
-                                        >
-                                            <Checkbox
-                                                checked={isSelected}
-                                                className="mt-0.5 pointer-events-none"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium">
-                                                    {prompt.title || "Untitled"}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {prompt.text.length > 50 ? prompt.text.substring(0, 50) + "..." : prompt.text}
-                                                </p>
+                                        return (
+                                            <div
+                                                key={prompt.id}
+                                                className={cn(
+                                                    "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
+                                                    "hover:bg-accent",
+                                                    isSelected && "bg-indigo-5 dark:bg-indigo-950/30"
+                                                )}
+                                                onClick={() => handleToggle(prompt.id)}
+                                            >
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    className="mt-0.5 pointer-events-none"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium">
+                                                        {prompt.title || "Untitled"}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {prompt.text.length > 50 ? prompt.text.substring(0, 50) + "..." : prompt.text}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                    {paginatedPrompts.length === 0 && (
+                                        <div className="py-4 px-3 text-xs text-muted-foreground text-center">No prompts found</div>
+                                    )}
+                                </div>
+                                {totalPromptPages > 1 && (
+                                    <div className="flex items-center justify-between px-3 py-2 border-t">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => setPromptPage(p => Math.max(0, p - 1))}
+                                            disabled={promptPage === 0}
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                        <span className="text-xs text-muted-foreground">
+                                            {promptPage + 1} / {totalPromptPages}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => setPromptPage(p => Math.min(totalPromptPages - 1, p + 1))}
+                                            disabled={promptPage >= totalPromptPages - 1}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                </ScrollArea>
+                                )}
                             </div>
                         </PopoverContent>
                     </Popover>

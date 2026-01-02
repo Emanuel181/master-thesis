@@ -22,6 +22,7 @@ const sitemapData = [
     { url: '/privacy', name: 'Privacy Policy', priority: 0.80, changefreq: 'yearly', lastModified: '2024-12-29' },
     { url: '/terms', name: 'Terms & Conditions', priority: 0.80, changefreq: 'yearly', lastModified: '2024-12-29' },
     { url: '/about', name: 'About', priority: 0.64, changefreq: 'monthly', lastModified: '2024-12-29' },
+    { url: '/supporters', name: 'Supporters', priority: 0.64, changefreq: 'weekly', lastModified: '2026-01-01' },
 ];
 
 function getPriorityColor(priority) {

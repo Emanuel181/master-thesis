@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useMemo } from "react"
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -21,18 +22,26 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw, Folder, FolderPlus } from "lucide-react"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw, Folder, FolderPlus, PanelLeftClose, PanelLeftOpen, GripVertical } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 import { AddCategoryDialog } from "./add-category-dialog";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { CategoryCard } from "./category-card";
 import { FolderTree } from "./folder-tree";
+import { UseCaseGroupsPanel } from "./use-case-groups-panel";
 import { CategoryCardSkeleton, DocumentListSkeleton } from "@/components/ui/loading-skeletons";
 import { NoCategoriesEmptyState, NoDocumentsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-states";
-import { DEMO_USE_CASES, DEMO_DOCUMENTS } from "@/contexts/demoContext";
+import { DEMO_USE_CASES, DEMO_USE_CASE_GROUPS, DEMO_DOCUMENTS } from "@/contexts/demoContext";
 
 // Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
 const PdfViewerDialog = dynamic(
@@ -107,10 +116,42 @@ export default function KnowledgeBaseVisualization() {
     // Track refreshing use cases
     const [refreshingUseCases, setRefreshingUseCases] = useState(new Set());
 
-    // Fetch use cases from database on mount
+    // Use case groups state
+    const [useCaseGroups, setUseCaseGroups] = useState([]);
+    const [selectedGroupId, setSelectedGroupId] = useState(null);
+    const [showGroupsPanel, setShowGroupsPanel] = useState(true);
+    const [isGroupsPanelCollapsed, setIsGroupsPanelCollapsed] = useState(false);
+
+    // Resizable columns state (percentages for categories and documents columns)
+    const [categoriesWidth, setCategoriesWidth] = useState(42); // 5/12 ≈ 42%
+    const [isResizing, setIsResizing] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const resizeRef = useRef(null);
+    const containerRef = useRef(null);
+
+    // Multi-select use cases for drag-drop to groups
+    const [selectedUseCases, setSelectedUseCases] = useState(new Set());
+
+    // Check for mobile on mount and resize
+    useEffect(() => {
+        const checkMobile = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+            // Collapse groups panel by default on mobile
+            if (mobile) {
+                setIsGroupsPanelCollapsed(true);
+            }
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Fetch use cases and groups from database on mount
     useEffect(() => {
         fetchUseCases();
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchUseCases only needed on mount
+        fetchUseCaseGroups();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only needed on mount
     }, [isDemoMode]);
 
     // Reset document page and selection when use case changes
@@ -132,6 +173,9 @@ export default function KnowledgeBaseVisualization() {
                     fullDescription: uc.fullDescription,
                     shortDescription: uc.shortDescription,
                     icon: uc.icon,
+                    color: uc.color || 'default',
+                    groupId: uc.groupId || null,
+                    order: uc.order || 0,
                     pdfCount: uc.pdfCount,
                     formattedTotalSize: uc.formattedTotalSize,
                 }));
@@ -155,6 +199,9 @@ export default function KnowledgeBaseVisualization() {
                 fullDescription: uc.fullContent || uc.content, // Keep full for "Show More"
                 shortDescription: uc.shortDescription, // Word-based truncation
                 icon: uc.icon,
+                color: uc.color || 'default',
+                groupId: uc.groupId || null,
+                order: uc.order || 0,
                 pdfCount: uc.pdfCount,
                 formattedTotalSize: uc.formattedTotalSize,
             }));
@@ -183,6 +230,74 @@ export default function KnowledgeBaseVisualization() {
         }
     };
 
+    const fetchUseCaseGroups = async () => {
+        try {
+            // In demo mode, use demo data
+            if (isDemoMode) {
+                setUseCaseGroups(DEMO_USE_CASE_GROUPS);
+                return;
+            }
+
+            const response = await fetch("/api/use-case-groups");
+            if (!response.ok) {
+                throw new Error("Failed to fetch groups");
+            }
+            const data = await response.json();
+            setUseCaseGroups(data.groups || []);
+        } catch (error) {
+            console.error("Error fetching use case groups:", error);
+            // Don't show error toast - groups are optional
+        }
+    };
+
+    // --- Resize Handlers ---
+    const handleResizeStart = useCallback((e) => {
+        e.preventDefault();
+        setIsResizing(true);
+    }, []);
+
+    const handleResizeMove = useCallback((e) => {
+        if (!isResizing || !containerRef.current) return;
+
+        const container = containerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const groupsPanelWidth = isGroupsPanelCollapsed ? 48 : (window.innerWidth >= 1024 ? 256 : 224); // collapsed button width or lg:w-64 or md:w-56
+        const availableWidth = containerRect.width - groupsPanelWidth - 48; // minus gaps and resize handle
+
+        // Calculate mouse position relative to the resizable area
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const mouseX = clientX - containerRect.left - groupsPanelWidth - 16;
+        // Minimum 25% to ensure card content is readable, maximum 75%
+        const newWidth = Math.max(25, Math.min(75, (mouseX / availableWidth) * 100));
+
+        setCategoriesWidth(newWidth);
+    }, [isResizing, isGroupsPanelCollapsed]);
+
+    const handleResizeEnd = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    // Add/remove resize event listeners
+    useEffect(() => {
+        if (isResizing) {
+            window.addEventListener('mousemove', handleResizeMove);
+            window.addEventListener('mouseup', handleResizeEnd);
+            window.addEventListener('touchmove', handleResizeMove);
+            window.addEventListener('touchend', handleResizeEnd);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleResizeMove);
+            window.removeEventListener('mouseup', handleResizeEnd);
+            window.removeEventListener('touchmove', handleResizeMove);
+            window.removeEventListener('touchend', handleResizeEnd);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [isResizing, handleResizeMove, handleResizeEnd]);
+
     // --- Logic Handlers ---
 
     const handleAddCategory = (newCategory) => {
@@ -191,20 +306,110 @@ export default function KnowledgeBaseVisualization() {
         toast.success(`Category "${newCategory.name}" added successfully!`);
     };
 
+    // Handle moving use cases to a group
+    const handleMoveUseCasesToGroup = async (useCaseIds, targetGroupId) => {
+        if (!useCaseIds || useCaseIds.length === 0) {
+            return;
+        }
+
+        if (isDemoMode) {
+            // Mock in demo mode
+            setUseCases(prev => prev.map(uc =>
+                useCaseIds.includes(uc.id) ? { ...uc, groupId: targetGroupId } : uc
+            ));
+            setSelectedUseCases(new Set());
+            const groupName = targetGroupId
+                ? useCaseGroups.find(g => g.id === targetGroupId)?.name || 'group'
+                : 'Ungrouped';
+            toast.success(`Moved ${useCaseIds.length} use case(s) to ${groupName}`);
+            return;
+        }
+
+        // Show loading toast
+        const loadingToast = toast.loading(`Moving ${useCaseIds.length} use case(s)...`);
+
+        try {
+            // Move each use case
+            const movePromises = useCaseIds.map(id =>
+                fetch(`/api/use-cases/${id}/move`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ groupId: targetGroupId }),
+                })
+            );
+
+            const results = await Promise.all(movePromises);
+            const allSuccessful = results.every(r => r.ok);
+
+            toast.dismiss(loadingToast);
+
+            if (allSuccessful) {
+                setUseCases(prev => prev.map(uc =>
+                    useCaseIds.includes(uc.id) ? { ...uc, groupId: targetGroupId } : uc
+                ));
+                setSelectedUseCases(new Set());
+                const groupName = targetGroupId
+                    ? useCaseGroups.find(g => g.id === targetGroupId)?.name || 'group'
+                    : 'Ungrouped';
+                toast.success(`Moved ${useCaseIds.length} use case(s) to ${groupName}`);
+            } else {
+                toast.error("Some use cases failed to move");
+            }
+        } catch (error) {
+            toast.dismiss(loadingToast);
+            console.error("Error moving use cases:", error);
+            toast.error("Failed to move use cases");
+        }
+    };
+
+    // Toggle use case selection
+    const toggleUseCaseSelection = (useCaseId) => {
+        setSelectedUseCases(prev => {
+            const next = new Set(prev);
+            if (next.has(useCaseId)) {
+                next.delete(useCaseId);
+            } else {
+                next.add(useCaseId);
+            }
+            return next;
+        });
+    };
+
+    // Clear use case selection
+    const clearUseCaseSelection = () => {
+        setSelectedUseCases(new Set());
+    };
+
     const useCasesWithCounts = useCases.map(uc => {
         // @ts-ignore
         const IconComponent = LucideIcons[uc.icon];
         return {
             ...uc,
             count: documents[uc.id]?.length || 0,
-            icon: IconComponent ? React.createElement(IconComponent) : null
+            iconElement: IconComponent ? React.createElement(IconComponent) : null
         };
     });
 
     const filteredCategories = useCasesWithCounts.filter(
-        (uc) =>
-            uc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            uc.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (uc) => {
+            // Filter by search term
+            const matchesSearch = uc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                uc.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+            // Filter by selected group
+            // null means show all, "ungrouped" means show only items without a group
+            let matchesGroup = true;
+            if (selectedGroupId === null) {
+                matchesGroup = true; // Show all
+            } else if (selectedGroupId === "ungrouped") {
+                matchesGroup = !uc.groupId; // Show only ungrouped items
+            } else {
+                matchesGroup = uc.groupId === selectedGroupId; // Show items in specific group
+            }
+
+            return matchesSearch && matchesGroup;
+        }
     );
 
     const paginatedCategories = filteredCategories.slice(
@@ -329,6 +534,7 @@ export default function KnowledgeBaseVisualization() {
                 const response = await fetch("/api/folders", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({
                         name: newFolderName.trim(),
                         useCaseId: selectedUseCase,
@@ -382,6 +588,7 @@ export default function KnowledgeBaseVisualization() {
                 const presignedResponse = await fetch("/api/pdfs", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({
                         fileName: finalName,
                         fileSize: file.size,
@@ -417,6 +624,7 @@ export default function KnowledgeBaseVisualization() {
                 const confirmResponse = await fetch("/api/pdfs/confirm", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({
                         s3Key,
                         fileName: finalName,
@@ -497,6 +705,41 @@ export default function KnowledgeBaseVisualization() {
         setDeleteUseCaseDialogOpen(true);
     };
 
+    // Handle refresh all use cases based on selected group
+    const handleRefreshAllUseCases = async () => {
+        // Get use cases to refresh based on selected group
+        let useCasesToRefresh = [];
+
+        if (selectedGroupId === null) {
+            // All use cases
+            useCasesToRefresh = useCases;
+        } else if (selectedGroupId === "ungrouped") {
+            // Only ungrouped use cases
+            useCasesToRefresh = useCases.filter(uc => !uc.groupId);
+        } else {
+            // Use cases in the selected group
+            useCasesToRefresh = useCases.filter(uc => uc.groupId === selectedGroupId);
+        }
+
+        if (useCasesToRefresh.length === 0) {
+            toast.info("No use cases to refresh in this view");
+            return;
+        }
+
+        // Refresh each use case
+        const groupName = selectedGroupId === null
+            ? "all use cases"
+            : selectedGroupId === "ungrouped"
+                ? "ungrouped"
+                : useCaseGroups.find(g => g.id === selectedGroupId)?.name || "group";
+
+        toast.info(`Refreshing ${useCasesToRefresh.length} use case(s) in ${groupName}...`);
+
+        for (const useCase of useCasesToRefresh) {
+            await handleRefreshUseCase(useCase);
+        }
+    };
+
     // Handle refresh use case (sync documents from S3)
     const handleRefreshUseCase = async (useCase) => {
         if (refreshingUseCases.has(useCase.id)) return;
@@ -519,6 +762,7 @@ export default function KnowledgeBaseVisualization() {
             // Production mode - actually sync from S3
             const response = await fetch(`/api/use-cases/${useCase.id}/sync`, {
                 method: "POST",
+                credentials: "include",
             });
             
             if (!response.ok) {
@@ -528,8 +772,8 @@ export default function KnowledgeBaseVisualization() {
             const data = await response.json();
             toast.success(`"${useCase.name}" synced successfully! ${data.documentsFound || 0} documents found.`);
             
-            // Refresh the documents list
-            fetchDocuments(useCase.id);
+            // Refresh the use cases and documents list
+            fetchUseCases();
         } catch (error) {
             console.error("Error syncing use case:", error);
             toast.error(`Failed to sync "${useCase.name}"`);
@@ -754,12 +998,116 @@ export default function KnowledgeBaseVisualization() {
     return (
         <>
         {/* MAIN CONTAINER */}
-        <div className="flex flex-col md:grid flex-1 gap-4 pt-0 pb-4 pl-0 md:grid-cols-12 md:gap-8 h-auto md:h-[calc(100vh-120px)] overflow-auto md:overflow-hidden">
+        <div
+            ref={containerRef}
+            className={cn(
+                "flex flex-col md:flex-row flex-1 gap-4 pt-0 pb-4 pl-0 h-auto md:h-[calc(100vh-120px)] overflow-auto md:overflow-hidden",
+                isResizing && "select-none"
+            )}
+        >
+            {/* Mobile Groups Panel Toggle */}
+            <div className="md:hidden flex items-center gap-2 px-2 py-2 bg-muted/30 rounded-lg mx-2">
+                <Button
+                    variant={isGroupsPanelCollapsed ? "default" : "outline"}
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setIsGroupsPanelCollapsed(!isGroupsPanelCollapsed)}
+                >
+                    {isGroupsPanelCollapsed ? (
+                        <>
+                            <PanelLeftOpen className="h-4 w-4" />
+                            <span>Show Groups</span>
+                        </>
+                    ) : (
+                        <>
+                            <PanelLeftClose className="h-4 w-4" />
+                            <span>Hide Groups</span>
+                        </>
+                    )}
+                </Button>
+                <span className="text-xs text-muted-foreground truncate flex-1">
+                    {selectedGroupId === null
+                        ? "All Use Cases"
+                        : selectedGroupId === "ungrouped"
+                            ? "Ungrouped"
+                            : useCaseGroups.find(g => g.id === selectedGroupId)?.name || "All"}
+                </span>
+                <Badge variant="secondary" className="text-xs">
+                    {useCaseGroups.length} groups
+                </Badge>
+            </div>
+
+            {/* Mobile Groups Panel (collapsible) */}
+            {!isGroupsPanelCollapsed && (
+                <div className="md:hidden mx-2 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-auto h-[250px] min-h-[200px]">
+                    <UseCaseGroupsPanel
+                        groups={useCaseGroups}
+                        useCases={useCasesWithCounts}
+                        selectedGroupId={selectedGroupId}
+                        onSelectGroup={(id) => {
+                            setSelectedGroupId(id);
+                            // Auto-collapse on mobile after selection
+                            if (isMobile) setIsGroupsPanelCollapsed(true);
+                        }}
+                        onGroupsChange={setUseCaseGroups}
+                        selectedUseCases={selectedUseCases}
+                        onMoveUseCases={handleMoveUseCasesToGroup}
+                        onSelectUseCase={(id) => {
+                            setSelectedUseCase(id);
+                            if (isMobile) setIsGroupsPanelCollapsed(true);
+                        }}
+                    />
+                </div>
+            )}
+
+            {/* Desktop Groups Panel Toggle Button (visible when collapsed) */}
+            {isGroupsPanelCollapsed && (
+                <div className="hidden md:flex flex-col items-center py-2 shrink-0">
+                    <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-lg"
+                                    onClick={() => setIsGroupsPanelCollapsed(false)}
+                                >
+                                    <PanelLeftOpen className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="text-xs">Show Groups Panel</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            )}
+
+            {/* Desktop Groups Panel (collapsible sidebar) */}
+            {!isGroupsPanelCollapsed && (
+                <div className="hidden md:flex md:w-56 lg:w-64 flex-col rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden shrink-0">
+                    <UseCaseGroupsPanel
+                        groups={useCaseGroups}
+                        useCases={useCasesWithCounts}
+                        selectedGroupId={selectedGroupId}
+                        onSelectGroup={setSelectedGroupId}
+                        onGroupsChange={setUseCaseGroups}
+                        selectedUseCases={selectedUseCases}
+                        onMoveUseCases={handleMoveUseCasesToGroup}
+                        onSelectUseCase={setSelectedUseCase}
+                        onCollapse={() => setIsGroupsPanelCollapsed(true)}
+                    />
+                </div>
+            )}
+
+            {/* Main content area with resizable columns */}
+            <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-0 min-w-0 overflow-visible">
 
             {/* ---------------------------------------------------------------------------
-          COLUMN 1: CATEGORIES
+          COLUMN 1: CATEGORIES (Resizable on desktop)
          --------------------------------------------------------------------------- */}
-            <div className="md:col-span-5 flex flex-col min-h-[300px] md:h-full md:min-h-0 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden">
+            <div
+                className="flex flex-col min-h-[300px] md:h-full md:min-h-0 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-y-auto overflow-x-visible w-full md:w-auto"
+                style={!isMobile ? { flex: `0 0 ${Math.max(categoriesWidth, 25)}%`, minWidth: '280px' } : undefined}
+            >
 
                 {/* Header (Fixed) */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 p-3 sm:p-4 lg:p-6 pb-2">
@@ -776,16 +1124,44 @@ export default function KnowledgeBaseVisualization() {
                         <Button
                             variant="outline"
                             size="icon"
-                            onClick={fetchUseCases}
-                            title="Refresh use cases"
-                            disabled={isLoading}
+                            onClick={handleRefreshAllUseCases}
+                            title={
+                                selectedGroupId === null
+                                    ? "Refresh all use cases"
+                                    : selectedGroupId === "ungrouped"
+                                        ? "Refresh ungrouped use cases"
+                                        : `Refresh use cases in ${useCaseGroups.find(g => g.id === selectedGroupId)?.name || 'group'}`
+                            }
+                            disabled={isLoading || refreshingUseCases.size > 0}
                             className="h-9 w-9 sm:h-10 sm:w-10"
                         >
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-4 w-4 ${isLoading || refreshingUseCases.size > 0 ? 'animate-spin' : ''}`} />
                         </Button>
-                        <AddCategoryDialog onAddCategory={handleAddCategory} />
+                        <AddCategoryDialog onAddCategory={handleAddCategory} groups={useCaseGroups} />
                     </div>
                 </div>
+
+                {/* Selection toolbar - appears when items are selected */}
+                {selectedUseCases.size > 0 && (
+                    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-primary/5 border-b border-primary/20">
+                        <span className="text-sm font-medium text-primary">
+                            {selectedUseCases.size} selected
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                                Drag to a group to move
+                            </span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearUseCaseSelection}
+                                className="h-7 text-xs"
+                            >
+                                Clear selection
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Scrollable List */}
                 <ScrollArea className="flex-1 h-full">
@@ -806,6 +1182,9 @@ export default function KnowledgeBaseVisualization() {
                                     onDelete={handleDeleteUseCase}
                                     onRefresh={handleRefreshUseCase}
                                     isRefreshing={refreshingUseCases.has(useCase.id)}
+                                    isChecked={selectedUseCases.has(useCase.id)}
+                                    onCheckChange={toggleUseCaseSelection}
+                                    allSelectedIds={Array.from(selectedUseCases)}
                                 />
                             ))
                         ) : (
@@ -851,11 +1230,28 @@ export default function KnowledgeBaseVisualization() {
                 )}
             </div>
 
+            {/* Resize Handle */}
+            <div
+                ref={resizeRef}
+                onMouseDown={handleResizeStart}
+                className={cn(
+                    "hidden md:flex items-center justify-center w-4 cursor-col-resize group shrink-0 hover:bg-primary/5 transition-colors",
+                    isResizing && "bg-primary/10"
+                )}
+            >
+                <div className={cn(
+                    "w-1 h-16 rounded-full bg-border group-hover:bg-primary/50 transition-colors",
+                    isResizing && "bg-primary"
+                )} />
+            </div>
 
             {/* ---------------------------------------------------------------------------
-          COLUMN 2: UPLOAD + DOCUMENTS
+          COLUMN 2: UPLOAD + DOCUMENTS (Resizable)
          --------------------------------------------------------------------------- */}
-            <div className="md:col-span-7 flex flex-col min-h-[400px] md:h-full md:min-h-0 rounded-xl bg-muted/50 overflow-hidden border border-border/50 shadow-sm relative">
+            <div
+                className="flex flex-col min-h-[400px] md:h-full md:min-h-0 rounded-xl bg-muted/50 overflow-hidden border border-border/50 shadow-sm relative"
+                style={{ flex: 1 }}
+            >
 
                 {selectedUseCase ? (
                     <>
@@ -937,6 +1333,7 @@ export default function KnowledgeBaseVisualization() {
                 )}
             </div>
 
+            </div>{/* End of main content wrapper */}
         </div>
 
         {/* PDF Viewer Dialog */}
@@ -1155,8 +1552,9 @@ export default function KnowledgeBaseVisualization() {
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
             useCase={useCaseToEdit}
+            groups={useCaseGroups}
             onUpdate={(updatedCategory) => {
-                setUseCases(prev => prev.map(uc => uc.id === updatedCategory.id ? updatedCategory : uc));
+                setUseCases(prev => prev.map(uc => uc.id === updatedCategory.id ? { ...uc, ...updatedCategory } : uc));
                 toast.success(`Category "${updatedCategory.name}" updated successfully!`);
             }}
         />
