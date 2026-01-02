@@ -19,7 +19,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
+# Build-time argument for Prisma client generation
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL:-"postgresql://user:pass@localhost:5432/db"}
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./

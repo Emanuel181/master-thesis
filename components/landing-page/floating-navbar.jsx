@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, BookOpen, Newspaper, GitBranch, Mail, AlertTriangle, Code, Rss, MessageSquare, Heart } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, GitBranch, AlertTriangle, Rss, MessageSquare, Heart, Building2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 import {
@@ -22,12 +22,18 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
-    { name: "Features", link: "/#features" },
-    { name: "Use cases", link: "/#use-cases" },
-    { name: "About", link: "/about" },
-    { name: "Blogs", link: "/blog" },
-    { name: "Connect", link: "/#connect" },
-    { name: "Changelog", link: "/changelog" },
+    // Product
+    { name: "Features", link: "/#features", section: "Product" },
+    { name: "Use Cases", link: "/#use-cases", section: "Product" },
+    { name: "Integrations", link: "/#connect", section: "Product" },
+    // Resources
+    { name: "Blog", link: "/blog", section: "Resources" },
+    { name: "Changelog", link: "/changelog", section: "Resources" },
+    { name: "Supporters", link: "/supporters", section: "Resources" },
+    // Company
+    { name: "About", link: "/about", section: "Company" },
+    { name: "Security", link: "/security", section: "Company" },
+    { name: "Contact", link: "/#connect", section: "Company" },
 ];
 
 export const FloatingNavbar = () => {
@@ -59,16 +65,16 @@ export const FloatingNavbar = () => {
         // Check on scroll - try both window and scroll container
         const handleScroll = () => checkLampPosition();
         window.addEventListener('scroll', handleScroll, { passive: true });
-        
+
         // Also listen to scroll on the ScrollArea viewport
         const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
         if (scrollContainer) {
             scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
         }
-        
+
         // Initial check
         checkLampPosition();
-        
+
         // Also check after a short delay for initial render
         const timeoutId = setTimeout(checkLampPosition, 100);
 
@@ -180,40 +186,8 @@ export const FloatingNavbar = () => {
                                     Resources
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
-                                    <ul className="grid w-[300px] gap-2 p-3 md:grid-cols-1">
-                                        <ListItem href="/changelog" title="Changelog" icon={FileCode}>
-                                            See what's new in VulnIQ.
-                                        </ListItem>
-                                        <ListItem href="/about" title="About Us" icon={BookOpen}>
-                                            Learn about our mission and team.
-                                        </ListItem>
-                                        <ListItem href="/supporters" title="Supporters" icon={Heart}>
-                                            People who support this project.
-                                        </ListItem>
-                                        <ListItem href="/security" title="Security Policy" icon={Shield}>
-                                            Vulnerability disclosure policy.
-                                        </ListItem>
-                                        <ListItem href="/#connect" title="Support" icon={MessageSquare}>
-                                            Get help or contact our team.
-                                        </ListItem>
-                                    </ul>
-                                </NavigationMenuContent>
-                            </NavigationMenuItem>
-
-                            {/* Direct Links */}
-                            <NavigationMenuItem>
-                                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent hover:bg-muted/50 text-muted-foreground hover:text-foreground text-sm")}>
-                                    <Link href="/about">About</Link>
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-
-                            <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 text-muted-foreground hover:text-foreground data-[state=open]:bg-muted/50 data-[state=open]:text-foreground text-sm">
-                                    Blog
-                                </NavigationMenuTrigger>
-                                <NavigationMenuContent>
-                                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[450px] lg:grid-cols-[.75fr_1fr]">
-                                        <li className="row-span-3">
+                                    <ul className="grid gap-3 p-4 md:w-[450px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                                        <li className="row-span-4">
                                             <NavigationMenuLink asChild>
                                                 <Link
                                                     className="flex h-full w-full select-none flex-col justify-end rounded-md p-6 no-underline outline-none focus:shadow-md transition-all duration-200 overflow-hidden relative group"
@@ -228,31 +202,48 @@ export const FloatingNavbar = () => {
                                                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
                                                     <Rss className="h-8 w-8 mb-3 text-[var(--brand-accent)] relative z-10 group-hover:scale-110 transition-transform" />
                                                     <div className="mb-1 text-lg font-medium relative z-10 text-foreground">
-                                                        VulnIQ Blog
+                                                        Blog
                                                     </div>
                                                     <p className="text-sm leading-tight text-muted-foreground relative z-10">
-                                                        Security insights, best practices, and the latest updates.
+                                                        Security insights and best practices.
                                                     </p>
                                                 </Link>
                                             </NavigationMenuLink>
                                         </li>
-                                        <ListItem href="/blog/understanding-sql-injection-prevention" title="SQL Injection Prevention" icon={AlertTriangle}>
-                                            Detection and prevention guide.
+                                        <ListItem href="/blog/understanding-sql-injection-prevention" title="SQL Injection Guide" icon={AlertTriangle}>
+                                            Detection and prevention strategies.
                                         </ListItem>
-                                        <ListItem href="/blog/modern-application-security-testing-strategies" title="Security Testing Strategies" icon={Shield}>
+                                        <ListItem href="/blog/modern-application-security-testing-strategies" title="Security Testing" icon={Shield}>
                                             SAST and DAST best practices.
                                         </ListItem>
-                                        <ListItem href="/blog/cross-site-scripting-defense-guide" title="XSS Defense Guide" icon={Code}>
-                                            Protecting from XSS attacks.
+                                        <ListItem href="/changelog" title="Changelog" icon={FileCode}>
+                                            Latest updates and releases.
+                                        </ListItem>
+                                        <ListItem href="/supporters" title="Supporters" icon={Heart}>
+                                            People supporting this project.
                                         </ListItem>
                                     </ul>
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
+                            {/* Company Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent hover:bg-muted/50 text-muted-foreground hover:text-foreground text-sm")}>
-                                    <a href="/#connect">Contact</a>
-                                </NavigationMenuLink>
+                                <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-muted-foreground hover:text-foreground text-sm">
+                                    Company
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[280px] gap-2 p-3">
+                                        <ListItem href="/about" title="About Us" icon={Building2}>
+                                            Learn about our mission and team.
+                                        </ListItem>
+                                        <ListItem href="/security" title="Security Policy" icon={Shield}>
+                                            Vulnerability disclosure policy.
+                                        </ListItem>
+                                        <ListItem href="/#connect" title="Contact" icon={MessageSquare}>
+                                            Get in touch with our team.
+                                        </ListItem>
+                                    </ul>
+                                </NavigationMenuContent>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
@@ -334,41 +325,53 @@ export const FloatingNavbar = () => {
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     className="fixed top-12 xs:top-14 sm:top-16 md:top-20 inset-x-0 z-[99] flex justify-center px-2 sm:px-3 md:px-4 md:hidden"
                 >
-                    <div className="bg-card/95 backdrop-blur-xl border border-border/30 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm p-2 sm:p-3 overflow-hidden">
-                        <div className="flex flex-col gap-0.5 sm:gap-1">
-                            {navItems.map((item, idx) => (
-                                <motion.a
-                                    key={item.name}
-                                    href={item.link}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    whileHover={{ x: 4 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    {item.name}
-                                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50" />
-                                </motion.a>
+                    <div className="bg-card/95 backdrop-blur-xl border border-border/30 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm p-2 sm:p-3 overflow-hidden max-h-[70vh] overflow-y-auto">
+                        <div className="flex flex-col gap-1">
+                            {/* Group items by section */}
+                            {['Product', 'Resources', 'Company'].map((section, sectionIdx) => (
+                                <div key={section}>
+                                    <div className="px-3 py-1.5 text-[10px] sm:text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                                        {section}
+                                    </div>
+                                    {navItems
+                                        .filter(item => item.section === section)
+                                        .map((item, idx) => (
+                                            <motion.a
+                                                key={item.name}
+                                                href={item.link}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target"
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: (sectionIdx * 3 + idx) * 0.03 }}
+                                                whileHover={{ x: 4 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                {item.name}
+                                                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50" />
+                                            </motion.a>
+                                        ))}
+                                    {sectionIdx < 2 && <div className="border-b border-border/20 my-1.5" />}
+                                </div>
                             ))}
+
                             {/* Demo button in mobile menu */}
                             <motion.a
                                 href="/demo"
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target border border-[var(--brand-accent)]/30"
+                                className="mx-1 mt-1 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 rounded-lg sm:rounded-xl transition-all flex items-center justify-between touch-target border border-[var(--brand-accent)]/30"
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: navItems.length * 0.05 }}
+                                transition={{ delay: navItems.length * 0.03 }}
                                 whileHover={{ x: 4 }}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                Demo
+                                Try Demo
                                 <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-accent)]/50" />
                             </motion.a>
                         </div>
                         <motion.div
-                            className="border-t border-border/30 mt-1.5 sm:mt-2 pt-2 sm:pt-3"
+                            className="border-t border-border/30 mt-2 pt-2 sm:pt-3"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.2 }}
@@ -551,3 +554,4 @@ function ListItem({ title, children, href, icon: Icon, ...props }) {
         </li>
     );
 }
+

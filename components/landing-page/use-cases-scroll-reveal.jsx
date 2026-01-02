@@ -4,8 +4,8 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { GraduationCap, Rocket, BookOpen, Building2, Users } from "lucide-react";
 
-const defaultTitleClass = "text-base md:text-lg font-semibold mb-1 text-foreground transition-opacity duration-300";
-const defaultDescriptionClass = "text-sm font-medium text-muted-foreground max-w-[350px] leading-[140%] transition-opacity duration-300";
+const defaultTitleClass = "text-sm sm:text-base md:text-lg font-semibold mb-0.5 sm:mb-1 text-foreground transition-opacity duration-300";
+const defaultDescriptionClass = "text-xs sm:text-sm font-medium text-muted-foreground max-w-[350px] leading-[140%] transition-opacity duration-300";
 
 const useCasesData = [
   {
@@ -90,21 +90,21 @@ const PointItem = ({
     <div className="flex flex-col w-full">
       <div className="w-full">
         <h3 className={cn(
-          "text-2xl md:text-3xl font-bold mb-2 ml-4 transition-opacity duration-300",
+          "text-lg sm:text-xl md:text-2xl font-bold mb-1 ml-2 sm:ml-4 transition-opacity duration-300",
           isActive ? "opacity-100 text-foreground" : "opacity-40 text-muted-foreground"
         )}>
           {number}
         </h3>
       </div>
-      <div className="w-full flex relative left-[12px]">
-        <div className="w-[50px] flex items-start justify-center relative">
+      <div className="w-full flex relative left-[8px] sm:left-[12px]">
+        <div className="w-[30px] sm:w-[50px] flex items-start justify-center relative">
           <div className="h-full w-[2px] bg-foreground/10 absolute top-0 left-[50%] -translate-x-1/2" />
           <div
             className="w-[2px] bg-[var(--brand-accent)] absolute top-0 left-[50%] -translate-x-1/2 transition-all duration-150"
             style={{ height: `${barHeightPercentage}%` }}
           />
         </div>
-        <div className="flex-1 pl-3 pb-6">
+        <div className="flex-1 pl-2 sm:pl-3 pb-3 sm:pb-6">
           <h3 className={cn(defaultTitleClass, isActive ? "opacity-100" : "opacity-40")}>{title}</h3>
           <p className={cn(defaultDescriptionClass, isActive ? "opacity-100" : "opacity-40")}>{description}</p>
         </div>
@@ -182,36 +182,38 @@ export function UseCasesScrollReveal({ className }) {
     <section 
       className={cn("relative bg-background", className)} 
       ref={containerRef} 
-      style={{ height: "500vh" }}
+      style={{ height: "300vh" }}
     >
       {/* Sticky container that stays in view */}
-      <div className="sticky top-0 h-screen flex items-center z-10">
-        <div className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 xl:gap-24 w-full items-center">
+      <div className="sticky top-0 min-h-screen flex items-center z-10 py-8 md:py-0">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 xl:gap-24 w-full items-center">
             {/* Left side - Timeline */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center">
               {/* Section Header */}
               <div className="mb-4 md:mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1">
                   Who Benefits from VulnIQ?
                 </h2>
-                <p className="text-muted-foreground text-sm max-w-sm">
+                <p className="text-muted-foreground text-xs sm:text-sm max-w-sm">
                   From learners to enterprises, VulnIQ adapts to your workflow.
                 </p>
               </div>
 
               {/* Timeline Items */}
-              {useCasesData.map((item, index) => (
-                <PointItem
-                  key={item.number}
-                  number={item.number}
-                  title={item.title}
-                  description={item.description}
-                  thresholdStart={index * thresholdStep}
-                  thresholdEnd={(index + 1) * thresholdStep}
-                  scrollProgress={scrollProgress}
-                />
-              ))}
+              <div className="space-y-1">
+                {useCasesData.map((item, index) => (
+                  <PointItem
+                    key={item.number}
+                    number={item.number}
+                    title={item.title}
+                    description={item.description}
+                    thresholdStart={index * thresholdStep}
+                    thresholdEnd={(index + 1) * thresholdStep}
+                    scrollProgress={scrollProgress}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Right side - Visual content */}
