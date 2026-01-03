@@ -239,35 +239,38 @@ export function BlogSection() {
           </p>
         </motion.div>
         
-        {/* Blog Grid */}
+        {/* Blog Grid - Cards stack from bottom (near pagination) upward */}
+        {/* Using flex-col-reverse on mobile so cards appear at bottom, empty space above */}
         <AnimatePresence mode="wait">
-          <motion.div 
+          <motion.div
             key={currentPage}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className={`grid grid-cols-1 gap-6 lg:gap-8 ${
-              currentPosts.length === 1 
-                ? 'md:grid-cols-1 max-w-md mx-auto' 
-                : currentPosts.length === 2 
-                  ? 'md:grid-cols-2 max-w-3xl mx-auto' 
-                  : 'md:grid-cols-2 lg:grid-cols-3'
-            }`}
+            className="flex flex-col-reverse md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
           >
-            {currentPosts.map((post, index) => (
+            {/* Invisible placeholders render first in DOM, appear at TOP visually due to flex-col-reverse */}
+            {Array.from({ length: POSTS_PER_PAGE - currentPosts.length }).map((_, index) => (
+              <div key={`placeholder-${index}`} className="invisible order-last md:order-none" aria-hidden="true">
+                <BlogCard post={blogPosts[0]} index={index} />
+              </div>
+            ))}
+
+            {/* Real posts render second in DOM, appear at BOTTOM visually due to flex-col-reverse */}
+            {[...currentPosts].reverse().map((post, index) => (
               <BlogCard key={post.id} post={post} index={index} />
             ))}
           </motion.div>
         </AnimatePresence>
-        
+
         {/* Pagination */}
         <PaginationDots
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
         />
-        
+
         {/* View All Link */}
         <motion.div
           initial={{ opacity: 0 }}

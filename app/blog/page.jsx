@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { SearchIcon, ArrowRightIcon, CalendarDaysIcon, Clock } from "lucide-react";
+import { SearchIcon, ArrowRightIcon, CalendarDaysIcon, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { Footer } from "@/components/landing-page/footer";
@@ -15,16 +15,120 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { blogPosts, getIconComponent } from "@/lib/blog-data";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
+import { BlogPostCard } from "@/components/blog/blog-post-card";
+import { FeaturedPostSidebarItem } from "@/components/blog/featured-post-sidebar-item";
 
-// Blog Grid Component
+const POSTS_PER_PAGE = 6;
+
+// Featured Hero Section with main post and sidebar
+function FeaturedSection({ posts }) {
+  const router = useRouter();
+
+  // Get featured post (first featured or first post)
+  const featuredPost = posts.find(p => p.featured) || posts[0];
+  // Get other featured posts for sidebar (excluding the main featured)
+  const sidebarPosts = posts
+    .filter(p => p.id !== featuredPost?.id)
+    .slice(0, 5);
+
+  if (!featuredPost) return null;
+
+  const Icon = getIconComponent(featuredPost.iconName);
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-12">
+      {/* Main Featured Post */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden rounded-xl shadow-lg lg:col-span-2 cursor-pointer group"
+        onClick={() => router.push(`/blog/${featuredPost.slug}`)}
+      >
+        <div
+          className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105"
+          style={{
+            background: featuredPost.gradient || `linear-gradient(135deg, 
+              rgba(var(--brand-accent-rgb), 0.3) 0%, 
+              rgba(var(--brand-primary-rgb), 0.5) 50%,
+              rgba(var(--brand-accent-rgb), 0.3) 100%)`,
+            backgroundSize: "400% 400%",
+            animation: "gradientMove 8s ease infinite",
+          }}
+        />
+
+        {/* Icon overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-20">
+          <Icon className="w-48 h-48 text-white" />
+        </div>
+
+        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 md:p-8 text-white">
+          <Badge className="mb-3 w-fit bg-[var(--brand-accent)] text-white border-0">
+            {featuredPost.category}
+          </Badge>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl leading-tight font-bold mb-3 group-hover:text-[var(--brand-accent)] transition-colors">
+            {featuredPost.title}
+          </h2>
+          <p className="text-white/80 text-sm md:text-base line-clamp-2 mb-4 max-w-2xl">
+            {featuredPost.excerpt}
+          </p>
+          <div className="flex items-center gap-4 text-sm text-white/70">
+            <span className="font-medium text-white">{featuredPost.author}</span>
+            <span className="flex items-center gap-1">
+              <CalendarDaysIcon className="w-4 h-4" />
+              {featuredPost.date}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              {featuredPost.readTime}
+            </span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Other Featured Posts Sidebar */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="bg-card text-card-foreground space-y-5 rounded-xl border border-border/50 p-5 lg:col-span-1"
+      >
+        <h3 className="text-lg font-semibold">More articles</h3>
+        <div className="space-y-4">
+          {sidebarPosts.map((post) => {
+            const PostIcon = getIconComponent(post.iconName);
+            return (
+              <FeaturedPostSidebarItem
+                key={post.id}
+                imageSrc={null}
+                imageAlt={post.title}
+                title={post.title}
+                href={`/blog/${post.slug}`}
+                category={post.category}
+                icon={<PostIcon className="w-6 h-6 text-[var(--brand-accent)]" />}
+              />
+            );
+          })}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// Blog Grid Component - always renders exactly 3 grid items to maintain consistent layout
 function BlogGrid({ posts }) {
   const router = useRouter();
-  
+
+  // Calculate empty placeholders needed to always have 3 items
+  const emptyCount = POSTS_PER_PAGE - posts.length;
+
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    // Grid with fixed row structure ensures consistent height regardless of post count
+    <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Render actual posts */}
       {posts.map((post, index) => {
         const Icon = getIconComponent(post.iconName);
-        
+
         return (
           <motion.div
             key={post.slug}
@@ -116,6 +220,96 @@ function BlogGrid({ posts }) {
           </motion.div>
         );
       })}
+
+      {/* Empty placeholder cards to maintain consistent grid height */}
+      {emptyCount > 0 && Array.from({ length: emptyCount }).map((_, i) => (
+        <div
+          key={`placeholder-${i}`}
+          className="invisible"
+          aria-hidden="true"
+        >
+          <Card className="h-full overflow-hidden">
+            <CardContent className="space-y-3.5 p-0">
+              <div className="mb-6 overflow-hidden rounded-t-lg sm:mb-8">
+                <div className="h-48 w-full" />
+              </div>
+              <div className="px-5 pb-5 space-y-3.5">
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
+                    <CalendarDaysIcon className="size-4" />
+                    <span>Placeholder</span>
+                  </div>
+                  <Badge className="rounded-full border-0 text-xs">Category</Badge>
+                </div>
+                <h3 className="line-clamp-2 text-lg font-medium md:text-xl">Placeholder Title Goes Here</h3>
+                <p className="text-muted-foreground line-clamp-2 text-sm">Placeholder excerpt text for consistent height.</p>
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="font-medium">Author</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="size-3.5" />
+                      5 min
+                    </span>
+                  </div>
+                  <Button size="icon" variant="outline">
+                    <ArrowRightIcon className="size-4 -rotate-45" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Pagination Controls Component
+function PaginationControls({ posts, currentPage, setCurrentPage, postsPerPage }) {
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-border/30">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+        className="rounded-full px-4 gap-1 border-border/50 hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] disabled:opacity-50"
+      >
+        <ChevronLeft className="w-4 h-4" />
+        <span className="hidden sm:inline">Previous</span>
+      </Button>
+
+      <div className="flex items-center gap-1">
+        {Array.from({ length: totalPages }).map((_, i) => (
+          <Button
+            key={i}
+            variant={currentPage === i + 1 ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setCurrentPage(i + 1)}
+            className={`w-8 h-8 rounded-full p-0 ${
+              currentPage === i + 1 
+                ? 'bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90' 
+                : 'hover:bg-muted'
+            }`}
+          >
+            {i + 1}
+          </Button>
+        ))}
+      </div>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+        disabled={currentPage === totalPages}
+        className="rounded-full px-4 gap-1 border-border/50 hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] disabled:opacity-50"
+      >
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight className="w-4 h-4" />
+      </Button>
     </div>
   );
 }
@@ -123,6 +317,7 @@ function BlogGrid({ posts }) {
 // Main Blog Page
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const scrollRef = useRef(null);
   
   // Restore scroll position when returning to this page
@@ -150,6 +345,17 @@ export default function BlogPage() {
     if (category === "All") return filteredPosts;
     return filteredPosts.filter(post => post.category === category);
   };
+
+  // Pagination logic
+  const getPaginatedPosts = (posts) => {
+    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+    return posts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+  };
+
+  // Reset page when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   return (
     <ScrollArea className="h-screen" viewportRef={scrollRef}>
@@ -185,9 +391,22 @@ export default function BlogPage() {
               </p>
             </motion.div>
 
-            {/* Tabs and Search */}
-            <Tabs defaultValue="All" className="space-y-8 lg:space-y-10">
-              <motion.div 
+            {/* Featured Section - Only show when not searching */}
+            {!searchQuery && (
+              <FeaturedSection posts={blogPosts} />
+            )}
+
+            {/* Recent Posts Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {searchQuery ? "Search Results" : "All Posts"}
+                </h2>
+              </div>
+
+              {/* Tabs and Search */}
+              <Tabs defaultValue="All" className="space-y-8 lg:space-y-10">
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -221,17 +440,30 @@ export default function BlogPage() {
 
               {/* All Posts Tab */}
               <TabsContent value="All" className="mt-8">
-                <BlogGrid posts={getPostsByCategory("All")} />
+                <BlogGrid posts={getPaginatedPosts(getPostsByCategory("All"))} />
+                <PaginationControls
+                  posts={getPostsByCategory("All")}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  postsPerPage={POSTS_PER_PAGE}
+                />
               </TabsContent>
 
               {/* Category-specific Tabs */}
               {categories.slice(1).map((category) => (
                 <TabsContent key={category} value={category} className="mt-8">
-                  <BlogGrid posts={getPostsByCategory(category)} />
+                  <BlogGrid posts={getPaginatedPosts(getPostsByCategory(category))} />
+                  <PaginationControls
+                    posts={getPostsByCategory(category)}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    postsPerPage={POSTS_PER_PAGE}
+                  />
                 </TabsContent>
               ))}
             </Tabs>
-            
+            </div>
+
             {/* No Results */}
             {filteredPosts.length === 0 && (
               <motion.div
@@ -239,8 +471,8 @@ export default function BlogPage() {
                 animate={{ opacity: 1 }}
                 className="text-center py-16"
               >
-                <p className="text-muted-foreground text-lg">No articles found matching "{searchQuery}"</p>
-                <Button 
+                <p className="text-muted-foreground text-lg">No articles found matching &ldquo;{searchQuery}&rdquo;</p>
+                <Button
                   variant="ghost" 
                   className="mt-4 text-[var(--brand-accent)]"
                   onClick={() => setSearchQuery("")}

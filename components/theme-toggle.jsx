@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { flushSync } from "react-dom";
 
-export function ThemeToggle({ className = "", duration = 400 }) {
+export function ThemeToggle({ className = "", duration = 400, compact = false }) {
   const { settings, updateSettings } = useSettings();
   const [mounted, setMounted] = useState(false);
   const buttonRef = useRef(null);
@@ -68,16 +68,22 @@ export function ThemeToggle({ className = "", duration = 400 }) {
   return (
     <Button
       ref={buttonRef}
-      variant="outline"
+      variant={compact ? "ghost" : "outline"}
       size="icon"
       onClick={handleThemeToggle}
-      className={cn(className, "text-[var(--brand-primary)] dark:text-[var(--brand-light)] hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300")}
+      className={cn(
+        className,
+        "text-[var(--brand-primary)] dark:text-[var(--brand-light)] hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] transition-all duration-300",
+        compact
+          ? "h-7 w-7 border-0"
+          : "hover:border-[var(--brand-accent)]/50"
+      )}
       aria-label={`Switch to ${currentMode === "dark" ? "light" : "dark"} mode`}
     >
       {currentMode === "dark" ? (
-        <Sun className="h-5 w-5" />
+        <Sun className={compact ? "h-4 w-4" : "h-5 w-5"} />
       ) : (
-        <Moon className="h-5 w-5" />
+        <Moon className={compact ? "h-4 w-4" : "h-5 w-5"} />
       )}
     </Button>
   );

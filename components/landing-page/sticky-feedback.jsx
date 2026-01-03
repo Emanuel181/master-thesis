@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Send, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 /**
  * Sticky Feedback Widget
@@ -15,21 +23,15 @@ export function StickyFeedback() {
     const [isOpen, setIsOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [feedback, setFeedback] = useState('');
-    const [email, setEmail] = useState('');
-    const [status, setStatus] = useState('idle'); // idle, loading, success, error
-    const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const textareaRef = useRef(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
+    const handleSubmit = async () => {
         if (!feedback.trim()) {
-            setStatus('error');
-            setMessage('Please enter your feedback');
             return;
         }
 
-        setStatus('loading');
-        setMessage('');
+        setIsSubmitting(true);
 
         try {
             const response = await fetch('/api/feedback/public', {
@@ -37,144 +39,92 @@ export function StickyFeedback() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     feedback: feedback.trim(),
-                    email: email.trim() || undefined,
                     page: typeof window !== 'undefined' ? window.location.pathname : 'landing'
                 }),
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-                setStatus('success');
-                setMessage('Thank you for your feedback!');
                 setFeedback('');
-                setEmail('');
-                // Auto-close after success
-                setTimeout(() => {
-                    setIsOpen(false);
-                    setStatus('idle');
-                    setMessage('');
-                }, 2000);
-            } else {
-                setStatus('error');
-                setMessage(data.error || 'Failed to submit feedback');
+                if (textareaRef.current) {
+                    textareaRef.current.textContent = '';
+                }
+                setIsOpen(false);
             }
         } catch (error) {
-            setStatus('error');
-            setMessage('An error occurred. Please try again.');
+            // Silent fail
+        } finally {
+            setIsSubmitting(false);
         }
+    };
+
+    const handleInput = (e) => {
+        setFeedback(e.currentTarget.textContent || '');
+    };
+
+    const handleClose = () => {
+        setIsOpen(false);
     };
 
     return (
         <>
-            {/* Feedback Dialog */}
-            <AnimatePresence>
-                {isOpen && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                            onClick={() => {
-                                setIsOpen(false);
-                                setStatus('idle');
-                                setMessage('');
-                            }}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-4 border-b border-border bg-muted/30">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="font-semibold text-sm">Send Feedback</h3>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() => {
-                                            setIsOpen(false);
-                                            setStatus('idle');
-                                            setMessage('');
-                                        }}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <form onSubmit={handleSubmit} className="p-4 space-y-3">
-                                <div>
-                                    <Input
-                                        type="email"
-                                        placeholder="Email (optional)"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="text-sm"
-                                        disabled={status === 'loading' || status === 'success'}
-                                    />
-                                </div>
-                                <div>
-                                    <Textarea
-                                        placeholder="Tell us what you think..."
-                                        value={feedback}
-                                        onChange={(e) => setFeedback(e.target.value)}
-                                        className="min-h-[100px] text-sm resize-none"
-                                        disabled={status === 'loading' || status === 'success'}
-                                    />
-                                </div>
-                                {message && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -5 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className={`text-xs flex items-center gap-1 ${
-                                            status === 'success'
-                                                ? 'text-green-600 dark:text-green-400'
-                                                : 'text-red-600 dark:text-red-400'
-                                        }`}
-                                    >
-                                        {status === 'success' ? (
-                                            <CheckCircle2 className="w-3 h-3" />
-                                        ) : (
-                                            <AlertCircle className="w-3 h-3" />
-                                        )}
-                                        {message}
-                                    </motion.p>
-                                )}
-                                <Button
-                                    type="submit"
-                                    className="w-full"
-                                    disabled={status === 'loading' || status === 'success'}
-                                >
-                                    {status === 'loading' ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Sending...
-                                        </>
-                                    ) : status === 'success' ? (
-                                        <>
-                                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                                            Sent!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="w-4 h-4 mr-2" />
-                                            Send Feedback
-                                        </>
-                                    )}
-                                </Button>
-                            </form>
-                        </motion.div>
+            {/* Feedback Dialog - matches dashboard design */}
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogContent className="w-[400px] max-w-[90vw]">
+                    <DialogHeader>
+                        <DialogTitle>Share your feedback</DialogTitle>
+                        <DialogDescription>
+                            We&apos;d love to hear your thoughts on how we can improve.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        <Label htmlFor="sticky-feedback">Your feedback</Label>
+                        <ScrollArea className="h-[120px] w-full rounded-md border border-input bg-transparent overflow-hidden">
+                            <div
+                                ref={textareaRef}
+                                contentEditable
+                                role="textbox"
+                                aria-multiline="true"
+                                id="sticky-feedback"
+                                data-placeholder="Tell us what you think..."
+                                onInput={handleInput}
+                                className="min-h-[120px] w-full px-3 py-2 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground break-all"
+                                suppressContentEditableWarning
+                            />
+                        </ScrollArea>
                     </div>
-                )}
-            </AnimatePresence>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleClose}
+                            disabled={isSubmitting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button type="button" onClick={handleSubmit} disabled={isSubmitting || !feedback.trim()}>
+                            {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Floating button - right edge, vertically positioned */}
+            {/* On mobile: simple button that directly opens form */}
+            {/* On desktop: expands on hover to show text */}
             <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50">
+                {/* Mobile button - always compact, no hover effect */}
                 <motion.button
-                    className="flex items-center bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-lg shadow-[var(--brand-accent)]/25 rounded-l-xl overflow-hidden"
+                    className="md:hidden flex items-center justify-center bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-lg shadow-[var(--brand-accent)]/25 rounded-l-xl p-3"
+                    onClick={() => setIsOpen(true)}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Send feedback"
+                >
+                    <Star className="w-5 h-5" fill="currentColor" />
+                </motion.button>
+
+                {/* Desktop button - expands on hover */}
+                <motion.button
+                    className="hidden md:flex items-center bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-lg shadow-[var(--brand-accent)]/25 rounded-l-xl overflow-hidden"
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                     onClick={() => setIsOpen(true)}

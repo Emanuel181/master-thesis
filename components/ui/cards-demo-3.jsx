@@ -7,26 +7,26 @@ import { GoCopilot } from "react-icons/go";
 export default function CardDemo() {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 {/* Left: Text Explanation */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="space-y-6"
+                    className="space-y-6 text-center lg:text-left"
                 >
 
-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
                         Power your agents with <br/>
                         <span className="gradient-text">state-of-the-art models</span>
                     </h2>
 
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-base lg:text-lg text-muted-foreground leading-relaxed">
                         Don't get locked into a single ecosystem. VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost for your specific use cases.
                     </p>
 
-                    <div className="flex flex-wrap gap-3 pt-2">
+                    <div className="flex flex-wrap gap-3 pt-2 justify-center lg:justify-start">
                         {["OpenAI", "Anthropic", "Google Gemini", "Llama"].map((model) => (
                             <span key={model} className="px-3 py-1.5 text-sm rounded-md bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 font-medium">
                 {model}
@@ -41,7 +41,7 @@ export default function CardDemo() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    className="flex justify-center lg:justify-end"
+                    className="flex justify-center"
                 >
                     <Card>
                         <CardSkeletonContainer>
@@ -132,7 +132,7 @@ const Skeleton = () => {
                 </Container>
             </div>
 
-            <div className="h-40 w-px absolute top-20 m-auto z-40 bg-gradient-to-b from-transparent via-[var(--brand-accent)] to-transparent animate-move">
+            <div className="h-40 w-px absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-gradient-to-b from-transparent via-[var(--brand-accent)] to-transparent animate-move">
                 <div className="w-10 h-32 top-1/2 -translate-y-1/2 absolute -left-10">
                     <Sparkles />
                 </div>

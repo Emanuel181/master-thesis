@@ -1,5 +1,4 @@
-import { getBlogPost, getAllSlugs, getRelatedPosts } from "@/lib/blog-data";
-import BlogPostContent from "./blog-post-content";
+import { getBlogPost, getAllSlugs } from "@/lib/blog-data";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vulniq.com";
 
@@ -79,10 +78,3 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 
-export default async function BlogPostPage({ params }) {
-  const { slug } = await params;
-  const post = getBlogPost(slug);
-  const relatedPosts = getRelatedPosts(slug, 3);
-
-  return <BlogPostContent post={post} relatedPosts={relatedPosts} />;
-}

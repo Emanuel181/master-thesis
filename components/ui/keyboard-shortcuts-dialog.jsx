@@ -27,6 +27,7 @@ const shortcuts = [
             { keys: "mod+3", description: "Go to Knowledge Base", action: "navigate-kb" },
             { keys: "mod+4", description: "Go to Results", action: "navigate-results" },
             { keys: "mod+5", description: "Go to Profile", action: "navigate-profile" },
+            { keys: "mod+6", description: "Go to Write Article", action: "navigate-article" },
         ]
     },
     {
@@ -41,6 +42,21 @@ const shortcuts = [
             { keys: "mod+shift+f", description: "Format code", action: "format" },
             { keys: "mod+=", description: "Zoom in", action: "zoom-in" },
             { keys: "mod+-", description: "Zoom out", action: "zoom-out" },
+        ]
+    },
+    {
+        category: "Article Editor",
+        items: [
+            { keys: "mod+s", description: "Save article draft", action: "save-article" },
+            { keys: "mod+enter", description: "Submit for review", action: "submit-article" },
+            { keys: "/", description: "Slash commands menu", action: "slash-commands" },
+            { keys: "mod+b", description: "Bold text", action: "bold" },
+            { keys: "mod+i", description: "Italic text", action: "italic" },
+            { keys: "mod+u", description: "Underline text", action: "underline" },
+            { keys: "mod+shift+s", description: "Strikethrough", action: "strikethrough" },
+            { keys: "mod+shift+h", description: "Highlight", action: "highlight" },
+            { keys: "mod+shift+7", description: "Numbered list", action: "numbered-list" },
+            { keys: "mod+shift+8", description: "Bullet list", action: "bullet-list" },
         ]
     },
     {
@@ -99,6 +115,9 @@ export function KeyboardShortcutsDialog() {
                     break
                 case "navigate-profile":
                     router.push("/profile")
+                    break
+                case "navigate-article":
+                    router.push("/dashboard?active=Write Article")
                     break
                 case "theme-toggle":
                     document.documentElement.classList.toggle("dark")

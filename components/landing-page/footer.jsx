@@ -6,6 +6,16 @@ import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink, MessageSquare, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -403,121 +413,83 @@ export function Footer({ onScrollToTop }) {
     );
 }
 
-// Footer Feedback Dialog Component
+// Footer Feedback Dialog Component - matches dashboard design
 function FooterFeedbackDialog({ isOpen, onClose }) {
     const [feedback, setFeedback] = useState('');
-    const [email, setEmail] = useState('');
-    const [status, setStatus] = useState('idle');
-    const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const textareaRef = useRef(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         if (!feedback.trim()) {
-            setStatus('error');
-            setMessage('Please enter your feedback');
             return;
         }
-        setStatus('loading');
-        setMessage('');
+        setIsSubmitting(true);
         try {
             const response = await fetch('/api/feedback/public', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     feedback: feedback.trim(),
-                    email: email.trim() || undefined,
                     page: typeof window !== 'undefined' ? window.location.pathname : 'landing'
                 }),
             });
-            const data = await response.json();
             if (response.ok) {
-                setStatus('success');
-                setMessage('Thank you for your feedback!');
                 setFeedback('');
-                setEmail('');
-                setTimeout(() => { onClose?.(); setStatus('idle'); setMessage(''); }, 2000);
-            } else {
-                setStatus('error');
-                setMessage(data.error || 'Failed to submit feedback');
+                if (textareaRef.current) {
+                    textareaRef.current.textContent = '';
+                }
+                onClose?.();
             }
         } catch (error) {
-            setStatus('error');
-            setMessage('An error occurred. Please try again.');
+            // Silent fail
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (!isOpen) return null;
+    const handleInput = (e) => {
+        setFeedback(e.currentTarget.textContent || '');
+    };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={onClose}
-            />
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
-            >
-                <div className="p-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">Send Feedback</h3>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
-                            <span className="sr-only">Close</span>
-                            ✕
-                        </Button>
-                    </div>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="w-[400px] max-w-[90vw]">
+                <DialogHeader>
+                    <DialogTitle>Share your feedback</DialogTitle>
+                    <DialogDescription>
+                        We&apos;d love to hear your thoughts on how we can improve.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Label htmlFor="footer-feedback">Your feedback</Label>
+                    <ScrollArea className="h-[120px] w-full rounded-md border border-input bg-transparent overflow-hidden">
+                        <div
+                            ref={textareaRef}
+                            contentEditable
+                            role="textbox"
+                            aria-multiline="true"
+                            id="footer-feedback"
+                            data-placeholder="Tell us what you think..."
+                            onInput={handleInput}
+                            className="min-h-[120px] w-full px-3 py-2 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground break-all"
+                            suppressContentEditableWarning
+                        />
+                    </ScrollArea>
                 </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                    <input
-                        type="email"
-                        placeholder="Email (optional)"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={status === 'loading' || status === 'success'}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
-                    />
-                    <textarea
-                        placeholder="Tell us what you think..."
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        className="w-full min-h-[120px] px-3 py-2 text-sm rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
-                        disabled={status === 'loading' || status === 'success'}
-                    />
-                    {message && (
-                        <motion.p
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className={`text-sm flex items-center gap-1.5 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-                        >
-                            {status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                            {message}
-                        </motion.p>
-                    )}
-                    <Button type="submit" className="w-full" disabled={status === 'loading' || status === 'success'}>
-                        {status === 'loading' ? (
-                            <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Sending...
-                            </>
-                        ) : status === 'success' ? (
-                            <>
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Sent!
-                            </>
-                        ) : (
-                            <>
-                                <Send className="w-4 h-4 mr-2" />
-                                Send Feedback
-                            </>
-                        )}
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
                     </Button>
-                </form>
-            </motion.div>
-        </div>
+                    <Button type="button" onClick={handleSubmit} disabled={isSubmitting || !feedback.trim()}>
+                        {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X, ArrowRight, ChevronRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, GitBranch, AlertTriangle, Rss, MessageSquare, Heart, Building2 } from "lucide-react";
+import { Menu, X, ArrowRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, GitBranch, AlertTriangle, Rss, MessageSquare, Heart, Building2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 import {
@@ -16,8 +16,17 @@ import {
     NavigationMenuLink,
     NavigationMenuList,
     NavigationMenuTrigger,
-    navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -40,7 +49,6 @@ export const FloatingNavbar = () => {
     const { data: session, status } = useSession();
     const isAuthenticated = status === "authenticated" && !!session;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [visible, setVisible] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
     const [isAboveLamp, setIsAboveLamp] = useState(false);
     const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -88,14 +96,7 @@ export const FloatingNavbar = () => {
     }, []);
 
     useMotionValueEvent(scrollY, "change", (latest) => {
-        const previous = scrollY.getPrevious();
-
-        if (latest < previous || latest < 100) {
-            setVisible(true);
-        } else if (latest > 100 && latest > previous) {
-            setVisible(false);
-        }
-
+        // Navbar always visible - only track scroll state for styling
         setIsScrolled(latest > 50);
     });
 
@@ -110,9 +111,7 @@ export const FloatingNavbar = () => {
             <motion.div
                 className="fixed top-2 sm:top-3 md:top-6 inset-x-0 z-[100] flex justify-center px-2 sm:px-3 md:px-4 pointer-events-none"
                 initial={{ y: -100 }}
-                animate={{
-                    y: visible ? 0 : -100
-                }}
+                animate={{ y: 0 }}
                 transition={{
                     type: "spring",
                     stiffness: 260,
@@ -120,7 +119,7 @@ export const FloatingNavbar = () => {
                 }}
             >
                 <motion.nav
-                    className={`pointer-events-auto flex items-center justify-between gap-1.5 sm:gap-2 md:gap-4 border px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-3.5 rounded-full w-full max-w-5xl backdrop-blur-xl ${
+                    className={`pointer-events-auto flex items-center justify-between gap-2 sm:gap-3 md:gap-4 border px-3 sm:px-4 md:px-4 lg:px-6 py-2.5 sm:py-3 md:py-3 lg:py-3.5 rounded-2xl sm:rounded-full w-full max-w-5xl backdrop-blur-xl ${
                         isScrolled 
                             ? 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10' 
                             : 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
@@ -128,16 +127,19 @@ export const FloatingNavbar = () => {
                     layout
                 >
 
-                {/* LEFT: Logo */}
+                {/* LEFT: Logo with brand name on mobile */}
                 <motion.a
                     href="/"
-                    className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 font-medium group"
+                    className="flex items-center gap-2 sm:gap-2.5 font-medium group"
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     aria-label="VulnIQ Home"
                 >
-                    <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg" width={28} height={28} priority fetchPriority="high" />
-
+                    <div className="relative">
+                        <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-8 w-8 sm:h-7 sm:w-7 rounded-xl sm:rounded-lg" width={32} height={32} priority fetchPriority="high" />
+                        <div className="absolute -inset-1 bg-[var(--brand-accent)]/20 rounded-xl blur-sm -z-10 opacity-0 group-hover:opacity-100 transition-opacity md:hidden"></div>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground md:hidden">VulnIQ</span>
                 </motion.a>
 
                 {/* CENTER: Navigation Menu */}
@@ -250,37 +252,47 @@ export const FloatingNavbar = () => {
                 </div>
 
                 {/* RIGHT: Actions */}
-                <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-                    <AccessibilityButton />
-                    <ThemeToggle />
+                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                    {/* Mobile: Compact action group */}
+                    <div className="flex md:hidden items-center gap-1 bg-muted/30 rounded-xl p-1 border border-border/30">
+                        <AccessibilityButton compact />
+                        <div className="w-px h-5 bg-border/50"></div>
+                        <ThemeToggle compact />
+                    </div>
+
+                    {/* Desktop: Full actions */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <AccessibilityButton />
+                        <ThemeToggle />
+                    </div>
+
                     <Button asChild variant="outline" size="sm" className="hidden md:flex rounded-full text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 border-[var(--brand-accent)]/50 text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]">
                         <a href="/demo" aria-label="View Demo">
                             Demo
                         </a>
                     </Button>
                     {isAuthenticated ? (
-                        <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white">
-                            <a href="/dashboard" className="flex items-center gap-1 xs:gap-1.5 sm:gap-2" aria-label="Go to Dashboard">
-                                <LayoutDashboard className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
-                                <span className="hidden xs:inline">Dashboard</span>
+                        <Button asChild size="sm" className="rounded-xl md:rounded-full text-xs sm:text-sm px-3 sm:px-4 md:px-5 h-8 sm:h-9 touch-target bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-md shadow-[var(--brand-accent)]/20">
+                            <a href="/dashboard" className="flex items-center gap-1.5 sm:gap-2" aria-label="Go to Dashboard">
+                                <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
+                                <span className="hidden sm:inline">Dashboard</span>
                             </a>
                         </Button>
                     ) : (
-                        <Button asChild size="sm" className="rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)]">
-                            <a href="/login" className="flex items-center gap-0.5 xs:gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account">
-                                <span className="hidden xs:inline">Get started</span>
-                                <span className="xs:hidden" aria-hidden="true">Go</span>
-                                <span className="sr-only xs:hidden">Get started</span>
-                                <ArrowRight className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                        <Button asChild size="sm" className="rounded-xl md:rounded-full text-xs sm:text-sm px-3 sm:px-4 md:px-5 h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)] shadow-md shadow-[var(--brand-accent)]/20">
+                            <a href="/login" className="flex items-center gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account">
+                                <span className="hidden sm:inline">Get started</span>
+                                <span className="sm:hidden">Start</span>
+                                <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
                             </a>
                         </Button>
                     )}
                     {/* Mobile menu button */}
-                    <motion.div whileTap={{ scale: 0.9 }}>
+                    <motion.div whileTap={{ scale: 0.9 }} className="md:hidden">
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="md:hidden rounded-full p-1.5 xs:p-2 h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 touch-target"
+                            className="rounded-xl p-2 h-8 w-8 touch-target bg-muted/30 hover:bg-muted/50 border border-border/30"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
                             aria-expanded={mobileMenuOpen}
@@ -328,82 +340,149 @@ export const FloatingNavbar = () => {
                     <div className="bg-card/98 backdrop-blur-xl border border-border/40 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
                         {/* Scrollable content */}
                         <div className="max-h-[65vh] overflow-y-auto p-4">
-                            {/* Navigation Grid */}
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                                {/* Product Section */}
-                                <div className="col-span-1">
-                                    <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-2 px-1">
-                                        Product
-                                    </div>
-                                    {navItems
-                                        .filter(item => item.section === 'Product')
-                                        .map((item) => (
-                                            <a
-                                                key={item.name}
-                                                href={item.link}
-                                                onClick={() => setMobileMenuOpen(false)}
-                                                className="block px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-                                            >
-                                                {item.name}
-                                            </a>
-                                        ))}
+                            {/* Product Section - Feature Cards */}
+                            <div className="mb-4">
+                                <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+                                    <Sparkles className="w-3 h-3" />
+                                    Product
                                 </div>
-
-                                {/* Resources Section */}
-                                <div className="col-span-1">
-                                    <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-2 px-1">
-                                        Resources
-                                    </div>
-                                    {navItems
-                                        .filter(item => item.section === 'Resources')
-                                        .map((item) => (
-                                            <a
-                                                key={item.name}
-                                                href={item.link}
-                                                onClick={() => setMobileMenuOpen(false)}
-                                                className="block px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-                                            >
-                                                {item.name}
-                                            </a>
-                                        ))}
+                                <div className="grid grid-cols-3 gap-2">
+                                    <motion.a
+                                        href="/#features"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
+                                    >
+                                        <Zap className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
+                                        <span className="text-xs font-medium text-foreground">Features</span>
+                                    </motion.a>
+                                    <motion.a
+                                        href="/#use-cases"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
+                                    >
+                                        <Shield className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
+                                        <span className="text-xs font-medium text-foreground">Use Cases</span>
+                                    </motion.a>
+                                    <motion.a
+                                        href="/#connect"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
+                                    >
+                                        <GitBranch className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
+                                        <span className="text-xs font-medium text-foreground">Integrations</span>
+                                    </motion.a>
                                 </div>
                             </div>
 
-                            {/* Company Section - Full Width */}
-                            <div className="mt-3 pt-3 border-t border-border/30">
-                                <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-2 px-1">
+                            {/* Resources Section - List with icons */}
+                            <div className="mb-4">
+                                <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+                                    <Rss className="w-3 h-3" />
+                                    Resources
+                                </div>
+                                <div className="space-y-1">
+                                    <motion.a
+                                        href="/blog"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
+                                            <Rss className="w-4 h-4 text-[var(--brand-accent)]" />
+                                        </div>
+                                        <div>
+                                            <span className="text-sm font-medium text-foreground">Blog</span>
+                                            <p className="text-[10px] text-muted-foreground">Security insights</p>
+                                        </div>
+                                    </motion.a>
+                                    <motion.a
+                                        href="/changelog"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
+                                            <FileCode className="w-4 h-4 text-[var(--brand-accent)]" />
+                                        </div>
+                                        <div>
+                                            <span className="text-sm font-medium text-foreground">Changelog</span>
+                                            <p className="text-[10px] text-muted-foreground">Latest updates</p>
+                                        </div>
+                                    </motion.a>
+                                    <motion.a
+                                        href="/supporters"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
+                                            <Heart className="w-4 h-4 text-[var(--brand-accent)]" />
+                                        </div>
+                                        <div>
+                                            <span className="text-sm font-medium text-foreground">Supporters</span>
+                                            <p className="text-[10px] text-muted-foreground">Our community</p>
+                                        </div>
+                                    </motion.a>
+                                </div>
+                            </div>
+
+                            {/* Company Section - Horizontal pills */}
+                            <div className="pt-3 border-t border-border/30">
+                                <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+                                    <Building2 className="w-3 h-3" />
                                     Company
                                 </div>
-                                <div className="grid grid-cols-3 gap-1">
-                                    {navItems
-                                        .filter(item => item.section === 'Company')
-                                        .map((item) => (
-                                            <a
-                                                key={item.name}
-                                                href={item.link}
-                                                onClick={() => setMobileMenuOpen(false)}
-                                                className="px-2 py-2 text-sm text-center text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-                                            >
-                                                {item.name}
-                                            </a>
-                                        ))}
+                                <div className="flex flex-wrap gap-2">
+                                    <motion.a
+                                        href="/about"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <Building2 className="w-3.5 h-3.5" />
+                                        About
+                                    </motion.a>
+                                    <motion.a
+                                        href="/security"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <Shield className="w-3.5 h-3.5" />
+                                        Security
+                                    </motion.a>
+                                    <motion.a
+                                        href="/#connect"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <MessageSquare className="w-3.5 h-3.5" />
+                                        Contact
+                                    </motion.a>
                                 </div>
                             </div>
                         </div>
 
                         {/* Fixed bottom actions */}
-                        <div className="border-t border-border/40 p-3 bg-muted/30 flex gap-2">
-                            <a
+                        <div className="border-t border-border/40 p-3 bg-gradient-to-r from-muted/30 via-muted/50 to-muted/30 flex gap-2">
+                            <motion.a
                                 href="/demo"
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="flex-1 px-4 py-2.5 text-sm font-medium text-center text-[var(--brand-accent)] border border-[var(--brand-accent)]/40 rounded-xl hover:bg-[var(--brand-accent)]/10 transition-colors"
+                                whileTap={{ scale: 0.95 }}
+                                className="flex-1 px-4 py-3 text-sm font-medium text-center text-[var(--brand-accent)] border border-[var(--brand-accent)]/40 rounded-xl hover:bg-[var(--brand-accent)]/10 transition-colors flex items-center justify-center gap-2"
                             >
+                                <Sparkles className="w-4 h-4" />
                                 Try Demo
-                            </a>
-                            <a
+                            </motion.a>
+                            <motion.a
                                 href={isAuthenticated ? "/dashboard" : "/login"}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="flex-1 px-4 py-2.5 text-sm font-medium text-center text-white bg-[var(--brand-accent)] rounded-xl hover:bg-[var(--brand-accent)]/90 transition-colors flex items-center justify-center gap-1.5"
+                                whileTap={{ scale: 0.95 }}
+                                className="flex-1 px-4 py-3 text-sm font-medium text-center text-white bg-gradient-to-r from-[var(--brand-accent)] to-[var(--brand-primary)] rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-[var(--brand-accent)]/20"
                             >
                                 {isAuthenticated ? (
                                     <>
@@ -416,7 +495,7 @@ export const FloatingNavbar = () => {
                                         <ArrowRight className="w-4 h-4" />
                                     </>
                                 )}
-                            </a>
+                            </motion.a>
                         </div>
                     </div>
                 </motion.div>
@@ -444,106 +523,89 @@ function FeedbackButton({ onClick }) {
     );
 }
 
-// Inline Feedback Dialog Component
+// Inline Feedback Dialog Component - matches dashboard design
 function FeedbackDialogInline({ isOpen, onClose }) {
     const [feedback, setFeedback] = React.useState('');
-    const [email, setEmail] = React.useState('');
-    const [status, setStatus] = React.useState('idle');
-    const [message, setMessage] = React.useState('');
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const textareaRef = React.useRef(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         if (!feedback.trim()) {
-            setStatus('error');
-            setMessage('Please enter your feedback');
             return;
         }
-        setStatus('loading');
-        setMessage('');
+        setIsSubmitting(true);
         try {
             const response = await fetch('/api/feedback/public', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     feedback: feedback.trim(),
-                    email: email.trim() || undefined,
                     page: typeof window !== 'undefined' ? window.location.pathname : 'landing'
                 }),
             });
-            const data = await response.json();
             if (response.ok) {
-                setStatus('success');
-                setMessage('Thank you for your feedback!');
                 setFeedback('');
-                setEmail('');
-                setTimeout(() => { onClose?.(); setStatus('idle'); setMessage(''); }, 2000);
-            } else {
-                setStatus('error');
-                setMessage(data.error || 'Failed to submit feedback');
+                if (textareaRef.current) {
+                    textareaRef.current.textContent = '';
+                }
+                onClose?.();
             }
         } catch (error) {
-            setStatus('error');
-            setMessage('An error occurred. Please try again.');
+            // Silent fail
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (!isOpen) return null;
+    const handleInput = (e) => {
+        setFeedback(e.currentTarget.textContent || '');
+    };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={onClose}
-            />
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
-            >
-                <div className="p-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">Send Feedback</h3>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="w-[400px] max-w-[90vw]">
+                <DialogHeader>
+                    <DialogTitle>Share your feedback</DialogTitle>
+                    <DialogDescription>
+                        We&apos;d love to hear your thoughts on how we can improve.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Label htmlFor="feedback">Your feedback</Label>
+                    <ScrollArea className="h-[120px] w-full rounded-md border border-input bg-transparent overflow-hidden">
+                        <div
+                            ref={textareaRef}
+                            contentEditable
+                            role="textbox"
+                            aria-multiline="true"
+                            id="feedback"
+                            data-placeholder="Tell us what you think..."
+                            onInput={handleInput}
+                            className="min-h-[120px] w-full px-3 py-2 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground break-all"
+                            suppressContentEditableWarning
+                        />
+                    </ScrollArea>
                 </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                    <input
-                        type="email"
-                        placeholder="Email (optional)"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={status === 'loading' || status === 'success'}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
-                    />
-                    <textarea
-                        placeholder="Tell us what you think..."
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        className="w-full min-h-[120px] px-3 py-2 text-sm rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40"
-                        disabled={status === 'loading' || status === 'success'}
-                    />
-                    {message && (
-                        <p className={`text-sm flex items-center gap-1.5 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {message}
-                        </p>
-                    )}
-                    <Button type="submit" className="w-full" disabled={status === 'loading' || status === 'success'}>
-                        {status === 'loading' ? 'Sending...' : status === 'success' ? 'Sent!' : 'Send Feedback'}
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
                     </Button>
-                </form>
-            </motion.div>
-        </div>
+                    <Button type="button" onClick={handleSubmit} disabled={isSubmitting || !feedback.trim()}>
+                        {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 // Accessibility Button for Navbar
-function AccessibilityButton() {
+function AccessibilityButton({ compact }) {
     const { openPanel } = useAccessibility();
 
     return (
@@ -551,11 +613,19 @@ function AccessibilityButton() {
             onClick={openPanel}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+            className={cn(
+                "flex items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2",
+                compact
+                    ? "w-7 h-7 bg-transparent hover:bg-[var(--brand-accent)]/10"
+                    : "w-8 h-8 sm:w-9 sm:h-9 bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30"
+            )}
             aria-label="Open Accessibility Menu"
             title="Accessibility Options"
         >
-            <PersonStanding className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+            <PersonStanding className={cn(
+                "text-[var(--brand-accent)]",
+                compact ? "w-4 h-4" : "w-4 h-4 sm:w-5 sm:h-5"
+            )} strokeWidth={2} />
         </motion.button>
     );
 }

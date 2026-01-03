@@ -1,0 +1,78 @@
+/* Editor Theme Styles for Plate.js Editor */
+
+/* Base editor styles */
+.plate-editor {
+  @apply text-foreground;
+}
+
+/* Selection styles */
+.plate-editor [data-slate-editor] ::selection {
+  @apply bg-brand/25;
+}
+
+/* Placeholder styles */
+.plate-editor [data-slate-placeholder] {
+  @apply text-muted-foreground/80;
+}
+
+/* Link styles */
+.plate-editor a {
+  @apply text-primary underline decoration-primary/50 hover:decoration-primary;
+}
+
+/* Code styles */
+.plate-editor code {
+  @apply rounded bg-muted px-1.5 py-0.5 font-mono text-sm;
+}
+
+/* Blockquote styles */
+.plate-editor blockquote {
+  @apply border-l-4 border-primary/50 pl-4 italic text-muted-foreground;
+}
+
+/* List styles */
+.plate-editor ul {
+  @apply list-disc pl-6;
+}
+
+.plate-editor ol {
+  @apply list-decimal pl-6;
+}
+
+/* Heading styles */
+.plate-editor h1 {
+  @apply text-3xl font-bold tracking-tight;
+}
+
+.plate-editor h2 {
+  @apply text-2xl font-semibold tracking-tight;
+}
+
+.plate-editor h3 {
+  @apply text-xl font-semibold tracking-tight;
+}
+
+/* Table styles */
+.plate-editor table {
+  @apply w-full border-collapse;
+}
+
+.plate-editor th,
+.plate-editor td {
+  @apply border border-border px-3 py-2;
+}
+
+.plate-editor th {
+  @apply bg-muted font-semibold;
+}
+
+/* Image styles */
+.plate-editor img {
+  @apply max-w-full rounded-lg;
+}
+
+/* Horizontal rule */
+.plate-editor hr {
+  @apply my-4 border-border;
+}
+

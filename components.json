@@ -22,6 +22,7 @@
     "@blocks": "https://blocks.so/r/{name}.json",
     "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
     "@react-bits": "https://reactbits.dev/r/{name}.json",
-    "@abui": "https://abui.io/r/{name}.json"
+    "@abui": "https://abui.io/r/{name}.json",
+    "@shadcn-editor": "https://shadcn-editor.vercel.app/r/{name}.json"
   }
 }

@@ -360,7 +360,12 @@ export function UseCaseGroupsPanel({
             {/* Header */}
             <div className="flex flex-col gap-2 p-3 border-b">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Groups</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold">Groups</h3>
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
+                            {groups.length}
+                        </span>
+                    </div>
                     <div className="flex items-center gap-1">
                         {/* Collapse panel button */}
                         {onCollapse && (
@@ -587,33 +592,42 @@ export function UseCaseGroupsPanel({
                                         </button>
                                     </CollapsibleTrigger>
 
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onSelectGroup(group.id);
-                                        }}
-                                        className={cn(
-                                            "flex-1 flex items-center gap-2 py-1.5 pr-1 text-sm transition-all",
-                                            isSelected ? "text-primary" : "",
-                                            isDragOver && "text-primary font-medium"
-                                        )}
-                                    >
-                                        <GroupIcon
-                                            iconName={isDragOver ? "FolderOpen" : (isExpanded ? "FolderOpen" : group.icon)}
-                                            className={cn(
-                                                "h-4 w-4 shrink-0 transition-transform",
-                                                isDragOver
-                                                    ? "text-primary scale-110"
-                                                    : colorClass ? colorClass.replace('bg-', 'text-') : "text-muted-foreground"
-                                            )}
-                                        />
-                                        <span className="truncate">
-                                            {isDragOver ? "Drop here" : group.name}
-                                        </span>
-                                        <span className="ml-auto text-xs text-muted-foreground">
-                                            {groupUseCases.length}
-                                        </span>
-                                    </button>
+                                    <TooltipProvider delayDuration={500}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onSelectGroup(group.id);
+                                                    }}
+                                                    className={cn(
+                                                        "flex-1 flex items-center gap-2 py-1.5 pr-1 text-sm transition-all min-w-0",
+                                                        isSelected ? "text-primary" : "",
+                                                        isDragOver && "text-primary font-medium"
+                                                    )}
+                                                >
+                                                    <GroupIcon
+                                                        iconName={isDragOver ? "FolderOpen" : (isExpanded ? "FolderOpen" : group.icon)}
+                                                        className={cn(
+                                                            "h-4 w-4 shrink-0 transition-transform",
+                                                            isDragOver
+                                                                ? "text-primary scale-110"
+                                                                : colorClass ? colorClass.replace('bg-', 'text-') : "text-muted-foreground"
+                                                        )}
+                                                    />
+                                                    <span className="truncate max-w-[140px]">
+                                                        {isDragOver ? "Drop here" : group.name}
+                                                    </span>
+                                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                                                        {groupUseCases.length}
+                                                    </span>
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right" className="text-xs max-w-[250px]">
+                                                {group.name}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -646,7 +660,7 @@ export function UseCaseGroupsPanel({
                                 </div>
 
                                 <CollapsibleContent>
-                                    <div className="ml-6 pl-2 border-l space-y-0.5 py-1">
+                                    <div className="ml-6 pl-2 border-l space-y-0.5 py-1 max-w-full overflow-hidden">
                                         {groupUseCases.length === 0 ? (
                                             <p className="text-xs text-muted-foreground py-1 px-2">
                                                 No use cases
@@ -655,24 +669,32 @@ export function UseCaseGroupsPanel({
                                             groupUseCases.map((uc) => {
                                                 const UseCaseIcon = LucideIcons[uc.icon] || LucideIcons.File
                                                 return (
-                                                    <button
-                                                        key={uc.id}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            // Select this group and then select the use case
-                                                            onSelectGroup(group.id)
-                                                            onSelectUseCase?.(uc.id)
-                                                        }}
-                                                        className={cn(
-                                                            "w-full flex items-center gap-2 px-2 py-1 text-xs rounded-md hover:bg-accent/50 cursor-pointer transition-colors",
-                                                            searchTerm && filteredData.matchedUseCaseIds.has(uc.id)
-                                                                ? "text-primary bg-primary/5 font-medium"
-                                                                : "text-muted-foreground hover:text-foreground"
-                                                        )}
-                                                    >
-                                                        <UseCaseIcon className="h-3.5 w-3.5 shrink-0" />
-                                                        <span className="truncate text-left">{uc.name}</span>
-                                                    </button>
+                                                    <TooltipProvider key={uc.id} delayDuration={500}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        // Select this group and then select the use case
+                                                                        onSelectGroup(group.id)
+                                                                        onSelectUseCase?.(uc.id)
+                                                                    }}
+                                                                    className={cn(
+                                                                        "w-full flex items-center gap-2 px-2 py-1 text-xs rounded-md hover:bg-accent/50 cursor-pointer transition-colors min-w-0",
+                                                                        searchTerm && filteredData.matchedUseCaseIds.has(uc.id)
+                                                                            ? "text-primary bg-primary/5 font-medium"
+                                                                            : "text-muted-foreground hover:text-foreground"
+                                                                    )}
+                                                                >
+                                                                    <UseCaseIcon className="h-3.5 w-3.5 shrink-0" />
+                                                                    <span className="truncate text-left max-w-[150px]">{uc.name}</span>
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="right" className="text-xs max-w-[250px]">
+                                                                {uc.name}
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 )
                                             })
                                         )}

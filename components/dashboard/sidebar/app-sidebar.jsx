@@ -10,6 +10,7 @@ import {
     MessageSquare,
     Home,
     Keyboard,
+    PenLine,
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -81,6 +82,11 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
             title: "Results",
             url: "/dashboard?active=Results",
             icon: FileText,
+        },
+        {
+            title: "Write Article",
+            url: "/dashboard?active=Write Article",
+            icon: PenLine,
         },
     ];
 

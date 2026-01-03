@@ -28,6 +28,7 @@ import { ProjectProvider, useProject } from "@/contexts/projectContext";
 import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
 import { HomePage } from "@/components/home/home-page";
+import { ArticleEditor } from "@/components/dashboard/article-editor/article-editor";
 
 // New feature imports
 import { CommandPaletteProvider, useCommandPalette } from "@/components/ui/command";
@@ -222,6 +223,8 @@ function DashboardContent({ settings, mounted }) {
                     return <KnowledgeBaseVisualization />
                 case "Results":
                     return <Results initialCode={initialCode} />
+                case "Write Article":
+                    return <ArticleEditor />
                 case "Home":
                     return <HomePage />
                 default:

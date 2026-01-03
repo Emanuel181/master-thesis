@@ -19,6 +19,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ProfileHeader from "@/components/profile/profile-header"
 import ProfileContent from "@/components/profile/profile-content"
+import { UserArticlesSection } from "@/components/profile/user-articles-section"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomizationDialog } from "@/components/customization-dialog"
 import { useSettings } from "@/contexts/settingsContext"
@@ -264,6 +265,14 @@ export default function ProfilePage() {
                                         onSaveSuccess={handleSaveSuccess}
                                         onImageUpload={handleImageUpload}
                                     />
+
+                                    {/* 5. User's Published Articles */}
+                                    {session?.user?.id && (
+                                        <UserArticlesSection
+                                            userId={session.user.id}
+                                            isOwnProfile={true}
+                                        />
+                                    )}
                                 </div>
                             </ScrollArea>
                         </div>

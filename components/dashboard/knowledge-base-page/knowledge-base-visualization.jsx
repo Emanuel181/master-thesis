@@ -1010,7 +1010,7 @@ export default function KnowledgeBaseVisualization() {
                 <Button
                     variant={isGroupsPanelCollapsed ? "default" : "outline"}
                     size="sm"
-                    className="gap-2"
+                    className="gap-2 shrink-0"
                     onClick={() => setIsGroupsPanelCollapsed(!isGroupsPanelCollapsed)}
                 >
                     {isGroupsPanelCollapsed ? (
@@ -1025,35 +1025,29 @@ export default function KnowledgeBaseVisualization() {
                         </>
                     )}
                 </Button>
-                <span className="text-xs text-muted-foreground truncate flex-1">
+                <span className="text-sm text-muted-foreground truncate flex-1">
                     {selectedGroupId === null
                         ? "All Use Cases"
                         : selectedGroupId === "ungrouped"
                             ? "Ungrouped"
                             : useCaseGroups.find(g => g.id === selectedGroupId)?.name || "All"}
                 </span>
-                <Badge variant="secondary" className="text-xs">
-                    {useCaseGroups.length} groups
-                </Badge>
             </div>
 
             {/* Mobile Groups Panel (collapsible) */}
             {!isGroupsPanelCollapsed && (
-                <div className="md:hidden mx-2 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-auto h-[250px] min-h-[200px]">
+                <div className="md:hidden mx-2 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-auto h-[450px] min-h-[400px]">
                     <UseCaseGroupsPanel
                         groups={useCaseGroups}
                         useCases={useCasesWithCounts}
                         selectedGroupId={selectedGroupId}
-                        onSelectGroup={(id) => {
-                            setSelectedGroupId(id);
-                            // Auto-collapse on mobile after selection
-                            if (isMobile) setIsGroupsPanelCollapsed(true);
-                        }}
+                        onSelectGroup={setSelectedGroupId}
                         onGroupsChange={setUseCaseGroups}
                         selectedUseCases={selectedUseCases}
                         onMoveUseCases={handleMoveUseCasesToGroup}
                         onSelectUseCase={(id) => {
                             setSelectedUseCase(id);
+                            // Only collapse on mobile when selecting a specific use case, not when selecting a group
                             if (isMobile) setIsGroupsPanelCollapsed(true);
                         }}
                     />
