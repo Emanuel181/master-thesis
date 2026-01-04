@@ -368,8 +368,8 @@ module.exports = { verifyToken };`,
                     type: "file",
                     content: `// VULNERABLE: Secrets in source code
 module.exports = {
-    AWS_ACCESS_KEY: 'AKIAIOSFODNN7EXAMPLE',
-    AWS_SECRET_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+    AWS_ACCESS_KEY: 'AKIA_EXAMPLE_KEY_HERE',
+    AWS_SECRET_KEY: 'example_secret_key_replace_me_in_production',
     JWT_SECRET: 'super-secret-jwt-key-do-not-share'
 };`,
                 },
@@ -538,8 +538,8 @@ def token_required(f):
     SQLALCHEMY_DATABASE_URI = 'postgresql://admin:password123@localhost/production'
     DEBUG = True
     WTF_CSRF_ENABLED = False
-    AWS_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE'
-    AWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'`,
+    AWS_ACCESS_KEY_ID = 'your-aws-access-key-here'
+    AWS_SECRET_ACCESS_KEY = 'your-aws-secret-key-here'`,
         },
         {
             name: "requirements.txt",
@@ -770,11 +770,11 @@ export default function UserProfile() {
                             type: "file",
                             content: `// VULNERABLE: API keys in frontend
 export const API_CONFIG = {
-  apiKey: 'sk-live-1234567890abcdef',
-  googleMapsKey: 'AIzaSyAxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  stripeSecretKey: 'sk_live_xxxxxxxxxxxxx',
+  apiKey: 'your-api-key-here',
+  googleMapsKey: 'your-google-maps-key-here',
+  stripeSecretKey: 'your-stripe-key-here',
   firebaseConfig: {
-    apiKey: "AIzaSyBxxxxxxxxxxxxxxxxx",
+    apiKey: "your-firebase-key-here",
     authDomain: "myapp.firebaseapp.com"
   }
 };`,

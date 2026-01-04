@@ -23,13 +23,13 @@ jobs:
       # Checkout
       ##################################
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       ##################################
       # Cache npm
       ##################################
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('package-lock.json') }}
@@ -47,7 +47,7 @@ jobs:
             --output=reports/semgrep.sarif || true
 
       - name: Upload Semgrep Results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@dd746615b3b9d728a6a37ca2045b68ca76d4841a # v3.28.8
         with:
           sarif_file: reports/semgrep.sarif
 
@@ -55,7 +55,7 @@ jobs:
       # SonarCloud
       ##################################
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92 # v2.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -63,12 +63,12 @@ jobs:
       # CodeQL
       ##################################
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
         with:
           languages: javascript
 
       - name: Analyze CodeQL
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
 
       ##################################
       # Snyk
@@ -92,7 +92,7 @@ jobs:
       # AWS Authentication
       ##################################
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -103,7 +103,7 @@ jobs:
       ##################################
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
 
       ##################################
       # Build & Push App Image

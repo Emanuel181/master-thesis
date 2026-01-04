@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import DOMPurify from 'dompurify';
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
     Shield,
@@ -240,6 +241,16 @@ function stripHtmlTags(html) {
 function HTMLContentPreview({ content }) {
     if (!content) return null;
 
+    // Sanitize HTML to prevent XSS attacks
+    const sanitizedContent = typeof window !== 'undefined'
+        ? DOMPurify.sanitize(content, {
+            ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li',
+                          'strong', 'em', 'u', 's', 'a', 'img', 'blockquote', 'pre', 'code',
+                          'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span'],
+            ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel']
+          })
+        : content;
+
     return (
         <div
             className="prose prose-lg dark:prose-invert max-w-none
@@ -254,7 +265,7 @@ function HTMLContentPreview({ content }) {
                 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:bg-muted prose-code:font-mono prose-code:text-sm
                 prose-pre:bg-zinc-900 prose-pre:rounded-lg prose-pre:p-4
                 prose-img:rounded-lg prose-img:my-4"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
     );
 }

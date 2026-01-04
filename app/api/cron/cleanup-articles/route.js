@@ -1,7 +1,26 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { createNotification, NOTIFICATION_TYPES } from "@/lib/notifications";
 import { sendArticleDeletedEmail } from "@/lib/article-emails";
+
+/**
+ * Timing-safe comparison of two secrets
+ * Prevents timing attacks by ensuring constant-time comparison
+ */
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+
+  if (bufA.length !== bufB.length) {
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+
+  return timingSafeEqual(bufA, bufB);
+}
 
 // This endpoint can be called by a cron job to clean up scheduled deletions
 // POST /api/cron/cleanup-articles - Delete articles past their scheduled deletion date
@@ -11,8 +30,9 @@ export async function POST(request) {
     // Verify cron secret (to prevent unauthorized calls)
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
+    const providedSecret = authHeader?.replace('Bearer ', '');
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (cronSecret && !safeCompare(providedSecret, cronSecret)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -113,8 +133,9 @@ export async function GET(request) {
   try {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
+    const providedSecret = authHeader?.replace('Bearer ', '');
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (cronSecret && !safeCompare(providedSecret, cronSecret)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -103,6 +103,7 @@
     "critters": "^0.0.23",
     "date-fns": "^4.1.0",
     "dedent": "^1.0.0",
+    "dompurify": "^3.3.1",
     "dprint": "^0.50.2",
     "dprint-node": "^1.0.8",
     "framer-motion": "^12.23.25",
@@ -183,5 +184,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "@auth/core": "0.41.1"
   }
 }

@@ -43,6 +43,10 @@ WORKDIR /app
 
 RUN apk add --no-cache libc6-compat
 
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 prisma
+
 # Prisma needs full schema + migrations
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
@@ -64,6 +68,7 @@ RUN echo '#!/bin/sh' > /app/migrate.sh && \
 
 
 # DATABASE_URL is injected at runtime by ECS
+USER prisma
 CMD ["/bin/sh", "/app/migrate.sh"]
 
 # ----------------------------

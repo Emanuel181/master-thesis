@@ -1457,10 +1457,15 @@ function ArticleJsonLd({ post, url }) {
     "timeRequired": post.readTime
   };
 
+  // Safely serialize JSON-LD, escaping </script> to prevent XSS
+  const safeJsonLd = JSON.stringify(jsonLd)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e');
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd }}
     />
   );
 }

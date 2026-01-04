@@ -13,9 +13,32 @@
  */
 
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import prisma from "@/lib/prisma";
 import { cleanupExpiredRateLimits } from "@/lib/rate-limit";
 import { cleanupOldAuditLogs } from "@/lib/audit-log";
+
+/**
+ * Timing-safe comparison of two secrets
+ * Prevents timing attacks by ensuring constant-time comparison
+ */
+function safeCompare(a, b) {
+    if (!a || !b) return false;
+
+    // Convert strings to buffers for timingSafeEqual
+    const bufA = Buffer.from(a, 'utf8');
+    const bufB = Buffer.from(b, 'utf8');
+
+    // If lengths differ, still perform comparison to avoid timing leak
+    // but ensure we return false
+    if (bufA.length !== bufB.length) {
+        // Compare bufA with itself to maintain constant time
+        timingSafeEqual(bufA, bufA);
+        return false;
+    }
+
+    return timingSafeEqual(bufA, bufB);
+}
 
 // Verify the cleanup secret to prevent unauthorized access
 function verifyCleanupSecret(request) {
@@ -28,7 +51,7 @@ function verifyCleanupSecret(request) {
     const authHeader = request.headers.get('authorization');
     const providedSecret = authHeader?.replace('Bearer ', '');
     
-    return providedSecret === secret;
+    return safeCompare(providedSecret, secret);
 }
 
 export async function POST(request) {

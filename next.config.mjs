@@ -72,6 +72,10 @@ const nextConfig = {
     ],
   },
   async headers() {
+    // SECURITY NOTE: Content-Security-Policy includes 'unsafe-eval' which is required
+    // for Monaco Editor to function (syntax highlighting, tokenization, etc.)
+    // This is an accepted trade-off - no eval() or new Function() calls exist in
+    // our application code. See: https://github.com/microsoft/monaco-editor/issues/2949
     return [
       // Public marketing pages - allow bfcache
       {
