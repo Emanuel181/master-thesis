@@ -62,6 +62,7 @@ RUN echo '#!/bin/sh' > /app/migrate.sh && \
     echo 'npx prisma migrate deploy' >> /app/migrate.sh && \
     chmod +x /app/migrate.sh
 
+
 # DATABASE_URL is injected at runtime by ECS
 CMD ["/bin/sh", "/app/migrate.sh"]
 
