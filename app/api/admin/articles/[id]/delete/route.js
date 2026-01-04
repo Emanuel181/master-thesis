@@ -2,21 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification, NOTIFICATION_TYPES } from "@/lib/notifications";
 import { sendArticleDeletedEmail } from "@/lib/article-emails";
-
-// List of allowed admin emails
-const ADMIN_EMAILS = [
-  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
-  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
-].filter(Boolean);
+import { requireAdmin } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 
 // DELETE /api/admin/articles/[id]/delete - Permanently delete an article
+// Requires admin authentication
 export async function DELETE(request, { params }) {
-  try {
-    const adminEmail = request.headers.get("x-admin-email");
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
 
-    if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
 
     const { id } = await params;
 

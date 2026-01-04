@@ -1,30 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// List of allowed admin emails - supports both ADMIN_EMAILS (comma-separated) and ADMIN_EMAIL (single)
-const ADMIN_EMAILS = [
-  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
-  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
-].filter(Boolean);
+import { requireAdmin } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/articles - Get all articles for admin review
+// Requires admin authentication
 export async function GET(request) {
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
+
   try {
-    // Get admin email from header (set by admin verification flow)
-    const adminEmail = request.headers.get("x-admin-email");
-
-    if (!adminEmail) {
-      return NextResponse.json({ error: "Unauthorized - No email provided" }, { status: 401 });
-    }
-
-    const normalizedEmail = adminEmail.toLowerCase().trim();
-
-    // Check if email is in allowed list
-    if (!ADMIN_EMAILS.includes(normalizedEmail)) {
-      console.log("Email not in admin list:", normalizedEmail, "Allowed:", ADMIN_EMAILS);
-      return NextResponse.json({ error: "Unauthorized - Email not in admin list" }, { status: 401 });
-    }
-
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // PENDING_REVIEW, IN_REVIEW, PUBLISHED, REJECTED
@@ -118,7 +104,7 @@ export async function GET(request) {
     console.error("Error fetching articles for admin:", error);
     return NextResponse.json(
       { error: "Failed to fetch articles" },
-      { status: 500 }
+      { status: 500, headers: securityHeaders }
     );
   }
 }

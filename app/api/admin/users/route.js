@@ -1,31 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// Get admin emails from environment
-function getAdminEmails() {
-  const adminEmails = process.env.ADMIN_EMAILS
-    ? process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase())
-    : [];
-  const singleAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (singleAdmin && !adminEmails.includes(singleAdmin)) {
-    adminEmails.push(singleAdmin);
-  }
-  return adminEmails;
-}
-
-// Check if email is admin
-function isAdminEmail(email) {
-  if (!email) return false;
-  return getAdminEmails().includes(email.toLowerCase());
-}
+import { requireAdmin } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/users - Get all users
+// Requires admin authentication
 export async function GET(request) {
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
+
   try {
-    const adminEmail = request.headers.get("x-admin-email");
-    if (!adminEmail || !isAdminEmail(adminEmail)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -111,7 +96,7 @@ export async function GET(request) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
       { error: "Failed to fetch users", details: error.message },
-      { status: 500 }
+      { status: 500, headers: securityHeaders }
     );
   }
 }

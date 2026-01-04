@@ -1,20 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// List of allowed admin emails
-const ADMIN_EMAILS = [
-  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
-  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
-].filter(Boolean);
+import { requireAdmin } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/articles/featured - Get all published articles with featured status
+// Requires admin authentication
 export async function GET(request) {
-  try {
-    const adminEmail = request.headers.get("x-admin-email");
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
 
-    if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
 
     // Get all published articles
     const articles = await prisma.article.findMany({
@@ -64,13 +60,13 @@ export async function GET(request) {
 }
 
 // POST /api/admin/articles/featured - Update featured article settings
+// Requires admin authentication
 export async function POST(request) {
-  try {
-    const adminEmail = request.headers.get("x-admin-email");
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
 
-    if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
 
     const body = await request.json();
     const { articleId, action, value, featuredOrder } = body;

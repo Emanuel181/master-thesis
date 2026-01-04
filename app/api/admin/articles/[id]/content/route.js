@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// List of allowed admin emails - supports both ADMIN_EMAILS (comma-separated) and ADMIN_EMAIL (single)
-const ADMIN_EMAILS = [
-  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
-  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
-].filter(Boolean);
+import { requireAdmin } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/articles/[id]/content - Get article content for admin
+// Requires admin authentication
 export async function GET(request, { params }) {
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
+
   try {
-    const adminEmail = request.headers.get("x-admin-email");
-
-    if (!adminEmail) {
-      return NextResponse.json({ error: "Unauthorized - No admin email" }, { status: 401 });
-    }
-
-    if (!ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-      return NextResponse.json({ error: "Unauthorized - Email not allowed" }, { status: 401 });
-    }
 
     const { id } = await params;
 
@@ -50,13 +42,13 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/admin/articles/[id]/content - Update article content (admin autosave)
+// Requires admin authentication
 export async function PUT(request, { params }) {
-  try {
-    const adminEmail = request.headers.get("x-admin-email");
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
 
-    if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
 
     const { id } = await params;
     const body = await request.json();

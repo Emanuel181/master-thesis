@@ -348,7 +348,7 @@ export default function AdminArticlesPage() {
     const [isFullscreenEditorOpen, setIsFullscreenEditorOpen] = useState(false);
 
     // Memoize custom headers for fullscreen editor to prevent unnecessary re-renders
-    const editorCustomHeaders = useMemo(() => ({ 'x-admin-email': adminEmail }), [adminEmail]);
+    const editorCustomHeaders = useMemo(() => ({}), []);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -612,11 +612,7 @@ export default function AdminArticlesPage() {
                 params.set('search', searchQuery);
             }
 
-            const response = await fetch(`/api/admin/articles?${params.toString()}`, {
-                headers: {
-                    'x-admin-email': email.trim()
-                }
-            });
+            const response = await fetch(`/api/admin/articles?${params.toString()}`);
             if (response.ok) {
                 const data = await response.json();
                 setArticles(data.articles || []);
@@ -647,11 +643,7 @@ export default function AdminArticlesPage() {
     async function fetchFeaturedArticles(email) {
         setIsFeaturedLoading(true);
         try {
-            const response = await fetch('/api/admin/articles/featured', {
-                headers: {
-                    'x-admin-email': email.trim()
-                }
-            });
+            const response = await fetch('/api/admin/articles/featured');
             if (response.ok) {
                 const data = await response.json();
                 setFeaturedArticles(data.articles || []);
@@ -671,8 +663,7 @@ export default function AdminArticlesPage() {
             const response = await fetch('/api/admin/articles/featured', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ articleId, action, value, featuredOrder })
             });
@@ -709,8 +700,7 @@ export default function AdminArticlesPage() {
             const response = await fetch(`/api/admin/articles/${selectedArticle.id}/status`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     status: 'PUBLISHED',
@@ -747,8 +737,7 @@ export default function AdminArticlesPage() {
             const response = await fetch(`/api/admin/articles/${selectedArticle.id}/status`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     status: 'REJECTED',
@@ -779,8 +768,7 @@ export default function AdminArticlesPage() {
             const response = await fetch(`/api/admin/articles/${article.id}/status`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     status: 'IN_REVIEW'
@@ -809,8 +797,7 @@ export default function AdminArticlesPage() {
             const response = await fetch(`/api/admin/articles/${selectedArticle.id}/delete`, {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     feedback: deleteFeedback || null
@@ -844,8 +831,7 @@ export default function AdminArticlesPage() {
             const response = await fetch(`/api/admin/articles/${selectedArticle.id}/status`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     status: 'SCHEDULED_FOR_DELETION',
@@ -874,11 +860,7 @@ export default function AdminArticlesPage() {
     // Fetch available users for reassignment
     async function fetchUsers() {
         try {
-            const response = await fetch('/api/admin/users', {
-                headers: {
-                    'x-admin-email': adminEmail.trim()
-                }
-            });
+            const response = await fetch('/api/admin/users');
             if (response.ok) {
                 const data = await response.json();
                 setAvailableUsers(data.users || []);
@@ -897,8 +879,7 @@ export default function AdminArticlesPage() {
             const response = await fetch(`/api/admin/articles/${editedArticle.id}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     title: editedArticle.title,

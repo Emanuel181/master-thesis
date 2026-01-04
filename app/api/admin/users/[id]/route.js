@@ -1,31 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-
-// Get admin emails from environment
-function getAdminEmails() {
-  const adminEmails = process.env.ADMIN_EMAILS
-    ? process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase())
-    : [];
-  const singleAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (singleAdmin && !adminEmails.includes(singleAdmin)) {
-    adminEmails.push(singleAdmin);
-  }
-  return adminEmails;
-}
-
-function isAdminEmail(email) {
-  if (!email) return false;
-  return getAdminEmails().includes(email.toLowerCase());
-}
+import { requireAdmin, isAdminEmail } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/users/[id] - Get user details
+// Requires admin authentication
 export async function GET(request, { params }) {
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
+
   try {
-    const adminEmail = request.headers.get("x-admin-email");
-    if (!adminEmail || !isAdminEmail(adminEmail)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const { id } = await params;
 
@@ -64,13 +50,13 @@ export async function GET(request, { params }) {
 }
 
 // POST /api/admin/users/[id] - Warn user
+// Requires admin authentication
 export async function POST(request, { params }) {
-  try {
-    const adminEmail = request.headers.get("x-admin-email");
-    if (!adminEmail || !isAdminEmail(adminEmail)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
 
+  try {
     const { id } = await params;
     const body = await request.json();
     const { action, reason } = body;
@@ -104,7 +90,7 @@ export async function POST(request, { params }) {
         data: {
           userId: id,
           reason: reason.trim(),
-          warnedBy: adminEmail,
+          warnedBy: adminCheck.email,
         },
       });
 
@@ -124,7 +110,7 @@ export async function POST(request, { params }) {
         title: "Account Warning",
         message: `You have received a warning: ${reason.trim()}`,
         link: "/dashboard",
-        metadata: { warnedBy: adminEmail, reason: reason.trim() },
+        metadata: { warnedBy: adminCheck.email, reason: reason.trim() },
       });
 
       return NextResponse.json({
@@ -145,12 +131,13 @@ export async function POST(request, { params }) {
 }
 
 // DELETE /api/admin/users/[id]/warning/[warningId] - Remove a specific warning
+// Requires admin authentication
 export async function DELETE(request, { params }) {
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
+
   try {
-    const adminEmail = request.headers.get("x-admin-email");
-    if (!adminEmail || !isAdminEmail(adminEmail)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const { id } = await params;
     const { searchParams } = new URL(request.url);

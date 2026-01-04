@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { securityHeaders, readJsonBody } from "@/lib/api-security";
+import { requireAdmin } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 
@@ -23,8 +24,13 @@ const updateSupporterSchema = z.object({
 /**
  * PUT /api/admin/supporters/[id]
  * Update a supporter in database
+ * Requires admin authentication
  */
 export async function PUT(request, { params }) {
+    // Verify admin authentication
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) return adminCheck.error;
+
     try {
         const { id } = await params;
 
@@ -94,8 +100,13 @@ export async function PUT(request, { params }) {
 /**
  * DELETE /api/admin/supporters/[id]
  * Delete a supporter from database
+ * Requires admin authentication
  */
 export async function DELETE(request, { params }) {
+    // Verify admin authentication
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) return adminCheck.error;
+
     try {
         const { id } = await params;
 

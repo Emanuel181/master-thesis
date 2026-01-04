@@ -188,9 +188,7 @@ export default function AdminUsersPage() {
                 search: searchQuery,
                 filter: filterStatus,
             });
-            const response = await fetch(`/api/admin/users?${params}`, {
-                headers: { 'x-admin-email': email.trim() },
-            });
+            const response = await fetch(`/api/admin/users?${params}`);
             if (response.ok) {
                 const data = await response.json();
                 setUsers(data.users || []);
@@ -363,8 +361,7 @@ export default function AdminUsersPage() {
             const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-email': adminEmail.trim(),
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ action: 'warn', reason: warningReason.trim() }),
             });

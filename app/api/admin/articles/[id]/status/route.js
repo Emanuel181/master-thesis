@@ -1,26 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createArticleStatusNotification } from "@/lib/notifications";
+import { requireAdmin } from "@/lib/admin-auth";
+import { securityHeaders } from "@/lib/api-security";
 import {
   sendArticleRejectedEmail,
   sendArticleScheduledForDeletionEmail,
   sendArticleStatusChangedEmail
 } from "@/lib/article-emails";
 
-// List of allowed admin emails - supports both ADMIN_EMAILS (comma-separated) and ADMIN_EMAIL (single)
-const ADMIN_EMAILS = [
-  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
-  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
-].filter(Boolean);
-
 // POST /api/admin/articles/[id]/status - Change article status
+// Requires admin authentication
 export async function POST(request, { params }) {
-  try {
-    const adminEmail = request.headers.get("x-admin-email");
+  // Verify admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck.error) return adminCheck.error;
 
-    if (!adminEmail || !ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
 
     const { id } = await params;
     const body = await request.json();

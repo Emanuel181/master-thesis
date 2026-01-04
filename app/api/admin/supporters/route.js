@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { securityHeaders, readJsonBody } from "@/lib/api-security";
+import { requireAdmin } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 
@@ -22,8 +23,13 @@ const supporterSchema = z.object({
 /**
  * GET /api/admin/supporters
  * Get all supporters from database
+ * Requires admin authentication
  */
 export async function GET() {
+    // Verify admin authentication
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) return adminCheck.error;
+
     try {
         const supporters = await prisma.supporter.findMany({
             orderBy: [
@@ -49,8 +55,13 @@ export async function GET() {
 /**
  * POST /api/admin/supporters
  * Create a new supporter in database
+ * Requires admin authentication
  */
 export async function POST(request) {
+    // Verify admin authentication
+    const adminCheck = await requireAdmin();
+    if (adminCheck.error) return adminCheck.error;
+
     try {
         const bodyResult = await readJsonBody(request);
         if (!bodyResult.ok) {
