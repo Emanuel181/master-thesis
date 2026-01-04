@@ -7,7 +7,7 @@ Contact: mailto:emanuel.rusu03@e-uvt.ro
 Policy: https://vulniq.org/security
 
 # Languages that our team speaks and understands
-Preferred-Languages: en-US
+Preferred-Languages: en, ro
 
 # Expiration date for this security.txt file
 Expires: 2027-01-02T12:25:10z

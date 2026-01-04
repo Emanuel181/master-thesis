@@ -57,7 +57,7 @@ export default auth((req) => {
 export const config = {
     matcher: [
         "/dashboard/:path*", 
-        "/demo/:path*", 
-        "/api/:path*"
+        "/demo/:path*",
+        "/api/:path((?!health).*)",
     ],
 }
