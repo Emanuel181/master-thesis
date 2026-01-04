@@ -53,8 +53,17 @@ COPY prisma.config.ts ./
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN npx prisma generate
 
+# Create migration script that handles failed migrations
+RUN echo '#!/bin/sh' > /app/migrate.sh && \
+    echo 'set -e' >> /app/migrate.sh && \
+    echo '# Mark any failed migrations as rolled back' >> /app/migrate.sh && \
+    echo 'npx prisma migrate resolve --rolled-back 20260103000000_add_article_content_s3_key 2>/dev/null || true' >> /app/migrate.sh && \
+    echo '# Deploy migrations' >> /app/migrate.sh && \
+    echo 'npx prisma migrate deploy' >> /app/migrate.sh && \
+    chmod +x /app/migrate.sh
+
 # DATABASE_URL is injected at runtime by ECS
-CMD ["npx", "prisma", "migrate", "deploy"]
+CMD ["/bin/sh", "/app/migrate.sh"]
 
 # ----------------------------
 # Runner (App)
