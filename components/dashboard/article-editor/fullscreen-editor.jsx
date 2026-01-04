@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react";
 
 // --- Tiptap Core Extensions ---
@@ -9,7 +10,6 @@ import { Image } from "@tiptap/extension-image";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { Typography } from "@tiptap/extension-typography";
-import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 import { Selection } from "@tiptap/extensions";
@@ -41,11 +41,6 @@ import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu";
 import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button";
 import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button";
 import {
-  ColorHighlightPopover,
-  ColorHighlightPopoverContent,
-  ColorHighlightPopoverButton,
-} from "@/components/tiptap-ui/color-highlight-popover";
-import {
   LinkPopover,
   LinkContent,
   LinkButton,
@@ -56,7 +51,6 @@ import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button";
 
 // --- Icons ---
 import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon";
-import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon";
 import { LinkIcon } from "@/components/tiptap-icons/link-icon";
 
 // --- Hooks ---
@@ -71,12 +65,14 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 import "./fullscreen-editor.scss";
 
 // --- UI Components ---
-import { X, Save, Loader2, Check, Clock } from "lucide-react";
+import { X, Save, Loader2, Check, Clock, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
+import { useSettings } from "@/contexts/settingsContext";
 
 // Autosave interval in milliseconds (30 seconds)
 const AUTOSAVE_INTERVAL = 30000;
+
 
 // Generate HTML from TipTap JSON
 function generateHTML(json) {
@@ -179,7 +175,7 @@ function generateText(json) {
   return processNode(json);
 }
 
-const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile }) => {
+const MainToolbarContent = ({ onLinkClick, isMobile }) => {
   return (
     <>
       <Spacer />
@@ -201,11 +197,6 @@ const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile }) => {
         <MarkButton type="strike" />
         <MarkButton type="code" />
         <MarkButton type="underline" />
-        {!isMobile ? (
-          <ColorHighlightPopover />
-        ) : (
-          <ColorHighlightPopoverButton onClick={onHighlighterClick} />
-        )}
         {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
       </ToolbarGroup>
       <ToolbarSeparator />
@@ -229,26 +220,23 @@ const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile }) => {
   );
 };
 
-const MobileToolbarContent = ({ type, onBack }) => (
+const MobileToolbarContent = ({ onBack }) => (
   <>
     <ToolbarGroup>
       <Button data-style="ghost" onClick={onBack}>
         <ArrowLeftIcon className="tiptap-button-icon" />
-        {type === "highlighter" ? (
-          <HighlighterIcon className="tiptap-button-icon" />
-        ) : (
-          <LinkIcon className="tiptap-button-icon" />
-        )}
+        <LinkIcon className="tiptap-button-icon" />
       </Button>
     </ToolbarGroup>
 
     <ToolbarSeparator />
 
-    {type === "highlighter" ? <ColorHighlightPopoverContent /> : <LinkContent />}
+    <LinkContent />
   </>
 );
 
-export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate }) {
+export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate, apiBasePath = '/api/articles', customHeaders = {}, allowAutosaveAllStatuses = false }) {
+
   const isMobile = useIsBreakpoint();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = useState("main");
@@ -260,6 +248,72 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
   const autosaveTimerRef = useRef(null);
   const hasUnsavedChanges = useRef(false);
   const [shouldCreateEditor, setShouldCreateEditor] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const themeButtonRef = useRef(null);
+  const fetchedArticleId = useRef(null); // Track which article was fetched
+  const customHeadersRef = useRef(customHeaders); // Ref to avoid callback recreation
+  const articleRef = useRef(article); // Ref to always have latest article data
+  const saveContentRef = useRef(null); // Ref for save function to use in interval
+
+  // Keep refs updated
+  useEffect(() => {
+    customHeadersRef.current = customHeaders;
+  }, [customHeaders]);
+
+  useEffect(() => {
+    articleRef.current = article;
+  }, [article]);
+
+  // Theme toggle using settings context
+  const { settings, updateSettings } = useSettings();
+
+  // Handle hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = useCallback(async () => {
+    if (!settings || !themeButtonRef.current) return;
+
+    const newMode = settings.mode === "dark" ? "light" : "dark";
+
+    // Check if View Transitions API is supported
+    if (!document.startViewTransition) {
+      // Fallback for browsers without View Transitions API
+      updateSettings({ ...settings, mode: newMode });
+      return;
+    }
+
+    await document.startViewTransition(() => {
+      flushSync(() => {
+        updateSettings({ ...settings, mode: newMode });
+      });
+    }).ready;
+
+    const { top, left, width, height } = themeButtonRef.current.getBoundingClientRect();
+    const x = left + width / 2;
+    const y = top + height / 2;
+    const maxRadius = Math.hypot(
+      Math.max(left, window.innerWidth - left),
+      Math.max(top, window.innerHeight - top)
+    );
+
+    document.documentElement.animate(
+      {
+        clipPath: [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${maxRadius}px at ${x}px ${y}px)`,
+        ],
+      },
+      {
+        duration: 400,
+        easing: "ease-in-out",
+        pseudoElement: "::view-transition-new(root)",
+      }
+    );
+  }, [settings, updateSettings]);
+
+  const isDarkMode = mounted && settings?.mode === "dark";
 
   // Only create editor when dialog is opened
   useEffect(() => {
@@ -279,6 +333,7 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
         setSaveStatus("idle");
         setLastSaved(null);
         hasUnsavedChanges.current = false;
+        fetchedArticleId.current = null; // Reset so next open will fetch
       }, 300);
       return () => clearTimeout(timeout);
     }
@@ -286,18 +341,20 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
 
   // Fetch content when dialog opens
   useEffect(() => {
-    if (open && article?.id) {
+    // Only fetch if open, have article id, and haven't already fetched this article
+    if (open && article?.id && fetchedArticleId.current !== article.id) {
       setIsLoading(true);
-      fetch(`/api/articles/${article.id}/content`)
+      fetchedArticleId.current = article.id; // Mark as fetching
+      const url = `${apiBasePath}/${article.id}/content`;
+
+      fetch(url, {
+        headers: customHeaders,
+      })
         .then((res) => res.json())
         .then((data) => {
           // Use contentJson if available, otherwise try to use content
           if (data.contentJson) {
             setInitialContent(data.contentJson);
-          } else if (data.content) {
-            // If only HTML content exists, we'll start fresh
-            // TipTap will handle this
-            setInitialContent(null);
           } else {
             setInitialContent(null);
           }
@@ -305,12 +362,13 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
         .catch((error) => {
           console.error("Error fetching content:", error);
           toast.error("Failed to load article content");
+          fetchedArticleId.current = null; // Reset on error so retry is possible
         })
         .finally(() => {
           setIsLoading(false);
         });
     }
-  }, [open, article?.id]);
+  }, [open, article?.id, apiBasePath]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -336,7 +394,6 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TaskList,
       TaskItem.configure({ nested: true }),
-      Highlight.configure({ multicolor: true }),
       Image,
       Typography,
       Superscript,
@@ -401,7 +458,15 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
 
   // Save function
   const saveContent = useCallback(async () => {
-    if (!editor || !article?.id || !hasUnsavedChanges.current) return;
+    const currentArticle = articleRef.current;
+
+    if (!editor || !currentArticle?.id) {
+      return;
+    }
+
+    if (!hasUnsavedChanges.current) {
+      return;
+    }
 
     try {
       setSaveStatus("saving");
@@ -410,9 +475,9 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
       const html = generateHTML(json);
       const text = generateText(json);
 
-      const response = await fetch(`/api/articles/${article.id}/content`, {
+      const response = await fetch(`${apiBasePath}/${currentArticle.id}/content`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...customHeadersRef.current },
         body: JSON.stringify({
           contentJson: json,
           contentMarkdown: text,
@@ -431,8 +496,8 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
       setLastSaved(new Date());
 
       // Update article in parent
-      if (data.readTime) {
-        onArticleUpdate({ id: article.id, readTime: data.readTime });
+      if (data.readTime && onArticleUpdate) {
+        onArticleUpdate({ id: currentArticle.id, readTime: data.readTime });
       }
 
       // Reset status after 2 seconds
@@ -444,7 +509,13 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
       setSaveStatus("error");
       toast.error("Failed to save content");
     }
-  }, [editor, article?.id, onArticleUpdate]);
+  }, [editor, apiBasePath, onArticleUpdate]);
+
+  // Keep saveContentRef updated
+  useEffect(() => {
+    saveContentRef.current = saveContent;
+  }, [saveContent]);
+
 
   // Manual save
   const handleManualSave = () => {
@@ -456,6 +527,7 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
   const handleClose = useCallback(async () => {
     if (hasUnsavedChanges.current) {
       await saveContent();
+      toast.success("Content saved.");
     }
     onOpenChange(false);
   }, [saveContent, onOpenChange]);
@@ -474,13 +546,23 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, handleClose]);
 
-  // Autosave every 30 seconds
+  // Autosave every 30 seconds (only for draft articles when editor is open, unless allowAutosaveAllStatuses is true)
   useEffect(() => {
-    if (!open || !editor) return;
+    if (!open) {
+      return;
+    }
 
+    // For regular users, only autosave drafts; for admin (allowAutosaveAllStatuses), autosave all
+    const canAutosave = allowAutosaveAllStatuses || articleRef.current?.status === "DRAFT";
+
+    if (!canAutosave) {
+      return;
+    }
+
+    // Set up autosave interval - use ref to always call latest saveContent
     autosaveTimerRef.current = setInterval(() => {
-      if (hasUnsavedChanges.current) {
-        saveContent();
+      if (hasUnsavedChanges.current && saveContentRef.current) {
+        saveContentRef.current();
       }
     }, AUTOSAVE_INTERVAL);
 
@@ -489,7 +571,60 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
         clearInterval(autosaveTimerRef.current);
       }
     };
-  }, [open, editor, saveContent]);
+  }, [open, allowAutosaveAllStatuses]);
+
+  // Save on page close/refresh or tab visibility change (laptop closing, switching tabs)
+  useEffect(() => {
+    if (!open) return;
+
+    // Save before page unload (closing tab, refreshing, navigating away)
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges.current && saveContentRef.current) {
+        // Try to save using fetch with keepalive
+        const currentArticle = articleRef.current;
+        if (currentArticle?.id) {
+          const editorElement = document.querySelector('.fullscreen-editor-content .ProseMirror');
+          if (editorElement) {
+            const url = `${apiBasePath}/${currentArticle.id}/content`;
+            const data = JSON.stringify({
+              contentJson: null,
+              content: editorElement.innerHTML,
+              contentMarkdown: editorElement.innerText,
+            });
+
+            const headers = { 'Content-Type': 'application/json', ...customHeadersRef.current };
+
+            fetch(url, {
+              method: 'PUT',
+              headers,
+              body: data,
+              keepalive: true,
+            }).catch(() => {});
+          }
+        }
+
+        // Show browser's "unsaved changes" warning
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    // Save when tab becomes hidden (laptop closing, switching tabs)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && hasUnsavedChanges.current && saveContentRef.current) {
+        saveContentRef.current();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [open, apiBasePath]);
 
 
   // Save status indicator
@@ -499,48 +634,39 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
         return (
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Saving...</span>
+            <span className="hidden sm:inline">Saving...</span>
           </div>
         );
       case "saved":
         return (
           <div className="flex items-center gap-2 text-green-600 text-sm">
             <Check className="h-4 w-4" />
-            <span>Saved</span>
+            <span className="hidden sm:inline">Saved</span>
           </div>
         );
       case "error":
         return (
           <div className="flex items-center gap-2 text-destructive text-sm">
             <X className="h-4 w-4" />
-            <span>Error saving</span>
+            <span className="hidden sm:inline">Error</span>
           </div>
         );
       default:
-        if (lastSaved) {
-          return (
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Clock className="h-3 w-3" />
-              <span>Last saved {lastSaved.toLocaleTimeString()}</span>
-            </div>
-          );
-        }
         return null;
     }
   };
 
   // Don't render if not open or not in browser
-  if (!open) return null;
-  if (typeof document === "undefined") return null;
+  if (!open) {
+    return null;
+  }
+  if (typeof document === "undefined") {
+    return null;
+  }
 
   const content = (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-      {/* Backdrop for escape key handling */}
-      <div
-        className="fixed inset-0 bg-black/50 -z-10"
-        onClick={handleClose}
-        onKeyDown={(e) => e.key === "Escape" && handleClose()}
-      />
+
 
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b bg-background shrink-0 z-10">
@@ -560,8 +686,28 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {renderSaveStatus()}
+          {/* Last saved time - displayed next to theme toggle */}
+          {lastSaved && (
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs px-2 py-1.5 rounded-md bg-muted/60 border border-border/50">
+              <Clock className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline font-medium">Last saved:</span>
+              <span className="font-mono">{lastSaved.toLocaleTimeString()}</span>
+            </div>
+          )}
+          <button
+            ref={themeButtonRef}
+            onClick={toggleTheme}
+            className="p-2 rounded-md hover:bg-muted transition-colors"
+            title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
           <button
             onClick={handleManualSave}
             disabled={saveStatus === "saving"}
@@ -598,13 +744,11 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate 
             >
               {mobileView === "main" ? (
                 <MainToolbarContent
-                  onHighlighterClick={() => setMobileView("highlighter")}
                   onLinkClick={() => setMobileView("link")}
                   isMobile={isMobile}
                 />
               ) : (
                 <MobileToolbarContent
-                  type={mobileView === "highlighter" ? "highlighter" : "link"}
                   onBack={() => setMobileView("main")}
                 />
               )}

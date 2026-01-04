@@ -1,10 +1,48 @@
-import { getBlogPost, getAllSlugs } from "@/lib/blog-data";
+import { prisma } from "@/lib/prisma";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vulniq.com";
 
+// Helper function to get post from database
+async function getPostFromDatabase(slug) {
+  try {
+    const article = await prisma.article.findUnique({
+      where: { slug },
+      select: {
+        title: true,
+        excerpt: true,
+        category: true,
+        authorName: true,
+        publishedAt: true,
+        status: true,
+      },
+    });
+
+    if (!article || article.status !== "PUBLISHED") {
+      return null;
+    }
+
+    return {
+      title: article.title,
+      excerpt: article.excerpt,
+      category: article.category,
+      author: article.authorName,
+      date: article.publishedAt
+        ? new Date(article.publishedAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : null,
+    };
+  } catch (error) {
+    console.error("Error fetching article from database:", error);
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPostFromDatabase(slug);
 
   if (!post) {
     return {
@@ -74,7 +112,14 @@ export async function generateMetadata({ params }) {
 }
 
 export async function generateStaticParams() {
-  const slugs = getAllSlugs();
-  return slugs.map((slug) => ({ slug }));
+  try {
+    const articles = await prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true },
+    });
+    return articles.map((article) => ({ slug: article.slug }));
+  } catch (error) {
+    console.error("Error fetching article slugs:", error);
+    return [];
+  }
 }
-

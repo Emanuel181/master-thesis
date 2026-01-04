@@ -33,10 +33,31 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Only allow submitting drafts or rejected articles
-    if (!["DRAFT", "REJECTED"].includes(existingArticle.status)) {
+    // Check current status and apply rules:
+    // - IN_REVIEW: Cannot modify, must wait until published
+    // - PENDING_REVIEW: Can resubmit (overwrites previous submission)
+    // - DRAFT, REJECTED, SCHEDULED_FOR_DELETION: Can submit
+    if (existingArticle.status === "IN_REVIEW") {
       return NextResponse.json(
-        { error: "Can only submit draft or rejected articles" },
+        {
+          error: "Article is currently being reviewed. Please wait until the review is complete before making changes.",
+          code: "IN_REVIEW",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Only allow submitting from these statuses
+    if (
+      ![
+        "DRAFT",
+        "REJECTED",
+        "PENDING_REVIEW",
+        "SCHEDULED_FOR_DELETION",
+      ].includes(existingArticle.status)
+    ) {
+      return NextResponse.json(
+        { error: "Cannot submit this article. It may already be published." },
         { status: 400 }
       );
     }
@@ -69,6 +90,8 @@ export async function POST(request, { params }) {
         status: "PENDING_REVIEW",
         submittedAt: new Date(),
         adminFeedback: null, // Clear previous feedback
+        rejectedAt: null, // Clear rejection date
+        scheduledForDeletionAt: null, // Clear deletion schedule
       },
     });
 
@@ -79,6 +102,10 @@ export async function POST(request, { params }) {
         status: article.status,
         submittedAt: article.submittedAt,
       },
+      message:
+        existingArticle.status === "PENDING_REVIEW"
+          ? "Article resubmitted successfully. Your changes will replace the previous submission."
+          : "Article submitted for review successfully.",
     });
   } catch (error) {
     console.error("Error submitting article:", error);

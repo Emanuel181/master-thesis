@@ -7,11 +7,15 @@ import {
   Bell,
   BellRing,
   Check,
-  CheckCheck,
   FileText,
   X,
   Loader2,
   ExternalLink,
+  Trash2,
+  Eye,
+  AlertTriangle,
+  Clock,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,24 +29,35 @@ import { cn } from "@/lib/utils";
 
 // Notification item component
 function NotificationItem({ notification, onMarkAsRead, onNavigate }) {
-  const isUnread = !notification.read;
   const timeAgo = getTimeAgo(new Date(notification.createdAt));
 
   const getIcon = () => {
     switch (notification.type) {
-      case "ARTICLE_APPROVED":
+      case "ARTICLE_PUBLISHED":
         return <Check className="w-4 h-4 text-green-500" />;
       case "ARTICLE_REJECTED":
         return <X className="w-4 h-4 text-red-500" />;
+      case "ARTICLE_IN_REVIEW":
+        return <Eye className="w-4 h-4 text-blue-500" />;
+      case "ARTICLE_SCHEDULED_FOR_DELETION":
+        return <AlertTriangle className="w-4 h-4 text-orange-500" />;
+      case "ARTICLE_DELETED":
+        return <Trash2 className="w-4 h-4 text-red-500" />;
+      case "ARTICLE_STATUS_CHANGED":
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case "ARTICLE_REACTION":
+        return <Heart className="w-4 h-4 text-pink-500" />;
+      case "WARNING":
+        return <AlertTriangle className="w-4 h-4 text-amber-500" />;
       default:
         return <FileText className="w-4 h-4 text-primary" />;
     }
   };
 
   const handleClick = () => {
-    if (isUnread) {
-      onMarkAsRead(notification.id);
-    }
+    // Always mark as read when clicked (will remove from list)
+    onMarkAsRead(notification.id);
+    // Navigate if there's a link
     if (notification.link) {
       onNavigate(notification.link);
     }
@@ -50,21 +65,16 @@ function NotificationItem({ notification, onMarkAsRead, onNavigate }) {
 
   return (
     <div
-      className={cn(
-        "p-3 cursor-pointer transition-colors hover:bg-muted/50 relative",
-        isUnread && "bg-primary/5"
-      )}
+      className="p-3 cursor-pointer transition-colors hover:bg-muted/50 relative bg-primary/5"
       onClick={handleClick}
     >
-      {isUnread && (
-        <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />
-      )}
+      <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />
       <div className="flex items-start gap-3">
         <div className="mt-0.5 p-1.5 rounded-full bg-muted">
           {getIcon()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={cn("text-sm", isUnread && "font-medium")}>
+          <p className="text-sm font-medium">
             {notification.title}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
@@ -127,19 +137,16 @@ export function NotificationBell() {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Mark single notification as read
+  // Mark single notification as read and remove from list
   const handleMarkAsRead = async (id) => {
     try {
       const response = await fetch(`/api/notifications/${id}`, {
-        method: "PUT",
+        method: "PATCH",
       });
 
       if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n
-          )
-        );
+        // Remove the notification from the list since it's now read
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -147,17 +154,18 @@ export function NotificationBell() {
     }
   };
 
-  // Mark all as read
+  // Mark all as read and clear the list
   const handleMarkAllAsRead = async () => {
     try {
-      const response = await fetch("/api/notifications/read-all", {
+      const response = await fetch("/api/notifications", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markAllRead" }),
       });
 
       if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => ({ ...n, read: true, readAt: new Date().toISOString() }))
-        );
+        // Clear all notifications from the list since they're now read
+        setNotifications([]);
         setUnreadCount(0);
       }
     } catch (error) {
@@ -207,9 +215,9 @@ export function NotificationBell() {
               size="sm"
               className="h-auto py-1 px-2 text-xs"
               onClick={handleMarkAllAsRead}
+              title="Mark all as read"
             >
-              <CheckCheck className="w-3 h-3 mr-1" />
-              Mark all read
+              <Trash2 className="w-3.5 h-3.5" />
             </Button>
           )}
         </div>

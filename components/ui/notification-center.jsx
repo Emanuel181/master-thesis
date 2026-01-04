@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
@@ -26,6 +28,12 @@ import {
     VolumeX,
     ExternalLink,
     Settings,
+    Heart,
+    Eye,
+    FileText,
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 
@@ -44,13 +52,19 @@ export function useNotifications() {
     return context
 }
 
-// Notification types
+// Notification types - extended to support article notifications
 const notificationIcons = {
     info: Info,
     success: CheckCircle,
     warning: AlertTriangle,
     error: XCircle,
     loading: Loader2,
+    // Article notification types
+    ARTICLE_SUBMITTED: FileText,
+    ARTICLE_IN_REVIEW: Eye,
+    ARTICLE_PUBLISHED: CheckCircle,
+    ARTICLE_REJECTED: XCircle,
+    ARTICLE_REACTION: Heart,
 }
 
 const notificationColors = {
@@ -59,6 +73,12 @@ const notificationColors = {
     warning: "text-yellow-500",
     error: "text-red-500",
     loading: "text-primary",
+    // Article notification types
+    ARTICLE_SUBMITTED: "text-blue-500",
+    ARTICLE_IN_REVIEW: "text-blue-500",
+    ARTICLE_PUBLISHED: "text-green-500",
+    ARTICLE_REJECTED: "text-red-500",
+    ARTICLE_REACTION: "text-pink-500",
 }
 
 // Simple notification sound (base64 encoded short beep)
@@ -115,6 +135,7 @@ export function NotificationProvider({ children }) {
     const [doNotDisturb, setDoNotDisturb] = React.useState(false)
     const [soundEnabled, setSoundEnabled] = React.useState(true)
     const [desktopEnabled, setDesktopEnabled] = React.useState(false)
+    const { data: session } = useSession()
 
     // Listen for open-notifications event (from command palette shortcut)
     React.useEffect(() => {
@@ -139,6 +160,50 @@ export function NotificationProvider({ children }) {
             console.error('Failed to load notification settings:', e)
         }
     }, [])
+
+    // Fetch persistent notifications from API
+    const fetchPersistentNotifications = React.useCallback(async () => {
+        if (!session?.user?.id) return
+
+        try {
+            const response = await fetch(`/api/notifications?limit=20`)
+            if (!response.ok) return
+
+            const data = await response.json()
+
+            // Transform API notifications to match the UI format
+            const persistentNotifications = (data.notifications || []).map(n => ({
+                id: n.id,
+                type: n.type, // ARTICLE_SUBMITTED, ARTICLE_IN_REVIEW, etc.
+                title: n.title,
+                description: n.message,
+                read: n.read,
+                timestamp: new Date(n.createdAt),
+                source: 'articles',
+                link: n.link,
+                persistent: true, // Mark as persistent for special handling
+            }))
+
+            // Merge with existing local notifications, avoiding duplicates
+            setNotifications(prev => {
+                const localNotifs = prev.filter(n => !n.persistent)
+                return [...persistentNotifications, ...localNotifs].slice(0, 50)
+            })
+        } catch (error) {
+            console.error('Error fetching notifications:', error)
+        }
+    }, [session?.user?.id])
+
+    // Initial fetch and poll for new notifications
+    React.useEffect(() => {
+        if (!session?.user?.id) return
+
+        fetchPersistentNotifications()
+
+        // Poll every 60 seconds for new notifications
+        const interval = setInterval(fetchPersistentNotifications, 60000)
+        return () => clearInterval(interval)
+    }, [session?.user?.id, fetchPersistentNotifications])
 
     // Toggle DND mode
     const toggleDoNotDisturb = React.useCallback(() => {
@@ -235,16 +300,44 @@ export function NotificationProvider({ children }) {
     }, [])
 
     // Mark notification as read
-    const markAsRead = React.useCallback((id) => {
+    const markAsRead = React.useCallback(async (id) => {
+        // Update local state immediately
         setNotifications(prev =>
             prev.map(n => n.id === id ? { ...n, read: true } : n)
         )
-    }, [])
+
+        // If it's a persistent notification, also update on server
+        const notification = notifications.find(n => n.id === id)
+        if (notification?.persistent) {
+            try {
+                await fetch(`/api/notifications/${id}`, {
+                    method: 'PATCH',
+                })
+            } catch (error) {
+                console.error('Error marking notification as read:', error)
+            }
+        }
+    }, [notifications])
 
     // Mark all as read
-    const markAllAsRead = React.useCallback(() => {
+    const markAllAsRead = React.useCallback(async () => {
+        // Update local state immediately
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-    }, [])
+
+        // Also update persistent notifications on server
+        const hasPersistent = notifications.some(n => n.persistent && !n.read)
+        if (hasPersistent) {
+            try {
+                await fetch('/api/notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'markAllRead' }),
+                })
+            } catch (error) {
+                console.error('Error marking all as read:', error)
+            }
+        }
+    }, [notifications])
 
     // Clear all notifications
     const clearAll = React.useCallback(() => {
@@ -308,6 +401,7 @@ export function NotificationProvider({ children }) {
         toggleSound,
         desktopEnabled,
         toggleDesktopNotifications,
+        refreshNotifications: fetchPersistentNotifications,
     }), [
         notifications,
         groupedNotifications,
@@ -328,6 +422,7 @@ export function NotificationProvider({ children }) {
         toggleSound,
         desktopEnabled,
         toggleDesktopNotifications,
+        fetchPersistentNotifications,
     ])
 
     return (
@@ -353,9 +448,34 @@ export function NotificationCenter() {
         toggleSound,
         desktopEnabled,
         toggleDesktopNotifications,
+        refreshNotifications,
     } = useNotifications()
 
+    const router = useRouter()
     const [showSettings, setShowSettings] = React.useState(false)
+    const [isRefreshing, setIsRefreshing] = React.useState(false)
+    const [currentPage, setCurrentPage] = React.useState(1)
+    const NOTIFICATIONS_PER_PAGE = 5
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true)
+        await refreshNotifications?.()
+        setIsRefreshing(false)
+    }
+
+    // Paginated notifications
+    const totalPages = Math.ceil(notifications.length / NOTIFICATIONS_PER_PAGE)
+    const paginatedNotifications = React.useMemo(() => {
+        const start = (currentPage - 1) * NOTIFICATIONS_PER_PAGE
+        return notifications.slice(start, start + NOTIFICATIONS_PER_PAGE)
+    }, [notifications, currentPage])
+
+    // Reset to page 1 when notifications change significantly
+    React.useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages)
+        }
+    }, [totalPages, currentPage])
 
     const formatTime = (date) => {
         const now = new Date()
@@ -400,6 +520,16 @@ export function NotificationCenter() {
                         )}
                     </h4>
                     <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            title="Refresh notifications"
+                        >
+                            <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"
@@ -482,7 +612,7 @@ export function NotificationCenter() {
                     )}
                 </AnimatePresence>
 
-                <ScrollArea className="max-h-[350px]">
+                <ScrollArea className="h-[350px]">
                     {notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-8 text-center">
                             <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
@@ -491,7 +621,7 @@ export function NotificationCenter() {
                         </div>
                     ) : (
                         <AnimatePresence mode="popLayout">
-                            {notifications.map((notification) => {
+                            {paginatedNotifications.map((notification) => {
                                 const Icon = notificationIcons[notification.type] || Info
                                 const colorClass = notificationColors[notification.type] || ""
 
@@ -508,7 +638,10 @@ export function NotificationCenter() {
                                         )}
                                         onClick={() => {
                                             markAsRead(notification.id)
-                                            if (notification.action) {
+                                            if (notification.link) {
+                                                setOpen(false)
+                                                router.push(notification.link)
+                                            } else if (notification.action) {
                                                 notification.action()
                                             }
                                         }}
@@ -575,6 +708,35 @@ export function NotificationCenter() {
                         </AnimatePresence>
                     )}
                 </ScrollArea>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-3 py-2 border-t">
+                        <span className="text-xs text-muted-foreground">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                            >
+                                <ChevronLeft className="h-3 w-3" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                            >
+                                <ChevronRight className="h-3 w-3" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     )

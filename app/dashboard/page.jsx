@@ -95,13 +95,27 @@ const loadSavedCodeState = () => {
     return { code: '', codeType: '', isLocked: false };
 };
 
+// Helper to load saved active page from localStorage
+const loadSavedActivePage = () => {
+    if (typeof window === 'undefined') return 'Home';
+    try {
+        const saved = localStorage.getItem('vulniq_active_page');
+        if (saved) {
+            return saved;
+        }
+    } catch (err) {
+        console.error("Error loading active page:", err);
+    }
+    return 'Home';
+};
+
 // Inner component that can use useProject context
 function DashboardContent({ settings, mounted }) {
     const { projectClearCounter, projectStructure, setSelectedFile } = useProject();
     const { setForceHideFloating } = useAccessibility();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
-    const [activeComponent, setActiveComponent] = useState("Home")
+    const [activeComponent, setActiveComponent] = useState(() => loadSavedActivePage())
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
     const [initialCode, setInitialCode] = useState(() => loadSavedCodeState().code);
     const [codeType, setCodeType] = useState(() => loadSavedCodeState().codeType);
@@ -182,6 +196,28 @@ function DashboardContent({ settings, mounted }) {
         }
     }, [searchParams])
     /* eslint-enable react-hooks/set-state-in-effect */
+
+    // Save active page to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            localStorage.setItem('vulniq_active_page', activeComponent);
+        } catch (err) {
+            console.error("Error saving active page:", err);
+        }
+    }, [activeComponent]);
+
+    // Initialize breadcrumbs based on active component on mount
+    /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- intentional: only run on mount to restore state */
+    useEffect(() => {
+        if (activeComponent && activeComponent !== "Home") {
+            setBreadcrumbs([
+                { label: 'Home', href: '#' },
+                { label: activeComponent, href: '#' }
+            ]);
+        }
+    }, []);
+    /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
     const handleNavigation = useCallback((item) => {
         if (item.title === "Workflow configuration") {

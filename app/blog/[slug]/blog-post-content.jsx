@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { cn } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,24 +43,53 @@ import {
   Type
 } from "lucide-react";
 import { toast } from "sonner";
-import { Shield, Code, Zap, Lock, AlertTriangle } from "lucide-react";
+import {
+  Shield,
+  Code,
+  Zap,
+  Lock,
+  AlertTriangle,
+  Bug,
+  Eye,
+  Key,
+  Server,
+  Database,
+  Globe,
+  Wifi,
+  Terminal,
+  FileCode,
+  GitBranch,
+  Cloud,
+  Cpu,
+  HardDrive,
+} from "lucide-react";
+
+// Map of all available icons for blog posts
+const ICON_MAP = {
+  Shield,
+  Code,
+  Zap,
+  Lock,
+  AlertTriangle,
+  Bug,
+  Eye,
+  Key,
+  Server,
+  Database,
+  Globe,
+  Wifi,
+  Terminal,
+  FileCode,
+  GitBranch,
+  Cloud,
+  Cpu,
+  HardDrive,
+};
 
 // Blog icon component - renders the appropriate icon based on iconName
-function BlogIcon({ iconName, className }) {
-  switch (iconName) {
-    case 'AlertTriangle':
-      return <AlertTriangle className={className} />;
-    case 'Shield':
-      return <Shield className={className} />;
-    case 'Code':
-      return <Code className={className} />;
-    case 'Zap':
-      return <Zap className={className} />;
-    case 'Lock':
-      return <Lock className={className} />;
-    default:
-      return <Shield className={className} />;
-  }
+function BlogIcon({ iconName, className, style }) {
+  const IconComponent = ICON_MAP[iconName] || Shield;
+  return <IconComponent className={className} style={style} />;
 }
 
 // Helper function to create slug from text
@@ -71,6 +101,139 @@ function slugify(text) {
     .replace(/\s+/g, "-")
     .replace(/[^\w-]+/g, "")
     .replace(/--+/g, "-");
+}
+
+// Convert TipTap JSON to Markdown
+function tiptapJsonToMarkdown(json) {
+  if (!json || !json.content) return "";
+
+  const processNode = (node) => {
+    if (!node) return "";
+
+    switch (node.type) {
+      case "doc":
+        return node.content?.map(processNode).join("\n\n") || "";
+
+      case "paragraph":
+        return node.content?.map(processNode).join("") || "";
+
+      case "heading": {
+        const level = node.attrs?.level || 1;
+        const text = node.content?.map(processNode).join("") || "";
+        return "#".repeat(level) + " " + text;
+      }
+
+      case "text": {
+        let text = node.text || "";
+        if (node.marks) {
+          node.marks.forEach((mark) => {
+            switch (mark.type) {
+              case "bold":
+                text = `**${text}**`;
+                break;
+              case "italic":
+                text = `*${text}*`;
+                break;
+              case "code":
+                text = `\`${text}\``;
+                break;
+              case "link":
+                text = `[${text}](${mark.attrs?.href || ""})`;
+                break;
+              case "strike":
+                text = `~~${text}~~`;
+                break;
+            }
+          });
+        }
+        return text;
+      }
+
+      case "bulletList":
+        return node.content?.map((item) => "- " + processNode(item).replace(/^\s+/, "")).join("\n") || "";
+
+      case "orderedList":
+        return node.content?.map((item, i) => `${i + 1}. ` + processNode(item).replace(/^\s+/, "")).join("\n") || "";
+
+      case "listItem":
+        return node.content?.map(processNode).join("\n") || "";
+
+      case "taskList":
+        return node.content?.map(processNode).join("\n") || "";
+
+      case "taskItem": {
+        const checked = node.attrs?.checked ? "[x]" : "[ ]";
+        return `- ${checked} ` + (node.content?.map(processNode).join("") || "");
+      }
+
+      case "codeBlock": {
+        const language = node.attrs?.language || "";
+        const code = node.content?.map(processNode).join("") || "";
+        return "```" + language + "\n" + code + "\n```";
+      }
+
+      case "blockquote":
+        return node.content?.map((n) => "> " + processNode(n)).join("\n") || "";
+
+      case "horizontalRule":
+        return "---";
+
+      case "image": {
+        const src = node.attrs?.src || "";
+        const alt = node.attrs?.alt || "";
+        return `![${alt}](${src})`;
+      }
+
+      case "table": {
+        if (!node.content) return "";
+        const rows = node.content.map((row) => {
+          if (row.type !== "tableRow") return "";
+          const cells = row.content?.map((cell) => {
+            const text = cell.content?.map(processNode).join("") || "";
+            return text;
+          }) || [];
+          return "| " + cells.join(" | ") + " |";
+        });
+        if (rows.length > 0) {
+          const headerSeparator = "| " + rows[0].split("|").slice(1, -1).map(() => "---").join(" | ") + " |";
+          return [rows[0], headerSeparator, ...rows.slice(1)].join("\n");
+        }
+        return rows.join("\n");
+      }
+
+      case "hardBreak":
+        return "\n";
+
+      default:
+        return node.content?.map(processNode).join("") || "";
+    }
+  };
+
+  return processNode(json);
+}
+
+// Extract headings from TipTap JSON
+function extractHeadingsFromTiptap(json) {
+  if (!json || !json.content) return [];
+
+  const headings = [];
+
+  const processNode = (node) => {
+    if (node.type === "heading" && node.attrs?.level >= 2 && node.attrs?.level <= 4) {
+      const text = node.content?.map((n) => n.text || "").join("") || "";
+      headings.push({
+        level: node.attrs.level,
+        text: text.trim(),
+        id: slugify(text.trim()),
+      });
+    }
+    if (node.content) {
+      node.content.forEach(processNode);
+    }
+  };
+
+  processNode(json);
+  return headings;
 }
 
 // Extract headings from markdown content
@@ -1058,14 +1221,26 @@ function RelatedPostCard({ post }) {
     >
       <CardContent className="p-0">
         <div className="relative h-32 overflow-hidden">
-          <div
-            className="absolute inset-0 transition-transform duration-300 group-hover:scale-105"
-            style={{
-              background: post.gradient || `linear-gradient(135deg, rgba(var(--brand-accent-rgb), 0.2) 0%, rgba(var(--brand-primary-rgb), 0.4) 100%)`,
-            }}
-          />
+          {/* Background - either gradient or cover image */}
+          {post.coverType === "image" && post.coverImage ? (
+            <div
+              className="absolute inset-0 transition-transform duration-300 group-hover:scale-105 bg-cover bg-center"
+              style={{ backgroundImage: `url(${post.coverImage})` }}
+            />
+          ) : (
+            <div
+              className="absolute inset-0 transition-transform duration-300 group-hover:scale-105"
+              style={{
+                background: post.gradient || `linear-gradient(135deg, rgba(var(--brand-accent-rgb), 0.2) 0%, rgba(var(--brand-primary-rgb), 0.4) 100%)`,
+              }}
+            />
+          )}
           <div className="absolute inset-0 flex items-center justify-center">
-            <BlogIcon iconName={post.iconName} className="w-10 h-10 text-white/80" />
+            <BlogIcon
+              iconName={post.iconName}
+              className="w-10 h-10"
+              style={{ color: post.iconColor || "rgba(255,255,255,0.8)" }}
+            />
           </div>
         </div>
         <div className="p-4 space-y-2">
@@ -1158,20 +1333,35 @@ function NewsletterCTA() {
 
 // Author bio component
 function AuthorBio({ author }) {
+  const isVulnIQAuthor = author === "VulnIQ security";
+
   return (
     <div className="mt-8 sm:mt-12 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
         <Avatar className="w-14 h-14 sm:w-16 sm:h-16 ring-2 ring-[var(--brand-accent)]/20">
-          <AvatarImage src="/favicon.png" alt={author} />
-          <AvatarFallback>VQ</AvatarFallback>
+          <AvatarImage
+            src={isVulnIQAuthor ? "/favicon.png" : "/placeholder.svg"}
+            alt={author}
+          />
+          <AvatarFallback>
+            {isVulnIQAuthor ? "VQ" : author?.split(" ").map(n => n[0]).join("").slice(0, 2) || "AU"}
+          </AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <h3 className="font-semibold text-foreground">{author}</h3>
-          <p className="text-sm text-[var(--brand-accent)] mb-2">@vulniqsecurity</p>
-          <p className="text-sm text-muted-foreground">
-            VulnIQ helps developers identify and fix security vulnerabilities in their code.
-            Our team shares insights on application security, secure coding practices, and vulnerability management.
-          </p>
+          {isVulnIQAuthor ? (
+            <>
+              <p className="text-sm text-[var(--brand-accent)] mb-2">@vulniqsecurity</p>
+              <p className="text-sm text-muted-foreground">
+                VulnIQ helps developers identify and fix security vulnerabilities in their code.
+                Our team shares insights on application security, secure coding practices, and vulnerability management.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Community contributor sharing insights on security and development practices.
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -1317,7 +1507,22 @@ export default function BlogPostContent({ post, relatedPosts }) {
     );
   }
 
-  const headings = extractHeadings(post.content);
+  // Convert TipTap JSON to markdown if needed (for user-submitted articles)
+  const contentToRender = React.useMemo(() => {
+    if (post.isUserSubmitted && post.contentJson) {
+      return tiptapJsonToMarkdown(post.contentJson);
+    }
+    return post.content || "";
+  }, [post.isUserSubmitted, post.contentJson, post.content]);
+
+  // Extract headings - use appropriate method based on content type
+  const headings = React.useMemo(() => {
+    if (post.isUserSubmitted && post.contentJson) {
+      return extractHeadingsFromTiptap(post.contentJson);
+    }
+    return extractHeadings(post.content || "");
+  }, [post.isUserSubmitted, post.contentJson, post.content]);
+
   const markdownComponents = createMarkdownComponents(fontSize);
   const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://vulniq.com/blog/${post.slug}`;
 
@@ -1348,18 +1553,45 @@ export default function BlogPostContent({ post, relatedPosts }) {
 
                 {/* Hero title section with gradient background */}
                 <div className="relative -mx-3 sm:-mx-4 md:-mx-6 lg:-mx-8 mb-6 sm:mb-8 md:mb-10 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <div
-                    className="absolute inset-0 w-full h-full"
-                    style={{
-                      background: post.gradient || `linear-gradient(135deg, 
-                        rgba(var(--brand-accent-rgb), 0.3) 0%, 
-                        rgba(var(--brand-primary-rgb), 0.5) 50%,
-                        rgba(var(--brand-accent-rgb), 0.3) 100%)`,
-                    }}
-                  />
+                  {/* Background - either gradient or cover image */}
+                  {post.coverType === "image" && post.coverImage ? (
+                    <div
+                      className="absolute inset-0 w-full h-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${post.coverImage})` }}
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0 w-full h-full"
+                      style={{
+                        background: post.gradient || `linear-gradient(135deg, 
+                          rgba(var(--brand-accent-rgb), 0.3) 0%, 
+                          rgba(var(--brand-primary-rgb), 0.5) 50%,
+                          rgba(var(--brand-accent-rgb), 0.3) 100%)`,
+                      }}
+                    />
+                  )}
 
-                  <div className="absolute inset-0 flex items-center justify-center opacity-15">
-                    <BlogIcon iconName={post.iconName} className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 text-white" />
+                  {/* Icon with position and color support */}
+                  <div
+                    className={cn(
+                      "absolute inset-0 flex opacity-15",
+                      // Icon position classes
+                      post.iconPosition === "top-left" && "items-start justify-start p-8",
+                      post.iconPosition === "top-center" && "items-start justify-center pt-8",
+                      post.iconPosition === "top-right" && "items-start justify-end p-8",
+                      post.iconPosition === "center-left" && "items-center justify-start pl-8",
+                      (!post.iconPosition || post.iconPosition === "center") && "items-center justify-center",
+                      post.iconPosition === "center-right" && "items-center justify-end pr-8",
+                      post.iconPosition === "bottom-left" && "items-end justify-start p-8",
+                      post.iconPosition === "bottom-center" && "items-end justify-center pb-8",
+                      post.iconPosition === "bottom-right" && "items-end justify-end p-8",
+                    )}
+                  >
+                    <BlogIcon
+                      iconName={post.iconName}
+                      className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48"
+                      style={{ color: post.iconColor || "white" }}
+                    />
                   </div>
 
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
@@ -1384,16 +1616,27 @@ export default function BlogPostContent({ post, relatedPosts }) {
                           <div className="flex items-center gap-3">
                             <div className="relative w-fit">
                               <Avatar className="w-9 h-9 sm:w-10 sm:h-10 ring-offset-background ring-2 ring-white/50 ring-offset-2 ring-offset-transparent">
-                                <AvatarImage src="/favicon.png" alt="VulnIQ security" />
-                                <AvatarFallback className="text-xs bg-[var(--brand-primary)]">VQ</AvatarFallback>
+                                <AvatarImage
+                                  src={post.author === "VulnIQ security" ? "/favicon.png" : "/placeholder.svg"}
+                                  alt={post.author}
+                                />
+                                <AvatarFallback className="text-xs bg-[var(--brand-primary)]">
+                                  {post.author === "VulnIQ security" ? "VQ" : post.author?.split(" ").map(n => n[0]).join("").slice(0, 2) || "AU"}
+                                </AvatarFallback>
                               </Avatar>
-                              <span className="absolute -right-1 -bottom-1 inline-flex size-3 sm:size-4 items-center justify-center rounded-full bg-green-600 dark:bg-green-500">
-                                <CheckIcon className="size-2 sm:size-2.5 text-white" />
-                              </span>
+                              {post.author === "VulnIQ security" && (
+                                <span className="absolute -right-1 -bottom-1 inline-flex size-3 sm:size-4 items-center justify-center rounded-full bg-green-600 dark:bg-green-500">
+                                  <CheckIcon className="size-2 sm:size-2.5 text-white" />
+                                </span>
+                              )}
                             </div>
                             <div>
-                              <p className="text-sm sm:text-base font-medium text-white">VulnIQ security</p>
-                              <p className="text-xs sm:text-sm text-white/70">@vulniqsecurity</p>
+                              <p className="text-sm sm:text-base font-medium text-white">{post.author}</p>
+                              {post.author === "VulnIQ security" ? (
+                                <p className="text-xs sm:text-sm text-white/70">@vulniqsecurity</p>
+                              ) : (
+                                <p className="text-xs sm:text-sm text-white/70">Community Author</p>
+                              )}
                             </div>
                           </div>
 
@@ -1450,7 +1693,7 @@ export default function BlogPostContent({ post, relatedPosts }) {
                     remarkPlugins={[remarkGfm]}
                     components={markdownComponents}
                   >
-                    {post.content}
+                    {contentToRender}
                   </ReactMarkdown>
                 </div>
 

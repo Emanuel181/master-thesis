@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+// List of allowed admin emails - supports both ADMIN_EMAILS (comma-separated) and ADMIN_EMAIL (single)
+const ADMIN_EMAILS = [
+  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
+  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
+].filter(Boolean);
+
+// Check if user is admin
+function isAdminUser(email) {
+  return email && ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
 // GET /api/articles - Get all articles for the current user
 export async function GET(request) {
   try {
@@ -11,7 +22,7 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // DRAFT, PENDING_REVIEW, APPROVED, REJECTED
+    const status = searchParams.get("status"); // DRAFT, PENDING_REVIEW, IN_REVIEW, PUBLISHED, REJECTED, SCHEDULED_FOR_DELETION
 
     const where = {
       authorId: session.user.id,
@@ -37,6 +48,8 @@ export async function GET(request) {
         submittedAt: true,
         reviewedAt: true,
         publishedAt: true,
+        rejectedAt: true,
+        scheduledForDeletionAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -103,7 +116,8 @@ export async function POST(request) {
         contentJson: null,
         contentMarkdown: null,
         authorId: session.user.id,
-        authorName: session.user.name || "Anonymous",
+        // Use "VulnIQ security" as author for admin users
+        authorName: isAdminUser(session.user.email) ? "VulnIQ security" : (session.user.name || "Anonymous"),
         authorEmail: session.user.email || "",
         status: "DRAFT",
       },

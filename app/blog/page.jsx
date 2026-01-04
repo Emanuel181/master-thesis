@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { SearchIcon, ArrowRightIcon, CalendarDaysIcon, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { SearchIcon, ArrowRightIcon, CalendarDaysIcon, Clock, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { Footer } from "@/components/landing-page/footer";
@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { blogPosts, getIconComponent } from "@/lib/blog-data";
+import { getIconComponent } from "@/lib/blog-data";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { BlogPostCard } from "@/components/blog/blog-post-card";
 import { FeaturedPostSidebarItem } from "@/components/blog/featured-post-sidebar-item";
@@ -24,11 +24,11 @@ const POSTS_PER_PAGE = 6;
 function FeaturedSection({ posts }) {
   const router = useRouter();
 
-  // Get featured post (first featured or first post)
+  // Get featured post (first one marked as featured, or first post)
   const featuredPost = posts.find(p => p.featured) || posts[0];
-  // Get other featured posts for sidebar (excluding the main featured)
+  // Get other posts for sidebar (those marked for "More Articles", excluding the main featured)
   const sidebarPosts = posts
-    .filter(p => p.id !== featuredPost?.id)
+    .filter(p => p.id !== featuredPost?.id && p.showInMoreArticles !== false)
     .slice(0, 5);
 
   if (!featuredPost) return null;
@@ -318,17 +318,42 @@ function PaginationControls({ posts, currentPage, setCurrentPage, postsPerPage }
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [publishedArticles, setPublishedArticles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef(null);
   
   // Restore scroll position when returning to this page
   useScrollRestoration(scrollRef);
   
+  // Fetch published articles from database
+  useEffect(() => {
+    const fetchPublishedArticles = async () => {
+      try {
+        const response = await fetch("/api/articles/published");
+        if (response.ok) {
+          const data = await response.json();
+          setPublishedArticles(data.articles || []);
+        }
+      } catch (error) {
+        console.error("Error fetching published articles:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPublishedArticles();
+  }, []);
+
+  // Blog posts are now only from the database
+  const blogPosts = useMemo(() => {
+    return publishedArticles;
+  }, [publishedArticles]);
+
   // Get unique categories from blog posts
   const categories = useMemo(() => {
     const cats = ["All", ...new Set(blogPosts.map(post => post.category))];
     return cats;
-  }, []);
-  
+  }, [blogPosts]);
+
   // Filter posts by search query
   const filteredPosts = useMemo(() => {
     if (!searchQuery.trim()) return blogPosts;
@@ -338,8 +363,8 @@ export default function BlogPage() {
       post.excerpt.toLowerCase().includes(query) ||
       post.category.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
-  
+  }, [searchQuery, blogPosts]);
+
   // Get posts by category
   const getPostsByCategory = (category) => {
     if (category === "All") return filteredPosts;

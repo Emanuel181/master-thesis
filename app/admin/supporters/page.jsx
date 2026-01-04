@@ -36,7 +36,8 @@ import {
     Pencil,
     Columns3,
     Check,
-    MoreHorizontal
+    MoreHorizontal,
+    Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,6 +152,7 @@ export default function AdminSupportersPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Inline editing state
     const [editingCell, setEditingCell] = useState(null); // { id: supporterId, field: fieldName }
@@ -292,7 +294,6 @@ export default function AdminSupportersPage() {
             const savedSessionExpiry = localStorage.getItem(SESSION_EXPIRY_KEY);
 
             if (savedEmail) {
-                setAdminEmail(savedEmail);
                 try {
                     const response = await fetch('/api/admin/check-session', {
                         method: 'POST',
@@ -301,6 +302,8 @@ export default function AdminSupportersPage() {
                     });
                     const data = await response.json();
                     if (data.valid) {
+                        // Only set email if session is valid
+                        setAdminEmail(savedEmail);
                         setVerifyState(VERIFY_STATE.VERIFIED);
                         // Clear any leftover code expiry
                         localStorage.removeItem(CODE_EXPIRY_KEY);
@@ -333,15 +336,24 @@ export default function AdminSupportersPage() {
                             console.error('Failed to fetch supporters:', fetchErr);
                         }
                         return;
+                    } else {
+                        // Session invalid, clear stored email
+                        localStorage.removeItem(ADMIN_EMAIL_KEY);
+                        localStorage.removeItem(SESSION_EXPIRY_KEY);
                     }
                 } catch (err) {
                     console.error('Failed to check session:', err);
+                    // On error, clear stored data
+                    localStorage.removeItem(ADMIN_EMAIL_KEY);
+                    localStorage.removeItem(SESSION_EXPIRY_KEY);
                 }
 
                 // Check if there's an unexpired code waiting
                 if (savedCodeExpiry) {
                     const expiryTime = parseInt(savedCodeExpiry, 10);
                     if (Date.now() < expiryTime) {
+                        // Only set email if code hasn't expired yet
+                        setAdminEmail(savedEmail);
                         // Code still valid - restore CODE_SENT state
                         setCodeExpiry(expiryTime);
                         setVerifyState(VERIFY_STATE.CODE_SENT);
@@ -350,6 +362,7 @@ export default function AdminSupportersPage() {
                     } else {
                         // Code expired - clean up
                         localStorage.removeItem(CODE_EXPIRY_KEY);
+                        localStorage.removeItem(ADMIN_EMAIL_KEY);
                     }
                 }
             }
@@ -574,6 +587,22 @@ export default function AdminSupportersPage() {
         }
     }
 
+    // Filter supporters by search query across all columns
+    const filteredSupporters = supporters.filter(supporter => {
+        if (!searchQuery.trim()) return true;
+        const query = searchQuery.toLowerCase().trim();
+        return (
+            supporter.name?.toLowerCase().includes(query) ||
+            supporter.occupation?.toLowerCase().includes(query) ||
+            supporter.company?.toLowerCase().includes(query) ||
+            supporter.contribution?.toLowerCase().includes(query) ||
+            supporter.personalBio?.toLowerCase().includes(query) ||
+            supporter.linkedin?.toLowerCase().includes(query) ||
+            supporter.website?.toLowerCase().includes(query) ||
+            String(supporter.order || '').includes(query)
+        );
+    });
+
     // Loading screen
     if (verifyState === VERIFY_STATE.LOADING) {
         return (
@@ -754,6 +783,7 @@ export default function AdminSupportersPage() {
 
     // Main admin page (verified)
     return (
+        <ScrollArea className="h-screen">
         <div className="min-h-screen bg-background">
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -875,7 +905,10 @@ export default function AdminSupportersPage() {
                             <div>
                                 <h1 className="text-2xl font-bold tracking-tight">Manage Supporters</h1>
                                 <p className="text-sm text-muted-foreground">
-                                    {supporters.length} supporter{supporters.length !== 1 ? 's' : ''} • Click any cell to edit
+                                    {searchQuery
+                                        ? `${filteredSupporters.length} of ${supporters.length} supporter${supporters.length !== 1 ? 's' : ''}`
+                                        : `${supporters.length} supporter${supporters.length !== 1 ? 's' : ''}`
+                                    } • Click any cell to edit
                                 </p>
                             </div>
                         </div>
@@ -888,6 +921,21 @@ export default function AdminSupportersPage() {
                         Add Supporter
                     </Button>
                 </div>
+
+                {/* Search Bar */}
+                <Card className="border-border/50 shadow-sm">
+                    <CardContent className="py-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search supporters by name, occupation, company, contribution..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Supporters Table */}
                 <Card className="border-border/50 w-full shadow-sm">
@@ -907,7 +955,8 @@ export default function AdminSupportersPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setIsPreviewOpen(true)}
-                                    className="border-[var(--brand-accent)] text-[var(--brand-accent)] hover:bg-[var(--brand-accent)] hover:text-white"
+                                    disabled={supporters.length === 0}
+                                    className="border-[var(--brand-accent)] text-[var(--brand-accent)] hover:bg-[var(--brand-accent)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Eye className="mr-2 h-4 w-4" />
                                     Preview
@@ -1026,7 +1075,7 @@ export default function AdminSupportersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {supporters.length === 0 ? (
+                                {filteredSupporters.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={Object.values(columnVisibility).filter(Boolean).length} className="h-40 text-center">
                                             <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -1034,22 +1083,33 @@ export default function AdminSupportersPage() {
                                                     <Users className="h-8 w-8 opacity-50" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium">No supporters yet</p>
-                                                    <p className="text-sm">Add your first supporter to get started</p>
+                                                    {searchQuery ? (
+                                                        <>
+                                                            <p className="font-medium">No supporters found</p>
+                                                            <p className="text-sm">Try adjusting your search query</p>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <p className="font-medium">No supporters yet</p>
+                                                            <p className="text-sm">Add your first supporter to get started</p>
+                                                        </>
+                                                    )}
                                                 </div>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => { setEditingSupporter(null); setIsModalOpen(true); }}
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Add Supporter
-                                                </Button>
+                                                {!searchQuery && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => { setEditingSupporter(null); setIsModalOpen(true); }}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Add Supporter
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    supporters.map((supporter) => (
+                                    filteredSupporters.map((supporter) => (
                                         <TableRow key={supporter.id} className="group hover:bg-muted/30 border-b">
                                             {columnVisibility.supporter && (
                                                 <TableCell className="py-3 border-r border-border/50 max-w-[200px]">
@@ -1519,6 +1579,7 @@ export default function AdminSupportersPage() {
                 supporters={supporters}
             />
         </div>
+        </ScrollArea>
     );
 }
 

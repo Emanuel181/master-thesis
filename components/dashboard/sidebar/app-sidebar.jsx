@@ -11,6 +11,10 @@ import {
     Home,
     Keyboard,
     PenLine,
+    ShieldCheck,
+    FileEdit,
+    Heart,
+    Users,
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -24,9 +28,13 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarGroupContent,
 } from "@/components/ui/sidebar"
 import {NavUser} from "./nav-user";
 import {useSession} from "next-auth/react";
+import Link from "next/link";
 
 const data = {
     team: {
@@ -48,6 +56,30 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
     const pathname = usePathname()
     const isDemo = pathname?.startsWith('/demo')
     const { data: session, status } = useSession()
+    const [isAdmin, setIsAdmin] = React.useState(false)
+
+    // Check if user is admin
+    React.useEffect(() => {
+        const checkAdminStatus = async () => {
+            if (!session?.user?.email || isDemo) {
+                setIsAdmin(false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/admin-check');
+                if (response.ok) {
+                    const data = await response.json();
+                    setIsAdmin(data.isAdmin);
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                setIsAdmin(false);
+            }
+        };
+
+        checkAdminStatus();
+    }, [session, isDemo]);
 
     // Save user name to localStorage when session is loaded
     React.useEffect(() => {
@@ -97,6 +129,44 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
             </SidebarHeader>
             <SidebarContent>
                 <NavMain items={navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} activeComponent={activeComponent} />
+
+                {/* Admin Section - Only visible to admin users */}
+                {isAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel className="flex items-center gap-2">
+                            <ShieldCheck className="size-4" />
+                            Admin
+                        </SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="Review Articles">
+                                        <Link href="/admin/articles">
+                                            <FileEdit className="size-4" />
+                                            <span>Review Articles</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="Manage Users">
+                                        <Link href="/admin/users">
+                                            <Users className="size-4" />
+                                            <span>Users</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild tooltip="Manage Supporters">
+                                        <Link href="/admin/supporters">
+                                            <Heart className="size-4" />
+                                            <span>Supporters</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
             </SidebarContent>
             <SidebarFooter>
                 {status === "loading" && !isDemo ? (

@@ -220,10 +220,30 @@
 // Dark mode adjustments (handled automatically by CSS variables)
 :root {
   --tt-scrollbar-color: rgba(0, 0, 0, 0.2);
+  --tt-caret-color: #000000;
 }
 
 .dark {
   --tt-scrollbar-color: rgba(255, 255, 255, 0.2);
+  --tt-caret-color: #ffffff;
+}
+
+// Cursor/caret color for light and dark mode
+.fullscreen-editor-content .tiptap.ProseMirror.fullscreen-editor-prose,
+.fullscreen-editor-content .tiptap.ProseMirror {
+  caret-color: var(--tt-caret-color);
+
+  // Selection highlighting
+  ::selection {
+    background-color: rgba(0, 0, 0, 0.15);
+  }
+}
+
+.dark .fullscreen-editor-content .tiptap.ProseMirror.fullscreen-editor-prose,
+.dark .fullscreen-editor-content .tiptap.ProseMirror {
+  ::selection {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 // Scrollbar styles

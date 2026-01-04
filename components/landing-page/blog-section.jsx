@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,99 +17,79 @@ import {
   Code,
   Zap,
   Lock,
-  AlertTriangle
+  AlertTriangle,
+  Bug,
+  Eye,
+  Key,
+  Server,
+  Database,
+  Globe,
+  Wifi,
+  Terminal,
+  FileCode,
+  GitBranch,
+  Cloud,
+  Cpu,
+  HardDrive,
+  Loader2,
 } from "lucide-react";
 
-const blogPosts = [
-  {
-    id: 1,
-    slug: "understanding-sql-injection-prevention",
-    title: "Understanding SQL injection: detection and prevention",
-    excerpt: "SQL injection remains one of the most dangerous vulnerabilities in web applications. Learn how attackers exploit database queries and discover proven strategies to protect your applications.",
-    category: "Vulnerability Analysis",
-    date: "December 28, 2024",
-    readTime: "12 min read",
-    icon: AlertTriangle,
-    gradient: "linear-gradient(45deg, hsl(220,60%,10%), hsl(0,70%,35%), hsl(20,80%,30%), hsl(350,60%,35%), hsl(10,70%,20%))",
-    featured: true,
-  },
-  {
-    id: 2,
-    slug: "modern-application-security-testing-strategies",
-    title: "Modern application security testing: SAST and DAST strategy",
-    excerpt: "Discover how to combine static and dynamic security testing methodologies to create a robust application security program and integrate testing into your CI/CD pipeline.",
-    category: "Security Testing",
-    date: "December 25, 2024",
-    readTime: "15 min read",
-    icon: Shield,
-    gradient: "linear-gradient(45deg, hsl(220,60%,10%), hsl(180,70%,25%), hsl(200,80%,30%), hsl(170,60%,35%), hsl(190,70%,20%))",
-    featured: false,
-  },
-  {
-    id: 3,
-    slug: "cross-site-scripting-defense-guide",
-    title: "Cross-site scripting defense: protecting your web apps",
-    excerpt: "Cross-site scripting vulnerabilities allow attackers to inject malicious scripts into trusted websites. Learn the different types of XSS attacks and implement effective defenses.",
-    category: "Web Security",
-    date: "December 22, 2024",
-    readTime: "14 min read",
-    icon: Code,
-    gradient: "linear-gradient(45deg, hsl(220,60%,10%), hsl(270,70%,35%), hsl(290,80%,30%), hsl(260,60%,40%), hsl(280,70%,25%))",
-    featured: false,
-  },
-  {
-    id: 4,
-    slug: "secure-api-development-best-practices",
-    title: "Secure API development: building resilient APIs",
-    excerpt: "APIs are the backbone of modern applications but also prime targets for attackers. Learn essential security practices for authentication, authorization, and input validation.",
-    category: "API Security",
-    date: "December 19, 2024",
-    readTime: "16 min read",
-    icon: Zap,
-    gradient: "linear-gradient(45deg, hsl(220,60%,10%), hsl(40,70%,35%), hsl(30,80%,40%), hsl(50,60%,35%), hsl(45,70%,25%))",
-    featured: false,
-  },
-  {
-    id: 5,
-    slug: "secrets-management-secure-development",
-    title: "Secrets management: protecting API keys and credentials",
-    excerpt: "Hard-coded secrets in source code are a leading cause of security breaches. Learn how to properly manage API keys, database credentials, and other sensitive configuration data.",
-    category: "DevSecOps",
-    date: "December 15, 2024",
-    readTime: "13 min read",
-    icon: Lock,
-    gradient: "linear-gradient(45deg, hsl(220,60%,10%), hsl(140,70%,25%), hsl(160,80%,30%), hsl(130,60%,35%), hsl(150,70%,20%))",
-    featured: false,
-  }
-];
+// Icon map for dynamic icon rendering
+const ICON_MAP = {
+  Shield,
+  Code,
+  Zap,
+  Lock,
+  AlertTriangle,
+  Bug,
+  Eye,
+  Key,
+  Server,
+  Database,
+  Globe,
+  Wifi,
+  Terminal,
+  FileCode,
+  GitBranch,
+  Cloud,
+  Cpu,
+  HardDrive,
+};
 
 const POSTS_PER_PAGE = 3;
 
-const BlogCard = ({ post, index }) => {
-  const Icon = post.icon;
-  
+const BlogCard = ({ post }) => {
+  const Icon = ICON_MAP[post.iconName] || Shield;
+
   return (
     <div className="h-full">
       <Card className="h-full pt-0 overflow-hidden group bg-card dark:bg-card/50 backdrop-blur-sm border-border/50 dark:border-[rgba(var(--brand-accent-rgb),0.15)] hover:shadow-xl hover:shadow-[rgba(var(--brand-accent-rgb),0.1)] dark:hover:shadow-[rgba(var(--brand-accent-rgb),0.15)] transition-all duration-300 hover:border-[rgba(var(--brand-accent-rgb),0.3)] dark:hover:border-[rgba(var(--brand-accent-rgb),0.4)]">
         <CardContent className="px-0 pt-0">
           <div className="relative overflow-hidden aspect-video rounded-t-xl">
-            {/* Animated Moving Gradient Background */}
-            <motion.div
-              className="absolute inset-0 w-full h-full bg-[length:400%_400%]"
-              style={{
-                backgroundColor: 'var(--brand-dark)',
-                backgroundImage: post.gradient,
-              }}
-              animate={{ 
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] 
-              }}
-              transition={{ 
-                duration: 8, 
-                ease: 'easeInOut', 
-                repeat: Infinity 
-              }}
-            />
-            
+            {/* Background - either gradient or cover image */}
+            {post.coverType === "image" && post.coverImage ? (
+              <div
+                className="absolute inset-0 w-full h-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${post.coverImage})` }}
+              />
+            ) : (
+              <motion.div
+                className="absolute inset-0 w-full h-full bg-[length:400%_400%]"
+                style={{
+                  backgroundColor: 'var(--brand-dark)',
+                  backgroundImage: post.gradient || "linear-gradient(45deg, hsl(220,60%,10%), hsl(180,70%,25%), hsl(200,80%,30%), hsl(170,60%,35%), hsl(190,70%,20%))",
+                }}
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                }}
+                transition={{
+                  duration: 8,
+                  ease: 'easeInOut',
+                  repeat: Infinity
+                }}
+              />
+            )}
+
             {/* Noise overlay */}
             <div
               className="absolute inset-0 opacity-[0.08] pointer-events-none"
@@ -120,7 +101,10 @@ const BlogCard = ({ post, index }) => {
             {/* Icon in center */}
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="p-5 rounded-full bg-[rgba(var(--brand-accent-rgb),0.15)] backdrop-blur-sm group-hover:scale-110 group-hover:bg-[rgba(var(--brand-accent-rgb),0.25)] transition-all duration-300">
-                <Icon className="w-10 h-10 text-[var(--brand-light)]" />
+                <Icon
+                  className="w-10 h-10"
+                  style={{ color: post.iconColor || "var(--brand-light)" }}
+                />
               </div>
             </div>
             
@@ -155,10 +139,10 @@ const BlogCard = ({ post, index }) => {
             asChild
             className="flex-1 bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-[var(--brand-primary)]"
           >
-            <a href={`/blog/${post.slug}`}>
+            <Link href={`/blog/${post.slug}`}>
               Read Article
               <ArrowRight className="w-4 h-4 ml-2" />
-            </a>
+            </Link>
           </Button>
         </CardFooter>
       </Card>
@@ -167,6 +151,8 @@ const BlogCard = ({ post, index }) => {
 };
 
 const PaginationDots = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+
   return (
     <div className="flex items-center justify-center gap-2 mt-10">
       <Button
@@ -205,8 +191,47 @@ const PaginationDots = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+// Empty state component
+const EmptyState = () => (
+  <div className="text-center py-16">
+    <BookOpen className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+    <h3 className="text-xl font-semibold text-foreground mb-2">No articles yet</h3>
+    <p className="text-muted-foreground max-w-md mx-auto">
+      Our security experts are working on new content. Check back soon for insights on application security and vulnerability detection.
+    </p>
+  </div>
+);
+
+// Loading state component
+const LoadingState = () => (
+  <div className="flex items-center justify-center py-16">
+    <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-accent)]" />
+  </div>
+);
+
 export function BlogSection() {
   const [currentPage, setCurrentPage] = useState(0);
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch published articles from database
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const response = await fetch("/api/articles/published?limit=9");
+        if (response.ok) {
+          const data = await response.json();
+          setBlogPosts(data.articles || []);
+        }
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
+
   const totalPages = Math.ceil(blogPosts.length / POSTS_PER_PAGE);
   
   const currentPosts = blogPosts.slice(
@@ -219,6 +244,11 @@ export function BlogSection() {
       setCurrentPage(newPage);
     }
   };
+
+  // Don't render section if no articles and not loading
+  if (!isLoading && blogPosts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
@@ -239,58 +269,66 @@ export function BlogSection() {
           </p>
         </motion.div>
         
-        {/* Blog Grid - Cards stack from bottom (near pagination) upward */}
-        {/* Using flex-col-reverse on mobile so cards appear at bottom, empty space above */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col-reverse md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {/* Invisible placeholders render first in DOM, appear at TOP visually due to flex-col-reverse */}
-            {Array.from({ length: POSTS_PER_PAGE - currentPosts.length }).map((_, index) => (
-              <div key={`placeholder-${index}`} className="invisible order-last md:order-none" aria-hidden="true">
-                <BlogCard post={blogPosts[0]} index={index} />
-              </div>
-            ))}
+        {/* Loading State */}
+        {isLoading && <LoadingState />}
 
-            {/* Real posts render second in DOM, appear at BOTTOM visually due to flex-col-reverse */}
-            {[...currentPosts].reverse().map((post, index) => (
-              <BlogCard key={post.id} post={post} index={index} />
-            ))}
-          </motion.div>
-        </AnimatePresence>
+        {/* Blog Grid */}
+        {!isLoading && blogPosts.length > 0 && (
+          <>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col-reverse md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+              >
+                {/* Invisible placeholders render first in DOM, appear at TOP visually due to flex-col-reverse */}
+                {Array.from({ length: POSTS_PER_PAGE - currentPosts.length }).map((_, index) => (
+                  <div key={`placeholder-${index}`} className="invisible order-last md:order-none" aria-hidden="true">
+                    <BlogCard post={blogPosts[0]} />
+                  </div>
+                ))}
 
-        {/* Pagination */}
-        <PaginationDots
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+                {/* Real posts render second in DOM, appear at BOTTOM visually due to flex-col-reverse */}
+                {[...currentPosts].reverse().map((post) => (
+                  <BlogCard key={post.id} post={post} />
+                ))}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Pagination */}
+            <PaginationDots
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
+        )}
 
         {/* View All Link */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center mt-10"
-        >
-          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className="rounded-full font-medium border-[rgba(var(--brand-accent-rgb),0.3)] hover:bg-[rgba(var(--brand-accent-rgb),0.1)] hover:border-[rgba(var(--brand-accent-rgb),0.5)] text-foreground px-8"
+        {!isLoading && blogPosts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-center mt-10"
           >
-            <a href="/blog" className="flex items-center gap-2">
-              View all articles
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </Button>
-        </motion.div>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-full font-medium border-[rgba(var(--brand-accent-rgb),0.3)] hover:bg-[rgba(var(--brand-accent-rgb),0.1)] hover:border-[rgba(var(--brand-accent-rgb),0.5)] text-foreground px-8"
+            >
+              <Link href="/blog" className="flex items-center gap-2">
+                View all articles
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Button>
+          </motion.div>
+        )}
       </div>
     </section>
   );
