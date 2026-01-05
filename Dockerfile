@@ -24,6 +24,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL:-"postgresql://user:pass@localhost:5432/db"}
 
+# Build-time argument for public environment variables (embedded at build time)
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 # Prisma client generation (NO DB required)
