@@ -9,14 +9,20 @@ import Image from 'next/image';
 import { LoginForm } from "@/components/login/login-form"
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PersonStanding } from "lucide-react";
+import { ArrowLeft, PersonStanding, Loader2 } from "lucide-react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 
 export default function LoginPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const [serviceStatus, setServiceStatus] = useState("checking") // checking, operational, partial, down
+    const [mounted, setMounted] = useState(false)
     const { openPanel, setForceHideFloating } = useAccessibility()
+
+    // Track mount state to avoid hydration mismatch
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Hide floating button on login page
     useEffect(() => {
@@ -25,10 +31,10 @@ export default function LoginPage() {
     }, [setForceHideFloating])
 
     useEffect(() => {
-        if (status === 'authenticated') {
+        if (mounted && status === 'authenticated') {
             router.push('/dashboard')
         }
-    }, [status, router])
+    }, [status, router, mounted])
 
     useEffect(() => {
         const checkHealth = async () => {
@@ -53,8 +59,13 @@ export default function LoginPage() {
         return () => clearInterval(interval);
     }, []);
 
-    if (status === 'loading') {
-        return null // Or a loading spinner
+    // Show loading state only after mount to prevent hydration mismatch
+    if (mounted && status === 'loading') {
+        return (
+            <div className="min-h-svh flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (

@@ -22,7 +22,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
 import { ProjectProvider, useProject } from "@/contexts/projectContext";
-import { useDemo, DEMO_CODE, DEMO_PROJECT_STRUCTURE } from "@/contexts/demoContext";
+import { useDemo } from "@/contexts/demoContext";
 
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
 import { Badge } from "@/components/ui/badge"
@@ -84,7 +84,7 @@ const routeToComponent = {
 
 // Inner component that can use useProject context
 function DemoLayoutContent({ settings, mounted, children }) {
-    const { projectStructure, setProjectStructure, setSelectedFile, projectUnloaded } = useProject();
+    const { projectStructure, setSelectedFile } = useProject();
     const { setForceHideFloating } = useAccessibility();
     const { enableDemoMode } = useDemo();
     const router = useRouter();
@@ -101,13 +101,12 @@ function DemoLayoutContent({ settings, mounted, children }) {
     // Use shared isCodeLocked state from DemoContext
     const { isCodeLocked } = useDemo();
 
-    // Enable demo mode and set demo project structure on mount (only if not explicitly unloaded)
+    // Enable demo mode on mount
+    // NOTE: Project structure is NOT auto-loaded - user must import a repo from GitHub/GitLab
+    // This simulates real conditions where no project is shown until explicitly imported
     useEffect(() => {
         enableDemoMode();
-        if (!projectStructure && !projectUnloaded) {
-            setProjectStructure(DEMO_PROJECT_STRUCTURE);
-        }
-    }, [enableDemoMode, setProjectStructure, projectStructure, projectUnloaded]);
+    }, [enableDemoMode]);
 
     // Update breadcrumbs when route changes
     useEffect(() => {

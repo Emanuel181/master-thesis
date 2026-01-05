@@ -516,11 +516,19 @@ export function HomePage() {
     // Disconnect GitHub
     // ---------------------------
     const handleDisconnectGitHub = async () => {
+        // Check if current project is from GitHub
+        const isCurrentProjectFromGitHub = currentRepo && currentRepo.provider === 'github';
+        
         if (isDemoMode) {
-            // Demo mode: just clear state locally
+            // Demo mode: clear state locally and clear project if it was from GitHub
             setIsGithubConnected(false);
             setRepos([]);
-            toast.success("Disconnected from GitHub!");
+            if (isCurrentProjectFromGitHub) {
+                clearProject();
+                toast.success("Disconnected from GitHub! Project unloaded.");
+            } else {
+                toast.success("Disconnected from GitHub!");
+            }
             return;
         }
         try {
@@ -530,16 +538,29 @@ export function HomePage() {
         }
         setIsGithubConnected(false);
         setRepos([]);
-        toast.success("Disconnected from GitHub!");
+        if (isCurrentProjectFromGitHub) {
+            clearProject();
+            toast.success("Disconnected from GitHub! Project unloaded.");
+        } else {
+            toast.success("Disconnected from GitHub!");
+        }
         await refreshLinkedProviders()
     }
 
     const handleDisconnectGitlab = async () => {
+        // Check if current project is from GitLab
+        const isCurrentProjectFromGitLab = currentRepo && currentRepo.provider === 'gitlab';
+        
         if (isDemoMode) {
-            // Demo mode: just clear state locally
+            // Demo mode: clear state locally and clear project if it was from GitLab
             setIsGitlabConnected(false);
             setGitlabRepos([]);
-            toast.success("Disconnected from GitLab!");
+            if (isCurrentProjectFromGitLab) {
+                clearProject();
+                toast.success("Disconnected from GitLab! Project unloaded.");
+            } else {
+                toast.success("Disconnected from GitLab!");
+            }
             return;
         }
         try {
@@ -549,7 +570,12 @@ export function HomePage() {
         }
         setIsGitlabConnected(false);
         setGitlabRepos([]);
-        toast.success("Disconnected from GitLab!");
+        if (isCurrentProjectFromGitLab) {
+            clearProject();
+            toast.success("Disconnected from GitLab! Project unloaded.");
+        } else {
+            toast.success("Disconnected from GitLab!");
+        }
         await refreshLinkedProviders()
     }
 

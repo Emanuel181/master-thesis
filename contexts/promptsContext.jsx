@@ -96,7 +96,7 @@ export function PromptsProvider({ children }) {
         };
     }, [session, pathname, status]);
 
-    const handlePromptChange = (agent, promptId) => {
+    const handlePromptChange = useCallback((agent, promptId) => {
         setSelectedPrompts(prev => {
             const current = prev[agent] || [];
             if (current.includes(promptId)) {
@@ -113,16 +113,16 @@ export function PromptsProvider({ children }) {
                 };
             }
         });
-    };
+    }, []);
 
-    const handlePromptTextChange = (agent, promptId, newText) => {
+    const handlePromptTextChange = useCallback((agent, promptId, newText) => {
         setPrompts(prev => ({
             ...prev,
             [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, text: newText } : p)
         }));
-    };
+    }, []);
 
-    const addPrompt = async (agent, promptData) => {
+    const addPrompt = useCallback(async (agent, promptData) => {
         // In demo mode, add locally with generated ID
         if (isDemoMode) {
             const newPrompt = {
@@ -158,9 +158,9 @@ export function PromptsProvider({ children }) {
             console.error('Error adding prompt:', err);
             return { success: false, error: 'Error adding prompt' };
         }
-    };
+    }, [isDemoMode, prompts]);
 
-    const savePrompts = async () => {
+    const savePrompts = useCallback(async () => {
         try {
             const response = await fetch('/api/prompts', {
                 method: 'POST',
@@ -179,9 +179,9 @@ export function PromptsProvider({ children }) {
             console.error('Error saving prompts:', err);
             return { success: false, error: 'Error saving prompts' };
         }
-    };
+    }, [prompts]);
 
-    const deletePrompt = async (agent, promptId) => {
+    const deletePrompt = useCallback(async (agent, promptId) => {
         // In demo mode, just remove from local state
         if (isDemoMode) {
             setPrompts(prev => ({
@@ -216,9 +216,9 @@ export function PromptsProvider({ children }) {
             console.error('Error deleting prompt:', err);
             return { success: false, error: 'Error deleting prompt' };
         }
-    };
+    }, [isDemoMode]);
 
-    const bulkDeletePrompts = async (promptIds) => {
+    const bulkDeletePrompts = useCallback(async (promptIds) => {
         const ids = Array.from(new Set((promptIds || []).filter(Boolean)));
         if (ids.length === 0) return { success: true, deletedIds: [], missingIds: [], s3Failed: [] };
 
@@ -275,9 +275,9 @@ export function PromptsProvider({ children }) {
             console.error('Error bulk deleting prompts:', err);
             return { success: false, error: 'Error bulk deleting prompts' };
         }
-    };
+    }, [isDemoMode]);
 
-    const editPrompt = async (agent, promptId, promptData) => {
+    const editPrompt = useCallback(async (agent, promptId, promptData) => {
         // In demo mode, just update local state
         if (isDemoMode) {
             setPrompts(prev => ({
@@ -288,44 +288,40 @@ export function PromptsProvider({ children }) {
         }
 
         try {
-            console.log('Editing prompt:', { agent, promptId, promptData });
             const response = await fetch(`/api/prompts/${promptId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: promptData.title, text: promptData.text })
             });
-            console.log('Edit response status:', response.status);
             if (response.ok) {
-                const result = await response.json();
-                console.log('Edit result:', result);
                 setPrompts(prev => ({
                     ...prev,
                     [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, title: promptData.title, text: promptData.text } : p)
                 }));
                 return { success: true };
             } else {
-                const error = await response.text();
-                console.log('Edit error:', error);
                 return { success: false, error: 'Failed to edit prompt' };
             }
         } catch (err) {
             console.error('Error editing prompt:', err);
             return { success: false, error: 'Error editing prompt' };
         }
-    };
+    }, [isDemoMode]);
 
-    const reorderPrompts = async (agent, orderedIds) => {
-        // Optimistically update local state
-        const previousPrompts = prompts[agent] || [];
-        const reorderedPrompts = orderedIds
-            .map(id => previousPrompts.find(p => p.id === id))
-            .filter(Boolean)
-            .map((p, index) => ({ ...p, order: index }));
-
-        setPrompts(prev => ({
-            ...prev,
-            [agent]: reorderedPrompts
-        }));
+    const reorderPrompts = useCallback(async (agent, orderedIds) => {
+        // Get current prompts for rollback
+        let previousPrompts;
+        setPrompts(prev => {
+            previousPrompts = prev[agent] || [];
+            const reorderedPrompts = orderedIds
+                .map(id => previousPrompts.find(p => p.id === id))
+                .filter(Boolean)
+                .map((p, index) => ({ ...p, order: index }));
+            return {
+                ...prev,
+                [agent]: reorderedPrompts
+            };
+        });
 
         // In demo mode, just return success (local state already updated)
         if (isDemoMode) {
@@ -358,9 +354,10 @@ export function PromptsProvider({ children }) {
             }));
             return { success: false, error: 'Error reordering prompts' };
         }
-    };
+    }, [isDemoMode]);
 
-    const value = {
+    // Memoize context value to prevent unnecessary re-renders
+    const value = React.useMemo(() => ({
         prompts,
         selectedPrompts,
         loading,
@@ -375,7 +372,21 @@ export function PromptsProvider({ children }) {
         reorderPrompts,
         setSelectedPrompts,
         refresh: fetchPrompts,
-    };
+    }), [
+        prompts,
+        selectedPrompts,
+        loading,
+        error,
+        handlePromptChange,
+        handlePromptTextChange,
+        addPrompt,
+        savePrompts,
+        deletePrompt,
+        bulkDeletePrompts,
+        editPrompt,
+        reorderPrompts,
+        fetchPrompts,
+    ]);
 
     return (
         <PromptsContext.Provider value={value}>

@@ -178,6 +178,20 @@ export const Turnstile = forwardRef(function Turnstile({
     const uniqueId = useId();
     const containerId = `turnstile-${uniqueId.replace(/:/g, '')}`;
 
+    // Use refs for callbacks to prevent re-initialization when callbacks change
+    const onSuccessRef = useRef(onSuccess);
+    const onErrorRef = useRef(onError);
+    const onExpireRef = useRef(onExpire);
+    const onTimeoutRef = useRef(onTimeout);
+
+    // Keep refs updated with latest callbacks
+    useEffect(() => {
+        onSuccessRef.current = onSuccess;
+        onErrorRef.current = onError;
+        onExpireRef.current = onExpire;
+        onTimeoutRef.current = onTimeout;
+    });
+
     // Ensure consistent SSR/CSR rendering to avoid hydration mismatch
     useEffect(() => {
         setIsMounted(true);
@@ -260,50 +274,56 @@ export const Turnstile = forwardRef(function Turnstile({
 
                 if (!mountedRef.current || !containerRef.current) return;
 
-                // Remove existing widget
+                // Remove existing widget before creating new one
                 remove();
 
-                // Render the widget
-                widgetIdRef.current = window.turnstile.render(containerRef.current, {
-                    sitekey: resolvedSiteKey,
-                    theme,
-                    size,
-                    action,
-                    cData,
-                    execution,
-                    appearance,
-                    callback: (token) => {
-                        if (!mountedRef.current) return;
-                        onSuccess(token);
+                // Use turnstile.ready() as recommended by Cloudflare docs
+                // This ensures the API is fully ready before rendering
+                window.turnstile.ready(() => {
+                    if (!mountedRef.current || !containerRef.current) return;
+                    
+                    // Render the widget
+                    widgetIdRef.current = window.turnstile.render(containerRef.current, {
+                        sitekey: resolvedSiteKey,
+                        theme,
+                        size,
+                        action,
+                        cData,
+                        execution,
+                        appearance,
+                        callback: (token) => {
+                            if (!mountedRef.current) return;
+                            onSuccessRef.current?.(token);
 
-                        if (refreshBeforeExpiry > 0) {
-                            const refreshTime = TOKEN_VALIDITY_MS - refreshBeforeExpiry;
-                            expiryTimer = setTimeout(() => {
-                                if (mountedRef.current) reset();
-                            }, refreshTime);
-                        }
-                    },
-                    'error-callback': (errorCode) => {
-                        if (!mountedRef.current) return;
-                        console.error('[Turnstile] Widget error:', errorCode);
-                        setError(`Turnstile error: ${errorCode}`);
-                        onError?.(errorCode);
-                    },
-                    'expired-callback': () => {
-                        if (!mountedRef.current) return;
-                        onExpire?.();
-                        reset();
-                    },
-                    'timeout-callback': () => {
-                        if (!mountedRef.current) return;
-                        onTimeout?.();
-                    },
+                            if (refreshBeforeExpiry > 0) {
+                                const refreshTime = TOKEN_VALIDITY_MS - refreshBeforeExpiry;
+                                expiryTimer = setTimeout(() => {
+                                    if (mountedRef.current) reset();
+                                }, refreshTime);
+                            }
+                        },
+                        'error-callback': (errorCode) => {
+                            if (!mountedRef.current) return;
+                            console.error('[Turnstile] Widget error:', errorCode);
+                            setError(`Turnstile error: ${errorCode}`);
+                            onErrorRef.current?.(errorCode);
+                        },
+                        'expired-callback': () => {
+                            if (!mountedRef.current) return;
+                            onExpireRef.current?.();
+                            reset();
+                        },
+                        'timeout-callback': () => {
+                            if (!mountedRef.current) return;
+                            onTimeoutRef.current?.();
+                        },
+                    });
+
+                    if (mountedRef.current) {
+                        setIsLoading(false);
+                        setError(null);
+                    }
                 });
-
-                if (mountedRef.current) {
-                    setIsLoading(false);
-                    setError(null);
-                }
             } catch (err) {
                 if (!mountedRef.current) return;
                 console.error('[Turnstile] Init error:', err);
@@ -319,10 +339,10 @@ export const Turnstile = forwardRef(function Turnstile({
             if (expiryTimer) clearTimeout(expiryTimer);
             remove();
         };
-    }, [
-        resolvedSiteKey, theme, size, action, cData, execution, appearance,
-        onSuccess, onError, onExpire, onTimeout, refreshBeforeExpiry, remove, reset, retryCount
-    ]);
+    // Only re-initialize on essential widget config changes
+    // Callbacks are accessed via refs to prevent unnecessary re-initialization
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [resolvedSiteKey, retryCount]);
 
     if (!resolvedSiteKey) {
         return (

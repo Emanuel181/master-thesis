@@ -112,17 +112,20 @@ export function UseCasesProvider({ children }) {
     };
   }, [fetchUseCases]);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     await fetchUseCases();
-  };
+  }, [fetchUseCases]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    useCases,
+    loading,
+    error,
+    refresh
+  }), [useCases, loading, error, refresh]);
 
   return (
-    <UseCasesContext.Provider value={{
-      useCases,
-      loading,
-      error,
-      refresh
-    }}>
+    <UseCasesContext.Provider value={contextValue}>
       {children}
     </UseCasesContext.Provider>
   );

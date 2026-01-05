@@ -107,6 +107,21 @@ function LoginFormInner({ className, ...props }) {
         }
     }, [])
 
+    // Stable callbacks for Turnstile to prevent re-initialization on every render
+    const handleTurnstileSuccess = React.useCallback((token) => {
+        setTurnstileToken(token)
+        setTurnstileError(null)
+    }, [])
+
+    const handleTurnstileError = React.useCallback((errorCode) => {
+        setTurnstileError(`Security check failed: ${errorCode}`)
+        setTurnstileToken(null)
+    }, [])
+
+    const handleTurnstileExpire = React.useCallback(() => {
+        setTurnstileToken(null)
+    }, [])
+
     const handleSignIn = async (provider) => {
         setIsLoading(provider)
         setErrorMessage(null)
@@ -349,17 +364,9 @@ function LoginFormInner({ className, ...props }) {
                             <div className="flex justify-center">
                                 <Turnstile
                                     ref={turnstileRef}
-                                    onSuccess={(token) => {
-                                        setTurnstileToken(token)
-                                        setTurnstileError(null)
-                                    }}
-                                    onError={(errorCode) => {
-                                        setTurnstileError(`Security check failed: ${errorCode}`)
-                                        setTurnstileToken(null)
-                                    }}
-                                    onExpire={() => {
-                                        setTurnstileToken(null)
-                                    }}
+                                    onSuccess={handleTurnstileSuccess}
+                                    onError={handleTurnstileError}
+                                    onExpire={handleTurnstileExpire}
                                     theme="auto"
                                     action="login"
                                 />
