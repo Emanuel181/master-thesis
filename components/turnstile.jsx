@@ -173,9 +173,15 @@ export const Turnstile = forwardRef(function Turnstile({
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [retryCount, setRetryCount] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
     const mountedRef = useRef(true);
     const uniqueId = useId();
     const containerId = `turnstile-${uniqueId.replace(/:/g, '')}`;
+
+    // Ensure consistent SSR/CSR rendering to avoid hydration mismatch
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const resolvedSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -322,6 +328,17 @@ export const Turnstile = forwardRef(function Turnstile({
         return (
             <div className={`text-sm text-destructive ${className}`}>
                 Turnstile is not configured. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY.
+            </div>
+        );
+    }
+
+    // Return null during SSR to avoid hydration mismatch
+    if (!isMounted) {
+        return (
+            <div className={className}>
+                <div className="flex items-center justify-center h-[65px] text-sm text-muted-foreground">
+                    Loading security check...
+                </div>
             </div>
         );
     }

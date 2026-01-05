@@ -491,7 +491,7 @@ export function UseCaseGroupsPanel({
 
             {/* Groups List - Tree View */}
             {viewMode === "tree" && (
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 h-0">
                 <div className="p-2 space-y-1">
                     {/* All Use Cases view */}
                     <button
@@ -709,7 +709,7 @@ export function UseCaseGroupsPanel({
 
             {/* Groups List - Grid View */}
             {viewMode === "grid" && (
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 h-0">
                 <div className="p-2 space-y-2">
                     {/* All Use Cases card */}
                     <button

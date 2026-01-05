@@ -1036,7 +1036,7 @@ export default function KnowledgeBaseVisualization() {
 
             {/* Mobile Groups Panel (collapsible) */}
             {!isGroupsPanelCollapsed && (
-                <div className="md:hidden mx-2 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-auto h-[450px] min-h-[400px]">
+                <div className="md:hidden mx-2 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden h-[450px] min-h-[400px]">
                     <UseCaseGroupsPanel
                         groups={useCaseGroups}
                         useCases={useCasesWithCounts}
@@ -1099,7 +1099,7 @@ export default function KnowledgeBaseVisualization() {
           COLUMN 1: CATEGORIES (Resizable on desktop)
          --------------------------------------------------------------------------- */}
             <div
-                className="flex flex-col min-h-[300px] md:h-full md:min-h-0 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-y-auto overflow-x-visible w-full md:w-auto"
+                className="flex flex-col min-h-[300px] md:h-full md:min-h-0 rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden w-full md:w-auto"
                 style={!isMobile ? { flex: `0 0 ${Math.max(categoriesWidth, 25)}%`, minWidth: '280px' } : undefined}
             >
 
@@ -1167,7 +1167,7 @@ export default function KnowledgeBaseVisualization() {
                 )}
 
                 {/* Scrollable List */}
-                <ScrollArea className="flex-1 h-full">
+                <ScrollArea className="flex-1 h-0">
                     <div className="p-4 lg:p-6 pt-2 space-y-3 min-h-full">
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-10">

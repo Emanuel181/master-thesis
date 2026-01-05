@@ -79,6 +79,7 @@ const routeToComponent = {
     'knowledge-base': 'Knowledge base',
     'results': 'Results',
     'profile': 'Profile',
+    'write-article': 'Write Article',
 };
 
 // Inner component that can use useProject context
@@ -164,6 +165,7 @@ function DemoLayoutContent({ settings, mounted, children }) {
             'Knowledge base': '/demo/knowledge-base',
             'Results': '/demo/results',
             'Profile': '/demo/profile',
+            'Write Article': '/demo/write-article',
         };
 
         const route = routeMap[item.title];
