@@ -32,7 +32,17 @@ export async function POST(request) {
     const cronSecret = process.env.CRON_SECRET;
     const providedSecret = authHeader?.replace('Bearer ', '');
 
-    if (cronSecret && !safeCompare(providedSecret, cronSecret)) {
+    // Fail-closed: CRON_SECRET must be configured
+    if (!cronSecret) {
+      console.error("CRON_SECRET environment variable is not configured");
+      return NextResponse.json(
+        { error: "Service misconfigured" },
+        { status: 503 }
+      );
+    }
+
+    // Always validate the provided secret
+    if (!safeCompare(providedSecret, cronSecret)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -135,7 +145,17 @@ export async function GET(request) {
     const cronSecret = process.env.CRON_SECRET;
     const providedSecret = authHeader?.replace('Bearer ', '');
 
-    if (cronSecret && !safeCompare(providedSecret, cronSecret)) {
+    // Fail-closed: CRON_SECRET must be configured
+    if (!cronSecret) {
+      console.error("CRON_SECRET environment variable is not configured");
+      return NextResponse.json(
+        { error: "Service misconfigured" },
+        { status: 503 }
+      );
+    }
+
+    // Always validate the provided secret
+    if (!safeCompare(providedSecret, cronSecret)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

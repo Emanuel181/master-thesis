@@ -1,9 +1,13 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 // removed ThemeProvider import to avoid conflicting theme managers
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
 import { CookieConsentBanner } from "@/components/cookie-consent";
+
+// Google Tag Manager ID
+const GTM_ID = "GTM-KRHF2P8N";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -158,6 +162,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <head>
+        {/* Google Tag Manager */}
+        <Script id="google-tag-manager" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${GTM_ID}');
+          `}
+        </Script>
         <meta name="apple-mobile-web-app-title" content="VulnIQ" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -195,6 +209,15 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-x-hidden`}
         suppressHydrationWarning
       >
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
         {/* Skip to content link for accessibility */}
         <a
           href="#main-content"

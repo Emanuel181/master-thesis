@@ -265,6 +265,8 @@ jobs:
           SECRET_NEXTAUTH_SECRET_ARN: ${{ secrets.NEXTAUTH_SECRET_ARN }}
           SECRET_ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
           SECRET_ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
+          SECRET_TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          SECRET_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
         run: |
           APP_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "Deploying image: $APP_IMAGE"
@@ -302,6 +304,8 @@ jobs:
             --arg feedback_id "$SECRET_FEEDBACK_SPREADSHEET_ID" \
             --arg google_svc "$SECRET_GOOGLE_SERVICE_ACCOUNT_KEY" \
             --arg smtp_user "$SECRET_SMTP_AWS_IAM_USERNAME" \
+            --arg turnstile_secret "$SECRET_TURNSTILE_SECRET_KEY" \
+            --arg turnstile_site_key "$SECRET_TURNSTILE_SITE_KEY" \
             '{
               family: "vulniq-td",
               networkMode: "awsvpc",
@@ -316,6 +320,7 @@ jobs:
                 essential: true,
                 portMappings: [{containerPort: 3000, protocol: "tcp"}],
                 environment: [
+                  {name: "HOSTNAME", value: "0.0.0.0"},
                   {name: "NODE_ENV", value: "production"},
                   {name: "PORT", value: "3000"},
                   {name: "NEXTAUTH_URL", value: "https://vulniq.org"},
@@ -345,7 +350,9 @@ jobs:
                   {name: "MASTER_PASSWORD", value: $master_pass},
                   {name: "FEEDBACK_SPREADSHEET_ID", value: $feedback_id},
                   {name: "GOOGLE_SERVICE_ACCOUNT_KEY", value: $google_svc},
-                  {name: "SMTP_AWS_IAM_USERNAME", value: $smtp_user}
+                  {name: "SMTP_AWS_IAM_USERNAME", value: $smtp_user},
+                  {name: "TURNSTILE_SECRET_KEY", value: $turnstile_secret},
+                  {name: "NEXT_PUBLIC_TURNSTILE_SITE_KEY", value: $turnstile_site_key}
                 ],
                 secrets: [{name: "NEXTAUTH_SECRET", valueFrom: $nextauth_arn}],
                 logConfiguration: {
@@ -382,6 +389,7 @@ jobs:
             --cluster ${{ secrets.ECS_CLUSTER }} \
             --service ${{ secrets.ECS_SERVICE }} \
             --task-definition "$NEW_TASK_DEF_ARN" \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.ECS_SUBNETS }}],securityGroups=[${{ secrets.ECS_SECURITY_GROUP }}],assignPublicIp=DISABLED}" \
             --force-new-deployment
           
           echo "Deployment initiated successfully!"

@@ -27,6 +27,7 @@ import { signIn } from "next-auth/react"
 import { motion } from "framer-motion"
 import { Loader2, LockKeyhole, Clock, AlertTriangle, Mail } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { Turnstile } from "@/components/turnstile"
 
 const LAST_PROVIDER_KEY = "vulniq-last-login-provider"
 const USER_NAME_KEY = "vulniq-user-name"
@@ -78,6 +79,9 @@ function LoginFormInner({ className, ...props }) {
     const [errorDialogOpen, setErrorDialogOpen] = React.useState(false)
     const [currentError, setCurrentError] = React.useState(null)
     const [email, setEmail] = React.useState("")
+    const [turnstileToken, setTurnstileToken] = React.useState(null)
+    const [turnstileError, setTurnstileError] = React.useState(null)
+    const turnstileRef = React.useRef(null)
     const searchParams = useSearchParams()
 
     const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
@@ -120,20 +124,50 @@ function LoginFormInner({ className, ...props }) {
 
     const handleEmailSignIn = async (e) => {
         e.preventDefault()
+
+        // Verify Turnstile token is present for email sign-in
+        if (!turnstileToken) {
+            setErrorMessage("Please complete the security check")
+            return
+        }
+
         setIsLoading("nodemailer")
         setErrorMessage(null)
 
         try {
+            // First verify Turnstile token server-side
+            const verifyRes = await fetch("/api/auth/verify-turnstile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ turnstileToken }),
+            })
+
+            if (!verifyRes.ok) {
+                const data = await verifyRes.json()
+                setErrorMessage(data.error || "Security verification failed")
+                setIsLoading(null)
+                // Reset Turnstile for retry
+                turnstileRef.current?.reset?.()
+                setTurnstileToken(null)
+                return
+            }
+
             const res = await signIn("nodemailer", { email, callbackUrl, redirect: false })
             if (res?.error) {
                 setErrorMessage("Sign-in failed. Please try again.")
                 setIsLoading(null)
+                // Reset Turnstile for retry
+                turnstileRef.current?.reset?.()
+                setTurnstileToken(null)
             } else {
                 window.location.href = `/login/verify-code?email=${encodeURIComponent(email)}`
             }
         } catch (error) {
             setErrorMessage("Sign-in failed. Please try again.")
             setIsLoading(null)
+            // Reset Turnstile for retry
+            turnstileRef.current?.reset?.()
+            setTurnstileToken(null)
         }
     }
 
@@ -310,7 +344,35 @@ function LoginFormInner({ className, ...props }) {
                                     className="h-10"
                                 />
                             </div>
-                            <Button type="submit" disabled={isLoading !== null || !email} className="text-white dark:text-[var(--brand-primary)]">
+
+                            {/* Turnstile Widget - Only shown for email sign-in */}
+                            <div className="flex justify-center">
+                                <Turnstile
+                                    ref={turnstileRef}
+                                    onSuccess={(token) => {
+                                        setTurnstileToken(token)
+                                        setTurnstileError(null)
+                                    }}
+                                    onError={(errorCode) => {
+                                        setTurnstileError(`Security check failed: ${errorCode}`)
+                                        setTurnstileToken(null)
+                                    }}
+                                    onExpire={() => {
+                                        setTurnstileToken(null)
+                                    }}
+                                    theme="auto"
+                                    action="login"
+                                />
+                            </div>
+                            {turnstileError && (
+                                <p className="text-sm text-destructive text-center">{turnstileError}</p>
+                            )}
+
+                            <Button
+                                type="submit"
+                                disabled={isLoading !== null || !email || !turnstileToken}
+                                className="text-white dark:text-[var(--brand-primary)]"
+                            >
                                 {isLoading === "nodemailer" ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
