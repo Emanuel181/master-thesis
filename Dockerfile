@@ -80,7 +80,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
@@ -94,4 +93,4 @@ RUN mkdir -p .next && chown -R nextjs:nodejs .next
 USER nextjs
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "server.js", "--hostname", "0.0.0.0", "--port", "3000"]
