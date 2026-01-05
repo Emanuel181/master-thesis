@@ -84,12 +84,14 @@ export default auth((req) => {
  *   2. Middleware is COMPLETELY SKIPPED
  *   3. Request goes directly to route handler
  *   4. Fast 200 response, ALB happy
+ *
+ * @type {import('next').NextConfig['proxy']}
  */
 export const config = {
     matcher: [
         "/dashboard/:path*",
         "/demo/:path*",
         // Match all /api/* routes EXCEPT /api/health and /api/health/*
-        "/api/((?!health).*)",
+        "/api/:path*",
     ],
 }
