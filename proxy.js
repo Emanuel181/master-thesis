@@ -92,7 +92,6 @@ export const config = {
         "/dashboard/:path*",
         "/demo/:path*",
         // Match all /api/* routes EXCEPT /api/health and /api/health/*
-        "/api/:path*",
         "/((?!health).*)",
 
     ],
