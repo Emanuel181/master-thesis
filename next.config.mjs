@@ -286,6 +286,20 @@ const nextConfig = {
           }
         ]
       },
+      // Health check endpoint for ALB - minimal headers, no auth, fast response
+      {
+        source: '/api/health',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          }
+        ]
+      },
       // Protected/API routes - no cache for security
       {
         source: '/(dashboard|profile|api|editor)/:path*',

@@ -5,17 +5,6 @@ import { DEMO_ROUTE_PREFIX } from "@/lib/demo-mode"
 export default auth((req) => {
     const { pathname } = req.nextUrl
 
-    /**
-     * 🚑 HARD BYPASS — Infrastructure Health Check
-     * ------------------------------------------------
-     * - Required for ALB / ECS health checks
-     * - No auth, no cookies, no redirects
-     * - Safe: returns static 200 from route handler
-     */
-    if (pathname === "/api/health") {
-        return NextResponse.next()
-    }
-
     // Clone headers so we can safely mutate
     const requestHeaders = new Headers(req.headers)
 
@@ -77,15 +66,30 @@ export default auth((req) => {
 })
 
 /**
- * 🎯 Matcher (simple, predictable, safe)
+ * 🎯 Middleware Matcher Configuration
  * ------------------------------------------------
- * Health check bypass is handled at runtime,
- * NOT via fragile matcher regex.
+ * ⚠️  CRITICAL: /api/health is EXCLUDED via negative lookahead
+ *
+ * Health checks MUST be excluded at the matcher level, NOT at runtime.
+ * Why? Because auth() runs BEFORE the middleware function body executes.
+ *
+ * If /api/health is included in the matcher:
+ *   1. ALB sends request (no cookies, no auth headers)
+ *   2. auth() wrapper runs first (parses cookies, verifies JWTs, async work)
+ *   3. This can hang/timeout before your bypass code ever runs
+ *   4. ALB sees timeout → marks instance unhealthy
+ *
+ * By excluding /api/health from the matcher:
+ *   1. ALB sends request
+ *   2. Middleware is COMPLETELY SKIPPED
+ *   3. Request goes directly to route handler
+ *   4. Fast 200 response, ALB happy
  */
 export const config = {
     matcher: [
         "/dashboard/:path*",
         "/demo/:path*",
-        "/api/:path*",
+        // Match all /api/* routes EXCEPT /api/health and /api/health/*
+        "/api/((?!health).*)",
     ],
 }
