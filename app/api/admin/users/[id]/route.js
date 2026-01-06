@@ -144,27 +144,45 @@ export async function DELETE(request, { params }) {
     const { searchParams } = new URL(request.url);
     const warningId = searchParams.get("warningId");
 
-    if (warningId) {
-      // Delete specific warning
-      await prisma.userWarning.delete({
-        where: { id: warningId },
-      });
-
-      // Decrement warning count
-      await prisma.user.update({
-        where: { id },
-        data: {
-          warningCount: { decrement: 1 },
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: "Warning removed",
-      });
+    if (!warningId) {
+      return NextResponse.json({ error: "Warning ID required" }, { status: 400 });
     }
 
-    return NextResponse.json({ error: "Warning ID required" }, { status: 400 });
+    // SECURITY: Verify the warning belongs to the specified user before deleting
+    // This prevents IDOR attacks where an admin could delete any warning in the system
+    // by providing mismatched user ID and warning ID parameters
+    const warning = await prisma.userWarning.findUnique({
+      where: { id: warningId },
+      select: { id: true, userId: true },
+    });
+
+    if (!warning) {
+      return NextResponse.json({ error: "Warning not found" }, { status: 404 });
+    }
+
+    // SECURITY: Verify the warning belongs to the user specified in the URL path
+    if (warning.userId !== id) {
+      // Return 404 instead of 403 to avoid revealing that the warning exists
+      return NextResponse.json({ error: "Warning not found" }, { status: 404 });
+    }
+
+    // Delete specific warning - now verified to belong to the correct user
+    await prisma.userWarning.delete({
+      where: { id: warningId },
+    });
+
+    // Decrement warning count for the verified user
+    await prisma.user.update({
+      where: { id },
+      data: {
+        warningCount: { decrement: 1 },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Warning removed",
+    });
   } catch (error) {
     console.error("Error removing warning:", error);
     return NextResponse.json(

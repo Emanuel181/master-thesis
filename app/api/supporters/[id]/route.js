@@ -88,7 +88,23 @@ export async function GET(request, { params }) {
         }
 
         const supporter = await prisma.supporter.findUnique({
-            where: { id }
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+                occupation: true,
+                company: true,
+                companyUrl: true,
+                contributionBio: true,
+                personalBio: true,
+                linkedinUrl: true,
+                websiteUrl: true,
+                tier: true,
+                featured: true,
+                visible: true,
+                // Note: createdAt, updatedAt, order excluded - internal fields
+            }
         });
 
         if (!supporter) {
@@ -107,7 +123,23 @@ export async function GET(request, { params }) {
             );
         }
 
-        return NextResponse.json({ supporter }, { status: 200, headers: securityHeaders });
+        // Return only public fields (exclude visible flag for non-admins)
+        const publicSupporter = {
+            id: supporter.id,
+            name: supporter.name,
+            avatarUrl: supporter.avatarUrl,
+            occupation: supporter.occupation,
+            company: supporter.company,
+            companyUrl: supporter.companyUrl,
+            contributionBio: supporter.contributionBio,
+            personalBio: supporter.personalBio,
+            linkedinUrl: supporter.linkedinUrl,
+            websiteUrl: supporter.websiteUrl,
+            tier: supporter.tier,
+            featured: supporter.featured,
+        };
+
+        return NextResponse.json({ supporter: publicSupporter }, { status: 200, headers: securityHeaders });
     } catch (error) {
         console.error('[Supporters GET by ID Error]', error);
         return NextResponse.json(

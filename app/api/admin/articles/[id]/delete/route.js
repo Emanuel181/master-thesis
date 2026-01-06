@@ -6,11 +6,20 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { securityHeaders } from "@/lib/api-security";
 
 // DELETE /api/admin/articles/[id]/delete - Permanently delete an article
-// Requires admin authentication
+// Requires MASTER admin authentication
 export async function DELETE(request, { params }) {
   // Verify admin authentication
   const adminCheck = await requireAdmin();
   if (adminCheck.error) return adminCheck.error;
+
+  // SECURITY: Only master admins can permanently delete articles
+  // This is a destructive, irreversible operation that requires elevated privileges
+  if (!adminCheck.isMasterAdmin) {
+    return NextResponse.json(
+      { error: "Insufficient permissions. Only master admins can delete articles." },
+      { status: 403, headers: securityHeaders }
+    );
+  }
 
   try {
 
@@ -43,6 +52,9 @@ export async function DELETE(request, { params }) {
 
     // Use existing feedback if no new feedback provided
     const deletionReason = feedback || article.adminFeedback;
+
+    // SECURITY: Audit log for article deletion
+    console.log(`[Admin Audit] Article ${id} ("${article.title}") deleted by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
 
     // Delete the article
     await prisma.article.delete({

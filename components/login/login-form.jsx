@@ -84,7 +84,33 @@ function LoginFormInner({ className, ...props }) {
     const turnstileRef = React.useRef(null)
     const searchParams = useSearchParams()
 
-    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+    // Validate callbackUrl to prevent open redirect attacks
+    const rawCallbackUrl = searchParams.get("callbackUrl")
+    const callbackUrl = React.useMemo(() => {
+        if (!rawCallbackUrl) return "/dashboard"
+        
+        // Only allow relative paths starting with /
+        // Reject absolute URLs, protocol-relative URLs, and other schemes
+        if (
+            rawCallbackUrl.startsWith('/') && 
+            !rawCallbackUrl.startsWith('//') &&
+            !rawCallbackUrl.includes('://')
+        ) {
+            // Additional check: ensure no encoded characters that could bypass
+            try {
+                const decoded = decodeURIComponent(rawCallbackUrl)
+                if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes('://')) {
+                    return rawCallbackUrl
+                }
+            } catch {
+                // Invalid encoding, reject
+            }
+        }
+        
+        // Default to dashboard for any suspicious URLs
+        return "/dashboard"
+    }, [rawCallbackUrl])
+
     const errorParam = searchParams.get("error")
 
     React.useEffect(() => {

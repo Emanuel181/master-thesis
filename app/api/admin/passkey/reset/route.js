@@ -66,7 +66,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Passkey reset error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to reset passkeys' },
+            { error: 'Failed to reset passkeys' },
             { status: 500 }
         );
     }

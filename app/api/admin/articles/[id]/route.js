@@ -51,11 +51,20 @@ export async function GET(request, { params }) {
 }
 
 // PATCH /api/admin/articles/[id] - Update article (admin can edit any field)
-// Requires admin authentication
+// Requires MASTER admin authentication for content modifications
 export async function PATCH(request, { params }) {
   // Verify admin authentication
   const adminCheck = await requireAdmin();
   if (adminCheck.error) return adminCheck.error;
+
+  // SECURITY: Only master admins can modify article content
+  // Regular admins can only view articles and change status via the status endpoint
+  if (!adminCheck.isMasterAdmin) {
+    return NextResponse.json(
+      { error: "Insufficient permissions. Only master admins can modify articles." },
+      { status: 403, headers: securityHeaders }
+    );
+  }
 
   try {
 
@@ -129,6 +138,9 @@ export async function PATCH(request, { params }) {
       data: updateData,
     });
 
+    // SECURITY: Audit log for article modifications
+    console.log(`[Admin Audit] Article ${id} modified (PATCH) by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
+
     return NextResponse.json({ article });
   } catch (error) {
     console.error("Error updating article:", error);
@@ -140,11 +152,20 @@ export async function PATCH(request, { params }) {
 }
 
 // PUT /api/admin/articles/[id] - Full article update including author reassignment
-// Requires admin authentication
+// Requires MASTER admin authentication
 export async function PUT(request, { params }) {
   // Verify admin authentication
   const adminCheck = await requireAdmin();
   if (adminCheck.error) return adminCheck.error;
+
+  // SECURITY: Only master admins can perform full article updates
+  // This includes content modification and author reassignment
+  if (!adminCheck.isMasterAdmin) {
+    return NextResponse.json(
+      { error: "Insufficient permissions. Only master admins can fully modify articles." },
+      { status: 403, headers: securityHeaders }
+    );
+  }
 
   try {
 
@@ -233,6 +254,9 @@ export async function PUT(request, { params }) {
       where: { id },
       data: updateData,
     });
+
+    // SECURITY: Audit log for full article updates
+    console.log(`[Admin Audit] Article ${id} fully updated by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
 
     return NextResponse.json({ article });
   } catch (error) {

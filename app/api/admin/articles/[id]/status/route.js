@@ -90,6 +90,9 @@ export async function POST(request, { params }) {
       data: updateData,
     });
 
+    // SECURITY: Audit log for status changes
+    console.log(`[Admin Audit] Article ${id} status changed to ${status} by ${adminCheck.email}${adminCheck.isMasterAdmin ? ' (master admin)' : ''} at ${new Date().toISOString()}`);
+
     // Create notification and send email for the author
     try {
       // Handle different statuses

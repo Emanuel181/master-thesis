@@ -15,7 +15,7 @@ export async function GET(request, { params }) {
         excerpt: true,
         category: true,
         authorName: true,
-        authorEmail: true,
+        // Note: authorEmail intentionally excluded - not exposed to public
         iconName: true,
         iconPosition: true,
         iconColor: true,
@@ -48,7 +48,7 @@ export async function GET(request, { params }) {
       excerpt: article.excerpt,
       category: article.category,
       author: article.authorName,
-      authorEmail: article.authorEmail,
+      // Note: authorEmail not exposed to public API
       date: article.publishedAt
         ? new Date(article.publishedAt).toLocaleDateString("en-US", {
             year: "numeric",

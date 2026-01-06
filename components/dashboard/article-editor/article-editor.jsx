@@ -118,6 +118,13 @@ const STATUS_CONFIG = {
 };
 
 const ITEMS_PER_PAGE = 10;
+
+// Sanitize string input to prevent injection attacks
+const sanitizeString = (value) => {
+  if (typeof value !== 'string') return '';
+  // Remove null bytes and other control characters that could break message structure
+  return value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+};
 const ICONS_PER_PAGE = 9;
 
 // Icon position options
@@ -368,12 +375,12 @@ export function ArticleEditor() {
   const handleSelectArticle = (article) => {
     setSelectedArticle(article);
     setEditFormState({
-      title: article.title || "",
-      excerpt: article.excerpt || "",
+      title: sanitizeString(article.title) || "",
+      excerpt: sanitizeString(article.excerpt) || "",
       category: article.category || "General",
       coverType: article.coverType || "gradient",
       gradient: article.gradient || PRESET_GRADIENTS[0].value,
-      coverImage: article.coverImage || "",
+      coverImage: sanitizeString(article.coverImage) || "",
       iconName: article.iconName || "Shield",
       iconPosition: article.iconPosition || "center",
       iconColor: article.iconColor || "white",

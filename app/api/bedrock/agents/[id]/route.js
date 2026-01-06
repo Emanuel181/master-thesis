@@ -1,4 +1,4 @@
-import { BedrockAgentClient, GetAgentCommand, ListAgentActionGroupsCommand, ListAgentKnowledgeBasesCommand } from "@aws-sdk/client-bedrock-agent";
+import { BedrockAgentClient, GetAgentCommand, ListAgentActionGroupsCommand, ListAgentKnowledgeBasesCommand, ListTagsForResourceCommand } from "@aws-sdk/client-bedrock-agent";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
@@ -8,6 +8,28 @@ import { requireProductionMode } from "@/lib/api-middleware";
 const bedrockAgentClient = new BedrockAgentClient({
     region: process.env.AWS_REGION || "us-east-1",
 });
+
+/**
+ * SECURITY: Verify agent ownership via AWS resource tags
+ * Agents must have a 'userId' tag matching the requesting user's ID
+ * This prevents IDOR attacks where users access other users' agents
+ */
+async function verifyAgentOwnership(agentArn, userId) {
+    try {
+        const listTagsCommand = new ListTagsForResourceCommand({
+            resourceArn: agentArn,
+        });
+        const tagsResponse = await bedrockAgentClient.send(listTagsCommand);
+        const tags = tagsResponse.tags || {};
+        
+        // Check if the agent has a userId tag matching the requesting user
+        return tags.userId === userId;
+    } catch (error) {
+        console.error("Error checking agent tags:", error?.message || String(error));
+        // Fail closed - if we can't verify ownership, deny access
+        return false;
+    }
+}
 
 // GET - Get detailed agent information including action groups and knowledge bases
 export async function GET(request, { params }) {
@@ -47,7 +69,36 @@ export async function GET(request, { params }) {
         const getAgentCommand = new GetAgentCommand({
             agentId: id,
         });
-        const agentResponse = await bedrockAgentClient.send(getAgentCommand);
+        
+        let agentResponse;
+        try {
+            agentResponse = await bedrockAgentClient.send(getAgentCommand);
+        } catch (error) {
+            // SECURITY: Return generic 404 for non-existent agents to prevent enumeration
+            if (error?.name === 'ResourceNotFoundException' || error?.$metadata?.httpStatusCode === 404) {
+                return NextResponse.json(
+                    { error: "Agent not found", requestId },
+                    { status: 404, headers: { ...securityHeaders, 'x-request-id': requestId } }
+                );
+            }
+            throw error;
+        }
+
+        const agent = agentResponse.agent;
+
+        // SECURITY: Verify agent ownership before returning details
+        // This prevents IDOR attacks where users access other users' agents
+        const agentArn = agent.agentArn;
+        const isOwner = await verifyAgentOwnership(agentArn, session.user.id);
+        
+        if (!isOwner) {
+            // SECURITY: Return 404 instead of 403 to prevent agent enumeration
+            // Don't reveal whether the agent exists if the user doesn't own it
+            return NextResponse.json(
+                { error: "Agent not found", requestId },
+                { status: 404, headers: { ...securityHeaders, 'x-request-id': requestId } }
+            );
+        }
 
         // Get action groups
         const listActionGroupsCommand = new ListAgentActionGroupsCommand({

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
-import { securityHeaders, readJsonBody } from "@/lib/api-security";
+import { securityHeaders, readJsonBody, getClientIp } from "@/lib/api-security";
 import { prisma } from "@/lib/prisma";
 import bcrypt from 'bcryptjs';
 import {
@@ -10,18 +10,25 @@ import {
 } from "@/lib/admin-verification-store";
 import { hasPasskey } from "@/lib/admin-passkey";
 
+// Generic error message to prevent enumeration attacks
+const GENERIC_AUTH_ERROR = 'Invalid email or password. Please check your credentials and try again.';
+
 /**
  * POST /api/admin/verify
  * Verifies admin credentials (email + password), then checks WebAuthn passkey requirement
  *
- * Flow:
- * 1. User enters email -> API checks if email is a registered admin in database
- * 2. User enters password -> API verifies password
- *    - If password valid and NO passkey: returns { passwordVerified: true, requiresPasskeySetup: true }
- *    - If password valid and passkey EXISTS: returns { passwordVerified: true, requiresPasskeyAuth: true }
- * 3. UI handles passkey setup or authentication via separate endpoints
+ * SECURITY: Uses generic error messages to prevent admin email enumeration.
+ * All authentication failures return the same error message regardless of:
+ * - Whether the email exists
+ * - Whether the email is verified
+ * - Whether the password is correct
  *
- * Body: { email: string, password?: string }
+ * Flow:
+ * 1. User enters email + password
+ * 2. API verifies both, returns generic error if either fails
+ * 3. If valid: returns passkey requirement status
+ *
+ * Body: { email: string, password: string }
  */
 export async function POST(request) {
     try {
@@ -49,23 +56,49 @@ export async function POST(request) {
             );
         }
 
-        // Rate limiting for verification attempts
-        const rl = await rateLimit({
-            key: `admin:verify:${email}`,
-            limit: 10,
+        // SECURITY: Rate limit by IP AND email to prevent distributed enumeration
+        const clientIp = getClientIp(request);
+        
+        // Rate limit per IP (prevents single source enumeration)
+        const ipRl = await rateLimit({
+            key: `admin:verify:ip:${clientIp}`,
+            limit: 20,
             windowMs: 60 * 1000
         });
 
-        if (!rl.allowed) {
+        if (!ipRl.allowed) {
             return NextResponse.json(
                 { verified: false, error: 'Too many attempts. Please try again later.' },
                 { status: 429, headers: securityHeaders }
             );
         }
 
-        // NOTE: We no longer auto-verify based on hasValidAdminSession(email)
-        // The client should use check-session with the HTTP-only cookie instead.
-        // This ensures proper session invalidation on logout.
+        // Rate limit per email (prevents targeted brute force)
+        const emailRl = await rateLimit({
+            key: `admin:verify:email:${email}`,
+            limit: 5,
+            windowMs: 60 * 1000
+        });
+
+        if (!emailRl.allowed) {
+            return NextResponse.json(
+                { verified: false, error: 'Too many attempts. Please try again later.' },
+                { status: 429, headers: securityHeaders }
+            );
+        }
+
+        // SECURITY: Require password upfront to prevent email enumeration
+        // Don't reveal whether email exists until password is also provided
+        if (!password) {
+            return NextResponse.json(
+                {
+                    verified: false,
+                    requiresPassword: true,
+                    message: 'Please enter your email and password'
+                },
+                { status: 200, headers: securityHeaders }
+            );
+        }
 
         // Check if email is a registered admin in database
         const adminAccount = await prisma.adminAccount.findUnique({
@@ -79,55 +112,28 @@ export async function POST(request) {
             }
         });
 
-        if (!adminAccount) {
-            return NextResponse.json(
-                { verified: false, error: 'This email is not registered as an admin.' },
-                { status: 403, headers: securityHeaders }
-            );
+        // SECURITY: Use constant-time-like flow to prevent timing attacks
+        // Always perform a bcrypt compare even if account doesn't exist
+        let passwordValid = false;
+        
+        if (adminAccount && adminAccount.passwordHash && adminAccount.emailVerified) {
+            passwordValid = await bcrypt.compare(password, adminAccount.passwordHash);
+        } else {
+            // Perform dummy bcrypt compare to maintain consistent timing
+            // This prevents attackers from detecting non-existent accounts via response time
+            await bcrypt.compare(password, '$2a$12$dummy.hash.for.timing.attack.prevention');
         }
 
-        // Check if email is verified
-        if (!adminAccount.emailVerified) {
+        // SECURITY: Generic error for all authentication failures
+        // Don't reveal whether email exists, is verified, or password is wrong
+        if (!adminAccount || !adminAccount.emailVerified || !adminAccount.passwordHash || !passwordValid) {
             return NextResponse.json(
-                { verified: false, error: 'Email address not verified. Please check your inbox for the verification link.' },
-                { status: 403, headers: securityHeaders }
+                { verified: false, error: GENERIC_AUTH_ERROR },
+                { status: 401, headers: securityHeaders }
             );
         }
 
         const isMasterAdmin = adminAccount.isMasterAdmin === true;
-
-        // If no password provided, user needs to enter it
-        if (!password) {
-            return NextResponse.json(
-                {
-                    verified: false,
-                    emailValid: true,
-                    requiresPassword: true,
-                    message: 'Please enter your password'
-                },
-                { status: 200, headers: securityHeaders }
-            );
-        }
-
-        // Verify password
-        if (!adminAccount.passwordHash) {
-            return NextResponse.json(
-                { verified: false, error: 'Password not set. Please contact an administrator.' },
-                { status: 401, headers: securityHeaders }
-            );
-        }
-
-        const passwordValid = await bcrypt.compare(password, adminAccount.passwordHash);
-
-        if (!passwordValid) {
-            return NextResponse.json(
-                {
-                    verified: false,
-                    error: 'Invalid password'
-                },
-                { status: 401, headers: securityHeaders }
-            );
-        }
 
         // Password is valid - update last login
         await prisma.adminAccount.update({

@@ -42,11 +42,20 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/admin/articles/[id]/content - Update article content (admin autosave)
-// Requires admin authentication
+// Requires MASTER admin authentication
 export async function PUT(request, { params }) {
   // Verify admin authentication
   const adminCheck = await requireAdmin();
   if (adminCheck.error) return adminCheck.error;
+
+  // SECURITY: Only master admins can modify article content directly
+  // This prevents unauthorized content tampering and provides clear accountability
+  if (!adminCheck.isMasterAdmin) {
+    return NextResponse.json(
+      { error: "Insufficient permissions. Only master admins can modify article content." },
+      { status: 403 }
+    );
+  }
 
   try {
 
@@ -79,6 +88,9 @@ export async function PUT(request, { params }) {
         contentMarkdown: true,
       },
     });
+
+    // SECURITY: Audit log for content modifications
+    console.log(`[Admin Audit] Article ${id} content modified by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
 
     return NextResponse.json({
       success: true,

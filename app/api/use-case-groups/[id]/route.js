@@ -210,15 +210,15 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ error: "Group not found" }, { status: 404, headers: securityHeaders });
         }
 
-        // Ungroup all use cases (set groupId to null)
+        // Ungroup all use cases belonging to this user (set groupId to null)
         await prisma.knowledgeBaseCategory.updateMany({
-            where: { groupId: id },
+            where: { groupId: id, userId: session.user.id },
             data: { groupId: null }
         });
 
-        // Move child groups to parent (or root if no parent)
+        // Move child groups belonging to this user to parent (or root if no parent)
         await prisma.useCaseGroup.updateMany({
-            where: { parentId: id },
+            where: { parentId: id, userId: session.user.id },
             data: { parentId: group.parentId }
         });
 
