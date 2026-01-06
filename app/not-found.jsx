@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Home, Search, ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/back-button";
 
 export default function NotFound() {
   return (
@@ -27,10 +28,10 @@ export default function NotFound() {
         {/* Message */}
         <div className="space-y-3 -mt-8">
           <h2 className="text-xl sm:text-2xl font-semibold text-white">
-            This page doesn't exist
+            This page doesn&apos;t exist
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base max-w-sm">
-            The page you're looking for may have been moved, deleted, or never existed in the first place.
+            The page you&apos;re looking for may have been moved, deleted, or never existed in the first place.
           </p>
         </div>
 
@@ -53,13 +54,10 @@ export default function NotFound() {
         </div>
 
         {/* Back Link */}
-        <button
-          onClick={() => typeof window !== 'undefined' && window.history.back()}
-          className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mt-4"
-        >
+        <BackButton className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mt-4">
           <ArrowLeft className="h-3.5 w-3.5" />
           Go back to previous page
-        </button>
+        </BackButton>
       </div>
     </div>
   );

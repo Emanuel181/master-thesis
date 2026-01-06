@@ -352,3 +352,54 @@ model Notification {
   @@index([userId, read])
   @@index([createdAt])
 }
+
+// Admin Account - Stores admin users with email/password authentication
+model AdminAccount {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String?   // bcrypt hashed password (null until email verified)
+  emailVerified       Boolean   @default(false)
+  verificationToken   String?   @unique // Token for email verification
+  verificationExpires DateTime? // Token expiry
+  isMasterAdmin       Boolean   @default(false) // True for the master admin
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  lastLoginAt         DateTime?
+
+  @@index([email])
+  @@index([verificationToken])
+}
+
+// Admin Passkey - WebAuthn credentials for admin authentication
+model AdminPasskey {
+  id              String   @id @default(cuid())
+  email           String // Admin email this passkey belongs to
+  credentialId    String   @unique // Base64URL encoded credential ID
+  publicKey       Bytes // COSE public key bytes
+  webauthnUserId  String // Base64URL encoded user handle for WebAuthn
+  counter         BigInt   @default(0) // Signature counter for replay attack prevention
+  deviceType      String // 'singleDevice' or 'multiDevice'
+  backedUp        Boolean  @default(false) // Whether passkey is backed up
+  transports      String? // Comma-separated list of transports (usb, ble, nfc, internal, etc.)
+  aaguid          String? // Authenticator Attestation GUID
+  deviceName      String? // Optional user-friendly device name
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([email])
+  @@index([credentialId])
+}
+
+// Admin Passkey Challenge - Temporary storage for WebAuthn challenges
+model AdminPasskeyChallenge {
+  id        String   @id @default(cuid())
+  email     String
+  challenge String // Base64URL encoded challenge
+  type      String // 'registration' or 'authentication'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}

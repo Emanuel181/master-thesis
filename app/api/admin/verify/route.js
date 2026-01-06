@@ -1,22 +1,27 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders, readJsonBody } from "@/lib/api-security";
-import { isAdminEmail } from "@/lib/supporters-data";
+import { prisma } from "@/lib/prisma";
+import bcrypt from 'bcryptjs';
 import {
-    hasValidAdminSession,
-    verifyCodeAndGrantSession,
+    grantSession,
     SESSION_VALIDITY_MS,
     cleanupExpiredSessions
 } from "@/lib/admin-verification-store";
+import { hasPasskey } from "@/lib/admin-passkey";
 
 /**
  * POST /api/admin/verify
- * Verifies admin OTP code and grants session access
- * No login session required - standalone OTP flow
+ * Verifies admin credentials (email + password), then checks WebAuthn passkey requirement
  *
- * Body: { email: string, code?: string }
- * - If only email: checks if session exists
- * - If email + code: verifies code and grants session
+ * Flow:
+ * 1. User enters email -> API checks if email is a registered admin in database
+ * 2. User enters password -> API verifies password
+ *    - If password valid and NO passkey: returns { passwordVerified: true, requiresPasskeySetup: true }
+ *    - If password valid and passkey EXISTS: returns { passwordVerified: true, requiresPasskeyAuth: true }
+ * 3. UI handles passkey setup or authentication via separate endpoints
+ *
+ * Body: { email: string, password?: string }
  */
 export async function POST(request) {
     try {
@@ -33,7 +38,7 @@ export async function POST(request) {
         }
 
         const email = bodyResult.body.email.toLowerCase().trim();
-        const code = bodyResult.body.code?.toString().trim();
+        const password = bodyResult.body.password?.toString();
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,60 +63,118 @@ export async function POST(request) {
             );
         }
 
-        // Check if email is in admin list
-        if (!isAdminEmail(email)) {
+        // NOTE: We no longer auto-verify based on hasValidAdminSession(email)
+        // The client should use check-session with the HTTP-only cookie instead.
+        // This ensures proper session invalidation on logout.
+
+        // Check if email is a registered admin in database
+        const adminAccount = await prisma.adminAccount.findUnique({
+            where: { email },
+            select: { 
+                id: true, 
+                email: true, 
+                passwordHash: true, 
+                emailVerified: true, 
+                isMasterAdmin: true 
+            }
+        });
+
+        if (!adminAccount) {
             return NextResponse.json(
-                { verified: false, error: 'This email is not authorized for admin access.' },
+                { verified: false, error: 'This email is not registered as an admin.' },
                 { status: 403, headers: securityHeaders }
             );
         }
 
-        // Check if already verified (has valid session)
-        if (hasValidAdminSession(email)) {
+        // Check if email is verified
+        if (!adminAccount.emailVerified) {
+            return NextResponse.json(
+                { verified: false, error: 'Email address not verified. Please check your inbox for the verification link.' },
+                { status: 403, headers: securityHeaders }
+            );
+        }
+
+        const isMasterAdmin = adminAccount.isMasterAdmin === true;
+
+        // If no password provided, user needs to enter it
+        if (!password) {
             return NextResponse.json(
                 {
-                    verified: true,
-                    email,
-                    sessionExpiresIn: SESSION_VALIDITY_MS / 1000
+                    verified: false,
+                    emailValid: true,
+                    requiresPassword: true,
+                    message: 'Please enter your password'
                 },
                 { status: 200, headers: securityHeaders }
             );
         }
 
-        // If no code provided, user needs to request one
-        if (!code) {
+        // Verify password
+        if (!adminAccount.passwordHash) {
+            return NextResponse.json(
+                { verified: false, error: 'Password not set. Please contact an administrator.' },
+                { status: 401, headers: securityHeaders }
+            );
+        }
+
+        const passwordValid = await bcrypt.compare(password, adminAccount.passwordHash);
+
+        if (!passwordValid) {
             return NextResponse.json(
                 {
                     verified: false,
-                    requiresCode: true,
-                    message: 'Verification code required'
+                    error: 'Invalid password'
+                },
+                { status: 401, headers: securityHeaders }
+            );
+        }
+
+        // Password is valid - update last login
+        await prisma.adminAccount.update({
+            where: { id: adminAccount.id },
+            data: { lastLoginAt: new Date() }
+        });
+
+        // Check WebAuthn passkey status
+        try {
+            const adminHasPasskey = await hasPasskey(email);
+
+            if (adminHasPasskey) {
+                // Passkey exists - require WebAuthn authentication
+                return NextResponse.json(
+                    {
+                        verified: false,
+                        passwordVerified: true,
+                        requiresPasskeyAuth: true,
+                        message: 'Please authenticate with your passkey'
+                    },
+                    { status: 200, headers: securityHeaders }
+                );
+            } else {
+                // No passkey - require passkey setup
+                return NextResponse.json(
+                    {
+                        verified: false,
+                        passwordVerified: true,
+                        requiresPasskeySetup: true,
+                        message: 'Please set up your passkey to continue'
+                    },
+                    { status: 200, headers: securityHeaders }
+                );
+            }
+        } catch (passkeyError) {
+            console.error('[Admin Verify] Passkey check error:', passkeyError);
+            // If passkey check fails, require passkey setup as fallback
+            return NextResponse.json(
+                {
+                    verified: false,
+                    passwordVerified: true,
+                    requiresPasskeySetup: true,
+                    message: 'Please set up your passkey to continue'
                 },
                 { status: 200, headers: securityHeaders }
             );
         }
-
-        // Verify code and grant session
-        const result = verifyCodeAndGrantSession(email, code);
-
-        if (!result.valid) {
-            return NextResponse.json(
-                {
-                    verified: false,
-                    error: result.error
-                },
-                { status: 400, headers: securityHeaders }
-            );
-        }
-
-        // Code is valid - session granted
-        return NextResponse.json(
-            {
-                verified: true,
-                email,
-                sessionExpiresIn: SESSION_VALIDITY_MS / 1000
-            },
-            { status: 200, headers: securityHeaders }
-        );
 
     } catch (error) {
         console.error('[Admin Verify Error]', error);

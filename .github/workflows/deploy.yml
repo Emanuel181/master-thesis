@@ -353,7 +353,10 @@ jobs:
                   {name: "GOOGLE_SERVICE_ACCOUNT_KEY", value: $google_svc},
                   {name: "SMTP_AWS_IAM_USERNAME", value: $smtp_user},
                   {name: "TURNSTILE_SECRET_KEY", value: $turnstile_secret},
-                  {name: "NEXT_PUBLIC_TURNSTILE_SITE_KEY", value: $turnstile_site_key}
+                  {name: "NEXT_PUBLIC_TURNSTILE_SITE_KEY", value: $turnstile_site_key},
+                  {name: "WEBAUTHN_RP_NAME", value: "VulnIQ"},
+                  {name: "WEBAUTHN_RP_ID", value: "vulniq.org"},
+                  {name: "NEXT_PUBLIC_APP_URL", value: "https://vulniq.org"}
                 ],
                 secrets: [{name: "NEXTAUTH_SECRET", valueFrom: $nextauth_arn}],
                 logConfiguration: {

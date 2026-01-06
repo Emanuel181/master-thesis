@@ -8,6 +8,7 @@ import { ArrowLeft, ExternalLink, Map, PersonStanding } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Footer } from "@/components/landing-page/footer";
+import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRef } from "react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
@@ -67,6 +68,9 @@ export default function SitemapPage() {
             {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
+
+            {/* Floating Navbar */}
+            <FloatingNavbar />
 
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">

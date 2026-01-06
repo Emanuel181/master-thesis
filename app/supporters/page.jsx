@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Footer } from "@/components/landing-page/footer";
+import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { SupporterCard } from "@/components/ui/supporter-card";
@@ -225,6 +226,9 @@ export default function SupportersPage() {
             {/* Background effects - matching landing page */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
+
+            {/* Floating Navbar */}
+            <FloatingNavbar />
 
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">

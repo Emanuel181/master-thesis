@@ -184,7 +184,7 @@ export function Footer({ onScrollToTop }) {
                                 whileHover={{ x: 2 }}
                             >
                                 <FileText className="w-4 h-4" />
-                                View thesis paper
+                                View thesis paper (in progress...)
                                 <ExternalLink className="w-3 h-3" />
                             </motion.a>
                             <motion.a

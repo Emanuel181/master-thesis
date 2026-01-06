@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +20,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
  */
 export function StickyFeedback() {
     const [isOpen, setIsOpen] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
     const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const textareaRef = useRef(null);
@@ -109,50 +107,20 @@ export function StickyFeedback() {
             </Dialog>
 
             {/* Floating button - right edge, vertically positioned */}
-            {/* On mobile: simple button that directly opens form */}
-            {/* On desktop: expands on hover to show text */}
-            <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50">
-                {/* Mobile button - always compact, no hover effect */}
-                <motion.button
-                    className="md:hidden flex items-center justify-center bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-lg shadow-[var(--brand-accent)]/25 rounded-l-xl p-3"
+            {/* Compact by default, expands on hover to show text */}
+            <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 group">
+                <Button
+                    variant="default"
+                    size="sm"
+                    className="rounded-l-xl rounded-r-none px-2.5 py-5 shadow-lg transition-all duration-200 ease-out group-hover:px-4"
                     onClick={() => setIsOpen(true)}
-                    whileTap={{ scale: 0.95 }}
                     aria-label="Send feedback"
                 >
-                    <Star className="w-5 h-5" fill="currentColor" />
-                </motion.button>
-
-                {/* Desktop button - expands on hover */}
-                <motion.button
-                    className="hidden md:flex items-center bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-lg shadow-[var(--brand-accent)]/25 rounded-l-xl overflow-hidden"
-                    onMouseEnter={() => setIsHovered(true)}
-                    onMouseLeave={() => setIsHovered(false)}
-                    onClick={() => setIsOpen(true)}
-                    whileTap={{ scale: 0.95 }}
-                    layout
-                >
-                    <motion.div
-                        className="flex items-center py-3"
-                        animate={{ 
-                            paddingLeft: isHovered ? '16px' : '12px',
-                            paddingRight: isHovered ? '16px' : '12px',
-                        }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    >
-                        <motion.span
-                            className="text-sm font-medium whitespace-nowrap overflow-hidden"
-                            animate={{ 
-                                width: isHovered ? 'auto' : 0,
-                                opacity: isHovered ? 1 : 0,
-                                marginRight: isHovered ? '8px' : '0px'
-                            }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        >
-                            Give us your feedback
-                        </motion.span>
-                        <Star className="w-5 h-5 shrink-0" fill="currentColor" />
-                    </motion.div>
-                </motion.button>
+                    <Star className="w-4 h-4 shrink-0" fill="currentColor" />
+                    <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-200 ease-out group-hover:max-w-[100px] group-hover:ml-2">
+                        Feedback
+                    </span>
+                </Button>
             </div>
         </>
     );

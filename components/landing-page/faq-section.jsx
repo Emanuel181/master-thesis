@@ -152,12 +152,12 @@ export function FAQSection() {
           </p>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button
-                variant="link"
-                className="text-[var(--brand-accent)] hover:text-[var(--brand-accent)]/80 font-medium p-0 h-auto"
+              <button
+                type="button"
+                className="text-[var(--brand-accent)] hover:text-[var(--brand-accent)]/80 font-medium"
               >
                 Ask them here →
-              </Button>
+              </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>

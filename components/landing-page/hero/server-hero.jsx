@@ -56,7 +56,7 @@ export function ServerHero() {
                   className="flex items-center justify-center text-white dark:text-[var(--brand-primary)]"
                 >
                   <FileText className="mr-2 h-4 w-4" />
-                  Read the paper
+                  Paper in progress...
                   <ExternalLink className="ml-2 h-3 w-3" />
                 </a>
               </Button>

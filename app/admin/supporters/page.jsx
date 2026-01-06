@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AdminNav } from "@/components/admin/admin-nav";
 import {
     Shield,
     ShieldCheck,
@@ -13,6 +14,7 @@ import {
     Trash2,
     Save,
     Eye,
+    EyeOff,
     Users,
     Star,
     AlertTriangle,
@@ -37,7 +39,9 @@ import {
     Columns3,
     Check,
     MoreHorizontal,
-    Search
+    Search,
+    Lock,
+    RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,15 +105,17 @@ import { SupporterCard } from "@/components/ui/supporter-card";
 const VERIFY_STATE = {
     LOADING: 'loading',
     ENTER_EMAIL: 'enter_email',
-    CODE_SENT: 'code_sent',
+    ENTER_PASSWORD: 'enter_password',
     VERIFYING: 'verifying',
+    PASSKEY_SETUP: 'passkey_setup',      // Need to register new passkey
+    PASSKEY_AUTH: 'passkey_auth',         // Need to authenticate with existing passkey
+    PASSKEY_PROCESSING: 'passkey_processing', // WebAuthn dialog active
     VERIFIED: 'verified',
     ERROR: 'error'
 };
 
 // Local storage keys
 const ADMIN_EMAIL_KEY = 'vulniq_admin_email';
-const CODE_EXPIRY_KEY = 'vulniq_admin_code_expiry';
 const SESSION_EXPIRY_KEY = 'vulniq_admin_session_expiry';
 
 // Session duration in milliseconds (30 minutes)
@@ -135,13 +141,15 @@ export default function AdminSupportersPage() {
     const [verifyState, setVerifyState] = useState(VERIFY_STATE.LOADING);
     const [verifyError, setVerifyError] = useState(null);
     const [adminEmail, setAdminEmail] = useState('');
-    const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
-    const [codeSending, setCodeSending] = useState(false);
-    const [codeExpiry, setCodeExpiry] = useState(null);
-    const [countdown, setCountdown] = useState(0);
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [passkeyDeviceName, setPasskeyDeviceName] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
     const [sessionExpiry, setSessionExpiry] = useState(null);
     const [sessionCountdown, setSessionCountdown] = useState(0);
-    const inputRefs = useRef([]);
+    const [isMasterAdmin, setIsMasterAdmin] = useState(false);
+    const passwordRef = useRef(null);
+    const deviceNameRef = useRef(null);
 
     // Main page state
     const [supporters, setSupporters] = useState([]);
@@ -236,29 +244,6 @@ export default function AdminSupportersPage() {
         }
     };
 
-    // Code countdown timer effect
-    useEffect(() => {
-        if (!codeExpiry) {
-            setCountdown(0);
-            return;
-        }
-
-        const updateCountdown = () => {
-            const remaining = Math.max(0, Math.floor((codeExpiry - Date.now()) / 1000));
-            setCountdown(remaining);
-
-            if (remaining <= 0) {
-                // Code expired - clear storage
-                localStorage.removeItem(CODE_EXPIRY_KEY);
-                setCodeExpiry(null);
-            }
-        };
-
-        updateCountdown();
-        const interval = setInterval(updateCountdown, 1000);
-        return () => clearInterval(interval);
-    }, [codeExpiry]);
-
     // Session countdown timer effect
     useEffect(() => {
         if (!sessionExpiry || verifyState !== VERIFY_STATE.VERIFIED) {
@@ -289,36 +274,32 @@ export default function AdminSupportersPage() {
     // Check for existing session on mount
     useEffect(() => {
         async function checkExistingSession() {
-            const savedEmail = localStorage.getItem(ADMIN_EMAIL_KEY);
-            const savedCodeExpiry = localStorage.getItem(CODE_EXPIRY_KEY);
             const savedSessionExpiry = localStorage.getItem(SESSION_EXPIRY_KEY);
 
-            if (savedEmail) {
-                try {
-                    const response = await fetch('/api/admin/check-session', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: savedEmail })
-                    });
-                    const data = await response.json();
-                    if (data.valid) {
-                        // Only set email if session is valid
-                        setAdminEmail(savedEmail);
-                        setVerifyState(VERIFY_STATE.VERIFIED);
-                        // Clear any leftover code expiry
-                        localStorage.removeItem(CODE_EXPIRY_KEY);
-                        // Restore session expiry if available
-                        if (savedSessionExpiry) {
-                            const sessionExpiryTime = parseInt(savedSessionExpiry, 10);
-                            if (Date.now() < sessionExpiryTime) {
-                                setSessionExpiry(sessionExpiryTime);
-                            } else {
-                                // Session expired on client side but server says valid?
-                                // Set a new session expiry
-                                const newExpiry = Date.now() + SESSION_DURATION_MS;
-                                localStorage.setItem(SESSION_EXPIRY_KEY, newExpiry.toString());
-                                setSessionExpiry(newExpiry);
-                            }
+            try {
+                const response = await fetch('/api/admin/check-session', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.valid && data.email) {
+                    // Use email from server response as source of truth
+                    setAdminEmail(data.email);
+                    setIsMasterAdmin(data.isMasterAdmin || false);
+                    localStorage.setItem(ADMIN_EMAIL_KEY, data.email);
+                    setVerifyState(VERIFY_STATE.VERIFIED);
+                    // Restore session expiry if available
+                    if (savedSessionExpiry) {
+                        const sessionExpiryTime = parseInt(savedSessionExpiry, 10);
+                        if (Date.now() < sessionExpiryTime) {
+                            setSessionExpiry(sessionExpiryTime);
+                        } else {
+                            // Session expired on client side but server says valid?
+                            // Set a new session expiry
+                            const newExpiry = Date.now() + SESSION_DURATION_MS;
+                            localStorage.setItem(SESSION_EXPIRY_KEY, newExpiry.toString());
+                            setSessionExpiry(newExpiry);
+                        }
                         } else {
                             // No saved expiry, set a new one
                             const newExpiry = Date.now() + SESSION_DURATION_MS;
@@ -335,55 +316,32 @@ export default function AdminSupportersPage() {
                         } catch (fetchErr) {
                             console.error('Failed to fetch supporters:', fetchErr);
                         }
-                        return;
-                    } else {
-                        // Session invalid, clear stored email
-                        localStorage.removeItem(ADMIN_EMAIL_KEY);
-                        localStorage.removeItem(SESSION_EXPIRY_KEY);
-                    }
-                } catch (err) {
-                    console.error('Failed to check session:', err);
-                    // On error, clear stored data
-                    localStorage.removeItem(ADMIN_EMAIL_KEY);
-                    localStorage.removeItem(SESSION_EXPIRY_KEY);
+                    return;
                 }
-
-                // Check if there's an unexpired code waiting
-                if (savedCodeExpiry) {
-                    const expiryTime = parseInt(savedCodeExpiry, 10);
-                    if (Date.now() < expiryTime) {
-                        // Only set email if code hasn't expired yet
-                        setAdminEmail(savedEmail);
-                        // Code still valid - restore CODE_SENT state
-                        setCodeExpiry(expiryTime);
-                        setVerifyState(VERIFY_STATE.CODE_SENT);
-                        setTimeout(() => inputRefs.current[0]?.focus(), 100);
-                        return;
-                    } else {
-                        // Code expired - clean up
-                        localStorage.removeItem(CODE_EXPIRY_KEY);
-                        localStorage.removeItem(ADMIN_EMAIL_KEY);
-                    }
-                }
+            } catch (err) {
+                console.error('Failed to check session:', err);
             }
+            // Session invalid, clear stored email
+            localStorage.removeItem(ADMIN_EMAIL_KEY);
+            localStorage.removeItem(SESSION_EXPIRY_KEY);
             // No valid session found
             setVerifyState(VERIFY_STATE.ENTER_EMAIL);
         }
         checkExistingSession();
     }, []);
 
-    // Send verification code
-    async function sendVerificationCode() {
+    // Verify email
+    async function verifyEmail() {
         if (!adminEmail.trim()) {
-            setVerifyError('Please enter your admin email address');
+            setVerifyError('Please enter your email address');
             return;
         }
 
-        setCodeSending(true);
+        setIsVerifying(true);
         setVerifyError(null);
 
         try {
-            const response = await fetch('/api/admin/send-code', {
+            const response = await fetch('/api/admin/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: adminEmail.trim() })
@@ -391,110 +349,253 @@ export default function AdminSupportersPage() {
 
             const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.verified) {
                 localStorage.setItem(ADMIN_EMAIL_KEY, adminEmail.trim());
-                const expiryTime = Date.now() + (data.expiresIn * 1000);
-                localStorage.setItem(CODE_EXPIRY_KEY, expiryTime.toString());
-                setVerifyState(VERIFY_STATE.CODE_SENT);
-                setCodeExpiry(expiryTime);
-                setVerificationCode(['', '', '', '', '', '']);
-                setTimeout(() => inputRefs.current[0]?.focus(), 100);
+                const sessionExpiryTime = Date.now() + SESSION_DURATION_MS;
+                localStorage.setItem(SESSION_EXPIRY_KEY, sessionExpiryTime.toString());
+                setSessionExpiry(sessionExpiryTime);
+                setVerifyState(VERIFY_STATE.VERIFIED);
+                fetchSupporters();
+            } else if (data.emailValid && data.requiresPassword) {
+                setVerifyState(VERIFY_STATE.ENTER_PASSWORD);
+                setTimeout(() => passwordRef.current?.focus(), 100);
             } else {
-                setVerifyError(data.error || 'Failed to send code');
+                setVerifyError(data.error || 'Email not recognized');
             }
         } catch (err) {
-            setVerifyError('Failed to send verification code');
+            setVerifyError('Verification failed');
         } finally {
-            setCodeSending(false);
+            setIsVerifying(false);
         }
     }
 
-    // Handle code input
-    function handleCodeInput(index, value) {
-        if (!/^\d*$/.test(value)) return;
-
-        const newCode = [...verificationCode];
-        newCode[index] = value.slice(-1);
-        setVerificationCode(newCode);
-
-        if (value && index < 5) {
-            inputRefs.current[index + 1]?.focus();
+    // Verify password
+    async function verifyPassword() {
+        if (!password.trim()) {
+            setVerifyError('Please enter your password');
+            return;
         }
 
-        if (newCode.every(d => d !== '') && newCode.join('').length === 6) {
-            verifyCode(newCode.join(''));
-        }
-    }
-
-    function handleKeyDown(index, e) {
-        if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
-            inputRefs.current[index - 1]?.focus();
-        }
-        if (e.key === 'Enter' && verificationCode.every(d => d !== '')) {
-            verifyCode(verificationCode.join(''));
-        }
-    }
-
-    function handlePaste(e) {
-        e.preventDefault();
-        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-        if (pastedData.length === 6) {
-            const newCode = pastedData.split('');
-            setVerificationCode(newCode);
-            verifyCode(pastedData);
-        }
-    }
-
-    async function verifyCode(code) {
-        setVerifyState(VERIFY_STATE.VERIFYING);
+        setIsVerifying(true);
         setVerifyError(null);
 
         try {
             const response = await fetch('/api/admin/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: adminEmail.trim(), code })
+                body: JSON.stringify({ email: adminEmail.trim(), password: password.trim() })
             });
 
             const data = await response.json();
 
             if (data.verified) {
-                // Clear code expiry since we're now verified
-                localStorage.removeItem(CODE_EXPIRY_KEY);
-                setCodeExpiry(null);
-                // Set session expiry (30 minutes)
+                localStorage.setItem(ADMIN_EMAIL_KEY, adminEmail.trim());
                 const sessionExpiryTime = Date.now() + SESSION_DURATION_MS;
                 localStorage.setItem(SESSION_EXPIRY_KEY, sessionExpiryTime.toString());
                 setSessionExpiry(sessionExpiryTime);
                 setVerifyState(VERIFY_STATE.VERIFIED);
+                setPassword('');
                 fetchSupporters();
+            } else if (data.passwordVerified && data.requiresPasskeySetup) {
+                setVerifyState(VERIFY_STATE.PASSKEY_SETUP);
+                // Keep password for potential use
+                setTimeout(() => deviceNameRef.current?.focus(), 100);
+            } else if (data.passwordVerified && data.requiresPasskeyAuth) {
+                setVerifyState(VERIFY_STATE.PASSKEY_AUTH);
+                // Keep password for potential passkey reset
+                setTimeout(() => startPasskeyAuth(), 100);
             } else {
-                setVerifyState(VERIFY_STATE.CODE_SENT);
-                setVerifyError(data.error || 'Invalid code');
-                setVerificationCode(['', '', '', '', '', '']);
-                inputRefs.current[0]?.focus();
+                setVerifyError(data.error || 'Invalid password');
             }
         } catch (err) {
-            setVerifyState(VERIFY_STATE.CODE_SENT);
             setVerifyError('Verification failed');
+        } finally {
+            setIsVerifying(false);
         }
     }
 
-    function handleLogout() {
+    // WebAuthn Passkey Registration
+    async function startPasskeySetup() {
+        setVerifyState(VERIFY_STATE.PASSKEY_PROCESSING);
+        setVerifyError(null);
+
+        try {
+            // 1. Get registration options from server
+            const optionsRes = await fetch('/api/admin/passkey/register-options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: adminEmail.trim(),
+                    deviceName: passkeyDeviceName.trim() || undefined
+                })
+            });
+
+            const optionsData = await optionsRes.json();
+            if (!optionsRes.ok) {
+                throw new Error(optionsData.error || 'Failed to get registration options');
+            }
+            
+            if (!optionsData.options) {
+                throw new Error('Registration options not received from server');
+            }
+
+            // 2. Start WebAuthn registration ceremony
+            const { startRegistration } = await import('@simplewebauthn/browser');
+            const credential = await startRegistration(optionsData.options);
+
+            // 3. Verify registration with server
+            const verifyRes = await fetch('/api/admin/passkey/register-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    email: adminEmail.trim(),
+                    response: credential,
+                    deviceName: passkeyDeviceName.trim() || undefined
+                })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.verified) {
+                throw new Error(verifyData.error || 'Failed to register passkey');
+            }
+
+            // Success! Session is granted - use email from server response
+            const verifiedEmail = verifyData.email || adminEmail.trim();
+            setAdminEmail(verifiedEmail);
+            localStorage.setItem(ADMIN_EMAIL_KEY, verifiedEmail);
+            const sessionExpiryTime = Date.now() + SESSION_DURATION_MS;
+            localStorage.setItem(SESSION_EXPIRY_KEY, sessionExpiryTime.toString());
+            setSessionExpiry(sessionExpiryTime);
+            setVerifyState(VERIFY_STATE.VERIFIED);
+            fetchSupporters();
+
+        } catch (err) {
+            if (err.name === 'NotAllowedError') {
+                // User cancelled - this is expected behavior, not an error
+                console.log('Passkey registration cancelled by user');
+                setVerifyError('Passkey registration was cancelled. Click the button to try again.');
+            } else {
+                console.error('Passkey registration error:', err);
+                setVerifyError(err.message || 'Passkey registration failed');
+            }
+            setVerifyState(VERIFY_STATE.PASSKEY_SETUP);
+        }
+    }
+
+    // WebAuthn Passkey Authentication
+    async function startPasskeyAuth() {
+        setVerifyState(VERIFY_STATE.PASSKEY_PROCESSING);
+        setVerifyError(null);
+
+        try {
+            // 1. Get authentication options from server
+            const optionsRes = await fetch('/api/admin/passkey/auth-options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: adminEmail.trim() })
+            });
+
+            const optionsData = await optionsRes.json();
+            if (!optionsRes.ok) {
+                throw new Error(optionsData.error || 'Failed to get authentication options');
+            }
+            
+            if (!optionsData.options) {
+                throw new Error('Authentication options not received from server');
+            }
+
+            // 2. Start WebAuthn authentication ceremony
+            const { startAuthentication } = await import('@simplewebauthn/browser');
+            const credential = await startAuthentication(optionsData.options);
+
+            // 3. Verify authentication with server
+            const verifyRes = await fetch('/api/admin/passkey/auth-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    email: adminEmail.trim(),
+                    response: credential
+                })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.verified) {
+                throw new Error(verifyData.error || 'Failed to authenticate with passkey');
+            }
+
+            // Success! Session is granted - use email from server response
+            const verifiedEmail = verifyData.email || adminEmail.trim();
+            setAdminEmail(verifiedEmail);
+            localStorage.setItem(ADMIN_EMAIL_KEY, verifiedEmail);
+            const sessionExpiryTime = Date.now() + SESSION_DURATION_MS;
+            localStorage.setItem(SESSION_EXPIRY_KEY, sessionExpiryTime.toString());
+            setSessionExpiry(sessionExpiryTime);
+            setVerifyState(VERIFY_STATE.VERIFIED);
+            fetchSupporters();
+
+        } catch (err) {
+            if (err.name === 'NotAllowedError') {
+                console.log('Passkey authentication cancelled or not available');
+                setVerifyError('Passkey not found on this device. You may need to reset your passkey if it was deleted or you\'re on a different device.');
+            } else {
+                console.error('Passkey authentication error:', err);
+                setVerifyError(err.message || 'Passkey authentication failed');
+            }
+            setVerifyState(VERIFY_STATE.PASSKEY_AUTH);
+        }
+    }
+
+    // Reset passkey - delete existing and go to setup
+    async function resetPasskey() {
+        setIsVerifying(true);
+        setVerifyError(null);
+        
+        try {
+            const response = await fetch('/api/admin/passkey/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: adminEmail.trim(), password })
+            });
+            
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to reset passkey');
+            }
+            
+            setVerifyState(VERIFY_STATE.PASSKEY_SETUP);
+        } catch (err) {
+            console.error('Passkey reset error:', err);
+            setVerifyError(err.message || 'Failed to reset passkey');
+        } finally {
+            setIsVerifying(false);
+        }
+    }
+
+    async function handleLogout() {
+        try {
+            await fetch('/api/admin/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (err) {
+            console.error('Logout API error:', err);
+        }
         localStorage.removeItem(ADMIN_EMAIL_KEY);
-        localStorage.removeItem(CODE_EXPIRY_KEY);
         localStorage.removeItem(SESSION_EXPIRY_KEY);
         setAdminEmail('');
-        setCodeExpiry(null);
+        setPassword('');
         setSessionExpiry(null);
         setVerifyState(VERIFY_STATE.ENTER_EMAIL);
-        setVerificationCode(['', '', '', '', '', '']);
         setSupporters([]);
     }
 
     async function fetchSupporters() {
         try {
-            const response = await fetch('/api/admin/supporters');
+            const response = await fetch('/api/admin/supporters', {
+                credentials: 'include'
+            });
             if (response.ok) {
                 const data = await response.json();
                 setSupporters(data.supporters || []);
@@ -519,6 +620,7 @@ export default function AdminSupportersPage() {
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(formData)
             });
 
@@ -547,7 +649,8 @@ export default function AdminSupportersPage() {
 
         try {
             const response = await fetch(`/api/admin/supporters/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include'
             });
 
             if (response.ok) {
@@ -571,6 +674,7 @@ export default function AdminSupportersPage() {
             const response = await fetch(`/api/admin/supporters/${supporter.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ featured: !supporter.featured })
             });
 
@@ -640,8 +744,16 @@ export default function AdminSupportersPage() {
                             <CardTitle className="text-xl">Admin Access</CardTitle>
                             <CardDescription>
                                 {verifyState === VERIFY_STATE.ENTER_EMAIL
-                                    ? 'Enter your admin email to receive a verification code'
-                                    : 'Enter the 6-digit code sent to your email'}
+                                    ? 'Enter your admin email to continue'
+                                    : verifyState === VERIFY_STATE.ENTER_PASSWORD
+                                    ? 'Enter your password'
+                                    : verifyState === VERIFY_STATE.PASSKEY_SETUP
+                                    ? 'Set up your passkey for secure admin access'
+                                    : verifyState === VERIFY_STATE.PASSKEY_AUTH
+                                    ? 'Authenticate with your registered passkey'
+                                    : verifyState === VERIFY_STATE.PASSKEY_PROCESSING
+                                    ? 'Complete the passkey verification on your device'
+                                    : 'Verify your identity'}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -664,7 +776,7 @@ export default function AdminSupportersPage() {
                                                 placeholder="admin@example.com"
                                                 value={adminEmail}
                                                 onChange={(e) => setAdminEmail(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && sendVerificationCode()}
+                                                onKeyDown={(e) => e.key === 'Enter' && verifyEmail()}
                                                 className="pl-9"
                                                 autoFocus
                                             />
@@ -672,98 +784,188 @@ export default function AdminSupportersPage() {
                                     </div>
                                     <Button
                                         className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
-                                        onClick={sendVerificationCode}
-                                        disabled={codeSending}
+                                        onClick={verifyEmail}
+                                        disabled={isVerifying}
                                     >
-                                        {codeSending ? (
+                                        {isVerifying ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Sending...
+                                                Verifying...
                                             </>
                                         ) : (
                                             <>
                                                 <KeyRound className="mr-2 h-4 w-4" />
-                                                Send Verification Code
+                                                Continue
                                             </>
                                         )}
                                     </Button>
                                 </>
                             )}
 
-                            {(verifyState === VERIFY_STATE.CODE_SENT || verifyState === VERIFY_STATE.VERIFYING) && (
+                            {verifyState === VERIFY_STATE.ENTER_PASSWORD && (
                                 <>
-                                    <div className="flex justify-center gap-2">
-                                        {verificationCode.map((digit, index) => (
-                                            <Input
-                                                key={index}
-                                                ref={(el) => { inputRefs.current[index] = el }}
-                                                type="text"
-                                                inputMode="numeric"
-                                                maxLength={1}
-                                                value={digit}
-                                                onChange={(e) => handleCodeInput(index, e.target.value)}
-                                                onKeyDown={(e) => handleKeyDown(index, e)}
-                                                onPaste={handlePaste}
-                                                className="w-10 h-12 text-center text-lg font-semibold"
-                                                disabled={verifyState === VERIFY_STATE.VERIFYING}
-                                            />
-                                        ))}
+                                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4">
+                                        <Mail className="w-4 h-4" />
+                                        <span>{adminEmail}</span>
                                     </div>
-
-                                    {verifyState === VERIFY_STATE.VERIFYING && (
-                                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Verifying...
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password">Password</Label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                ref={passwordRef}
+                                                id="password"
+                                                type={showPassword ? 'text' : 'password'}
+                                                placeholder="Enter your password"
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && verifyPassword()}
+                                                className="pl-9 pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                            >
+                                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
                                         </div>
-                                    )}
+                                    </div>
+                                    <Button
+                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        onClick={verifyPassword}
+                                        disabled={isVerifying}
+                                    >
+                                        {isVerifying ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Verifying...
+                                            </>
+                                        ) : (
+                                            'Verify Password'
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setVerifyState(VERIFY_STATE.ENTER_EMAIL);
+                                            setPassword('');
+                                            setVerifyError(null);
+                                        }}
+                                        className="w-full"
+                                    >
+                                        Use different email
+                                    </Button>
+                                </>
+                            )}
 
-                                    {countdown > 0 && verifyState !== VERIFY_STATE.VERIFYING && (
-                                        <div className="flex flex-col items-center gap-1">
-                                            <div className={`flex items-center justify-center gap-2 text-sm font-medium ${countdown <= 60 ? 'text-amber-500' : 'text-[var(--brand-accent)]'}`}>
-                                                <Timer className="h-4 w-4" />
-                                                <span className="font-mono text-lg">{formatCountdown(countdown)}</span>
+                            {verifyState === VERIFY_STATE.PASSKEY_SETUP && (
+                                <>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-center gap-2 text-sm text-green-500 mb-4">
+                                            <Check className="h-4 w-4" />
+                                            Password verified
+                                        </div>
+                                        <div className="text-center text-sm text-muted-foreground mb-4">
+                                            <p>Set up a passkey for secure access.</p>
+                                            <p className="mt-2">You can use Face ID, Touch ID, Windows Hello, or a security key.</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="deviceName">Device Name (optional)</Label>
+                                            <Input
+                                                ref={deviceNameRef}
+                                                id="deviceName"
+                                                type="text"
+                                                placeholder="e.g., MacBook Pro, iPhone"
+                                                value={passkeyDeviceName}
+                                                onChange={(e) => setPasskeyDeviceName(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && startPasskeySetup()}
+                                            />
+                                        </div>
+                                        <Button
+                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            onClick={startPasskeySetup}
+                                        >
+                                            <KeyRound className="mr-2 h-4 w-4" />
+                                            Set Up Passkey
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setVerifyState(VERIFY_STATE.ENTER_EMAIL);
+                                            setVerifyError(null);
+                                            setPasskeyDeviceName('');
+                                        }}
+                                        className="w-full"
+                                    >
+                                        Start over
+                                    </Button>
+                                </>
+                            )}
+
+                            {verifyState === VERIFY_STATE.PASSKEY_AUTH && (
+                                <>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-center gap-2 text-sm text-green-500 mb-4">
+                                            <Check className="h-4 w-4" />
+                                            Password verified
+                                        </div>
+                                        <div className="text-center text-sm text-muted-foreground mb-4">
+                                            <p>Complete authentication with your registered passkey.</p>
+                                        </div>
+                                        <Button
+                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            onClick={startPasskeyAuth}
+                                        >
+                                            <KeyRound className="mr-2 h-4 w-4" />
+                                            Authenticate with Passkey
+                                        </Button>
+                                        <div className="relative my-4">
+                                            <div className="absolute inset-0 flex items-center">
+                                                <div className="w-full border-t border-muted" />
                                             </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                {countdown <= 60 ? 'Code expiring soon!' : 'Code expires in'}
-                                            </p>
+                                            <div className="relative flex justify-center text-xs uppercase">
+                                                <span className="bg-background px-2 text-muted-foreground">
+                                                    or if passkey is missing
+                                                </span>
+                                            </div>
                                         </div>
-                                    )}
-
-                                    {countdown === 0 && codeExpiry === null && verifyState === VERIFY_STATE.CODE_SENT && (
-                                        <div className="flex items-center justify-center gap-2 text-sm text-amber-500">
-                                            <AlertTriangle className="h-4 w-4" />
-                                            Code expired. Please request a new one.
-                                        </div>
-                                    )}
-
-                                    <div className="flex flex-col gap-2">
                                         <Button
                                             variant="outline"
-                                            onClick={sendVerificationCode}
-                                            disabled={codeSending || verifyState === VERIFY_STATE.VERIFYING}
-                                            className="w-full"
+                                            className="w-full text-amber-600 border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-950"
+                                            onClick={resetPasskey}
+                                            disabled={isVerifying}
                                         >
-                                            {codeSending ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            {isVerifying ? (
+                                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Resetting...</>
                                             ) : (
-                                                <Mail className="mr-2 h-4 w-4" />
+                                                <><RefreshCw className="mr-2 h-4 w-4" />Reset & Register New Passkey</>
                                             )}
-                                            Resend Code
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => {
-                                                localStorage.removeItem(CODE_EXPIRY_KEY);
-                                                setCodeExpiry(null);
-                                                setVerifyState(VERIFY_STATE.ENTER_EMAIL);
-                                                setVerifyError(null);
-                                            }}
-                                            className="w-full"
-                                        >
-                                            Use different email
                                         </Button>
                                     </div>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setVerifyState(VERIFY_STATE.ENTER_EMAIL);
+                                            setVerifyError(null);
+                                        }}
+                                        className="w-full"
+                                    >
+                                        Start over
+                                    </Button>
                                 </>
+                            )}
+
+                            {verifyState === VERIFY_STATE.PASSKEY_PROCESSING && (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col items-center justify-center gap-3 py-8">
+                                        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
+                                        <p className="text-sm text-muted-foreground">
+                                            Complete the verification on your device...
+                                        </p>
+                                    </div>
+                                </div>
                             )}
 
                             <div className="text-center">
@@ -773,6 +975,12 @@ export default function AdminSupportersPage() {
                                 >
                                     ← Back to Home
                                 </Link>
+                            </div>
+
+                            <Separator />
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <Shield className="h-4 w-4 text-[var(--brand-accent)] shrink-0" />
+                                <p><span className="font-medium text-foreground">Security Notice:</span> Verification codes are only sent to whitelisted admin emails.</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -803,6 +1011,8 @@ export default function AdminSupportersPage() {
                             <ShieldCheck className="mr-1 h-3 w-3" />
                             Admin
                         </Badge>
+                        <Separator orientation="vertical" className="h-6 hidden md:block" />
+                        <AdminNav adminEmail={adminEmail} isMasterAdmin={isMasterAdmin} className="hidden md:flex" />
                     </div>
                     <div className="flex flex-1 items-center justify-end gap-2">
                         {/* Session countdown */}

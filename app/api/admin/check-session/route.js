@@ -1,34 +1,50 @@
 import { NextResponse } from "next/server";
-import { securityHeaders, readJsonBody } from "@/lib/api-security";
-import { hasValidAdminSession } from "@/lib/admin-verification-store";
+import { securityHeaders } from "@/lib/api-security";
+import { validateSessionToken, SESSION_COOKIE_NAME } from "@/lib/admin-verification-store";
+import { checkAdminStatus } from "@/lib/admin-auth";
 
 /**
- * POST /api/admin/check-session
- * Check if the admin has a valid session
+ * GET /api/admin/check-session
+ * Check if the admin has a valid session using HTTP-only cookie
+ * Returns the authenticated admin email from the server session (not from client)
  */
-export async function POST(request) {
+export async function GET(request) {
     try {
-        const bodyResult = await readJsonBody(request);
-        if (!bodyResult.ok) {
+        // Get session token from HTTP-only cookie
+        const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+        
+        if (!sessionToken) {
             return NextResponse.json(
-                { valid: false, error: 'Invalid request' },
-                { status: 400, headers: securityHeaders }
+                { valid: false, error: 'No session' },
+                { status: 200, headers: securityHeaders }
             );
         }
-
-        const { email } = bodyResult.body;
-
-        if (!email) {
-            return NextResponse.json(
-                { valid: false, error: 'Email required' },
-                { status: 400, headers: securityHeaders }
+        
+        // Validate token and get the authenticated email from server
+        const session = validateSessionToken(sessionToken);
+        
+        if (!session.valid) {
+            // Clear the invalid cookie
+            const res = NextResponse.json(
+                { valid: false, error: 'Session expired' },
+                { status: 200, headers: securityHeaders }
             );
+            res.cookies.delete(SESSION_COOKIE_NAME);
+            return res;
         }
-
-        const isValid = hasValidAdminSession(email);
-
+        
+        // Check admin status from database
+        const adminStatus = await checkAdminStatus(session.email);
+        
         return NextResponse.json(
-            { valid: isValid },
+            { 
+                valid: true, 
+                // Return the authenticated email from server session
+                // This is the SOURCE OF TRUTH for admin identity
+                email: session.email,
+                expiresAt: session.expiresAt,
+                isMasterAdmin: adminStatus.isMasterAdmin
+            },
             { status: 200, headers: securityHeaders }
         );
 
@@ -39,5 +55,14 @@ export async function POST(request) {
             { status: 500, headers: securityHeaders }
         );
     }
+}
+
+/**
+ * POST /api/admin/check-session (legacy - deprecated)
+ * Maintained for backward compatibility but clients should use GET
+ */
+export async function POST(request) {
+    // Redirect to GET-based session check
+    return GET(request);
 }
 
