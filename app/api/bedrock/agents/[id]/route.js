@@ -128,8 +128,6 @@ export async function GET(request, { params }) {
             console.warn("Could not fetch knowledge bases:", error?.message || String(error));
         }
 
-        const agent = agentResponse.agent;
-
         return NextResponse.json({
             agent: {
                 id: agent.agentId,
