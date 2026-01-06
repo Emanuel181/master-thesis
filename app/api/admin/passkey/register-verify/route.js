@@ -31,6 +31,10 @@ export async function POST(request) {
         
         const normalizedEmail = email.toLowerCase().trim();
         
+        // Get request origin for WebAuthn configuration
+        const requestOrigin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/');
+        console.log('[Register-Verify] Request origin:', requestOrigin);
+        
         // Verify email is a registered admin in database
         const adminAccount = await prisma.adminAccount.findUnique({
             where: { email: normalizedEmail },
@@ -42,7 +46,7 @@ export async function POST(request) {
         }
         
         console.log('[Register-Verify] Calling verifyPasskeyRegistration...');
-        const result = await verifyPasskeyRegistration(normalizedEmail, response, deviceName);
+        const result = await verifyPasskeyRegistration(normalizedEmail, response, deviceName, requestOrigin);
         console.log('[Register-Verify] Result:', result);
         if (result.verified) {
             // Grant admin session after successful passkey registration
@@ -61,7 +65,7 @@ export async function POST(request) {
                 httpOnly: true,
                 secure: isProduction,
                 sameSite: 'strict',
-                path: '/admin',
+                path: '/', // Must be '/' to cover both /admin pages and /api/admin routes
                 maxAge: SESSION_VALIDITY_MS / 1000,
             });
             

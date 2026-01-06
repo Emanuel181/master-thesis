@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server';
 import { verifyPasskeyAuthentication } from '@/lib/admin-passkey';
 import { grantSession, SESSION_COOKIE_NAME, SESSION_VALIDITY_MS } from '@/lib/admin-verification-store';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Check if we're in production
 const isProduction = process.env.NODE_ENV === 'production';
@@ -28,6 +29,23 @@ export async function POST(request) {
         
         const normalizedEmail = email.toLowerCase().trim();
         
+        // Rate limit by email: 5 verification attempts per minute (stricter than options)
+        const rateLimitResult = await rateLimit({
+            key: `passkey-auth-verify:${normalizedEmail}`,
+            limit: 5,
+            windowMs: 60 * 1000,
+        });
+        
+        if (!rateLimitResult.allowed) {
+            return NextResponse.json(
+                { error: 'Too many authentication attempts. Please try again later.' },
+                { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) } }
+            );
+        }
+        
+        // Get request origin for WebAuthn configuration
+        const requestOrigin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/');
+        
         // Verify email is a registered admin in database
         const adminAccount = await prisma.adminAccount.findUnique({
             where: { email: normalizedEmail },
@@ -38,7 +56,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
         
-        const result = await verifyPasskeyAuthentication(normalizedEmail, response);
+        const result = await verifyPasskeyAuthentication(normalizedEmail, response, requestOrigin);
         
         if (result.verified) {
             // Grant admin session after successful passkey authentication
@@ -58,7 +76,7 @@ export async function POST(request) {
                 httpOnly: true,
                 secure: isProduction,
                 sameSite: 'strict',
-                path: '/admin',
+                path: '/', // Must be '/' to cover both /admin pages and /api/admin routes
                 maxAge: SESSION_VALIDITY_MS / 1000, // Convert to seconds
             });
             

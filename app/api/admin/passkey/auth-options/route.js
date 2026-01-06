@@ -11,19 +11,34 @@
 import { NextResponse } from 'next/server';
 import { generatePasskeyAuthenticationOptions, hasPasskey } from '@/lib/admin-passkey';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request) {
     try {
         const { email } = await request.json();
-        
-        console.log('[Auth-Options] Request for email:', email);
         
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
         
         const normalizedEmail = email.toLowerCase().trim();
-        console.log('[Auth-Options] Normalized email:', normalizedEmail);
+        
+        // Rate limit by email: 10 attempts per minute
+        const rateLimitResult = await rateLimit({
+            key: `passkey-auth-options:${normalizedEmail}`,
+            limit: 10,
+            windowMs: 60 * 1000,
+        });
+        
+        if (!rateLimitResult.allowed) {
+            return NextResponse.json(
+                { error: 'Too many authentication attempts. Please try again later.' },
+                { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) } }
+            );
+        }
+        
+        // Get request origin for WebAuthn configuration
+        const requestOrigin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/');
         
         // Verify email is a registered admin in database
         const adminAccount = await prisma.adminAccount.findUnique({
@@ -31,15 +46,12 @@ export async function POST(request) {
             select: { emailVerified: true, isMasterAdmin: true }
         });
         
-        console.log('[Auth-Options] Admin found:', !!adminAccount);
-        
         if (!adminAccount || !adminAccount.emailVerified) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
         
         // Check if admin has passkeys
         const hasExistingPasskey = await hasPasskey(normalizedEmail);
-        console.log('[Auth-Options] Has passkey:', hasExistingPasskey);
         
         if (!hasExistingPasskey) {
             return NextResponse.json({ 
@@ -48,8 +60,7 @@ export async function POST(request) {
             }, { status: 400 });
         }
         
-        const options = await generatePasskeyAuthenticationOptions(normalizedEmail);
-        console.log('[Auth-Options] Generated options, allowCredentials count:', options?.allowCredentials?.length);
+        const options = await generatePasskeyAuthenticationOptions(normalizedEmail, requestOrigin);
         
         return NextResponse.json({
             options,

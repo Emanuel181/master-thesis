@@ -117,6 +117,7 @@ jobs:
             --target runner \
             --build-arg DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY="${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}" \
+            --build-arg NEXT_PUBLIC_APP_URL="https://vulniq.org" \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
             .
@@ -257,7 +258,6 @@ jobs:
           SECRET_EMAIL_SERVER_PORT: ${{ secrets.EMAIL_SERVER_PORT }}
           SECRET_EMAIL_SERVER_USER: ${{ secrets.EMAIL_SERVER_USER }}
           SECRET_EMAIL_SERVER_PASSWORD: ${{ secrets.EMAIL_SERVER_PASSWORD }}
-          SECRET_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           SECRET_MASTER_USERNAME: ${{ secrets.MASTER_USERNAME }}
           SECRET_MASTER_PASSWORD: ${{ secrets.MASTER_PASSWORD }}
           SECRET_FEEDBACK_SPREADSHEET_ID: ${{ secrets.FEEDBACK_SPREADSHEET_ID }}
@@ -299,7 +299,6 @@ jobs:
             --arg email_port "$SECRET_EMAIL_SERVER_PORT" \
             --arg email_user "$SECRET_EMAIL_SERVER_USER" \
             --arg email_pass "$SECRET_EMAIL_SERVER_PASSWORD" \
-            --arg admin_email "$SECRET_ADMIN_EMAIL" \
             --arg master_user "$SECRET_MASTER_USERNAME" \
             --arg master_pass "$SECRET_MASTER_PASSWORD" \
             --arg feedback_id "$SECRET_FEEDBACK_SPREADSHEET_ID" \
@@ -346,7 +345,6 @@ jobs:
                   {name: "EMAIL_SERVER_PORT", value: $email_port},
                   {name: "EMAIL_SERVER_USER", value: $email_user},
                   {name: "EMAIL_SERVER_PASSWORD", value: $email_pass},
-                  {name: "ADMIN_EMAIL", value: $admin_email},
                   {name: "MASTER_USERNAME", value: $master_user},
                   {name: "MASTER_PASSWORD", value: $master_pass},
                   {name: "FEEDBACK_SPREADSHEET_ID", value: $feedback_id},

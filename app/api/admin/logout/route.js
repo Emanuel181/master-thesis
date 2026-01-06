@@ -25,7 +25,7 @@ export async function POST(request) {
         // Delete the session cookie
         res.cookies.delete({
             name: SESSION_COOKIE_NAME,
-            path: '/admin',
+            path: '/', // Must match the path used when setting the cookie
         });
         
         return res;

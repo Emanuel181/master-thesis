@@ -1124,15 +1124,6 @@ export default function AdminManagementPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Navigation */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>Admin Pages:</span>
-                        <Link href="/admin/articles" className="text-[var(--brand-accent)] hover:underline">Articles</Link>
-                        <span>•</span>
-                        <Link href="/admin/supporters" className="text-[var(--brand-accent)] hover:underline">Supporters</Link>
-                        <span>•</span>
-                        <Link href="/admin/users" className="text-[var(--brand-accent)] hover:underline">Users</Link>
-                    </div>
                 </main>
 
                 {/* Add Admin Dialog */}

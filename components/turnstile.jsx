@@ -170,6 +170,7 @@ export const Turnstile = forwardRef(function Turnstile({
 }, ref) {
     const containerRef = useRef(null);
     const widgetIdRef = useRef(null);
+    const verifiedRef = useRef(false); // Track if already verified to prevent reset
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [retryCount, setRetryCount] = useState(0);
@@ -200,6 +201,7 @@ export const Turnstile = forwardRef(function Turnstile({
     const resolvedSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
     const reset = useCallback(() => {
+        verifiedRef.current = false; // Allow re-verification
         if (widgetIdRef.current != null && window.turnstile) {
             window.turnstile.reset(widgetIdRef.current);
         }
@@ -269,10 +271,20 @@ export const Turnstile = forwardRef(function Turnstile({
         let expiryTimer = null;
 
         const initWidget = async () => {
+            // Don't reinitialize if already verified successfully
+            if (verifiedRef.current && widgetIdRef.current != null) {
+                return;
+            }
+            
             try {
                 await loadTurnstileScript();
 
                 if (!mountedRef.current || !containerRef.current) return;
+                
+                // Don't reinitialize if verified while loading script
+                if (verifiedRef.current && widgetIdRef.current != null) {
+                    return;
+                }
 
                 // Remove existing widget before creating new one
                 remove();
@@ -293,12 +305,17 @@ export const Turnstile = forwardRef(function Turnstile({
                         appearance,
                         callback: (token) => {
                             if (!mountedRef.current) return;
+                            // Mark as verified to prevent re-initialization
+                            verifiedRef.current = true;
                             onSuccessRef.current?.(token);
 
                             if (refreshBeforeExpiry > 0) {
                                 const refreshTime = TOKEN_VALIDITY_MS - refreshBeforeExpiry;
                                 expiryTimer = setTimeout(() => {
-                                    if (mountedRef.current) reset();
+                                    if (mountedRef.current) {
+                                        verifiedRef.current = false; // Allow refresh
+                                        reset();
+                                    }
                                 }, refreshTime);
                             }
                         },

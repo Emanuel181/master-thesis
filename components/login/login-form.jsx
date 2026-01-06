@@ -361,8 +361,10 @@ function LoginFormInner({ className, ...props }) {
                             </div>
 
                             {/* Turnstile Widget - Only shown for email sign-in */}
-                            <div className="flex justify-center">
+                            {/* key="stable" prevents re-mounting on parent state changes */}
+                            <div className="flex justify-center" key="turnstile-container">
                                 <Turnstile
+                                    key="turnstile-widget"
                                     ref={turnstileRef}
                                     onSuccess={handleTurnstileSuccess}
                                     onError={handleTurnstileError}
