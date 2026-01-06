@@ -545,13 +545,13 @@ Buildbetter
 
 apps with VulnIQ
 
-## Who Benefits from VulnIQ?
+## Who benefits from VulnIQ?
 
 From learners to enterprises, VulnIQ adapts to your workflow.
 
 ### 01
 
-### Security Learners
+### Security learners
 
 Hands-on insight with real vulnerabilities. Four agents guide you through detection, fixes, testing, and documentation.
 
@@ -569,33 +569,33 @@ Connect theory with practice. Students learn real remediation with curriculum-al
 
 ### 04
 
-### Open Source
+### Open source
 
 Transparent, community-driven security. Shared knowledge bases produce trustworthy fixes.
 
 ### 05
 
-### Enterprise Teams
+### Enterprise teams
 
 Scale security across large codebases with specialized prompts and compliance tracking.
 
-#### Guided Learning
+#### Guided learning
 
 Step-by-step remediation
 
-#### Move Fast
+#### Move fast
 
 Security at startup speed
 
-#### Academic Focus
+#### Academic focus
 
 Theory meets practice
 
-#### Community Driven
+#### Community driven
 
 Transparent improvements
 
-#### Enterprise Scale
+#### Enterprise scale
 
 Compliant & repeatable
 
@@ -607,19 +607,19 @@ LLMs act as central controllers orchestrating reasoning and tool interaction
 
 ![Zero Hallucinations](https://vulniq.org/demo/zero-hallucinations.png)
 
-Zero Hallucinations
+Zero hallucinations
 
 Knowledge-grounded fixes eliminate unreliable or fabricated remediation suggestions
 
 ![Security Knowledge](https://vulniq.org/demo/security-knowledge.png)
 
-Security Knowledge
+Security knowledge
 
 RAG retrieves best-practice guidelines, relevant code snippets, and historical fixes
 
 ![Context-Aware](https://vulniq.org/demo/context-aware.png)
 
-Context-Aware
+Context-aware
 
 Specialized retrieval methods yield substantial improvements over baselines
 
@@ -627,7 +627,7 @@ Specialized retrieval methods yield substantial improvements over baselines
 
 Don't get locked into a single ecosystem. VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost for your specific use cases.
 
-OpenAIAnthropicGoogle GeminiLlama
+OpenAI, Anthropic, Google, Gemini, Llama
 
 ### Model agnostic
 
@@ -637,7 +637,7 @@ Choose among state of the art providers to power your agents.
 
 Making code security autonomous by default
 
-[Get Started](https://vulniq.org/login) [Learn More](https://vulniq.org/#features)
+[Get started](https://vulniq.org/login) [Learn more](https://vulniq.org/#features)
 
 ## Frequently Asked Questions
 
@@ -673,7 +673,7 @@ Understanding SQL injection: detection and prevention
 
 SQL injection remains one of the most dangerous vulnerabilities in web applications. Learn how attackers exploit database queries and discover proven strategies to protect your applications.
 
-[Read Article](https://vulniq.org/blog/understanding-sql-injection-prevention)
+[Read article](https://vulniq.org/blog/understanding-sql-injection-prevention)
 
 Security Testing
 
@@ -683,7 +683,7 @@ Modern application security testing: SAST and DAST strategy
 
 Discover how to combine static and dynamic security testing methodologies to create a robust application security program and integrate testing into your CI/CD pipeline.
 
-[Read Article](https://vulniq.org/blog/modern-application-security-testing-strategies)
+[Read article](https://vulniq.org/blog/modern-application-security-testing-strategies)
 
 Web Security
 
@@ -693,7 +693,7 @@ Cross-site scripting defense: protecting your web apps
 
 Cross-site scripting vulnerabilities allow attackers to inject malicious scripts into trusted websites. Learn the different types of XSS attacks and implement effective defenses.
 
-[Read Article](https://vulniq.org/blog/cross-site-scripting-defense-guide)
+[Read article](https://vulniq.org/blog/cross-site-scripting-defense-guide)
 
 [View all articles](https://vulniq.org/blog)
 
@@ -701,7 +701,7 @@ Cross-site scripting vulnerabilities allow attackers to inject malicious scripts
 
 VulnIQ
 
-You can try VulnIQ right now - no account required.Experience AI-powered code security analysis instantly.
+You can try VulnIQ right now.Experience AI-powered code security analysis.
 
 [Try the interactive demo](https://vulniq.org/demo) [Learn more](https://vulniq.org/about)
 
@@ -757,7 +757,7 @@ Accessibility by VulnIQ ❤️
 
 [![Logo](https://vulniq.org/_next/image?url=%2Fweb-app-manifest-512x512.png&w=48&q=75)VulnIQ](https://vulniq.org/)
 
-[Back to Home](https://vulniq.org/) [Services are operational](https://status.vulniq.org/)
+[Back to home](https://vulniq.org/) [Services are operational](https://status.vulniq.org/)
 
 Welcome
 
@@ -831,7 +831,7 @@ Accessibility by VulnIQ ❤️
 
 # Changelog
 
-[Back to Home](https://vulniq.org/)
+[Back to home](https://vulniq.org/)
 
 December 2025
 
@@ -935,7 +935,7 @@ Building the foundation for RAG (Retrieval-Augmented Generation).
 
 #### Knowledge base
 
-- Define "Use Cases" to group related security documents.
+- Define "Use cases" to group related security documents.
 - Add descriptions and metadata to Use Cases for better context.
 - Import and index documents (PDFs, Markdown) relevant to each Use Case.
 
@@ -1663,7 +1663,7 @@ Developing agentic workflows that can autonomously analyze, reason about, and re
 
 This project is part of a Master's thesis focused on advancing the field of Automated Program Repair through the integration of modern LLMs and knowledge retrieval systems.
 
-[View Prototype](https://vulniq.org/login)
+[View prototype](https://vulniq.org/login)
 
 ### Built with modern technologies
 

@@ -493,7 +493,7 @@ export function UseCaseGroupsPanel({
             {viewMode === "tree" && (
             <ScrollArea className="flex-1 h-0">
                 <div className="p-2 space-y-1">
-                    {/* All Use Cases view */}
+                    {/* All use cases view */}
                     <button
                         onClick={() => onSelectGroup(null)}
                         className={cn(
@@ -504,7 +504,7 @@ export function UseCaseGroupsPanel({
                         )}
                     >
                         <LayoutGrid className="h-4 w-4 shrink-0" />
-                        <span className="truncate">All Use Cases</span>
+                        <span className="truncate">All use cases</span>
                         <span className="ml-auto text-xs text-muted-foreground">
                             {useCases.length}
                         </span>
@@ -711,7 +711,7 @@ export function UseCaseGroupsPanel({
             {viewMode === "grid" && (
             <ScrollArea className="flex-1 h-0">
                 <div className="p-2 space-y-2">
-                    {/* All Use Cases card */}
+                    {/* All use cases card */}
                     <button
                         onClick={() => onSelectGroup(null)}
                         className={cn(
@@ -725,7 +725,7 @@ export function UseCaseGroupsPanel({
                             <LayoutGrid className="h-5 w-5" />
                         </div>
                         <div className="flex-1 text-left">
-                            <p className="text-sm font-medium">All Use Cases</p>
+                            <p className="text-sm font-medium">All use cases</p>
                             <p className="text-xs text-muted-foreground">{useCases.length} items</p>
                         </div>
                     </button>

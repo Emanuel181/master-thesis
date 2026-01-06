@@ -174,6 +174,7 @@ export function ArticleEditor() {
   const [deletingId, setDeletingId] = useState(null);
   const [submittingId, setSubmittingId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [articleSearchTerm, setArticleSearchTerm] = useState("");
 
   // Pagination state per tab
   const [pages, setPages] = useState({
@@ -346,19 +347,21 @@ export function ArticleEditor() {
     }
   };
 
-  // Refresh single tab
-  const handleRefreshTab = async (tabId) => {
-    setRefreshingTab(tabId);
+  // Refresh only the current category/tab
+  const handleRefreshCategory = async () => {
+    setRefreshingTab(activeTab);
     await fetchArticles();
     setRefreshingTab(null);
+    const tabLabel = TABS.find(t => t.id === activeTab)?.label || "Articles";
+    toast.success(`${tabLabel} refreshed`);
   };
 
-  // Refresh all tabs
+  // Refresh all articles from all categories
   const handleRefreshAll = async () => {
     setRefreshingTab("all_global");
     await fetchArticles();
     setRefreshingTab(null);
-    toast.success("Articles refreshed");
+    toast.success("All articles refreshed");
   };
 
   // Select article for editing
@@ -385,14 +388,31 @@ export function ArticleEditor() {
     }
   };
 
-  // Filter articles by tab
+  // Filter articles by tab and search
   const getFilteredArticles = (tabId) => {
     const tab = TABS.find((t) => t.id === tabId);
-    if (!tab || !tab.status) return articles;
-    if (tab.status === "PUBLISHED") {
-      return articles.filter((a) => a.status === "PUBLISHED" || a.status === "APPROVED");
+    let filtered = articles;
+    
+    // Filter by status
+    if (tab && tab.status) {
+      if (tab.status === "PUBLISHED") {
+        filtered = filtered.filter((a) => a.status === "PUBLISHED" || a.status === "APPROVED");
+      } else {
+        filtered = filtered.filter((a) => a.status === tab.status);
+      }
     }
-    return articles.filter((a) => a.status === tab.status);
+    
+    // Filter by search term
+    if (articleSearchTerm.trim()) {
+      const searchLower = articleSearchTerm.toLowerCase();
+      filtered = filtered.filter((a) =>
+        a.title?.toLowerCase().includes(searchLower) ||
+        a.excerpt?.toLowerCase().includes(searchLower) ||
+        a.category?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return filtered;
   };
 
   // Paginated articles
@@ -454,19 +474,21 @@ export function ArticleEditor() {
   const canSubmit = selectedArticle && ["DRAFT", "REJECTED"].includes(selectedArticle.status);
 
   return (
-    <div className="flex h-full gap-4 p-4">
+    <div className="flex h-full gap-2 sm:gap-4 p-2 sm:p-4">
       {/* Left Sidebar - Articles List Card */}
+      {/* On mobile: absolute overlay, on desktop: side panel */}
       <Card className={cn(
         "flex flex-col transition-all duration-300 ease-in-out shrink-0",
-        sidebarOpen ? "w-80" : "w-0 p-0 border-0 overflow-hidden"
+        "max-md:absolute max-md:inset-2 max-md:z-50 max-md:shadow-xl",
+        sidebarOpen ? "w-full sm:w-72 md:w-80" : "w-0 p-0 border-0 overflow-hidden max-md:hidden"
       )}>
         {sidebarOpen && (
           <>
             <CardHeader className="pb-3 space-y-0 border-b">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-base">Your Articles</CardTitle>
-                  <Badge variant="secondary">{counts.all}</Badge>
+                <div className="flex items-center gap-2 min-w-0">
+                  <CardTitle className="text-sm sm:text-base whitespace-nowrap">Your Articles</CardTitle>
+                  <Badge variant="secondary" className="shrink-0">{counts.all}</Badge>
                 </div>
                 <div className="flex items-center gap-1">
                   <TooltipProvider>
@@ -495,7 +517,7 @@ export function ArticleEditor() {
 
             <CardContent className="flex-1 flex flex-col p-0 min-h-0">
               {/* Status filter dropdown instead of cluttered tabs */}
-              <div className="px-4 py-3 border-b">
+              <div className="px-4 py-3 border-b space-y-2">
                 <div className="flex items-center gap-2">
                   <Select value={activeTab} onValueChange={setActiveTab}>
                     <SelectTrigger className="w-full h-9">
@@ -520,13 +542,23 @@ export function ArticleEditor() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={handleRefreshAll} disabled={refreshingTab !== null}>
-                          <RefreshCw className={cn("h-4 w-4", refreshingTab === "all" && "animate-spin")} />
+                        <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={handleRefreshCategory} disabled={refreshingTab !== null}>
+                          <RefreshCw className={cn("h-4 w-4", refreshingTab === activeTab && "animate-spin")} />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Refresh all</TooltipContent>
+                      <TooltipContent>Refresh {TABS.find(t => t.id === activeTab)?.label || "category"}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+                </div>
+                {/* Search input */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder={`Search ${TABS.find(t => t.id === activeTab)?.label || "articles"}...`}
+                    value={articleSearchTerm}
+                    onChange={(e) => setArticleSearchTerm(e.target.value)}
+                    className="h-8 pl-8 text-xs"
+                  />
                 </div>
               </div>
 
@@ -581,63 +613,63 @@ export function ArticleEditor() {
                                         <p className="font-medium text-sm truncate flex-1">{article.title || "Untitled"}</p>
                                       </div>
                                       <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{truncateExcerpt(article.excerpt)}</p>
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0.5", statusConfig.color)}>
-                                          <StatusIcon className="h-2.5 w-2.5 mr-1" />
-                                          {statusConfig.label}
+                                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                        <Badge variant="secondary" className={cn("text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shrink-0", statusConfig.color)}>
+                                          <StatusIcon className="h-2 w-2 sm:h-2.5 sm:w-2.5 mr-0.5 sm:mr-1" />
+                                          <span className="truncate max-w-[60px] sm:max-w-none">{statusConfig.label}</span>
                                         </Badge>
                                         {article.readTime && (
-                                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                            <Clock className="h-2.5 w-2.5" />{article.readTime}
+                                          <span className="text-[9px] sm:text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+                                            <Clock className="h-2 w-2 sm:h-2.5 sm:w-2.5" />{article.readTime}
                                           </span>
                                         )}
                                         {article.scheduledForDeletionAt && (
-                                          <span className="text-[10px] text-orange-600 dark:text-orange-400 flex items-center gap-0.5">
-                                            Deletes: {new Date(article.scheduledForDeletionAt).toLocaleDateString()}
+                                          <span className="text-[9px] sm:text-[10px] text-orange-600 dark:text-orange-400 flex items-center gap-0.5 truncate">
+                                            <span className="hidden sm:inline">Deletes:</span> {new Date(article.scheduledForDeletionAt).toLocaleDateString()}
                                           </span>
                                         )}
                                       </div>
                                     </div>
 
-                                    {(isDraft || canImportToDrafts) && (
-                                      <div className="flex flex-col gap-1 shrink-0">
-                                        {canImportToDrafts ? (
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleImportToDrafts(article); }} disabled={submittingId === article.id}>
-                                                  {submittingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>Import to Drafts</TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        ) : (
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleSubmitForReview(article); }} disabled={submittingId === article.id}>
-                                                  {submittingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>Submit for review</TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        )}
-                                        {isDraft && (
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); setArticleToDelete(article); setDeleteDialogOpen(true); }} disabled={deletingId === article.id}>
-                                                  {deletingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>Delete</TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        )}
-                                      </div>
-                                    )}
+                                    <div className="flex flex-col gap-1 shrink-0">
+                                      {/* Import to Drafts button - for rejected and scheduled for deletion */}
+                                      {canImportToDrafts && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleImportToDrafts(article); }} disabled={submittingId === article.id}>
+                                                {submittingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Import to Drafts</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      {/* Submit for review button - only for drafts */}
+                                      {isDraft && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleSubmitForReview(article); }} disabled={submittingId === article.id}>
+                                                {submittingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Submit for review</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      {/* Delete button - for all articles */}
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button variant="outline" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); setArticleToDelete(article); setDeleteDialogOpen(true); }} disabled={deletingId === article.id}>
+                                              {deletingId === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>Delete</TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    </div>
                                   </div>
                                 </CardContent>
                               </Card>
@@ -677,48 +709,47 @@ export function ArticleEditor() {
       </Card>
 
       {/* Right Panel - Edit Article Card */}
-      <Card className="flex-1 flex flex-col min-h-0">
-        <CardHeader className="pb-3 shrink-0 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {!sidebarOpen && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(true)}>
-                        <PanelLeft className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Open sidebar</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <PenLine className="h-4 w-4" />
-                  {selectedArticle ? "Edit Article" : "Write Article"}
+      <Card className="flex-1 flex flex-col min-h-0 min-w-0">
+        <CardHeader className="pb-2 sm:pb-3 shrink-0 border-b px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              {/* Show open sidebar button when sidebar is closed OR always on mobile */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" className={cn("h-8 w-8 shrink-0", sidebarOpen && "md:hidden")} onClick={() => setSidebarOpen(!sidebarOpen)}>
+                      <PanelLeft className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{sidebarOpen ? "Close sidebar" : "Open sidebar"}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <PenLine className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{selectedArticle ? "Edit Article" : "Write Article"}</span>
                 </CardTitle>
                 {selectedArticle && (
-                  <CardDescription className="truncate max-w-[300px]">{selectedArticle.title || "Untitled"}</CardDescription>
+                  <CardDescription className="truncate max-w-full sm:max-w-[300px]">{selectedArticle.title || "Untitled"}</CardDescription>
                 )}
               </div>
             </div>
             {selectedArticle && (
-              <div className="flex items-center gap-2">
-                <Badge className={cn("font-normal", STATUS_CONFIG[selectedArticle.status]?.color)}>
-                  {React.createElement(STATUS_CONFIG[selectedArticle.status]?.icon || FileText, { className: "h-3 w-3 mr-1" })}
-                  {STATUS_CONFIG[selectedArticle.status]?.label || "Unknown"}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <Badge className={cn("font-normal text-[10px] sm:text-xs shrink-0", STATUS_CONFIG[selectedArticle.status]?.color)}>
+                  {React.createElement(STATUS_CONFIG[selectedArticle.status]?.icon || FileText, { className: "h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" })}
+                  <span className="hidden xs:inline">{STATUS_CONFIG[selectedArticle.status]?.label || "Unknown"}</span>
                 </Badge>
                 {canEdit && (
-                  <Button size="sm" variant="outline" onClick={handleUpdateArticle}>
+                  <Button size="sm" variant="outline" onClick={handleUpdateArticle} className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">
                     <Save className="h-3 w-3 mr-1" />
-                    Save
+                    <span className="hidden sm:inline">Save</span>
                   </Button>
                 )}
                 {canSubmit && (
-                  <Button size="sm" onClick={() => handleSubmitForReview(selectedArticle)} disabled={submittingId === selectedArticle.id}>
+                  <Button size="sm" onClick={() => handleSubmitForReview(selectedArticle)} disabled={submittingId === selectedArticle.id} className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">
                     {submittingId === selectedArticle.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
-                    Submit
+                    <span className="hidden sm:inline">Submit</span>
                   </Button>
                 )}
               </div>
@@ -730,7 +761,7 @@ export function ArticleEditor() {
           <>
             <CardContent className="flex-1 min-h-0 p-0">
               <ScrollArea className="h-full">
-                <div className="p-6 space-y-6">
+                <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
                   {/* Cover Section Card */}
                   <Card>
                     <CardHeader className="pb-3">
@@ -740,11 +771,12 @@ export function ArticleEditor() {
                     <CardContent className="space-y-4">
                       {/* Cover Preview with Icon */}
                       <div
-                        className="relative h-36 rounded-lg overflow-hidden border"
+                        className="relative h-36 rounded-xl overflow-hidden shadow-sm ring-1 ring-border/50"
                         style={{
                           background: editFormState.coverType === "gradient"
                             ? editFormState.gradient
-                            : (editFormState.coverImage ? `url(${editFormState.coverImage}) center/cover` : "hsl(var(--muted))")
+                            : (editFormState.coverImage ? `url(${editFormState.coverImage}) center/cover no-repeat` : "hsl(var(--muted))"),
+                          backgroundSize: editFormState.coverType === "gradient" ? "200% 200%" : "cover"
                         }}
                       >
                         {editFormState.coverType === "image" && !editFormState.coverImage && (
@@ -782,17 +814,17 @@ export function ArticleEditor() {
                         </TabsList>
 
                         <TabsContent value="gradient" className="space-y-4 mt-4">
-                          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                          <div className="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-1.5 sm:gap-2">
                             {PRESET_GRADIENTS.map((g) => (
                               <TooltipProvider key={g.name}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button
                                       className={cn(
-                                        "h-10 rounded-md transition-all border-2",
+                                        "h-10 rounded-md transition-all",
                                         editFormState.gradient === g.value
-                                          ? "border-primary ring-2 ring-primary/20"
-                                          : "border-transparent hover:border-muted-foreground/30"
+                                          ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                          : "ring-1 ring-border/50 hover:ring-2 hover:ring-muted-foreground/50"
                                       )}
                                       style={{ background: g.value }}
                                       onClick={() => setEditFormState((s) => ({ ...s, gradient: g.value }))}

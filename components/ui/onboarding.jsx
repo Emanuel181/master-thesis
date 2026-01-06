@@ -306,7 +306,7 @@ export function OnboardingProvider({ children, steps = defaultSteps }) {
                         )}
                         {isLastStep ? (
                             <Button onClick={completeOnboarding}>
-                                Get Started
+                                Get started
                                 <Check className="h-4 w-4 ml-1" />
                             </Button>
                         ) : (

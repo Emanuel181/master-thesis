@@ -896,7 +896,7 @@ export default function AdminManagementPage() {
                                     href="/"
                                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
-                                    ← Back to Home
+                                    ← Back to home
                                 </Link>
                             </div>
 
@@ -918,7 +918,7 @@ export default function AdminManagementPage() {
             <div className="min-h-screen bg-background">
                 {/* Header */}
                 <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                    <div className="container flex h-14 items-center">
+                    <div className="w-full px-4 sm:px-6 lg:px-8 flex h-14 items-center">
                         <div className="flex items-center gap-4">
                             <Link href="/" className="flex items-center gap-2 font-semibold">
                                 <Image
@@ -967,24 +967,31 @@ export default function AdminManagementPage() {
                 </header>
 
                 {/* Main Content */}
-                <main className="container py-6 space-y-6">
+                <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                     {/* Page Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2">
-                                <Users className="h-6 w-6 text-[var(--brand-accent)]" />
-                                Admin Accounts
-                            </h1>
-                            <p className="text-muted-foreground">
-                                Manage administrator accounts and permissions
-                            </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10">
+                                    <Users className="h-5 w-5 text-[var(--brand-accent)]" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold tracking-tight">Admin Accounts</h1>
+                                    <p className="text-sm text-muted-foreground">
+                                        Manage administrator accounts and permissions
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" onClick={() => fetchAdmins(adminEmail)}>
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 Refresh
                             </Button>
-                            <Button onClick={() => setIsAddDialogOpen(true)}>
+                            <Button 
+                                onClick={() => setIsAddDialogOpen(true)}
+                                className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 shadow-sm"
+                            >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Admin
                             </Button>
@@ -993,10 +1000,15 @@ export default function AdminManagementPage() {
 
                     {/* Messages */}
                     {successMessage && (
-                        <Alert className="bg-green-500/10 border-green-500/30">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <AlertDescription className="text-green-500">{successMessage}</AlertDescription>
-                        </Alert>
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <Alert className="bg-[var(--brand-accent)]/10 border-[var(--brand-accent)]/30 text-[var(--brand-accent)]">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <AlertDescription>{successMessage}</AlertDescription>
+                            </Alert>
+                        </motion.div>
                     )}
                     {error && (
                         <Alert variant="destructive">
@@ -1006,9 +1018,9 @@ export default function AdminManagementPage() {
                     )}
 
                     {/* Admin List */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Administrators</CardTitle>
+                    <Card className="border-border/50 w-full shadow-sm">
+                        <CardHeader className="py-4 px-6 border-b">
+                            <CardTitle className="text-lg font-semibold">Administrators</CardTitle>
                             <CardDescription>
                                 All registered admin accounts. Master admin cannot be deleted.
                             </CardDescription>
@@ -1024,15 +1036,15 @@ export default function AdminManagementPage() {
                                     <p>No admin accounts found</p>
                                 </div>
                             ) : (
-                                <Table>
+                                <Table className="w-full">
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Passkeys</TableHead>
-                                            <TableHead>Created</TableHead>
-                                            <TableHead>Last Login</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                            <TableHead className="font-semibold">Email</TableHead>
+                                            <TableHead className="font-semibold">Status</TableHead>
+                                            <TableHead className="font-semibold">Passkeys</TableHead>
+                                            <TableHead className="font-semibold">Created</TableHead>
+                                            <TableHead className="font-semibold">Last Login</TableHead>
+                                            <TableHead className="text-right font-semibold">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

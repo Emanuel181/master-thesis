@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { requireAdmin, isAdminEmail } from "@/lib/admin-auth";
+import { requireAdmin } from "@/lib/admin-auth";
+import { isAdminEmail } from "@/lib/supporters-data";
 import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/users/[id] - Get user details

@@ -57,12 +57,12 @@ export function EmptyState({
                 <div className="flex items-center gap-3">
                     {action && (
                         <Button onClick={action}>
-                            {actionLabel || "Get Started"}
+                            {actionLabel || "Get started"}
                         </Button>
                     )}
                     {secondaryAction && (
                         <Button variant="outline" onClick={secondaryAction}>
-                            {secondaryActionLabel || "Learn More"}
+                            {secondaryActionLabel || "Learn more"}
                         </Button>
                     )}
                 </div>

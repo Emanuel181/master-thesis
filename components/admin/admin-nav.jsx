@@ -70,12 +70,6 @@ export function AdminNav({ adminEmail, isMasterAdmin = false, className }) {
                     </Link>
                 );
             })}
-            {isMasterAdmin && (
-                <span className="ml-2 flex items-center gap-1 text-xs text-amber-500">
-                    <Shield className="h-3 w-3" />
-                    <span className="hidden md:inline">Master Admin</span>
-                </span>
-            )}
         </nav>
     );
 }

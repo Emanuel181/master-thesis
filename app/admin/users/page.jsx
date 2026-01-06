@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { cn } from "@/lib/utils";
 import {
     Shield,
     ShieldCheck,
@@ -814,16 +815,21 @@ export default function AdminUsersPage() {
         <ScrollArea className="h-screen">
         <div className="min-h-screen bg-background">
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-14 items-center justify-between gap-4">
+            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="w-full px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <Link href="/dashboard" className="flex items-center gap-2">
                             <Image src="/icon0.svg" alt="VulnIQ" width={28} height={28} className="dark:invert" />
                             <span className="font-semibold hidden sm:inline">VulnIQ</span>
                         </Link>
-                        <Badge variant="outline" className="bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30">
+                        <Badge variant="outline" className={cn(
+                            "border-[var(--brand-accent)]/30",
+                            isMasterAdmin 
+                                ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                : "bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]"
+                        )}>
                             <ShieldCheck className="mr-1 h-3 w-3" />
-                            Admin
+                            {isMasterAdmin ? 'Master Admin' : 'Admin'}
                         </Badge>
                         <Separator orientation="vertical" className="h-6 hidden md:block" />
                         <AdminNav adminEmail={adminEmail} isMasterAdmin={isMasterAdmin} className="hidden md:flex" />
@@ -868,11 +874,11 @@ export default function AdminUsersPage() {
                 </div>
             </header>
 
-            <main className="container py-6 space-y-6">
+            <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                 {/* Messages */}
                 {successMessage && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                        <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-600">
+                        <Alert className="bg-[var(--brand-accent)]/10 border-[var(--brand-accent)]/30 text-[var(--brand-accent)]">
                             <CheckCircle2 className="h-4 w-4" />
                             <AlertDescription>{successMessage}</AlertDescription>
                         </Alert>
@@ -906,7 +912,7 @@ export default function AdminUsersPage() {
                     <div className="flex gap-3">
                         <Card className="flex-1 min-w-[120px]">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-blue-500/10"><Users className="h-4 w-4 text-blue-500" /></div>
+                                <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10"><Users className="h-4 w-4 text-[var(--brand-accent)]" /></div>
                                 <div><p className="text-xl font-bold">{stats.totalUsers}</p><p className="text-xs text-muted-foreground">Total</p></div>
                             </CardContent>
                         </Card>
@@ -951,10 +957,10 @@ export default function AdminUsersPage() {
                 </Card>
 
                 {/* Users Table */}
-                <Card>
-                    <CardHeader className="py-4 border-b">
+                <Card className="border-border/50 w-full shadow-sm">
+                    <CardHeader className="py-4 px-6 border-b">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Users</CardTitle>
+                            <CardTitle className="text-lg font-semibold">Users</CardTitle>
                             <Badge variant="secondary">{totalUsers} total</Badge>
                         </div>
                     </CardHeader>
@@ -968,14 +974,14 @@ export default function AdminUsersPage() {
                                 <p className="text-sm">Try adjusting your search or filter</p>
                             </div>
                         ) : (
-                            <Table>
+                            <Table className="w-full">
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[300px]">User</TableHead>
-                                        <TableHead>Details</TableHead>
-                                        <TableHead className="text-center">Warnings</TableHead>
-                                        <TableHead className="text-center">Joined</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                        <TableHead className="w-[300px] font-semibold">User</TableHead>
+                                        <TableHead className="font-semibold">Details</TableHead>
+                                        <TableHead className="text-center font-semibold">Warnings</TableHead>
+                                        <TableHead className="text-center font-semibold">Joined</TableHead>
+                                        <TableHead className="text-right font-semibold">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

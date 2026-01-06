@@ -227,52 +227,32 @@ export default function SupportersPage() {
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
 
-            {/* Floating Navbar */}
-            <FloatingNavbar />
+            {/* Floating Navbar - disabled for footer pages */}            {/* <FloatingNavbar /> */}
 
             {/* Header */}
-            <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-                <div className="flex h-14 items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
-                    <Link href="/" className="flex items-center gap-1.5 sm:gap-2 font-semibold group shrink-0">
-                        <Image
-                            src="/web-app-manifest-512x512.png"
-                            alt="Logo"
-                            className="h-7 w-7 rounded-lg"
-                            width={28}
-                            height={28}
-                        />
-                        <span className="font-bold text-foreground tracking-tight text-base sm:text-lg">VulnIQ</span>
-                    </Link>
-                    <div className="flex items-center gap-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]"
-                        >
+            <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+                <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="flex items-center gap-2 font-semibold text-xl group">
+                            <Image src="/web-app-manifest-512x512.png" alt="Logo" className="w-8 h-8" width={32} height={32} />
+                            <span className="font-bold text-foreground">VulnIQ</span>
+                        </Link>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
-                                <ArrowLeft className="h-4 w-4" />
-                                <span className="sr-only">Back to Home</span>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to home
                             </Link>
                         </Button>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={openPanel}
-                                        className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]"
-                                    >
-                                        <PersonStanding className="h-4 w-4" />
-                                        <span className="sr-only">Accessibility Options</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Accessibility Options</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <button
+                            onClick={openPanel}
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            aria-label="Open Accessibility Menu"
+                            title="Accessibility Options"
+                        >
+                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                        </button>
                         <ThemeToggle />
                     </div>
                 </div>
@@ -280,7 +260,7 @@ export default function SupportersPage() {
 
             {/* Main Content */}
             <ScrollArea className="flex-1" viewportRef={scrollRef}>
-                <main className="relative z-10 container py-8 sm:py-12 lg:py-20 px-4 sm:px-6 lg:px-8">
+                <main className="relative z-10 container mx-auto py-8 sm:py-12 lg:py-20 px-4 sm:px-6 lg:px-8">
                     {/* Hero Section */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}

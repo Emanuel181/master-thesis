@@ -1027,7 +1027,7 @@ export default function KnowledgeBaseVisualization() {
                 </Button>
                 <span className="text-sm text-muted-foreground truncate flex-1">
                     {selectedGroupId === null
-                        ? "All Use Cases"
+                        ? "All use cases"
                         : selectedGroupId === "ungrouped"
                             ? "Ungrouped"
                             : useCaseGroups.find(g => g.id === selectedGroupId)?.name || "All"}

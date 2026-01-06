@@ -239,9 +239,9 @@ export function CTASection() {
             className="flex-1 bg-background p-8 sm:p-10 md:p-12 lg:p-16 flex flex-col justify-center"
           >
             <p className="text-muted-foreground text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8">
-              You can try VulnIQ right now - no account required.
+              You can try VulnIQ right now.
               <span className="block mt-2 text-foreground font-medium">
-                Experience AI-powered code security analysis instantly.
+                Experience AI-powered code security analysis.
               </span>
             </p>
 

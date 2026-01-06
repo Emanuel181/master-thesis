@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { cn } from "@/lib/utils";
 import {
     Shield,
     ShieldCheck,
@@ -973,7 +974,7 @@ export default function AdminSupportersPage() {
                                     href="/"
                                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
-                                    ← Back to Home
+                                    ← Back to home
                                 </Link>
                             </div>
 
@@ -995,7 +996,7 @@ export default function AdminSupportersPage() {
         <div className="min-h-screen bg-background">
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-14 items-center">
+                <div className="w-full px-4 sm:px-6 lg:px-8 flex h-14 items-center">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="flex items-center gap-2 font-semibold">
                             <Image
@@ -1007,9 +1008,14 @@ export default function AdminSupportersPage() {
                             />
                             <span className="hidden sm:inline-block">VulnIQ</span>
                         </Link>
-                        <Badge variant="outline" className="bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30">
+                        <Badge variant="outline" className={cn(
+                            "border-[var(--brand-accent)]/30",
+                            isMasterAdmin 
+                                ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                : "bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]"
+                        )}>
                             <ShieldCheck className="mr-1 h-3 w-3" />
-                            Admin
+                            {isMasterAdmin ? 'Master Admin' : 'Admin'}
                         </Badge>
                         <Separator orientation="vertical" className="h-6 hidden md:block" />
                         <AdminNav adminEmail={adminEmail} isMasterAdmin={isMasterAdmin} className="hidden md:flex" />
@@ -1075,7 +1081,7 @@ export default function AdminSupportersPage() {
                 </div>
             </header>
 
-            <main className="container py-8 space-y-8">
+            <main className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 {/* Success/Error Messages */}
                 {successMessage && (
                     <motion.div

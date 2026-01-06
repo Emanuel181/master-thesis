@@ -10,11 +10,11 @@ const defaultDescriptionClass = "text-xs sm:text-sm font-medium text-muted-foreg
 const useCasesData = [
   {
     number: "01",
-    title: "Security Learners",
+    title: "Security learners",
     description: "Hands-on insight with real vulnerabilities. Four agents guide you through detection, fixes, testing, and documentation.",
     visual: {
       icon: BookOpen,
-      title: "Guided Learning",
+      title: "Guided learning",
       subtitle: "Step-by-step remediation",
       color: "from-cyan-500 to-blue-600",
     },
@@ -25,7 +25,7 @@ const useCasesData = [
     description: "Strong security without a dedicated team. Import code, run the workflow, ship fixes fast.",
     visual: {
       icon: Rocket,
-      title: "Move Fast",
+      title: "Move fast",
       subtitle: "Security at startup speed",
       color: "from-emerald-500 to-teal-600",
     },
@@ -36,29 +36,29 @@ const useCasesData = [
     description: "Connect theory with practice. Students learn real remediation with curriculum-aligned prompts.",
     visual: {
       icon: GraduationCap,
-      title: "Academic Focus",
+      title: "Academic focus",
       subtitle: "Theory meets practice",
       color: "from-violet-500 to-purple-600",
     },
   },
   {
     number: "04",
-    title: "Open Source",
+    title: "Open source",
     description: "Transparent, community-driven security. Shared knowledge bases produce trustworthy fixes.",
     visual: {
       icon: Users,
-      title: "Community Driven",
+      title: "Community driven",
       subtitle: "Transparent improvements",
       color: "from-orange-500 to-rose-600",
     },
   },
   {
     number: "05",
-    title: "Enterprise Teams",
+    title: "Enterprise teams",
     description: "Scale security across large codebases with specialized prompts and compliance tracking.",
     visual: {
       icon: Building2,
-      title: "Enterprise Scale",
+      title: "Enterprise scale",
       subtitle: "Compliant & repeatable",
       color: "from-slate-500 to-zinc-700",
     },
@@ -193,7 +193,7 @@ export function UseCasesScrollReveal({ className }) {
               {/* Section Header */}
               <div className="mb-4 md:mb-6">
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Who Benefits from VulnIQ?
+                  Who benefits from VulnIQ?
                 </h2>
                 <p className="text-muted-foreground text-xs sm:text-sm max-w-sm">
                   From learners to enterprises, VulnIQ adapts to your workflow.

@@ -38,17 +38,17 @@ const defaultItems = [
     image: "/demo/agentic-rag.png", // Add your image to public/demo/
   },
   {
-    title: "Zero Hallucinations",
+    title: "Zero hallucinations",
     description: "Knowledge-grounded fixes eliminate unreliable or fabricated remediation suggestions",
     image: "/demo/zero-hallucinations.png",
   },
   {
-    title: "Security Knowledge",
+    title: "Security knowledge",
     description: "RAG retrieves best-practice guidelines, relevant code snippets, and historical fixes",
     image: "/demo/security-knowledge.png",
   },
   {
-    title: "Context-Aware",
+    title: "Context-aware",
     description: "Specialized retrieval methods yield substantial improvements over baselines",
     image: "/demo/context-aware.png",
   },

@@ -25,7 +25,7 @@ export default function DemoResultsPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                             <Button onClick={() => router.push('/login')} className="gap-2">
-                                Get Started Free
+                                Get started
                                 <ArrowRight className="w-4 h-4" />
                             </Button>
                             <Button variant="outline" onClick={() => router.push('/demo/code-input')}>

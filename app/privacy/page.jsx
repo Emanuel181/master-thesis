@@ -61,8 +61,8 @@ export default function PrivacyPage() {
             <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
 
-            {/* Floating Navbar */}
-            <FloatingNavbar />
+            {/* Floating Navbar - disabled for footer pages */}
+            {/* <FloatingNavbar /> */}
 
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">

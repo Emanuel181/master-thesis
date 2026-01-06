@@ -56,13 +56,13 @@ const ICON_MAP = {
   HardDrive,
 };
 
-const POSTS_PER_PAGE = 3;
+const POSTS_PER_PAGE = 4;
 
 const BlogCard = ({ post }) => {
   const Icon = ICON_MAP[post.iconName] || Shield;
 
   return (
-    <div className="h-full">
+    <div className="h-full w-full max-w-sm">
       <Card className="h-full pt-0 overflow-hidden group bg-card dark:bg-card/50 backdrop-blur-sm border-border/50 dark:border-[rgba(var(--brand-accent-rgb),0.15)] hover:shadow-xl hover:shadow-[rgba(var(--brand-accent-rgb),0.1)] dark:hover:shadow-[rgba(var(--brand-accent-rgb),0.15)] transition-all duration-300 hover:border-[rgba(var(--brand-accent-rgb),0.3)] dark:hover:border-[rgba(var(--brand-accent-rgb),0.4)]">
         <CardContent className="px-0 pt-0">
           <div className="relative overflow-hidden aspect-video rounded-t-xl">
@@ -140,7 +140,7 @@ const BlogCard = ({ post }) => {
             className="flex-1 bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-[var(--brand-primary)]"
           >
             <Link href={`/blog/${post.slug}`}>
-              Read Article
+              Read article
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
@@ -282,17 +282,9 @@ export function BlogSection() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex flex-col-reverse md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+                className="flex flex-wrap justify-center gap-6 lg:gap-8"
               >
-                {/* Invisible placeholders render first in DOM, appear at TOP visually due to flex-col-reverse */}
-                {Array.from({ length: POSTS_PER_PAGE - currentPosts.length }).map((_, index) => (
-                  <div key={`placeholder-${index}`} className="invisible order-last md:order-none" aria-hidden="true">
-                    <BlogCard post={blogPosts[0]} />
-                  </div>
-                ))}
-
-                {/* Real posts render second in DOM, appear at BOTTOM visually due to flex-col-reverse */}
-                {[...currentPosts].reverse().map((post) => (
+                {currentPosts.map((post) => (
                   <BlogCard key={post.id} post={post} />
                 ))}
               </motion.div>

@@ -172,7 +172,7 @@ export const FloatingNavbar = () => {
                                         <ListItem href="/#features" title="Features" icon={Zap}>
                                             Advanced vulnerability detection and AI-driven fixes.
                                         </ListItem>
-                                        <ListItem href="/#use-cases" title="Use Cases" icon={Shield}>
+                                        <ListItem href="/#use-cases" title="Use cases" icon={Shield}>
                                             See how teams use VulnIQ for security.
                                         </ListItem>
                                         <ListItem href="/#connect" title="Integrations" icon={GitBranch}>
@@ -235,7 +235,7 @@ export const FloatingNavbar = () => {
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
                                     <ul className="grid w-[280px] gap-2 p-3">
-                                        <ListItem href="/about" title="About Us" icon={Building2}>
+                                        <ListItem href="/about" title="About us" icon={Building2}>
                                             Learn about our mission and team.
                                         </ListItem>
                                         <ListItem href="/security" title="Security Policy" icon={Shield}>
@@ -363,7 +363,7 @@ export const FloatingNavbar = () => {
                                         className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
                                     >
                                         <Shield className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
-                                        <span className="text-xs font-medium text-foreground">Use Cases</span>
+                                        <span className="text-xs font-medium text-foreground">Use cases</span>
                                     </motion.a>
                                     <motion.a
                                         href="/#connect"
@@ -491,7 +491,7 @@ export const FloatingNavbar = () => {
                                     </>
                                 ) : (
                                     <>
-                                        Get Started
+                                        Get started
                                         <ArrowRight className="w-4 h-4" />
                                     </>
                                 )}

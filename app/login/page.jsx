@@ -87,7 +87,7 @@ export default function LoginPage() {
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                                <span className="hidden sm:inline">Back to Home</span>
+                                <span className="hidden sm:inline">Back to home</span>
                             </Link>
                         </Button>
                         <a

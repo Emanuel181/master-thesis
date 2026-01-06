@@ -69,23 +69,23 @@ export default function SitemapPage() {
             <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
 
-            {/* Floating Navbar */}
-            <FloatingNavbar />
+            {/* Floating Navbar - disabled for footer pages */}
+            {/* <FloatingNavbar /> */}
 
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="flex items-center gap-2 font-semibold text-xl group">
-                            <Image src="/web-app-manifest-512x512.png" alt="Logo" className="w-8 h-8 rounded-lg" width={32} height={32} />
-                            <span className="font-bold text-foreground tracking-tight">VulnIQ</span>
+                            <Image src="/web-app-manifest-512x512.png" alt="Logo" className="w-8 h-8" width={32} height={32} />
+                            <span className="font-bold text-foreground">VulnIQ</span>
                         </Link>
                     </div>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
-                                <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                                <span className="hidden sm:inline">Back to Home</span>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to home
                             </Link>
                         </Button>
                         <button

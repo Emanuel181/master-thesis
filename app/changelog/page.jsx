@@ -4,6 +4,9 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { Footer } from "@/components/landing-page/footer";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useAccessibility } from "@/contexts/accessibilityContext";
+import Image from "next/image";
 import { 
     CheckCircle2, 
     GitCommit, 
@@ -24,12 +27,146 @@ import {
     Rocket,
     Activity,
     Smartphone,
-    ArrowLeft
+    ArrowLeft,
+    PersonStanding
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const changelogData = [
+    {
+        version: "v1.6.0",
+        date: "January 2026",
+        title: "Admin dashboard & security hardening",
+        description: "Comprehensive admin tools and enhanced security infrastructure.",
+        type: "minor",
+        changes: [
+            {
+                category: "Security assessment",
+                icon: <Code2 className="w-4 h-4 text-emerald-500" />,
+                items: [
+                    "Assessed application security using agentic AI systems.",
+                    "Automated security scanning and vulnerability detection.",
+                    "Agentic pentesting workflows to identify and report potential threats."
+                ]
+            },
+            {
+                category: "Admin views",
+                icon: <Shield className="w-4 h-4 text-red-500" />,
+                items: [
+                    "Added admin dashboard for managing users, articles, and supporters.",
+                    "Master admin controls for creating and managing admin accounts.",
+                    "Article review system for approving user-submitted content."
+                ]
+            },
+            {
+                category: "Cloudflare integration",
+                icon: <Shield className="w-4 h-4 text-orange-500" />,
+                items: [
+                    "Integrated Cloudflare for DDoS protection and bot mitigation.",
+                    "Configured threat detection and automatic blocking rules.",
+                    "Added Turnstile CAPTCHA for enhanced form security."
+                ]
+            },
+            {
+                category: "Analytics",
+                icon: <Activity className="w-4 h-4 text-blue-500" />,
+                items: [
+                    "Configured Google Analytics for user behavior insights.",
+                    "Added tracking for key user interactions and page views."
+                ]
+            }
+        ]
+    },
+    {
+        version: "v1.5.0",
+        date: "January 2026",
+        title: "Knowledge base groups & workflow improvements",
+        description: "Better organization for use cases and streamlined workflow configuration.",
+        type: "minor",
+        changes: [
+            {
+                category: "Knowledge base groups",
+                icon: <Database className="w-4 h-4 text-indigo-500" />,
+                items: [
+                    "New groups panel in knowledge base page.",
+                    "Users can now organize use cases into logical groups.",
+                    "Drag and drop support for managing group assignments."
+                ]
+            },
+            {
+                category: "Workflow configuration",
+                icon: <Workflow className="w-4 h-4 text-purple-500" />,
+                items: [
+                    "Improved workflow configuration UI/UX.",
+                    "Streamlined agent selection and pipeline setup.",
+                    "Better visual feedback for workflow steps."
+                ]
+            }
+        ]
+    },
+    {
+        version: "v1.4.0",
+        date: "January 2026",
+        title: "Article publishing & responsive design",
+        description: "User-generated content system and cross-device optimizations.",
+        type: "minor",
+        changes: [
+            {
+                category: "Write articles",
+                icon: <FileText className="w-4 h-4 text-green-500" />,
+                items: [
+                    "New write article section available for all users.",
+                    "Rich text editor for creating security articles and guides.",
+                    "Submit articles for admin review before publishing."
+                ]
+            },
+            {
+                category: "Responsive design",
+                icon: <Smartphone className="w-4 h-4 text-cyan-500" />,
+                items: [
+                    "Mobile, tablet, and desktop layout optimizations.",
+                    "Improved touch interactions and navigation.",
+                    "Consistent spacing and typography across all breakpoints."
+                ]
+            }
+        ]
+    },
+    {
+        version: "v1.3.0",
+        date: "January 2026",
+        title: "Home customization & UI polish",
+        description: "Personalize your dashboard and enjoy a more consistent experience.",
+        type: "minor",
+        changes: [
+            {
+                category: "Home page customization",
+                icon: <Layout className="w-4 h-4 text-amber-500" />,
+                items: [
+                    "New panel position customization on home page.",
+                    "Swap and reorder dashboard panels to your preference.",
+                    "Persistent layout settings across sessions."
+                ]
+            },
+            {
+                category: "Landing page",
+                icon: <Sparkles className="w-4 h-4 text-pink-500" />,
+                items: [
+                    "Improved landing page with enhanced visuals.",
+                    "Better feature showcases and smoother animations."
+                ]
+            },
+            {
+                category: "Bug fixes & polish",
+                icon: <Zap className="w-4 h-4 text-yellow-500" />,
+                items: [
+                    "Fixed keyboard shortcut conflicts and edge cases.",
+                    "Ensured consistent design language across all pages.",
+                    "Improved accessibility and color contrast."
+                ]
+            }
+        ]
+    },
     {
         version: "v1.2.0",
         date: "December 2025",
@@ -86,7 +223,31 @@ const changelogData = [
                 icon: <Layout className="w-4 h-4 text-purple-500" />,
                 items: [
                     "Launched the new public-facing landing page showcasing features and use cases.",
-                    "Integrated smooth scrolling, feature grids, and interactive demos."
+                    "Integrated smooth scrolling, feature grids, and animations."
+                ]
+            }
+        ]
+    },
+    {
+        version: "v1.0.1",
+        date: "December 2025",
+        title: "Interactive demo experience",
+        description: "A fully functional demo simulating all core features without authentication.",
+        type: "patch",
+        changes: [
+            {
+                category: "Demo page",
+                icon: <Sparkles className="w-4 h-4 text-amber-500" />,
+                items: [
+                    "Added interactive demo page simulating the complete working application.",
+                    "Code importing: Demo repository browsing and code input simulation.",
+                    "Customizations: Theme, layout, and editor preferences in demo mode.",
+                    "Use cases: Create, edit, and organize use cases with documents.",
+                    "Groups: Group use cases into logical collections.",
+                    "Prompts: Create and manage AI agent prompts.",
+                    "Repository browsing: Navigate through demo GitHub/GitLab repositories.",
+                    "Article creation: Write and preview security articles.",
+                    "Code scanning: Simulate vulnerability detection and remediation workflows."
                 ]
             }
         ]
@@ -215,28 +376,53 @@ const changelogData = [
 ];
 
 export default function ChangelogPage() {
+    const { openPanel } = useAccessibility();
+    
     return (
         <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 relative">
              {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
 
-            <FloatingNavbar />
+            {/* Floating Navbar - disabled for footer pages */}
+            {/* <FloatingNavbar /> */}
 
             {/* Header */}
-            <div className="border-b border-border/50">
-                <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-32 pb-6 relative z-10">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-                            Changelog
-                        </h1>
+            <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+                <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="flex items-center gap-2 font-semibold text-xl group">
+                            <Image src="/web-app-manifest-512x512.png" alt="Logo" className="w-8 h-8" width={32} height={32} />
+                            <span className="font-bold text-foreground">VulnIQ</span>
+                        </Link>
+                    </div>
+                    <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Home
+                                Back to home
                             </Link>
                         </Button>
+                        <button
+                            onClick={openPanel}
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            aria-label="Open Accessibility Menu"
+                            title="Accessibility Options"
+                        >
+                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                        </button>
+                        <ThemeToggle />
                     </div>
+                </div>
+            </header>
+
+            {/* Title Section */}
+            <div className="border-b border-border/50">
+                <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8 relative z-10">
+                    <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+                        Changelog
+                    </h1>
+                    <p className="text-muted-foreground mt-2">Track all updates and improvements to VulnIQ</p>
                 </div>
             </div>
 

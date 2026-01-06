@@ -30,7 +30,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Edit, Trash2, Github, Eye, RefreshCw, FolderX, FolderOpen, Loader2, CheckCircle2, GitBranch, GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { Plus, Edit, Trash2, Github, Eye, RefreshCw, FolderX, FolderOpen, Loader2, CheckCircle2, GitBranch, GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, ArrowUpDown } from "lucide-react"
 import { GitlabIcon } from "@/components/icons/gitlab"
 import { toast } from "sonner"
 import { useSession, signIn } from "next-auth/react"
@@ -249,6 +249,38 @@ export function HomePage() {
     )
     const [isRefreshingGitlabRepos, setIsRefreshingGitlabRepos] = useState(false)
     const [gitlabSearchTerm, setGitlabSearchTerm] = useState("")
+
+    // Panel swap states (persisted to localStorage)
+    const PANEL_LAYOUT_KEY = 'vulniq-panel-layout';
+    const getInitialPanelLayout = () => {
+        if (typeof window === 'undefined') return { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
+        try {
+            const saved = localStorage.getItem(PANEL_LAYOUT_KEY);
+            return saved ? JSON.parse(saved) : { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
+        } catch {
+            return { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
+        }
+    };
+    const [panelLayout, setPanelLayout] = useState(getInitialPanelLayout);
+
+    // Persist panel layout to localStorage
+    useEffect(() => {
+        try {
+            localStorage.setItem(PANEL_LAYOUT_KEY, JSON.stringify(panelLayout));
+        } catch {}
+    }, [panelLayout]);
+
+    const handleSwapRepoPanels = () => {
+        setPanelLayout(prev => ({ ...prev, repoSwapped: !prev.repoSwapped }));
+    };
+
+    const handleSwapRightPanels = () => {
+        setPanelLayout(prev => ({ ...prev, rightSwapped: !prev.rightSwapped }));
+    };
+
+    const handleSwapColumns = () => {
+        setPanelLayout(prev => ({ ...prev, columnsSwapped: !prev.columnsSwapped }));
+    };
 
     // Persist demo connection state to localStorage
     useEffect(() => {
@@ -940,11 +972,36 @@ export function HomePage() {
     return (
         <ScrollArea className="flex-1 h-full">
             <div className="flex flex-col gap-2 p-2 sm:p-3 pt-0 pb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 auto-rows-min">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 auto-rows-min relative">
+                {/* Swap button between Left and Right columns - centered overlay */}
+                <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleSwapColumns}
+                        className="h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-accent"
+                        title="Swap left and right columns"
+                    >
+                        <ArrowUpDown className="h-4 w-4 rotate-90" />
+                    </Button>
+                </div>
+
                 {/* Left Column - GitHub & GitLab */}
-                <div className="flex flex-col gap-2 sm:gap-3 min-h-0 order-2 lg:order-1">
+                <div className={`flex flex-col gap-2 sm:gap-3 min-h-0 relative ${panelLayout.columnsSwapped ? 'order-2 lg:order-2' : 'order-2 lg:order-1'}`}>
+                {/* Swap button between GitHub and GitLab - overlay */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleSwapRepoPanels}
+                        className="h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-accent"
+                        title="Swap GitHub and GitLab positions"
+                    >
+                        <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                </div>
                 {/* GitHub Card */}
-                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px]">
+                <Card className={`flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px] ${panelLayout.repoSwapped ? 'order-2' : 'order-1'}`}>
                     <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         {isGithubConnected && (
                             <div className="flex items-center gap-1 mb-1">
@@ -1122,7 +1179,7 @@ export function HomePage() {
                 </Card>
 
                 {/* GitLab Card */}
-                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px]">
+                <Card className={`flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px] ${panelLayout.repoSwapped ? 'order-1' : 'order-2'}`}>
                     <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         {isGitlabConnected && (
                             <div className="flex items-center gap-1 mb-1">
@@ -1311,9 +1368,10 @@ export function HomePage() {
                 </div>
 
                 {/* Right Column - Prompts & Current Project */}
-                <div className="flex flex-col gap-2 sm:gap-3 min-h-0 order-1 lg:order-2">
-                {/* Prompts Card */}
-                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md flex-1 min-h-0">
+                <div className={`flex flex-col gap-2 sm:gap-3 min-h-0 ${panelLayout.columnsSwapped ? 'order-1 lg:order-1' : 'order-1 lg:order-2'}`}>
+                {/* Prompts Card Wrapper */}
+                <div className={`relative flex-1 min-h-0 ${panelLayout.rightSwapped ? 'order-3' : 'order-1'}`}>
+                <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md h-full">
                     <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         <div className="flex items-center justify-between gap-2">
                             <CardTitle className="text-xs sm:text-sm md:text-base truncate">AI Agent Prompts</CardTitle>
@@ -1525,9 +1583,23 @@ export function HomePage() {
                         </Tabs>
                     </CardContent>
                 </Card>
+                </div>
+
+                {/* Swap button - always between the two cards */}
+                <div className="relative h-0 order-2 flex items-center justify-center z-10">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleSwapRightPanels}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-accent"
+                        title="Swap Prompts and Current Project positions"
+                    >
+                        <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                </div>
 
                 {/* Current Project Card - Now in right column under Prompts */}
-                <Card className="flex flex-col transition-shadow hover:shadow-md shrink-0">
+                <Card className={`flex flex-col transition-shadow hover:shadow-md shrink-0 ${panelLayout.rightSwapped ? 'order-1' : 'order-3'}`}>
                     <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
