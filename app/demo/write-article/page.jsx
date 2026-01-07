@@ -1,15 +1,8 @@
-'use client'
+import { DemoWriteArticleClient } from "./demo-write-article-client";
 
-import { PageErrorBoundary } from "@/components/ui/error-boundary";
-import { PageTransition } from "@/components/ui/page-transitions";
-import { DemoArticleEditor } from "@/components/dashboard/article-editor/demo-article-editor";
+// Force dynamic rendering to avoid prerender issues with client-side localStorage
+export const dynamic = 'force-dynamic';
 
 export default function DemoWriteArticlePage() {
-    return (
-        <PageErrorBoundary pageName="Write article">
-            <PageTransition pageKey="demo-write-article" variant="default">
-                <DemoArticleEditor />
-            </PageTransition>
-        </PageErrorBoundary>
-    );
+    return <DemoWriteArticleClient />;
 }

@@ -284,14 +284,16 @@ export function DemoArticleEditor() {
 
   // Auto-save every 30 seconds when there's a selected article and user can edit
   useEffect(() => {
-    if (!selectedArticle || !canEdit) return;
+    // Check if article can be edited (not published/approved)
+    const articleCanEdit = selectedArticle && selectedArticle.status !== "PUBLISHED" && selectedArticle.status !== "APPROVED";
+    if (!selectedArticle || !articleCanEdit) return;
 
     const autoSaveInterval = setInterval(() => {
       handleUpdateArticle(true); // silent save
     }, 30000); // 30 seconds
 
     return () => clearInterval(autoSaveInterval);
-  }, [selectedArticle, canEdit, handleUpdateArticle]);
+  }, [selectedArticle, handleUpdateArticle]);
 
   // Create new article
   const handleCreateArticle = async () => {
