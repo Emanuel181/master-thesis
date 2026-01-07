@@ -134,6 +134,7 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
           docker build \
+            --no-cache \
             --target migrate \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:migrate-$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:migrate-latest \
