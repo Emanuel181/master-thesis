@@ -65,8 +65,8 @@ export default function SecurityPage() {
                         <button
                             onClick={openPanel}
                             className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
-                            aria-label="Open Accessibility Menu"
-                            title="Accessibility Options"
+                            aria-label="Open accessibility menu"
+                            title="Accessibility options"
                         >
                             <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
                         </button>

@@ -103,7 +103,7 @@ export function NoPromptsEmptyState({ onAdd, agentName }) {
     )
 }
 
-// No Categories Empty State (Knowledge Base)
+// No Categories Empty State (Knowledge base)
 export function NoCategoriesEmptyState({ onAdd }) {
     return (
         <EmptyState

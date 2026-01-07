@@ -112,7 +112,7 @@ export function KnowledgeBaseNode({ data }) {
 
                     <div className="mb-2 sm:mb-3">
                         <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                            <div className="text-[10px] sm:text-xs font-medium text-muted-foreground">Code Type:</div>
+                            <div className="text-[10px] sm:text-xs font-medium text-muted-foreground">Code type:</div>
                         </div>
                         <Select
                             value={data.codeType || ""}
@@ -179,7 +179,7 @@ export function KnowledgeBaseNode({ data }) {
 
                     <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
                         <div className="flex-1">
-                            <div className="text-[10px] sm:text-xs font-medium text-muted-foreground">Knowledge Bases:</div>
+                            <div className="text-[10px] sm:text-xs font-medium text-muted-foreground">Knowledge bases:</div>
                         </div>
                         <Button
                             variant="outline"
@@ -215,7 +215,7 @@ export function KnowledgeBaseNode({ data }) {
                         </PopoverTrigger>
                         <PopoverContent className="w-[220px] sm:w-[280px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                             <div className="p-3 border-b">
-                                <p className="text-sm font-medium">Select Knowledge Bases</p>
+                                <p className="text-sm font-medium">Select knowledge bases</p>
                             </div>
                             <div onWheelCapture={(e) => e.stopPropagation()}>
                                 <div className="p-2 border-b">

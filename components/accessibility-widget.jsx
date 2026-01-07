@@ -213,8 +213,8 @@ export function AccessibilityWidget() {
             zIndex: 2147483647,
             background: "linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)"
           }}
-          aria-label="Open Accessibility Menu"
-          title={isMobile ? "Accessibility Options (Touch and drag to move)" : "Accessibility Options (Drag to move)"}
+          aria-label="Open accessibility menu"
+          title={isMobile ? "Accessibility options (touch and drag to move)" : "Accessibility options (drag to move)"}
         >
           <PersonStanding className="w-7 h-7 text-white" strokeWidth={2.5} />
         </button>
@@ -549,8 +549,8 @@ export function AccessibilityNavButton({ className }) {
         "focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2",
         className
       )}
-      aria-label="Open Accessibility Menu"
-      title="Accessibility Options"
+      aria-label="Open accessibility menu"
+      title="Accessibility options"
     >
       <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
     </button>

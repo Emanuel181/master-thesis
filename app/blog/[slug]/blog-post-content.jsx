@@ -40,7 +40,12 @@ import {
   Mail,
   Minus,
   Plus,
-  Type
+  Type,
+  Play,
+  Pause,
+  Square,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -353,36 +358,68 @@ function useReadingProgress(scrollRef, contentRef) {
   return progress;
 }
 
-// Bookmark hook for save for later functionality
-function useBookmark(slug) {
+// Bookmark hook for save for later functionality (uses API for logged-in users)
+function useBookmark(slug, articleId, isAuthenticated) {
   const [isBookmarked, setIsBookmarked] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
+  // Check saved status on mount for authenticated users
   React.useEffect(() => {
-    const bookmarks = JSON.parse(localStorage.getItem('vulniq_blog_bookmarks') || '[]');
-    setIsBookmarked(bookmarks.includes(slug));
-  }, [slug]);
+    if (!isAuthenticated || !articleId) return;
 
-  const toggleBookmark = () => {
-    const bookmarks = JSON.parse(localStorage.getItem('vulniq_blog_bookmarks') || '[]');
-    let newBookmarks;
+    const checkSavedStatus = async () => {
+      try {
+        const response = await fetch(`/api/articles/saved/check?articleId=${articleId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsBookmarked(data.saved);
+        }
+      } catch (error) {
+        console.error('Failed to check saved status:', error);
+      }
+    };
 
-    if (bookmarks.includes(slug)) {
-      newBookmarks = bookmarks.filter(b => b !== slug);
-      toast.success("Bookmark removed", {
-        description: "Article removed from your reading list."
-      });
-    } else {
-      newBookmarks = [...bookmarks, slug];
-      toast.success("Bookmarked!", {
-        description: "Article saved to your reading list."
-      });
+    checkSavedStatus();
+  }, [articleId, isAuthenticated]);
+
+  const toggleBookmark = async () => {
+    if (!isAuthenticated || !articleId || isLoading) return;
+
+    setIsLoading(true);
+    try {
+      if (isBookmarked) {
+        // Unsave
+        const response = await fetch(`/api/articles/saved?articleId=${articleId}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          setIsBookmarked(false);
+          toast.success("Bookmark removed", {
+            description: "Article removed from your saved list."
+          });
+        }
+      } else {
+        // Save
+        const response = await fetch('/api/articles/saved', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ articleId }),
+        });
+        if (response.ok) {
+          setIsBookmarked(true);
+          toast.success("Bookmarked!", {
+            description: "Article saved to your profile."
+          });
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to update bookmark");
+    } finally {
+      setIsLoading(false);
     }
-
-    localStorage.setItem('vulniq_blog_bookmarks', JSON.stringify(newBookmarks));
-    setIsBookmarked(!isBookmarked);
   };
 
-  return { isBookmarked, toggleBookmark };
+  return { isBookmarked, toggleBookmark, isLoading };
 }
 
 // Font size hook
@@ -410,6 +447,337 @@ function useFontSize() {
   const isDefault = fontSize === DEFAULT_FONT_SIZE;
 
   return { fontSize, adjustFontSize, resetFontSize, isDefault };
+}
+
+// Text-to-Speech hook using AWS Polly
+function useTextToSpeech(text) {
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isPaused, setIsPaused] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
+  const [voices, setVoices] = React.useState([]);
+  const [selectedVoice, setSelectedVoice] = React.useState('Joanna');
+  const [speed, setSpeed] = React.useState('medium');
+  const audioRef = React.useRef(null);
+  const audioContextRef = React.useRef(null);
+
+  // Load available voices on mount
+  React.useEffect(() => {
+    const loadVoices = async () => {
+      try {
+        const response = await fetch('/api/tts');
+        if (response.ok) {
+          const data = await response.json();
+          setVoices(data.voices || []);
+        }
+      } catch (error) {
+        console.error('Failed to load voices:', error);
+      }
+    };
+    loadVoices();
+
+    // Restore saved preferences
+    const savedVoice = localStorage.getItem('vulniq_tts_voice_polly');
+    const savedSpeed = localStorage.getItem('vulniq_tts_speed');
+    if (savedVoice) setSelectedVoice(savedVoice);
+    if (savedSpeed) setSpeed(savedSpeed);
+
+    // Cleanup audio on unmount
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const speak = React.useCallback(async () => {
+    if (!text || isLoading) return;
+
+    setIsLoading(true);
+    setProgress(0);
+
+    try {
+      // Stop any existing playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          voiceId: selectedVoice,
+          speed
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate audio');
+      }
+
+      const data = await response.json();
+      
+      // Convert base64 to audio blob
+      const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+      const audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Create and play audio
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onplay = () => {
+        setIsPlaying(true);
+        setIsPaused(false);
+        setIsLoading(false);
+      };
+
+      audio.onpause = () => {
+        setIsPaused(true);
+      };
+
+      audio.onended = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+        setProgress(100);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsPlaying(false);
+        setIsPaused(false);
+        setIsLoading(false);
+        toast.error('Failed to play audio');
+      };
+
+      audio.ontimeupdate = () => {
+        if (audio.duration) {
+          setProgress((audio.currentTime / audio.duration) * 100);
+        }
+      };
+
+      await audio.play();
+
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsLoading(false);
+      setIsPlaying(false);
+      toast.error('Failed to generate speech', {
+        description: error.message
+      });
+    }
+  }, [text, selectedVoice, speed, isLoading]);
+
+  const pause = React.useCallback(() => {
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPaused(true);
+    }
+  }, []);
+
+  const resume = React.useCallback(() => {
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play();
+      setIsPaused(false);
+    }
+  }, []);
+
+  const stop = React.useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+    setIsPaused(false);
+    setProgress(0);
+  }, []);
+
+  const toggle = React.useCallback(() => {
+    if (isLoading) return;
+    
+    if (!isPlaying) {
+      speak();
+    } else if (isPaused) {
+      resume();
+    } else {
+      pause();
+    }
+  }, [isPlaying, isPaused, isLoading, speak, pause, resume]);
+
+  const changeVoice = React.useCallback((voiceId) => {
+    setSelectedVoice(voiceId);
+    localStorage.setItem('vulniq_tts_voice_polly', voiceId);
+  }, []);
+
+  const changeSpeed = React.useCallback((newSpeed) => {
+    setSpeed(newSpeed);
+    localStorage.setItem('vulniq_tts_speed', newSpeed);
+  }, []);
+
+  return {
+    isSupported: true, // Polly is always available via API
+    isPlaying,
+    isPaused,
+    isLoading,
+    progress,
+    voices,
+    selectedVoice,
+    speed,
+    speak,
+    pause,
+    resume,
+    stop,
+    toggle,
+    changeVoice,
+    changeSpeed
+  };
+}
+
+// Listen Button component with AWS Polly
+function ListenButton({ text, className }) {
+  const { 
+    isPlaying, 
+    isPaused,
+    isLoading, 
+    voices, 
+    selectedVoice, 
+    speed,
+    toggle, 
+    stop,
+    changeVoice,
+    changeSpeed 
+  } = useTextToSpeech(text);
+  const [showSettings, setShowSettings] = React.useState(false);
+  const settingsRef = React.useRef(null);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    if (!showSettings) return;
+    
+    const handleClickOutside = (event) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setShowSettings(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSettings]);
+
+  return (
+    <div className={cn("flex items-center gap-1 relative", className)} ref={settingsRef}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={toggle}
+        disabled={isLoading}
+        className={cn(
+          "h-8 px-2 sm:px-3 gap-1.5 transition-all",
+          isPlaying && !isPaused && "text-[var(--brand-accent)] bg-[rgba(var(--brand-accent-rgb),0.1)]"
+        )}
+        title={isPlaying ? (isPaused ? "Resume" : "Pause") : "Listen to article"}
+      >
+        {isLoading ? (
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        ) : isPlaying ? (
+          isPaused ? (
+            <Play className="w-4 h-4" />
+          ) : (
+            <Pause className="w-4 h-4" />
+          )
+        ) : (
+          <Volume2 className="w-4 h-4" />
+        )}
+        <span className="hidden sm:inline text-xs">
+          {isLoading ? "Loading..." : isPlaying ? (isPaused ? "Resume" : "Pause") : "Listen"}
+        </span>
+      </Button>
+      
+      {isPlaying && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={stop}
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+          title="Stop listening"
+        >
+          <Square className="w-3.5 h-3.5" />
+        </Button>
+      )}
+
+      {/* Settings button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowSettings(!showSettings)}
+        className="h-8 w-8 p-0 text-muted-foreground"
+        title="Voice settings"
+      >
+        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showSettings && "rotate-180")} />
+      </Button>
+
+      {/* Settings dropdown */}
+      {showSettings && (
+        <div className="absolute top-full right-0 mt-2 p-3 bg-background border border-border rounded-lg shadow-lg z-50 min-w-[240px]">
+          <div className="space-y-3">
+            {/* Voice selector */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Voice</label>
+              <select
+                value={selectedVoice}
+                onChange={(e) => changeVoice(e.target.value)}
+                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded-md"
+              >
+                {voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name} ({voice.accent} {voice.gender})
+                  </option>
+                ))}
+              </select>
+              {voices.find(v => v.id === selectedVoice)?.description && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {voices.find(v => v.id === selectedVoice)?.description}
+                </p>
+              )}
+            </div>
+
+            {/* Speed control */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Speed
+              </label>
+              <div className="flex gap-1">
+                {[
+                  { value: 'slow', label: 'Slow' },
+                  { value: 'medium', label: 'Normal' },
+                  { value: 'fast', label: 'Fast' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => changeSpeed(option.value)}
+                    className={cn(
+                      "flex-1 px-2 py-1.5 text-xs rounded-md transition-colors",
+                      speed === option.value
+                        ? "bg-[var(--brand-accent)] text-white"
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Sticky Table of Contents sidebar component (collapsible dropdown style)
@@ -538,23 +906,6 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
             </div>
           </button>
 
-          {/* Reading progress - always visible */}
-          <div className="px-4 pb-4 border-t border-zinc-200/50 dark:border-zinc-700/30 pt-3">
-            <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              <span>{remainingTime > 0 ? `${remainingTime} min left` : 'Done reading!'}</span>
-              <span className="font-semibold text-[var(--brand-accent)]">{Math.round(progress)}%</span>
-            </div>
-            <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-[var(--brand-accent)] rounded-full"
-                style={{ width: `${progress}%` }}
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.1 }}
-              />
-            </div>
-          </div>
-
           {/* Expandable TOC content */}
           {isExpanded && (
             <div className="border-t border-zinc-200/80 dark:border-zinc-700/50 overflow-hidden">
@@ -569,18 +920,12 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
                       return (
                         <li
                           key={index}
-                          className="relative"
+                          className="relative overflow-hidden"
                           style={{ marginLeft: `${indentPx}px` }}
                         >
-                          {isActive && (
-                            <motion.div
-                              layoutId="activeSection"
-                              className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--brand-accent)] rounded-full"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ duration: 0.2 }}
-                            />
-                          )}
+                          <div
+                            className={`absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--brand-accent)] rounded-full transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`}
+                          />
                           <a
                             href={`#${heading.id}`}
                             onClick={(e) => handleClick(e, heading.id)}
@@ -617,6 +962,34 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
                 </nav>
                 <ScrollBar />
               </ScrollArea>
+              
+              {/* Reading Progress Footer */}
+              <div className="border-t border-zinc-200/80 dark:border-zinc-700/50 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    Reading progress
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {progress >= 100 && (
+                      <Check className="w-3.5 h-3.5 text-green-500" />
+                    )}
+                    <span className={`text-xs font-semibold ${progress >= 100 ? 'text-green-500' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      {progress >= 100 ? 'Complete!' : `${Math.round(progress)}%`}
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${progress >= 100 ? 'bg-green-500' : 'bg-[var(--brand-accent)]'}`}
+                    style={{ width: `${Math.min(100, progress)}%` }}
+                  />
+                </div>
+                {progress < 100 && remainingTime > 0 && (
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1.5">
+                    ~{remainingTime} min remaining
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1471,12 +1844,12 @@ function ArticleJsonLd({ post, url }) {
 }
 
 // Main Blog Post Content Component
-export default function BlogPostContent({ post, relatedPosts }) {
+export default function BlogPostContent({ post, relatedPosts, isAuthenticated }) {
   const router = useRouter();
   const scrollRef = React.useRef(null);
   const contentRef = React.useRef(null);
   const newsletterRef = React.useRef(null);
-  const { isBookmarked, toggleBookmark } = useBookmark(post?.slug);
+  const { isBookmarked, toggleBookmark, isLoading: isBookmarkLoading } = useBookmark(post?.slug, post?.id, isAuthenticated);
   const { fontSize, adjustFontSize, resetFontSize, isDefault } = useFontSize();
   const progress = useReadingProgress(scrollRef, contentRef);
   const { setForceHideFloating } = useAccessibility();
@@ -1661,19 +2034,27 @@ export default function BlogPostContent({ post, relatedPosts }) {
                     resetFontSize={resetFontSize}
                     isDefault={isDefault}
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleBookmark}
-                    className={`h-8 px-2 sm:px-3 ${isBookmarked ? "text-[var(--brand-accent)]" : ""}`}
-                  >
-                    {isBookmarked ? (
-                      <BookmarkCheck className="w-4 h-4 sm:mr-1.5" />
-                    ) : (
-                      <Bookmark className="w-4 h-4 sm:mr-1.5" />
+                  <div className="flex items-center gap-1">
+                    <ListenButton text={contentToRender} />
+                    {isAuthenticated && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleBookmark}
+                        disabled={isBookmarkLoading}
+                        className={`h-8 px-2 sm:px-3 ${isBookmarked ? "text-[var(--brand-accent)]" : ""}`}
+                      >
+                        {isBookmarkLoading ? (
+                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin sm:mr-1.5" />
+                        ) : isBookmarked ? (
+                          <BookmarkCheck className="w-4 h-4 sm:mr-1.5" />
+                        ) : (
+                          <Bookmark className="w-4 h-4 sm:mr-1.5" />
+                        )}
+                        <span className="hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
+                      </Button>
                     )}
-                    <span className="hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
-                  </Button>
+                  </div>
                 </div>
 
                 {/* Excerpt as intro paragraph */}

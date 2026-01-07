@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import BlogPostContent from "./blog-post-content";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vulniq.com";
@@ -224,5 +225,9 @@ export default async function BlogPostPage({ params }) {
     relatedPosts = await getRelatedPosts(slug, post, 3);
   }
 
-  return <BlogPostContent post={post} relatedPosts={relatedPosts} />;
+  // Check if user is authenticated
+  const session = await auth();
+  const isAuthenticated = !!session?.user?.id;
+
+  return <BlogPostContent post={post} relatedPosts={relatedPosts} isAuthenticated={isAuthenticated} />;
 }

@@ -266,6 +266,16 @@ html {
   padding: clamp(0.75rem, 3vw, 1.5rem);
 }
 
+/* Medium breakpoint utilities with !important to override xs utilities */
+@media (min-width: 768px) {
+  .md\:\!hidden {
+    display: none !important;
+  }
+  .md\:\!flex {
+    display: flex !important;
+  }
+}
+
 /* Extra small breakpoint utilities (xs: 480px) */
 @media (min-width: 480px) {
   .xs\:inline {
@@ -1269,7 +1279,7 @@ body[style*="--a11y-saturation"] {
 /* Prevent accessibility styles from affecting the widget itself */
 [class*="a11y-"]:not(.a11y-guide-element) .SheetContent,
 [class*="a11y-"]:not(.a11y-guide-element) [data-radix-popper-content-wrapper],
-.a11y-big-cursor button[aria-label="Open Accessibility Menu"],
+.a11y-big-cursor button[aria-label="Open accessibility menu"],
 .a11y-big-cursor .a11y-widget-button {
   cursor: pointer !important;
 }

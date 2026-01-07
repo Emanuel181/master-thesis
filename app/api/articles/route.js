@@ -23,15 +23,26 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // DRAFT, PENDING_REVIEW, IN_REVIEW, PUBLISHED, REJECTED, SCHEDULED_FOR_DELETION
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = parseInt(searchParams.get("skip") || "0");
 
     const where = {
       authorId: session.user.id,
       ...(status && { status }),
     };
 
+    // Get total count and stats
+    const [total, publishedCount, draftCount] = await Promise.all([
+      prisma.article.count({ where }),
+      prisma.article.count({ where: { authorId: session.user.id, status: "PUBLISHED" } }),
+      prisma.article.count({ where: { authorId: session.user.id, status: "DRAFT" } }),
+    ]);
+
     const articles = await prisma.article.findMany({
       where,
       orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
       select: {
         id: true,
         title: true,
@@ -55,7 +66,7 @@ export async function GET(request) {
       },
     });
 
-    return NextResponse.json({ articles });
+    return NextResponse.json({ articles, total, publishedCount, draftCount });
   } catch (error) {
     console.error("Error fetching articles:", error);
     return NextResponse.json(

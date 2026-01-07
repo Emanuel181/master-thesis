@@ -116,8 +116,8 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
             icon: FileText,
         },
         {
-            title: "Write Article",
-            url: "/dashboard?active=Write Article",
+            title: "Write article",
+            url: "/dashboard?active=Write article",
             icon: PenLine,
         },
     ];

@@ -49,7 +49,7 @@ function CommandPaletteTrigger() {
             variant="outline"
             size="icon"
             onClick={() => setOpen(true)}
-            title="Command Palette (Ctrl+K)"
+            title="Command palette (Ctrl+K)"
         >
             <Keyboard className="h-5 w-5" />
         </Button>
@@ -65,7 +65,7 @@ function AccessibilityTrigger() {
             variant="outline"
             size="icon"
             onClick={openPanel}
-            title="Accessibility Options"
+            title="Accessibility options"
         >
             <PersonStanding className="h-5 w-5" />
         </Button>
@@ -79,7 +79,7 @@ const routeToComponent = {
     'knowledge-base': 'Knowledge base',
     'results': 'Results',
     'profile': 'Profile',
-    'write-article': 'Write Article',
+    'write-article': 'Write article',
 };
 
 // Inner component that can use useProject context
@@ -164,7 +164,7 @@ function DemoLayoutContent({ settings, mounted, children }) {
             'Knowledge base': '/demo/knowledge-base',
             'Results': '/demo/results',
             'Profile': '/demo/profile',
-            'Write Article': '/demo/write-article',
+            'Write article': '/demo/write-article',
         };
 
         const route = routeMap[item.title];

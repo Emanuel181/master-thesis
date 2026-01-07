@@ -1105,10 +1105,10 @@ export default function AdminUsersPage() {
                             </div>
                             <Separator />
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                {selectedUser.firstName && <div><Label className="text-xs text-muted-foreground">First Name</Label><p className="font-medium">{selectedUser.firstName}</p></div>}
-                                {selectedUser.lastName && <div><Label className="text-xs text-muted-foreground">Last Name</Label><p className="font-medium">{selectedUser.lastName}</p></div>}
+                                {selectedUser.firstName && <div><Label className="text-xs text-muted-foreground">First name</Label><p className="font-medium">{selectedUser.firstName}</p></div>}
+                                {selectedUser.lastName && <div><Label className="text-xs text-muted-foreground">Last name</Label><p className="font-medium">{selectedUser.lastName}</p></div>}
                                 {selectedUser.phone && <div><Label className="text-xs text-muted-foreground">Phone</Label><p className="font-medium">{selectedUser.phone}</p></div>}
-                                {selectedUser.jobTitle && <div><Label className="text-xs text-muted-foreground">Job Title</Label><p className="font-medium">{selectedUser.jobTitle}</p></div>}
+                                {selectedUser.jobTitle && <div><Label className="text-xs text-muted-foreground">Job title</Label><p className="font-medium">{selectedUser.jobTitle}</p></div>}
                                 {selectedUser.company && <div><Label className="text-xs text-muted-foreground">Company</Label><p className="font-medium">{selectedUser.company}</p></div>}
                                 {selectedUser.location && <div><Label className="text-xs text-muted-foreground">Location</Label><p className="font-medium">{selectedUser.location}</p></div>}
                                 <div><Label className="text-xs text-muted-foreground">Joined</Label><p className="font-medium">{new Date(selectedUser.createdAt).toLocaleDateString()}</p></div>

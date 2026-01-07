@@ -20,9 +20,9 @@ const sitemapData = [
     { url: '', name: 'Home', priority: 1.00, changefreq: 'weekly', lastModified: '2024-12-29' },
     { url: '/login', name: 'Login', priority: 0.80, changefreq: 'monthly', lastModified: '2024-12-29' },
     { url: '/changelog', name: 'Changelog', priority: 0.80, changefreq: 'weekly', lastModified: '2024-12-29' },
-    { url: '/privacy', name: 'Privacy Policy', priority: 0.80, changefreq: 'yearly', lastModified: '2024-12-29' },
+    { url: '/privacy', name: 'Privacy policy', priority: 0.80, changefreq: 'yearly', lastModified: '2024-12-29' },
     { url: '/terms', name: 'Terms & Conditions', priority: 0.80, changefreq: 'yearly', lastModified: '2024-12-29' },
-    { url: '/security', name: 'Security Policy', priority: 0.80, changefreq: 'yearly', lastModified: '2026-01-02' },
+    { url: '/security', name: 'Security policy', priority: 0.80, changefreq: 'yearly', lastModified: '2026-01-02' },
     { url: '/about', name: 'About', priority: 0.64, changefreq: 'monthly', lastModified: '2024-12-29' },
     { url: '/supporters', name: 'Supporters', priority: 0.64, changefreq: 'weekly', lastModified: '2026-01-01' },
 ];
@@ -91,8 +91,8 @@ export default function SitemapPage() {
                         <button
                             onClick={openPanel}
                             className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
-                            aria-label="Open Accessibility Menu"
-                            title="Accessibility Options"
+                            aria-label="Open accessibility menu"
+                            title="Accessibility ptions"
                         >
                             <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
                         </button>

@@ -107,7 +107,7 @@ export function FAQSection() {
           className="text-center mb-12 sm:mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
-            Frequently Asked Questions
+            Frequently asked questions
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
             Everything you need to know about VulnIQ and how it can help secure your code.

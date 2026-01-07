@@ -70,7 +70,7 @@ export function AgentNode({ data }) {
                     id="kb-in"
                     className="!bg-cyan-500 !w-3 !h-3"
                     style={{ top: '30%' }}
-                    title="Knowledge Base Context"
+                    title="Knowledge base context"
                 />
             )}
 

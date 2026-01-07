@@ -6,7 +6,7 @@ import { DemoArticleEditor } from "@/components/dashboard/article-editor/demo-ar
 
 export default function DemoWriteArticlePage() {
     return (
-        <PageErrorBoundary pageName="Write Article">
+        <PageErrorBoundary pageName="Write article">
             <PageTransition pageKey="demo-write-article" variant="default">
                 <DemoArticleEditor />
             </PageTransition>

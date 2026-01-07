@@ -15,6 +15,9 @@ const SecurityCodeDemo = dynamic(
   { ssr: false }
 );
 
+// Hero scroll wrapper for shrinking border effect
+import { HeroScrollWrapper } from '@/components/landing-page/hero/hero-scroll-wrapper';
+
 // Lazy load animated/interactive components (client-only)
 const FloatingNavbar = dynamic(
   () => import('@/components/landing-page/floating-navbar').then(mod => mod.FloatingNavbar),
@@ -207,8 +210,10 @@ export function ClientLandingWrapper({ children }) {
         <FloatingNavbar />
 
         <main id="main-content" className="w-full">
-          {/* Hero section - always render ServerHero, overlay code demo after hydration */}
-          {React.Children.toArray(children)[0]}
+          {/* Hero section with scroll-linked shrinking border effect */}
+          <HeroScrollWrapper>
+            {React.Children.toArray(children)[0]}
+          </HeroScrollWrapper>
           
           {/* Portal overlay for code demo - renders inside ServerHero's placeholder */}
           {isHydrated && <HeroCodeDemoOverlay />}

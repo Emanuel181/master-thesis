@@ -57,7 +57,7 @@ const defaultSteps = [
     },
     {
         id: "import",
-        title: "Import Your Code",
+        title: "Import your code",
         description: "Connect GitHub or GitLab to import repositories for analysis.",
         icon: Github,
         content: (
@@ -82,7 +82,7 @@ const defaultSteps = [
     },
     {
         id: "prompts",
-        title: "Customize AI Agents",
+        title: "Customize AI agents",
         description: "Add custom prompts to guide each agent's analysis.",
         icon: FileText,
         content: (
@@ -103,7 +103,7 @@ const defaultSteps = [
     },
     {
         id: "knowledge-base",
-        title: "Build Your Knowledge Base",
+        title: "Build your knowledge base",
         description: "Upload security documentation and references for the AI to use.",
         icon: BookOpen,
         content: (

@@ -20,7 +20,7 @@ export function LampDemo() {
                     duration: 0.8,
                     ease: "easeInOut",
                 }}
-                className="mt-8 sm:mt-12 bg-gradient-to-br from-[var(--brand-dark)] to-[var(--brand-accent)] dark:from-[var(--brand-light)] dark:to-[var(--brand-accent)] py-8 bg-clip-text text-center text-7xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold tracking-tight text-transparent px-4"
+                className="mt-4 xs:mt-6 sm:mt-12 bg-gradient-to-br from-[var(--brand-dark)] to-[var(--brand-accent)] dark:from-[var(--brand-light)] dark:to-[var(--brand-accent)] py-4 xs:py-6 sm:py-8 bg-clip-text text-center text-5xl xs:text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold tracking-tight text-transparent px-4"
             >
                 VulnIQ
             </motion.h1>
@@ -29,7 +29,7 @@ export function LampDemo() {
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
-                className="mt-6 sm:mt-8 text-slate-300 dark:text-slate-300 text-slate-600 text-center text-xl sm:text-2xl md:text-3xl lg:text-4xl max-w-lg sm:max-w-xl md:max-w-3xl lg:max-w-4xl px-4"
+                className="mt-4 xs:mt-6 sm:mt-8 text-slate-300 dark:text-slate-300 text-slate-600 text-center text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl max-w-xs xs:max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl px-4"
             >
                 Making code security autonomous by default
             </motion.p>
@@ -60,12 +60,12 @@ export const LampContainer = ({ children, className }) => {
     return (
         <div
             className={cn(
-                "relative flex min-h-[55vh] sm:min-h-[65vh] md:min-h-[80vh] lg:min-h-screen flex-col items-center justify-center overflow-hidden bg-transparent w-full max-w-[100vw] z-0",
+                "relative flex min-h-[50vh] xs:min-h-[55vh] sm:min-h-[65vh] md:min-h-[80vh] lg:min-h-screen flex-col items-center justify-center overflow-hidden bg-transparent w-full max-w-[100vw] z-0",
                 className
             )}>
             <div className="relative flex w-full max-w-[100vw] flex-1 scale-y-125 items-center justify-center isolate z-0">
                 {/* Glow effects - positioned below lamp line */}
-                <div className="absolute inset-auto z-30 h-40 sm:h-64 md:h-80 lg:h-96 w-[20rem] sm:w-[32rem] md:w-[48rem] lg:w-[56rem] -translate-y-[3rem] sm:-translate-y-[5rem] md:-translate-y-[6rem] lg:-translate-y-[7rem] rounded-full bg-[var(--brand-accent)] opacity-40 blur-3xl"></div>
+                <div className="absolute inset-auto z-30 h-32 xs:h-40 sm:h-64 md:h-80 lg:h-96 w-[16rem] xs:w-[20rem] sm:w-[32rem] md:w-[48rem] lg:w-[56rem] -translate-y-[2rem] xs:-translate-y-[3rem] sm:-translate-y-[5rem] md:-translate-y-[6rem] lg:-translate-y-[7rem] rounded-full bg-[var(--brand-accent)] opacity-40 blur-3xl"></div>
                 <motion.div
                     initial={{ width: "8rem" }}
                     whileInView={{ width: "16rem" }}
@@ -74,9 +74,9 @@ export const LampContainer = ({ children, className }) => {
                         duration: 0.8,
                         ease: "easeInOut",
                     }}
-                    className="absolute inset-auto z-30 h-36 sm:h-56 md:h-72 lg:h-80 w-48 sm:w-72 md:w-96 lg:w-[28rem] -translate-y-[2.5rem] sm:-translate-y-[4rem] md:-translate-y-[5rem] lg:-translate-y-[6rem] rounded-full bg-[var(--brand-accent)]/70 blur-2xl"></motion.div>
+                    className="absolute inset-auto z-30 h-28 xs:h-36 sm:h-56 md:h-72 lg:h-80 w-40 xs:w-48 sm:w-72 md:w-96 lg:w-[28rem] -translate-y-[2rem] xs:-translate-y-[2.5rem] sm:-translate-y-[4rem] md:-translate-y-[5rem] lg:-translate-y-[6rem] rounded-full bg-[var(--brand-accent)]/70 blur-2xl"></motion.div>
             </div>
-            <div className="relative z-50 flex -translate-y-36 sm:-translate-y-52 md:-translate-y-60 lg:-translate-y-64 flex-col items-center px-6 sm:px-8 py-4 sm:py-8 md:py-12 w-full max-w-[100vw]">
+            <div className="relative z-50 flex -translate-y-20 xs:-translate-y-28 sm:-translate-y-52 md:-translate-y-60 lg:-translate-y-64 flex-col items-center px-4 xs:px-6 sm:px-8 py-4 sm:py-8 md:py-12 w-full max-w-[100vw]">
                 {children}
             </div>
         </div>

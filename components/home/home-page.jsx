@@ -1012,7 +1012,7 @@ export function HomePage() {
                         <div className="flex items-center justify-between gap-2">
                             <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
                                 <Github className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                                <span className="truncate">GitHub Repositories</span>
+                                <span className="truncate">GitHub repositories</span>
                             </CardTitle>
                             {isGithubConnected && (
                                 <div className="flex gap-1 flex-shrink-0">
@@ -1190,7 +1190,7 @@ export function HomePage() {
                         <div className="flex items-center justify-between gap-2">
                             <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
                                 <GitlabIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                                <span className="truncate">GitLab Repositories</span>
+                                <span className="truncate">GitLab repositories</span>
                             </CardTitle>
                             {isGitlabConnected && (
                                 <div className="flex gap-1 flex-shrink-0">
@@ -1374,7 +1374,7 @@ export function HomePage() {
                 <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md h-full">
                     <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                         <div className="flex items-center justify-between gap-2">
-                            <CardTitle className="text-xs sm:text-sm md:text-base truncate">AI Agent Prompts</CardTitle>
+                            <CardTitle className="text-xs sm:text-sm md:text-base truncate">AI agent prompts</CardTitle>
                             <div className="flex gap-1 flex-shrink-0">
                                 <Button
                                     variant="outline"
@@ -1419,7 +1419,7 @@ export function HomePage() {
                                 <TabsContent key={agent} value={agent} className="flex-1 overflow-hidden mt-2 flex flex-col min-h-0">
                                     <div className="flex justify-between items-center gap-1 mb-2 flex-shrink-0">
                                         <Button size="sm" variant="destructive" className="h-7 px-2 text-[10px]" onClick={() => setDeleteDialog({ type: 'category', agent })}>
-                                            Delete All
+                                            Delete all
                                         </Button>
 
                                         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -1604,7 +1604,7 @@ export function HomePage() {
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
                                 <FolderOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                                <span className="truncate">Current Project</span>
+                                <span className="truncate">Current project</span>
                             </CardTitle>
                         </div>
                     </CardHeader>
@@ -1653,7 +1653,7 @@ export function HomePage() {
                                 <div className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center mb-1.5 border border-border/50">
                                     <FolderX className="h-4 w-4 text-muted-foreground/60" />
                                 </div>
-                                <h3 className="text-xs font-medium mb-0.5">No Project Loaded</h3>
+                                <h3 className="text-xs font-medium mb-0.5">No project loaded</h3>
                                 <p className="text-[10px] text-muted-foreground max-w-[180px]">Import a repository from GitHub or GitLab to get started</p>
                             </div>
                         )}

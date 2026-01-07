@@ -22,7 +22,7 @@ const galleryItems = [
   },
   {
     image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1260&h=750&fit=crop",
-    title: "Autonomous Agents",
+    title: "Autonomous agents",
     description: "Multi-agent pipeline: Reviewer, Fixer, Tester, and Report agents working in concert",
   },
   {

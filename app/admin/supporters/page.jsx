@@ -1057,7 +1057,7 @@ export default function AdminSupportersPage() {
                                         <span className="sr-only">Accessibility</span>
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Accessibility Options</TooltipContent>
+                                <TooltipContent>Accessibility options</TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                         <TooltipProvider>
@@ -1951,7 +1951,7 @@ function SupporterModal({ open, onOpenChange, supporter, onSave, isSaving }) {
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                 <User className="h-4 w-4" />
-                                Personal Information
+                                Personal information
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-6">
                                 <div className="space-y-2">

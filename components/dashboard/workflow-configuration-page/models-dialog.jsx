@@ -497,7 +497,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
             <DrawerContent>
                 <div className="mx-auto w-full max-w-7xl">
                     <DrawerHeader>
-                        <DrawerTitle>Configure AI Agent Workflow</DrawerTitle>
+                        <DrawerTitle>Configure AI agent workflow</DrawerTitle>
                         <DrawerDescription>
                             Visualize your code workflow and select AI models for each agent.
                         </DrawerDescription>
@@ -506,19 +506,19 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                         <Tabs defaultValue="workflow" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
                                 <TabsTrigger value="workflow" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Workflow Visualization</span>
+                                    <span className="hidden sm:inline">Workflow visualization</span>
                                     <span className="sm:hidden">Workflow</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="models" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Agents Configuration</span>
+                                    <span className="hidden sm:inline">Agents configuration</span>
                                     <span className="sm:hidden">Agents</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="prompts" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Prompts Configuration</span>
+                                    <span className="hidden sm:inline">Prompts configuration</span>
                                     <span className="sm:hidden">Prompts</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="knowledge" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Knowledge Base</span>
+                                    <span className="hidden sm:inline">Knowledge base</span>
                                     <span className="sm:hidden">Knowledge</span>
                                 </TabsTrigger>
                             </TabsList>
@@ -545,7 +545,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                 ) : (
                                                     <>
                                                         <RefreshCw className="h-4 w-4 mr-2" />
-                                                        Refresh All
+                                                        Refresh all
                                                     </>
                                                 )}
                                             </Button>
@@ -585,7 +585,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     <div className="pr-4">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                                             <div>
-                                                <h3 className="text-lg font-semibold">Agent Configuration</h3>
+                                                <h3 className="text-lg font-semibold">Agent configuration</h3>
                                                 <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
                                             </div>
                                             <Button
@@ -604,7 +604,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                 ) : (
                                                     <>
                                                         <RefreshCw className="h-4 w-4 mr-2" />
-                                                        Refresh All
+                                                        Refresh all
                                                     </>
                                                 )}
                                             </Button>
@@ -612,7 +612,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Reviewer Agent</CardTitle>
+                                            <CardTitle className="text-lg font-medium">Reviewer agent</CardTitle>
                                             <ScanSearch className="w-6 h-6 text-blue-500" />
                                         </CardHeader>
                                         <CardContent>
@@ -676,7 +676,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="reviewer-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Label htmlFor="reviewer-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
                                                         <div className="flex items-center gap-1">
                                                             <Select
                                                                 id="reviewer-system-prompt"
@@ -760,7 +760,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     </Card>
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Implementation Agent</CardTitle>
+                                            <CardTitle className="text-lg font-medium">Implementation agent</CardTitle>
                                             <Wrench className="w-6 h-6 text-green-500" />
                                         </CardHeader>
                                         <CardContent>
@@ -824,7 +824,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="implementation-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Label htmlFor="implementation-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
                                                         <div className="flex items-center gap-1">
                                                             <Select
                                                                 id="implementation-system-prompt"
@@ -908,7 +908,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     </Card>
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Tester Agent</CardTitle>
+                                            <CardTitle className="text-lg font-medium">Tester agent</CardTitle>
                                             <BugPlay  className="w-6 h-6 text-orange-500" />
                                         </CardHeader>
                                         <CardContent>
@@ -972,7 +972,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="tester-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Label htmlFor="tester-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
                                                         <div className="flex items-center gap-1">
                                                             <Select
                                                                 id="tester-system-prompt"
@@ -1056,7 +1056,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                     </Card>
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Report Agent</CardTitle>
+                                            <CardTitle className="text-lg font-medium">Report agent</CardTitle>
                                             <FileText className="w-6 h-6 text-purple-500" />
                                         </CardHeader>
                                         <CardContent>
@@ -1122,7 +1122,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label htmlFor="report-system-prompt" className="text-xs font-medium mb-1 block">System Prompt</Label>
+                                                        <Label htmlFor="report-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
                                                         <div className="flex items-center gap-1">
                                                             <Select
                                                                 id="report-system-prompt"
@@ -1243,7 +1243,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                             ) : (
                                                 <>
                                                     <RefreshCw className="h-4 w-4 mr-2" />
-                                                    Refresh All
+                                                    Refresh all
                                                 </>
                                             )}
                                         </Button>
@@ -1277,7 +1277,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                                                     <div className="flex items-center gap-2">
                                                                         <AgentIcon className={`w-5 h-5 ${config.color}`} />
-                                                                        <CardTitle className="text-lg font-medium capitalize">{agent} Agent</CardTitle>
+                                                                        <CardTitle className="text-lg font-medium capitalize">{agent} agent</CardTitle>
                                                                     </div>
                                                                     <Button
                                                                         variant="ghost"
@@ -1370,7 +1370,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             onClick={() => setAgentPage(prev => Math.max(0, prev - 1))}
                                                             disabled={agentPage === 0}
                                                         >
-                                                            ← Previous Agents
+                                                            ← Previous agents page
                                                         </Button>
                                                         <span className="text-sm text-muted-foreground">
                                                             Agents {agentPage * agentsPerPage + 1}-{Math.min((agentPage + 1) * agentsPerPage, agentEntries.length)} of {agentEntries.length}
@@ -1381,7 +1381,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                             onClick={() => setAgentPage(prev => Math.min(totalAgentPages - 1, prev + 1))}
                                                             disabled={agentPage >= totalAgentPages - 1}
                                                         >
-                                                            Next Agents →
+                                                            Next agents page →
                                                         </Button>
                                                     </div>
                                                 )}
@@ -1417,7 +1417,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                 {!codeType ? (
                                     <div className="flex flex-col items-center justify-center py-12 text-center">
                                         <Database className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                                        <h3 className="text-lg font-semibold mb-2">Code Type Required</h3>
+                                        <h3 className="text-lg font-semibold mb-2">Code type required</h3>
                                         <p className="text-sm text-muted-foreground max-w-md">
                                             Please select a code type in the Code Editor first. The knowledge base selection will be automatically matched to your code type.
                                         </p>
@@ -1442,7 +1442,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                                 ) : (
                                                     <>
                                                         <RefreshCw className="h-4 w-4 mr-2" />
-                                                        Refresh All
+                                                        Refresh all
                                                     </>
                                                 )}
                                             </Button>

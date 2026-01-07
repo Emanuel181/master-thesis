@@ -4,110 +4,92 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import {
-    FileText,
+    Bookmark,
     Clock,
-    Eye,
     ChevronRight,
     ChevronLeft,
     Loader2,
-    PenLine,
+    Trash2,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-
-const STATUS_COLORS = {
-    DRAFT: 'bg-gray-500/10 text-gray-600 border-gray-500/30',
-    PENDING_REVIEW: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
-    IN_REVIEW: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-    PUBLISHED: 'bg-green-500/10 text-green-600 border-green-500/30',
-    REJECTED: 'bg-red-500/10 text-red-600 border-red-500/30',
-    SCHEDULED_FOR_DELETION: 'bg-orange-500/10 text-orange-600 border-orange-500/30',
-}
-
-const STATUS_LABELS = {
-    DRAFT: 'Draft',
-    PENDING_REVIEW: 'Pending',
-    IN_REVIEW: 'Review',
-    PUBLISHED: 'Published',
-    REJECTED: 'Rejected',
-    SCHEDULED_FOR_DELETION: 'Deleting',
-}
+import { toast } from 'sonner'
 
 const ITEMS_PER_PAGE = 5
 
 // Mock data for demo
-const MOCK_ARTICLES = [
+const MOCK_SAVED_ARTICLES = [
     {
         id: '1',
-        title: 'Getting Started with Web Security',
-        slug: 'getting-started-web-security',
-        excerpt: 'Learn the fundamentals of web application security and common vulnerabilities.',
+        title: 'OWASP Top 10 Security Risks Explained',
+        slug: 'owasp-top-10-explained',
+        excerpt: 'A comprehensive guide to the most critical web application security risks.',
         category: 'Web Security',
-        status: 'PUBLISHED',
-        readTime: '5 min read',
+        authorName: 'VulnIQ Security',
+        readTime: '12 min read',
         gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         coverType: 'gradient',
     },
     {
         id: '2',
-        title: 'Understanding SQL Injection Attacks',
-        slug: 'understanding-sql-injection',
-        excerpt: 'A deep dive into SQL injection vulnerabilities and how to prevent them.',
-        category: 'Database Security',
-        status: 'PUBLISHED',
+        title: 'Securing Your Node.js Applications',
+        slug: 'securing-nodejs-apps',
+        excerpt: 'Best practices for building secure Node.js backend services.',
+        category: 'Backend',
+        authorName: 'Security Team',
         readTime: '8 min read',
-        gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
         coverType: 'gradient',
     },
     {
         id: '3',
-        title: 'API Security Best Practices',
-        slug: 'api-security-best-practices',
-        excerpt: 'Essential security measures for protecting your REST and GraphQL APIs.',
-        category: 'API Security',
-        status: 'DRAFT',
+        title: 'Cross-Site Scripting Prevention',
+        slug: 'xss-prevention-guide',
+        excerpt: 'How to identify and prevent XSS vulnerabilities in your applications.',
+        category: 'Web Security',
+        authorName: 'VulnIQ Security',
         readTime: '6 min read',
-        gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+        gradient: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)',
         coverType: 'gradient',
     },
     {
         id: '4',
-        title: 'Authentication Patterns in Modern Apps',
-        slug: 'authentication-patterns',
-        excerpt: 'Exploring OAuth, JWT, and session-based authentication strategies.',
-        category: 'Authentication',
-        status: 'PENDING_REVIEW',
-        readTime: '10 min read',
-        gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+        title: 'Introduction to Penetration Testing',
+        slug: 'intro-penetration-testing',
+        excerpt: 'Getting started with ethical hacking and security assessments.',
+        category: 'Pentesting',
+        authorName: 'Security Expert',
+        readTime: '15 min read',
+        gradient: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)',
         coverType: 'gradient',
     },
     {
         id: '5',
-        title: 'Secure Coding Guidelines',
-        slug: 'secure-coding-guidelines',
-        excerpt: 'Best practices for writing secure code in JavaScript and TypeScript.',
-        category: 'Development',
-        status: 'DRAFT',
+        title: 'Secure Password Storage Techniques',
+        slug: 'secure-password-storage',
+        excerpt: 'Modern approaches to hashing and storing user passwords safely.',
+        category: 'Authentication',
+        authorName: 'VulnIQ Security',
         readTime: '7 min read',
-        gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+        gradient: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
         coverType: 'gradient',
     },
     {
         id: '6',
-        title: 'Container Security Fundamentals',
-        slug: 'container-security',
-        excerpt: 'Securing Docker containers and Kubernetes deployments.',
-        category: 'DevOps',
-        status: 'PUBLISHED',
-        readTime: '9 min read',
-        gradient: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
+        title: 'API Rate Limiting Strategies',
+        slug: 'api-rate-limiting',
+        excerpt: 'Protecting your APIs from abuse with effective rate limiting.',
+        category: 'API Security',
+        authorName: 'Dev Team',
+        readTime: '5 min read',
+        gradient: 'linear-gradient(135deg, #f857a6 0%, #ff5858 100%)',
         coverType: 'gradient',
     },
 ]
 
-export function UserArticlesSection() {
+export function SavedArticlesSection() {
     const router = useRouter()
     const pathname = usePathname()
     const { data: session } = useSession()
@@ -115,24 +97,19 @@ export function UserArticlesSection() {
     const [isLoading, setIsLoading] = useState(true)
     const [currentPage, setCurrentPage] = useState(1)
     const [totalCount, setTotalCount] = useState(0)
-    const [stats, setStats] = useState({ published: 0, drafts: 0 })
     const [useMockData, setUseMockData] = useState(false)
 
     const isDemo = pathname?.includes('/demo')
     const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
-    const fetchArticles = async (page = 1) => {
+    const fetchSavedArticles = async (page = 1) => {
         // Only use mock data on demo routes
         if (isDemo) {
             setUseMockData(true)
             const start = (page - 1) * ITEMS_PER_PAGE
-            const paginatedMock = MOCK_ARTICLES.slice(start, start + ITEMS_PER_PAGE)
+            const paginatedMock = MOCK_SAVED_ARTICLES.slice(start, start + ITEMS_PER_PAGE)
             setArticles(paginatedMock)
-            setTotalCount(MOCK_ARTICLES.length)
-            setStats({
-                published: MOCK_ARTICLES.filter(a => a.status === 'PUBLISHED').length,
-                drafts: MOCK_ARTICLES.filter(a => a.status === 'DRAFT').length
-            })
+            setTotalCount(MOCK_SAVED_ARTICLES.length)
             setIsLoading(false)
             return
         }
@@ -145,48 +122,64 @@ export function UserArticlesSection() {
         setIsLoading(true)
         try {
             const skip = (page - 1) * ITEMS_PER_PAGE
-            const response = await fetch(`/api/articles?limit=${ITEMS_PER_PAGE}&skip=${skip}`)
+            const response = await fetch(`/api/articles/saved?limit=${ITEMS_PER_PAGE}&skip=${skip}`)
             if (response.ok) {
                 const data = await response.json()
                 setUseMockData(false)
                 setArticles(data.articles || [])
                 setTotalCount(data.total || 0)
-                setStats({
-                    published: data.publishedCount || 0,
-                    drafts: data.draftCount || 0
-                })
             }
         } catch (error) {
-            console.error('Failed to fetch articles:', error)
+            console.error('Failed to fetch saved articles:', error)
         } finally {
             setIsLoading(false)
         }
     }
 
     useEffect(() => {
-        fetchArticles(currentPage)
+        fetchSavedArticles(currentPage)
     }, [session, currentPage, isDemo])
+
+    const handleUnsave = async (e, articleId) => {
+        e.stopPropagation()
+        
+        if (useMockData) {
+            // Handle mock data removal
+            setArticles(prev => prev.filter(a => a.id !== articleId))
+            setTotalCount(prev => prev - 1)
+            toast.success('Article removed from saved')
+            return
+        }
+
+        try {
+            const response = await fetch(`/api/articles/saved?articleId=${articleId}`, {
+                method: 'DELETE',
+            })
+            if (response.ok) {
+                setTotalCount(prev => prev - 1)
+                if (articles.length === 1 && currentPage > 1) {
+                    setCurrentPage(prev => prev - 1)
+                } else {
+                    fetchSavedArticles(currentPage)
+                }
+                toast.success('Article removed from saved')
+            }
+        } catch (error) {
+            toast.error('Failed to remove article')
+        }
+    }
 
     return (
         <Card className="border-border/50">
             <CardHeader className="pb-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
-                        <CardTitle className="text-base sm:text-lg">Your articles</CardTitle>
+                        <Bookmark className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
+                        <CardTitle className="text-base sm:text-lg">Saved articles</CardTitle>
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push('/dashboard?tab=write')}
-                        className="gap-1 w-full sm:w-auto"
-                    >
-                        <PenLine className="h-3.5 w-3.5" />
-                        Write article
-                    </Button>
                 </div>
                 <CardDescription className="text-xs sm:text-sm">
-                    {stats.published} published • {stats.drafts} drafts
+                    {totalCount} saved article{totalCount !== 1 ? 's' : ''}
                     {useMockData && <span className="text-muted-foreground/60"> (demo)</span>}
                 </CardDescription>
             </CardHeader>
@@ -197,19 +190,18 @@ export function UserArticlesSection() {
                     </div>
                 ) : articles.length === 0 && currentPage === 1 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <FileText className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">No articles yet</p>
+                        <Bookmark className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                        <p className="text-sm font-medium text-muted-foreground">No saved articles</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Start writing to share your knowledge
+                            Save articles while reading to find them here
                         </p>
                         <Button
                             variant="outline"
                             size="sm"
                             className="mt-4"
-                            onClick={() => router.push('/dashboard?tab=write')}
+                            onClick={() => router.push('/blog')}
                         >
-                            <PenLine className="h-3.5 w-3.5 mr-1" />
-                            Create your first article
+                            Explore blog
                         </Button>
                     </div>
                 ) : (
@@ -220,13 +212,7 @@ export function UserArticlesSection() {
                                     <div
                                         key={article.id}
                                         className="group flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
-                                        onClick={() => {
-                                            if (article.status === 'PUBLISHED') {
-                                                router.push(`/blog/${article.slug}`)
-                                            } else {
-                                                router.push('/dashboard?tab=write')
-                                            }
-                                        }}
+                                        onClick={() => router.push(`/blog/${article.slug}`)}
                                     >
                                         {/* Thumbnail - hidden on very small screens */}
                                         <div className="hidden xs:block shrink-0 w-12 h-10 sm:w-16 sm:h-12 rounded-md overflow-hidden">
@@ -250,32 +236,37 @@ export function UserArticlesSection() {
                                                 <h4 className="font-medium text-xs sm:text-sm line-clamp-1 group-hover:text-[var(--brand-accent)] transition-colors">
                                                     {article.title || 'Untitled Article'}
                                                 </h4>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={`shrink-0 text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 ${STATUS_COLORS[article.status] || ''}`}
-                                                >
-                                                    {STATUS_LABELS[article.status] || article.status}
+                                                <Badge variant="outline" className="shrink-0 text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 hidden sm:inline-flex">
+                                                    {article.category}
                                                 </Badge>
                                             </div>
                                             <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 mt-0.5">
                                                 {article.excerpt || 'No excerpt'}
                                             </p>
-                                            <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 text-[10px] sm:text-xs text-muted-foreground">
+                                            <div className="flex items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-0.5 mt-1 sm:mt-1.5 text-[10px] sm:text-xs text-muted-foreground">
                                                 {article.readTime && (
                                                     <span className="flex items-center gap-1">
                                                         <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                                         {article.readTime}
                                                     </span>
                                                 )}
-                                                {article.status === 'PUBLISHED' && (
-                                                    <span className="flex items-center gap-1">
-                                                        <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                                        Live
-                                                    </span>
-                                                )}
+                                                <span className="text-muted-foreground/60 truncate max-w-[100px] sm:max-w-none">
+                                                    {article.authorName}
+                                                </span>
                                             </div>
                                         </div>
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center" />
+                                        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 self-center">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 sm:h-7 sm:w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                                onClick={(e) => handleUnsave(e, article.id)}
+                                                title="Remove from saved"
+                                            >
+                                                <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                            </Button>
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -317,4 +308,4 @@ export function UserArticlesSection() {
     )
 }
 
-export default UserArticlesSection
+export default SavedArticlesSection

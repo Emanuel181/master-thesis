@@ -582,7 +582,7 @@ export const SecurityCodeDemo = () => {
                                         </div>
                                         <div className="flex justify-between text-xs text-slate-400">
                                             <span>Agent</span>
-                                            <span className="text-white">Reporting Agent</span>
+                                            <span className="text-white">Reporting agent</span>
                                         </div>
                                     </div>
                                 </div>
@@ -628,25 +628,25 @@ export const SecurityCodeDemo = () => {
                    However, for this task "centering and resizing", maybe just hiding them on very small screens is better to avoid clutter?
                    Let's hide Red/Emerald on xs screens (< 480px) and show them on sm+.
                 */}
-                <AgentPointer isVisible={step === 3} x={180} y={150} label="Reviewer Agent" color="blue" icon={Play} className="hidden sm:block" />
+                <AgentPointer isVisible={step === 3} x={180} y={150} label="Reviewer agent" color="blue" icon={Play} className="hidden sm:block" />
                 
                 {/* We need to adjust Y for these based on screen size if we want them visible on mobile. 
                     If we hide them on xs, we can just use the SM offset (approx 216px top + 10 = 226px).
                     Let's try to target sm+ screens.
                 */}
-                <AgentPointer isVisible={step === 4} x={60} y={246} label="Reviewer Agent" color="red" icon={AlertTriangle} className="hidden sm:block" />
-                <AgentPointer isVisible={step === 5} x={60} y={246} label="Fixer Agent" color="emerald" icon={FileCode} className="hidden sm:block" />
+                <AgentPointer isVisible={step === 4} x={60} y={246} label="Reviewer agent" color="red" icon={AlertTriangle} className="hidden sm:block" />
+                <AgentPointer isVisible={step === 5} x={60} y={246} label="Fixer agent" color="emerald" icon={FileCode} className="hidden sm:block" />
                 
                 {/* For XS screens, we could add separate pointers with different Y if really needed, but let's start by decluttering mobile. */}
                 
-                <AgentPointer isVisible={step === 6} x={200} y={480} label="QA Agent" color="purple" icon={Beaker} className="hidden md:block" />
+                <AgentPointer isVisible={step === 6} x={200} y={480} label="QA agent" color="purple" icon={Beaker} className="hidden md:block" />
 
                 {/* --- NEW Reporting Agent --- */}
                 <AgentPointer
                     isVisible={step === 8}
                     x={600}
                     y={320}
-                    label="Reporting Agent"
+                    label="Reporting agent"
                     color="orange"
                     icon={LayoutTemplate}
                     className="hidden lg:block"

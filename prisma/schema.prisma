@@ -36,6 +36,7 @@ model User {
   sessions            Session[]
   auditLogs           AuditLog[]
   warnings            UserWarning[]
+  savedArticles       SavedArticle[]
 }
 
 model Account {
@@ -290,6 +291,7 @@ model Article {
   updatedAt              DateTime          @updatedAt
   reactions              ArticleReaction[]
   media                  ArticleMedia[]
+  savedBy                SavedArticle[]
 
   @@index([status])
   @@index([authorId])
@@ -331,6 +333,20 @@ model ArticleReaction {
   article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
   @@unique([articleId, userId]) // One reaction per user per article
+  @@index([articleId])
+  @@index([userId])
+}
+
+// Saved articles for users
+model SavedArticle {
+  id        String   @id @default(cuid())
+  articleId String
+  userId    String
+  createdAt DateTime @default(now())
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId]) // One save per user per article
   @@index([articleId])
   @@index([userId])
 }

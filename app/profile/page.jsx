@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import ProfileHeader from "@/components/profile/profile-header"
 import ProfileContent from "@/components/profile/profile-content"
 import { UserArticlesSection } from "@/components/profile/user-articles-section"
+import { SavedArticlesSection } from "@/components/profile/saved-articles-section"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomizationDialog } from "@/components/customization-dialog"
 import { useSettings } from "@/contexts/settingsContext"
@@ -32,28 +33,11 @@ import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dial
 import { Button } from "@/components/ui/button"
 import { Keyboard, PersonStanding } from "lucide-react"
 import { useAccessibility } from "@/contexts/accessibilityContext"
-import { useIsMobile } from "@/hooks/use-mobile"
-
-// Accessibility button for mobile in header
-function AccessibilityTrigger() {
-    const { openPanel } = useAccessibility()
-
-    return (
-        <Button
-            variant="outline"
-            size="icon"
-            onClick={openPanel}
-            title="Accessibility Options"
-        >
-            <PersonStanding className="h-5 w-5" />
-        </Button>
-    )
-}
 
 // Header buttons component that can use the command palette context
 function HeaderButtons() {
     const { setOpen } = useCommandPalette()
-    const isMobile = useIsMobile()
+    const { openPanel } = useAccessibility()
 
     return (
         <div className="flex items-center gap-2">
@@ -61,13 +45,19 @@ function HeaderButtons() {
                 variant="outline"
                 size="icon"
                 onClick={() => setOpen(true)}
-                title="Command Palette (Ctrl+K)"
+                title="Command palette (Ctrl+K)"
             >
                 <Keyboard className="h-5 w-5" />
             </Button>
             <NotificationCenter />
-            {/* Show accessibility trigger on mobile in header */}
-            {isMobile && <AccessibilityTrigger />}
+            <Button
+                variant="outline"
+                size="icon"
+                onClick={openPanel}
+                title="Accessibility options"
+            >
+                <PersonStanding className="h-5 w-5" />
+            </Button>
             <CustomizationDialog showEditorTabs={false} />
             <ThemeToggle />
         </div>
@@ -78,7 +68,6 @@ export default function ProfilePage() {
     const { settings, mounted } = useSettings()
     const { data: session } = useSession()
     const router = useRouter()
-    const isMobile = useIsMobile()
     const { setForceHideFloating } = useAccessibility()
 
     // 1. Add State Management here
@@ -86,13 +75,11 @@ export default function ProfilePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
-    // Hide floating accessibility button on mobile (use header icon instead)
+    // Always hide floating accessibility button on profile page (use header icon instead)
     useEffect(() => {
-        if (isMobile) {
-            setForceHideFloating(true);
-            return () => setForceHideFloating(false);
-        }
-    }, [isMobile, setForceHideFloating]);
+        setForceHideFloating(true);
+        return () => setForceHideFloating(false);
+    }, [setForceHideFloating]);
 
     // Listen for open-feedback event (from command palette shortcut)
     useEffect(() => {
@@ -272,6 +259,11 @@ export default function ProfilePage() {
                                             userId={session.user.id}
                                             isOwnProfile={true}
                                         />
+                                    )}
+
+                                    {/* 6. User's saved articles */}
+                                    {session?.user?.id && (
+                                        <SavedArticlesSection />
                                     )}
                                 </div>
                             </ScrollArea>

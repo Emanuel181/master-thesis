@@ -189,6 +189,7 @@ export function HoverExpandPanels({
   return (
     <div 
       ref={containerRef} 
+      data-hover-panels
       className={cn(
         "relative w-full overflow-visible", 
         "p-2 sm:p-4 md:p-6 lg:p-8", 
@@ -256,7 +257,7 @@ export function HoverExpandPanels({
               />
 
               {/* Animated content like features cards */}
-              <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10">
+              <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 z-0 opacity-40 sm:opacity-50 md:opacity-100">
                 {getPanelAnimation(i)}
               </div>
 
@@ -294,10 +295,10 @@ export function HoverExpandPanels({
               />
 
               {/* Readability overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 z-10" />
 
               {/* Labels */}
-              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 lg:p-8">
+              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 lg:p-8 z-20">
                 <motion.div
                   className="max-w-[50ch] text-white"
                   initial={false}

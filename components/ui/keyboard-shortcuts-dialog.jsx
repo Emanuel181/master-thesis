@@ -22,12 +22,12 @@ const shortcuts = [
             { keys: "mod+k", description: "Open command palette", action: "command-palette" },
             { keys: "mod+p", description: "Quick file switcher", action: "file-switcher" },
             { keys: "mod+g", description: "Go to line", action: "go-to-line" },
-            { keys: "mod+1", description: "Go to Home", action: "navigate-home" },
-            { keys: "mod+2", description: "Go to Code Input", action: "navigate-code" },
-            { keys: "mod+3", description: "Go to Knowledge Base", action: "navigate-kb" },
-            { keys: "mod+4", description: "Go to Results", action: "navigate-results" },
-            { keys: "mod+5", description: "Go to Profile", action: "navigate-profile" },
-            { keys: "mod+6", description: "Go to Write Article", action: "navigate-article" },
+            { keys: "mod+1", description: "Go to home", action: "navigate-home" },
+            { keys: "mod+2", description: "Go to code Input", action: "navigate-code" },
+            { keys: "mod+3", description: "Go to knowledge Base", action: "navigate-kb" },
+            { keys: "mod+4", description: "Go to results", action: "navigate-results" },
+            { keys: "mod+5", description: "Go to profile", action: "navigate-profile" },
+            { keys: "mod+6", description: "Go to write article", action: "navigate-article" },
         ]
     },
     {
@@ -45,7 +45,7 @@ const shortcuts = [
         ]
     },
     {
-        category: "Article Editor",
+        category: "Article editor",
         items: [
             { keys: "mod+s", description: "Save article draft", action: "save-article" },
             { keys: "mod+enter", description: "Submit for review", action: "submit-article" },
@@ -71,7 +71,7 @@ const shortcuts = [
         ]
     },
     {
-        category: "File Tree",
+        category: "File tree",
         items: [
             { keys: "mod+b", description: "Toggle file tree sidebar", action: "toggle-sidebar" },
             { keys: "mod+shift+e", description: "Focus file explorer", action: "focus-explorer" },
@@ -117,7 +117,7 @@ export function KeyboardShortcutsDialog() {
                     router.push("/profile")
                     break
                 case "navigate-article":
-                    router.push("/dashboard?active=Write Article")
+                    router.push("/dashboard?active=Write article")
                     break
                 case "theme-toggle":
                     document.documentElement.classList.toggle("dark")

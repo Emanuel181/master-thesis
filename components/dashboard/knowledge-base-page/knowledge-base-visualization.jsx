@@ -1330,7 +1330,7 @@ export default function KnowledgeBaseVisualization() {
                         <div className="h-12 w-12 sm:h-16 sm:w-16 bg-muted rounded-full flex items-center justify-center mb-3 sm:mb-4">
                             <Search className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                         </div>
-                        <h3 className="text-base sm:text-lg font-medium">No Category Selected</h3>
+                        <h3 className="text-base sm:text-lg font-medium">No category selected</h3>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2 max-w-sm">Select a category from above to view documents and upload new files.</p>
                     </div>
                 )}

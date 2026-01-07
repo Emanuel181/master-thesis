@@ -99,21 +99,21 @@ const TABS = [
   { id: "all", label: "All", status: null },
   { id: "draft", label: "Draft", status: "DRAFT" },
   { id: "pending", label: "Pending", status: "PENDING_REVIEW" },
-  { id: "in_review", label: "In Review", status: "IN_REVIEW" },
+  { id: "in_review", label: "In review", status: "IN_REVIEW" },
   { id: "published", label: "Published", status: "PUBLISHED" },
   { id: "rejected", label: "Rejected", status: "REJECTED" },
-  { id: "pending_deletion", label: "Pending Deletion", status: "SCHEDULED_FOR_DELETION" },
+  { id: "pending_deletion", label: "Pending deletion", status: "SCHEDULED_FOR_DELETION" },
 ];
 
 // Status configuration
 const STATUS_CONFIG = {
   DRAFT: { label: "Draft", icon: FileText, color: "bg-secondary text-secondary-foreground" },
   PENDING_REVIEW: { label: "Pending", icon: Clock, color: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400" },
-  IN_REVIEW: { label: "In Review", icon: Eye, color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  IN_REVIEW: { label: "In review", icon: Eye, color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
   PUBLISHED: { label: "Published", icon: CheckCircle, color: "bg-green-500/15 text-green-600 dark:text-green-400" },
   APPROVED: { label: "Published", icon: CheckCircle, color: "bg-green-500/15 text-green-600 dark:text-green-400" },
   REJECTED: { label: "Rejected", icon: XCircle, color: "bg-red-500/15 text-red-600 dark:text-red-400" },
-  SCHEDULED_FOR_DELETION: { label: "Pending Deletion", icon: Trash2, color: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
+  SCHEDULED_FOR_DELETION: { label: "Pending deletion", icon: Trash2, color: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -244,6 +244,9 @@ export function DemoArticleEditor() {
   // Icon search and pagination
   const [iconSearch, setIconSearch] = useState("");
   const [iconPage, setIconPage] = useState(1);
+  
+  // Auto-save timestamp (mocked for demo)
+  const [lastSavedAt, setLastSavedAt] = useState(null);
 
   // Persist articles to localStorage
   useEffect(() => {
@@ -251,6 +254,44 @@ export function DemoArticleEditor() {
       localStorage.setItem("demo-articles", JSON.stringify(articles));
     }
   }, [articles]);
+
+  // Update article in state (for auto-save)
+  const handleUpdateArticle = useCallback((silent = false) => {
+    if (!selectedArticle) return;
+    
+    const updatedArticle = {
+      ...selectedArticle,
+      title: editFormState.title,
+      excerpt: editFormState.excerpt,
+      category: editFormState.category,
+      coverType: editFormState.coverType,
+      gradient: editFormState.coverType === "gradient" ? editFormState.gradient : null,
+      coverImage: editFormState.coverType === "image" ? editFormState.coverImage : null,
+      iconName: editFormState.iconName,
+      iconPosition: editFormState.iconPosition,
+      iconColor: editFormState.iconColor,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    setArticles((prev) => prev.map((a) => (a.id === selectedArticle.id ? updatedArticle : a)));
+    setSelectedArticle(updatedArticle);
+    setLastSavedAt(new Date());
+    
+    if (!silent) {
+      toast.success("Article saved");
+    }
+  }, [selectedArticle, editFormState]);
+
+  // Auto-save every 30 seconds when there's a selected article and user can edit
+  useEffect(() => {
+    if (!selectedArticle || !canEdit) return;
+
+    const autoSaveInterval = setInterval(() => {
+      handleUpdateArticle(true); // silent save
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [selectedArticle, canEdit, handleUpdateArticle]);
 
   // Create new article
   const handleCreateArticle = async () => {
@@ -355,35 +396,6 @@ export function DemoArticleEditor() {
       toast.error("Failed to import article");
     } finally {
       setSubmittingId(null);
-    }
-  };
-
-  // Update article metadata
-  const handleUpdateArticle = async () => {
-    if (!selectedArticle) return;
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const updatedArticle = {
-        ...selectedArticle,
-        title: editFormState.title,
-        excerpt: editFormState.excerpt,
-        category: editFormState.category,
-        coverType: editFormState.coverType,
-        gradient: editFormState.coverType === "gradient" ? editFormState.gradient : null,
-        coverImage: editFormState.coverType === "image" ? editFormState.coverImage : null,
-        iconName: editFormState.iconName,
-        iconPosition: editFormState.iconPosition,
-        iconColor: editFormState.iconColor,
-      };
-      
-      setArticles((prev) => prev.map((a) => (a.id === selectedArticle.id ? updatedArticle : a)));
-      setSelectedArticle(updatedArticle);
-      toast.success("Article saved");
-    } catch (error) {
-      console.error("Error updating article:", error);
-      toast.error("Failed to update article");
     }
   };
 
@@ -513,7 +525,7 @@ export function DemoArticleEditor() {
             <CardHeader className="pb-3 space-y-0 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                  <CardTitle className="text-sm sm:text-base whitespace-nowrap">Your Articles</CardTitle>
+                  <CardTitle className="text-sm sm:text-base whitespace-nowrap">Your articles</CardTitle>
                   <Badge variant="secondary" className="shrink-0">{counts.all}</Badge>
                 </div>
                 <div className="flex items-center gap-1">
@@ -580,7 +592,7 @@ export function DemoArticleEditor() {
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder={`Search ${TABS.find(t => t.id === activeTab)?.label || "articles"}...`}
+                    placeholder={`Search in ${(TABS.find(t => t.id === activeTab)?.label || "articles").toLowerCase()}...`}
                     value={articleSearchTerm}
                     onChange={(e) => setArticleSearchTerm(e.target.value)}
                     className="h-8 pl-8 text-xs"
@@ -722,11 +734,11 @@ export function DemoArticleEditor() {
                 );
               })()}
 
-              {/* New Article button at bottom of content */}
+              {/* New article button at bottom of content */}
               <div className="p-3 border-t mt-auto">
                 <Button onClick={handleCreateArticle} disabled={isCreating} className="w-full">
                   {isCreating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                  New Article
+                  New article
                 </Button>
               </div>
             </CardContent>
@@ -737,8 +749,10 @@ export function DemoArticleEditor() {
       {/* Right Panel - Edit Article Card */}
       <Card className="flex-1 flex flex-col min-h-0 min-w-0">
         <CardHeader className="pb-2 sm:pb-3 shrink-0 border-b px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Mobile: Stack layout */}
+          <div className="flex flex-col gap-2">
+            {/* Top row: Sidebar toggle + Title */}
+            <div className="flex items-center gap-2 min-w-0">
               {/* Show open sidebar button when sidebar is closed OR always on mobile */}
               <TooltipProvider>
                 <Tooltip>
@@ -753,31 +767,55 @@ export function DemoArticleEditor() {
               <div className="min-w-0 flex-1">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <PenLine className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{selectedArticle ? "Edit Article" : "Write Article"}</span>
+                  <span className="truncate">{selectedArticle ? "Edit Article" : "Write article"}</span>
                 </CardTitle>
                 {selectedArticle && (
                   <CardDescription className="truncate max-w-full sm:max-w-[300px]">{selectedArticle.title || "Untitled"}</CardDescription>
                 )}
               </div>
+              {/* Desktop: Actions inline */}
+              {selectedArticle && (
+                <div className="hidden sm:flex items-center gap-2">
+                  <Badge className={cn("font-normal text-xs shrink-0", STATUS_CONFIG[selectedArticle.status]?.color)}>
+                    {React.createElement(STATUS_CONFIG[selectedArticle.status]?.icon || FileText, { className: "h-3 w-3 mr-1" })}
+                    {STATUS_CONFIG[selectedArticle.status]?.label || "Unknown"}
+                  </Badge>
+                  {canEdit && (
+                    <Button size="sm" variant="outline" onClick={handleUpdateArticle} className="h-8 text-sm px-3">
+                      <Save className="h-3 w-3 mr-1" />
+                      Save
+                    </Button>
+                  )}
+                  {canSubmit && (
+                    <Button size="sm" onClick={() => handleSubmitForReview(selectedArticle)} disabled={submittingId === selectedArticle.id} className="h-8 text-sm px-3">
+                      {submittingId === selectedArticle.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
+                      Submit
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
+            {/* Mobile: Actions row below */}
             {selectedArticle && (
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <Badge className={cn("font-normal text-[10px] sm:text-xs shrink-0", STATUS_CONFIG[selectedArticle.status]?.color)}>
-                  {React.createElement(STATUS_CONFIG[selectedArticle.status]?.icon || FileText, { className: "h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" })}
-                  <span className="hidden xs:inline">{STATUS_CONFIG[selectedArticle.status]?.label || "Unknown"}</span>
+              <div className="flex sm:hidden items-center justify-between gap-2">
+                <Badge className={cn("font-normal text-[10px] shrink-0", STATUS_CONFIG[selectedArticle.status]?.color)}>
+                  {React.createElement(STATUS_CONFIG[selectedArticle.status]?.icon || FileText, { className: "h-2.5 w-2.5 mr-1" })}
+                  {STATUS_CONFIG[selectedArticle.status]?.label || "Unknown"}
                 </Badge>
-                {canEdit && (
-                  <Button size="sm" variant="outline" onClick={handleUpdateArticle} className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">
-                    <Save className="h-3 w-3 mr-1" />
-                    <span className="hidden sm:inline">Save</span>
-                  </Button>
-                )}
-                {canSubmit && (
-                  <Button size="sm" onClick={() => handleSubmitForReview(selectedArticle)} disabled={submittingId === selectedArticle.id} className="h-7 sm:h-8 text-xs sm:text-sm px-2 sm:px-3">
-                    {submittingId === selectedArticle.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
-                    <span className="hidden sm:inline">Submit</span>
-                  </Button>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {canEdit && (
+                    <Button size="sm" variant="outline" onClick={handleUpdateArticle} className="h-7 text-xs px-2">
+                      <Save className="h-3 w-3 mr-1" />
+                      Save
+                    </Button>
+                  )}
+                  {canSubmit && (
+                    <Button size="sm" onClick={() => handleSubmitForReview(selectedArticle)} disabled={submittingId === selectedArticle.id} className="h-7 text-xs px-2">
+                      {submittingId === selectedArticle.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
+                      Submit
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1114,7 +1152,12 @@ export function DemoArticleEditor() {
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                          Your progress is automatically saved every 30 seconds, when you switch tabs, and when you close the editor.
+                          Your progress is automatically saved every 30 seconds, and when you close the editor.
+                          {lastSavedAt && (
+                            <span className="block mt-1 text-muted-foreground">
+                              Last saved: {lastSavedAt.toLocaleTimeString()} (demo)
+                            </span>
+                          )}
                         </AlertDescription>
                       </Alert>
                       <Button onClick={() => setIsFullscreenOpen(true)} className="w-full" size="lg" disabled={!canEdit}>

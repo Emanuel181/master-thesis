@@ -254,7 +254,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                 <form id="profile-form" onSubmit={handleSave} className="space-y-4 sm:space-y-6">
                     <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="firstName">First Name</Label>
+                            <Label htmlFor="firstName">First name</Label>
                             <Input
                                 id="firstName"
                                 value={profile.firstName}
@@ -266,7 +266,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lastName">Last Name</Label>
+                            <Label htmlFor="lastName">Last name</Label>
                             <Input
                                 id="lastName"
                                 value={profile.lastName}
@@ -303,7 +303,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="jobTitle">Job Title</Label>
+                            <Label htmlFor="jobTitle">Job title</Label>
                             <Input
                                 id="jobTitle"
                                 value={profile.jobTitle}

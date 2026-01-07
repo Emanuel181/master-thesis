@@ -37,19 +37,29 @@ export function AnimatedHero({ scrollContainerRef }) {
   
   const heroOpacity = useTransform(smoothProgress, [0, 0.12], [1, 0]);
   const heroY = useTransform(smoothProgress, [0, 0.12], [0, -40]);
+  
+  // Scroll-linked shrinking border effect
+  const horizontalInset = useTransform(smoothProgress, [0, 0.15], [0, 32]);
+  const borderRadius = useTransform(smoothProgress, [0, 0.15], [0, 24]);
 
   return (
     <motion.section
       ref={heroRef}
       id="hero"
-      className="relative z-10 w-full min-h-[100svh] md:min-h-screen flex flex-col justify-center hero-gradient px-3 sm:px-4 overflow-hidden"
-      style={{ opacity: heroOpacity, y: heroY }}
+      className="relative z-10 w-full min-h-[100svh] md:min-h-screen flex flex-col justify-center hero-gradient overflow-hidden"
+      style={{ 
+        opacity: heroOpacity, 
+        y: heroY,
+        marginLeft: horizontalInset,
+        marginRight: horizontalInset,
+        borderRadius: borderRadius,
+      }}
     >
       {/* Decorative elements */}
       <div className="absolute top-1/4 left-10 w-72 h-72 bg-[#1fb6cf]/10 rounded-full blur-[100px] pointer-events-none hidden sm:block" />
       <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-[#1fb6cf]/5 rounded-full blur-[120px] pointer-events-none hidden sm:block" />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-12 w-full pt-16 sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 w-full pt-16 sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-20 items-center">
           {/* Left: Copy - No entrance animation to prevent layout shift */}
           <motion.div

@@ -155,7 +155,7 @@ export function AIWorkflowVisualization({
                 type: "knowledgeBaseNode",
                 position: getNodePosition("knowledgeBase"),
                 data: {
-                    label: "Knowledge Base",
+                    label: "Knowledge base",
                     description: "RAG context source",
                     iconBg: "bg-cyan-500",
                     knowledgeBases,
@@ -173,7 +173,7 @@ export function AIWorkflowVisualization({
                 type: "userCodeNode",
                 position: getNodePosition("userCode"),
                 data: {
-                    label: "Your Code",
+                    label: "Your code",
                     description: "Input code for review",
                 },
             },
@@ -184,7 +184,7 @@ export function AIWorkflowVisualization({
                 type: "promptNode",
                 position: getNodePosition("reviewerPrompt"),
                 data: {
-                    label: "Reviewer Prompts",
+                    label: "Reviewer prompt",
                     description: "Select prompts for reviewer",
                     iconBg: "bg-indigo-500",
                     agent: "reviewer",
@@ -200,7 +200,7 @@ export function AIWorkflowVisualization({
                 position: getNodePosition("reviewer"),
                 data: {
                     id: "reviewer",
-                    label: "Reviewer Agent",
+                    label: "Reviewer agent",
                     description: "Analyzes code quality",
                     icon: ScanSearch,
                     iconBg: "bg-blue-500",
@@ -217,7 +217,7 @@ export function AIWorkflowVisualization({
                 type: "promptNode",
                 position: getNodePosition("implementationPrompt"),
                 data: {
-                    label: "Implementation Prompts",
+                    label: "Implementation prompt",
                     description: "Select prompts for changes",
                     iconBg: "bg-indigo-500",
                     agent: "implementation",
@@ -233,7 +233,7 @@ export function AIWorkflowVisualization({
                 position: getNodePosition("implementation"),
                 data: {
                     id: "implementation",
-                    label: "Implementation Agent",
+                    label: "Implementation agent",
                     description: "Implements code changes",
                     icon: Wrench,
                     iconBg: "bg-green-500",
@@ -250,7 +250,7 @@ export function AIWorkflowVisualization({
                 type: "promptNode",
                 position: getNodePosition("testerPrompt"),
                 data: {
-                    label: "Tester Prompts",
+                    label: "Tester prompt",
                     description: "Select prompts for testing",
                     iconBg: "bg-indigo-500",
                     agent: "tester",
@@ -266,7 +266,7 @@ export function AIWorkflowVisualization({
                 position: getNodePosition("tester"),
                 data: {
                     id: "tester",
-                    label: "Tester Agent",
+                    label: "Tester agent",
                     description: "Tests code functionality",
                     icon: BugPlay,
                     iconBg: "bg-orange-500",
@@ -283,7 +283,7 @@ export function AIWorkflowVisualization({
                 type: "promptNode",
                 position: getNodePosition("reportPrompt"),
                 data: {
-                    label: "Report Prompts",
+                    label: "Report prompt",
                     description: "Select prompts for report",
                     iconBg: "bg-indigo-500",
                     agent: "report",
@@ -299,7 +299,7 @@ export function AIWorkflowVisualization({
                 position: getNodePosition("report"),
                 data: {
                     id: "report",
-                    label: "Report Agent",
+                    label: "Report agent",
                     description: "Generates final report",
                     icon: FileText,
                     iconBg: "bg-purple-500",
@@ -476,7 +476,7 @@ export function AIWorkflowVisualization({
                 {/* Header - responsive layout */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-muted/30 gap-2 sm:gap-3">
                     <div className="text-sm font-semibold text-foreground">
-                        AI Workflow Configuration
+                        AI workflow configuration
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {/* Zoom controls */}
@@ -504,7 +504,7 @@ export function AIWorkflowVisualization({
                                 title="Save current layout"
                             >
                                 <Save className="w-3.5 h-3.5 sm:mr-1.5" />
-                                <span className="hidden sm:inline">Save Layout</span>
+                                <span className="hidden sm:inline">Save layout</span>
                             </Button>
                             <Button
                                 type="button"

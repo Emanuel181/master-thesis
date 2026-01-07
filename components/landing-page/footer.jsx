@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { HexGridBackground } from "./hex-grid-background";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -99,9 +100,12 @@ export function Footer({ onScrollToTop }) {
     };
 
     return (
-        <footer ref={ref} className="relative py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 bg-[var(--brand-dark)] dark:bg-[var(--brand-dark)] w-full pb-safe">
+        <footer ref={ref} className="relative pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 md:px-8 bg-background w-full pb-safe overflow-hidden">
+            {/* Hex Grid Background */}
+            <HexGridBackground className="z-0 opacity-60" />
+            
             <motion.div
-                className="max-w-7xl mx-auto"
+                className="max-w-7xl mx-auto relative z-10"
                 variants={containerVariants}
                 initial="hidden"
                 animate={isInView ? "visible" : "hidden"}

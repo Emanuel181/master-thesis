@@ -53,7 +53,7 @@ function CommandPaletteTrigger() {
             variant="outline"
             size="icon"
             onClick={() => setOpen(true)}
-            title="Command Palette (Ctrl+K)"
+            title="Command palette (Ctrl+K)"
         >
             <Keyboard className="h-5 w-5" />
         </Button>
@@ -69,7 +69,7 @@ function AccessibilityTrigger() {
             variant="outline"
             size="icon"
             onClick={openPanel}
-            title="Accessibility Options"
+            title="Accessibility options"
         >
             <PersonStanding className="h-5 w-5" />
         </Button>
@@ -259,7 +259,7 @@ function DashboardContent({ settings, mounted }) {
                     return <KnowledgeBaseVisualization />
                 case "Results":
                     return <Results initialCode={initialCode} />
-                case "Write Article":
+                case "Write article":
                     return <ArticleEditor />
                 case "Home":
                     return <HomePage />

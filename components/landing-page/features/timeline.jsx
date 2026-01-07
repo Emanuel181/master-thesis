@@ -238,7 +238,7 @@ export function TimelineDemo() {
 
                     <p className="mb-4 text-[#0e2736]/70 dark:text-[#e6f4f7]/70 text-sm font-normal leading-relaxed">
 
-                        Finally, the <span className="font-semibold text-[#0e2736] dark:text-[#e6f4f7]">QA Agent</span> generates a regression test, runs it locally, and opens a Pull Request only if the tests pass and the vulnerability is neutralized.
+                        Finally, the <span className="font-semibold text-[#0e2736] dark:text-[#e6f4f7]">QA agent</span> generates a regression test, runs it locally, and opens a Pull Request only if the tests pass and the vulnerability is neutralized.
 
                     </p>
 

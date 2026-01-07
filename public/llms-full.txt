@@ -900,7 +900,7 @@ A major release introducing secure authentication and the visual workflow builde
 
 - Added Visual Workflow Configurator: A drag-and-drop interface to design remediation pipelines.
 - Configure which agents (Reviewer, Fixer, Tester) to use for specific tasks.
-- Link specific Knowledge Bases and System Prompts to each agent in the chain.
+- Link specific Knowledge bases and System Prompts to each agent in the chain.
 
 October 2025
 

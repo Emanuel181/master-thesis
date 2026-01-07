@@ -124,7 +124,7 @@ export function AddCategoryDialog({ onAddCategory, groups = [] }) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          Add Category
+          Add category
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
@@ -234,7 +234,7 @@ export function AddCategoryDialog({ onAddCategory, groups = [] }) {
         <DialogFooter>
           <Button onClick={handleAdd} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? "Creating..." : "Add Category"}
+            {isLoading ? "Creating..." : "Add category"}
           </Button>
         </DialogFooter>
       </DialogContent>

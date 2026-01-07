@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, X, ArrowRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, GitBranch, AlertTriangle, Rss, MessageSquare, Heart, Building2 } from "lucide-react";
+import { Menu, X, ArrowRight, LayoutDashboard, PersonStanding, Sparkles, Shield, Zap, FileCode, GitBranch, AlertTriangle, Rss, MessageSquare, Heart, Building2, Rocket, BookOpen, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 import {
@@ -50,7 +50,6 @@ export const FloatingNavbar = () => {
     const isAuthenticated = status === "authenticated" && !!session;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isAboveLamp, setIsAboveLamp] = useState(false);
     const [feedbackOpen, setFeedbackOpen] = useState(false);
     const isMobile = useIsMobile();
 
@@ -59,32 +58,43 @@ export const FloatingNavbar = () => {
     // Subtle progress indicator
     const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
-    // Check if navbar is above lamp section
+    // Check if navbar is above sections with problematic backgrounds
+    const [isAboveColoredSection, setIsAboveColoredSection] = useState(false);
+
     useEffect(() => {
-        const checkLampPosition = () => {
-            const lampSection = document.getElementById('about');
-            if (lampSection) {
-                const rect = lampSection.getBoundingClientRect();
-                // Navbar is above lamp when lamp section top is near or above viewport top
-                setIsAboveLamp(rect.top <= 100 && rect.bottom > 0);
+        const checkSectionPositions = () => {
+            // Check multiple sections that have colored backgrounds
+            const sections = [
+                document.getElementById('about'),      // Lamp section
+                document.getElementById('blog'),       // Blog section  
+                document.getElementById('connect'),    // CTA section
+                document.querySelector('[data-hover-panels]'), // Hover expand panels
+            ];
+            
+            let isAbove = false;
+            for (const section of sections) {
+                if (section) {
+                    const rect = section.getBoundingClientRect();
+                    // Navbar is above section when section top is near viewport top
+                    if (rect.top <= 80 && rect.bottom > 60) {
+                        isAbove = true;
+                        break;
+                    }
+                }
             }
+            setIsAboveColoredSection(isAbove);
         };
 
-        // Check on scroll - try both window and scroll container
-        const handleScroll = () => checkLampPosition();
+        const handleScroll = () => checkSectionPositions();
         window.addEventListener('scroll', handleScroll, { passive: true });
 
-        // Also listen to scroll on the ScrollArea viewport
         const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
         if (scrollContainer) {
             scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
         }
 
-        // Initial check
-        checkLampPosition();
-
-        // Also check after a short delay for initial render
-        const timeoutId = setTimeout(checkLampPosition, 100);
+        checkSectionPositions();
+        const timeoutId = setTimeout(checkSectionPositions, 100);
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
@@ -119,27 +129,32 @@ export const FloatingNavbar = () => {
                 }}
             >
                 <motion.nav
-                    className={`pointer-events-auto flex items-center justify-between gap-2 sm:gap-3 md:gap-4 border px-3 sm:px-4 md:px-4 lg:px-6 py-2.5 sm:py-3 md:py-3 lg:py-3.5 rounded-2xl sm:rounded-full w-full max-w-5xl backdrop-blur-xl ${
-                        isScrolled 
-                            ? 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10' 
-                            : 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
-                    } transition-colors transition-shadow duration-300`}
+                    className={`pointer-events-auto flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3 md:gap-4 border px-2 xs:px-3 sm:px-4 md:px-4 lg:px-6 py-2 xs:py-2.5 sm:py-3 md:py-3 lg:py-3.5 rounded-2xl sm:rounded-full w-full max-w-5xl backdrop-blur-xl transition-all duration-500 ease-out ${
+                        isAboveColoredSection
+                            ? 'bg-background/95 dark:bg-background/90 border-[#1fb6cf]/50 shadow-xl shadow-black/20'
+                            : isScrolled 
+                                ? 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10' 
+                                : 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
+                    }`}
                     layout
                 >
 
                 {/* LEFT: Logo with brand name on mobile */}
                 <motion.a
                     href="/"
-                    className="flex items-center gap-2 sm:gap-2.5 font-medium group"
+                    className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 font-medium group shrink-0"
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     aria-label="VulnIQ Home"
                 >
                     <div className="relative">
-                        <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-8 w-8 sm:h-7 sm:w-7 rounded-xl sm:rounded-lg" width={32} height={32} priority fetchPriority="high" />
+                        <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="h-7 w-7 xs:h-8 xs:w-8 sm:h-7 sm:w-7 rounded-lg xs:rounded-xl sm:rounded-lg" width={32} height={32} priority fetchPriority="high" />
                         <div className="absolute -inset-1 bg-[var(--brand-accent)]/20 rounded-xl blur-sm -z-10 opacity-0 group-hover:opacity-100 transition-opacity md:hidden"></div>
                     </div>
-                    <span className="text-sm font-semibold text-foreground md:hidden">VulnIQ</span>
+                    <span className={cn(
+                        "text-xs xs:text-sm font-semibold md:hidden transition-colors duration-500 ease-out",
+                        isAboveColoredSection ? "text-[#1fb6cf]" : "text-foreground"
+                    )}>VulnIQ</span>
                 </motion.a>
 
                 {/* CENTER: Navigation Menu */}
@@ -148,7 +163,12 @@ export const FloatingNavbar = () => {
                         <NavigationMenuList>
                             {/* Product Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-muted-foreground hover:text-foreground text-sm">
+                                <NavigationMenuTrigger className={cn(
+                                    "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
+                                    isAboveColoredSection 
+                                        ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}>
                                     Product
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -184,7 +204,12 @@ export const FloatingNavbar = () => {
 
                             {/* Resources Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-muted-foreground hover:text-foreground text-sm">
+                                <NavigationMenuTrigger className={cn(
+                                    "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
+                                    isAboveColoredSection 
+                                        ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}>
                                     Resources
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -212,17 +237,17 @@ export const FloatingNavbar = () => {
                                                 </Link>
                                             </NavigationMenuLink>
                                         </li>
-                                        <ListItem href="/blog/understanding-sql-injection-prevention" title="SQL Injection Guide" icon={AlertTriangle}>
-                                            Detection and prevention strategies.
-                                        </ListItem>
-                                        <ListItem href="/blog/modern-application-security-testing-strategies" title="Security Testing" icon={Shield}>
-                                            SAST and DAST best practices.
-                                        </ListItem>
                                         <ListItem href="/changelog" title="Changelog" icon={FileCode}>
                                             Latest updates and releases.
                                         </ListItem>
                                         <ListItem href="/supporters" title="Supporters" icon={Heart}>
                                             People supporting this project.
+                                        </ListItem>
+                                        <ListItem href="https://www.producthunt.com/posts/vulniq" title="Product Hunt" icon={Rocket} external>
+                                            Support us on Product Hunt.
+                                        </ListItem>
+                                        <ListItem href="/demo" title="Try demo" icon={Zap}>
+                                            Experience VulnIQ in action.
                                         </ListItem>
                                     </ul>
                                 </NavigationMenuContent>
@@ -230,7 +255,12 @@ export const FloatingNavbar = () => {
 
                             {/* Company Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-muted-foreground hover:text-foreground text-sm">
+                                <NavigationMenuTrigger className={cn(
+                                    "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
+                                    isAboveColoredSection 
+                                        ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}>
                                     Company
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -238,7 +268,7 @@ export const FloatingNavbar = () => {
                                         <ListItem href="/about" title="About us" icon={Building2}>
                                             Learn about our mission and team.
                                         </ListItem>
-                                        <ListItem href="/security" title="Security Policy" icon={Shield}>
+                                        <ListItem href="/security" title="Security policy" icon={Shield}>
                                             Vulnerability disclosure policy.
                                         </ListItem>
                                         <ListItem href="/#connect" title="Contact" icon={MessageSquare}>
@@ -252,16 +282,16 @@ export const FloatingNavbar = () => {
                 </div>
 
                 {/* RIGHT: Actions */}
-                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-                    {/* Mobile: Compact action group */}
-                    <div className="flex md:hidden items-center gap-1 bg-muted/30 rounded-xl p-1 border border-border/30">
+                <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-3">
+                    {/* Tablet: Compact action group (xs to md) */}
+                    <div className="hidden xs:flex items-center gap-1 bg-muted/30 rounded-xl p-1 border border-border/30 md:!hidden">
                         <AccessibilityButton compact />
                         <div className="w-px h-5 bg-border/50"></div>
                         <ThemeToggle compact />
                     </div>
 
-                    {/* Desktop: Full actions */}
-                    <div className="hidden md:flex items-center gap-2">
+                    {/* Desktop: Full actions (md+) */}
+                    <div className="hidden md:!flex items-center gap-2">
                         <AccessibilityButton />
                         <ThemeToggle />
                     </div>
@@ -272,17 +302,18 @@ export const FloatingNavbar = () => {
                         </a>
                     </Button>
                     {isAuthenticated ? (
-                        <Button asChild size="sm" className="rounded-xl md:rounded-full text-xs sm:text-sm px-3 sm:px-4 md:px-5 h-8 sm:h-9 touch-target bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-md shadow-[var(--brand-accent)]/20">
-                            <a href="/dashboard" className="flex items-center gap-1.5 sm:gap-2" aria-label="Go to Dashboard">
-                                <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
+                        <Button asChild size="sm" className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-md shadow-[var(--brand-accent)]/20">
+                            <a href="/dashboard" className="flex items-center gap-1 xs:gap-1.5 sm:gap-2" aria-label="Go to Dashboard">
+                                <LayoutDashboard className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
                                 <span className="hidden sm:inline">Dashboard</span>
                             </a>
                         </Button>
                     ) : (
-                        <Button asChild size="sm" className="rounded-xl md:rounded-full text-xs sm:text-sm px-3 sm:px-4 md:px-5 h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)] shadow-md shadow-[var(--brand-accent)]/20">
+                        <Button asChild size="sm" className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)] shadow-md shadow-[var(--brand-accent)]/20">
                             <a href="/login" className="flex items-center gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account">
+                                <span className="hidden xs:inline sm:hidden">Start</span>
                                 <span className="hidden sm:inline">Get started</span>
-                                <span className="sm:hidden">Start</span>
+                                <span className="xs:hidden">Go</span>
                                 <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
                             </a>
                         </Button>
@@ -292,7 +323,7 @@ export const FloatingNavbar = () => {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="rounded-xl p-2 h-8 w-8 touch-target bg-muted/30 hover:bg-muted/50 border border-border/30"
+                            className="rounded-xl p-1.5 xs:p-2 h-7 w-7 xs:h-8 xs:w-8 touch-target bg-muted/30 hover:bg-muted/50 border border-border/30"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
                             aria-expanded={mobileMenuOpen}
@@ -426,6 +457,38 @@ export const FloatingNavbar = () => {
                                             <p className="text-[10px] text-muted-foreground">Our community</p>
                                         </div>
                                     </motion.a>
+                                    <motion.a
+                                        href="https://www.producthunt.com/posts/vulniq"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
+                                            <Rocket className="w-4 h-4 text-[var(--brand-accent)]" />
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-sm font-medium text-foreground">Product Hunt</span>
+                                            <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                                        </div>
+                                    </motion.a>
+                                    <motion.a
+                                        href="https://github.com/vulniq/vulniq"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
+                                            <BookOpen className="w-4 h-4 text-[var(--brand-accent)]" />
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-sm font-medium text-foreground">Documentation</span>
+                                            <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                                        </div>
+                                    </motion.a>
                                 </div>
                             </div>
 
@@ -476,7 +539,7 @@ export const FloatingNavbar = () => {
                                 className="flex-1 px-4 py-3 text-sm font-medium text-center text-[var(--brand-accent)] border border-[var(--brand-accent)]/40 rounded-xl hover:bg-[var(--brand-accent)]/10 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                Try Demo
+                                Try demo
                             </motion.a>
                             <motion.a
                                 href={isAuthenticated ? "/dashboard" : "/login"}
@@ -619,8 +682,8 @@ function AccessibilityButton({ compact }) {
                     ? "w-7 h-7 bg-transparent hover:bg-[var(--brand-accent)]/10"
                     : "w-8 h-8 sm:w-9 sm:h-9 bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30"
             )}
-            aria-label="Open Accessibility Menu"
-            title="Accessibility Options"
+            aria-label="Open accessibility menu"
+            title="Accessibility options"
         >
             <PersonStanding className={cn(
                 "text-[var(--brand-accent)]",
@@ -631,12 +694,14 @@ function AccessibilityButton({ compact }) {
 }
 
 // ListItem component for NavigationMenu
-function ListItem({ title, children, href, icon: Icon, ...props }) {
+function ListItem({ title, children, href, icon: Icon, external, ...props }) {
     return (
         <li {...props}>
             <NavigationMenuLink asChild>
                 <a
                     href={href}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noopener noreferrer" : undefined}
                     className={cn(
                         "block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors",
                         "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
@@ -644,7 +709,10 @@ function ListItem({ title, children, href, icon: Icon, ...props }) {
                 >
                     <div className="flex items-center gap-2">
                         {Icon && <Icon className="h-4 w-4 text-[var(--brand-accent)]" />}
-                        <div className="text-sm font-medium leading-none">{title}</div>
+                        <div className="text-sm font-medium leading-none flex items-center gap-1">
+                            {title}
+                            {external && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
+                        </div>
                     </div>
                     <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1.5">
                         {children}

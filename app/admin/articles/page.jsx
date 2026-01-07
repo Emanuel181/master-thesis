@@ -217,11 +217,11 @@ function StatusBadge({ status }) {
     const statusConfig = {
         DRAFT: { label: "Draft", variant: "secondary", icon: FileText },
         PENDING_REVIEW: { label: "Pending", variant: "warning", icon: Clock },
-        IN_REVIEW: { label: "In Review", variant: "info", icon: Eye },
+        IN_REVIEW: { label: "In review", variant: "info", icon: Eye },
         PUBLISHED: { label: "Published", variant: "success", icon: CheckCircle2 },
         APPROVED: { label: "Published", variant: "success", icon: CheckCircle2 }, // Legacy support
         REJECTED: { label: "Rejected", variant: "destructive", icon: XCircle },
-        SCHEDULED_FOR_DELETION: { label: "Pending Deletion", variant: "destructive", icon: Trash2 },
+        SCHEDULED_FOR_DELETION: { label: "Pending deletion", variant: "destructive", icon: Trash2 },
     };
 
     const config = statusConfig[status] || statusConfig.DRAFT;
@@ -895,7 +895,7 @@ export default function AdminArticlesPage() {
             });
 
             if (response.ok) {
-                setSuccessMessage('Article marked as "In Review" - author has been notified');
+                setSuccessMessage('Article marked as "In review" - author has been notified');
                 fetchArticles(adminEmail, currentPage);
                 setTimeout(() => setSuccessMessage(null), 3000);
             } else {
@@ -1411,7 +1411,7 @@ export default function AdminArticlesPage() {
                                         <span className="sr-only">Accessibility</span>
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Accessibility Options</TooltipContent>
+                                <TooltipContent>Accessibility pptions</TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                         <TooltipProvider>
@@ -1504,13 +1504,13 @@ export default function AdminArticlesPage() {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="PENDING_REVIEW">Pending Review</SelectItem>
-                            <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                            <SelectItem value="PENDING_REVIEW">Pending review</SelectItem>
+                            <SelectItem value="IN_REVIEW">In review</SelectItem>
                             <SelectItem value="PUBLISHED">Published</SelectItem>
                             <SelectItem value="REJECTED">Rejected</SelectItem>
-                            <SelectItem value="SCHEDULED_FOR_DELETION">Pending Deletion</SelectItem>
+                            <SelectItem value="SCHEDULED_FOR_DELETION">Pending deletion</SelectItem>
                             <SelectItem value="DRAFT">Drafts</SelectItem>
-                            <SelectItem value="all">All Articles</SelectItem>
+                            <SelectItem value="all">All articles</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
