@@ -104,11 +104,7 @@ export const metadata = {
   
   // Search engine verification tokens (replace with actual values)
   verification: {
-    google: "YOUR_GOOGLE_VERIFICATION_CODE",
-    yandex: "YOUR_YANDEX_VERIFICATION_CODE",
-    other: {
-      "msvalidate.01": "YOUR_BING_VERIFICATION_CODE"
-    }
+    google: "z6QaeExEQuN34I5J8o_p9ua881c3N2LDCEoLJr_12Q8",
   },
   
   // Apple Web App configuration

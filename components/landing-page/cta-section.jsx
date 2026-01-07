@@ -7,7 +7,7 @@ import { Section } from "@/components/ui/section";
 import { useState } from "react";
 
 export function CTASection({
-  title = "Start building",
+  title = "Start securing",
   buttons = [
     {
       href: "/login",

@@ -93,6 +93,7 @@ export async function POST(request) {
             return NextResponse.json(
                 {
                     verified: false,
+                    emailValid: true,
                     requiresPassword: true,
                     message: 'Please enter your email and password'
                 },

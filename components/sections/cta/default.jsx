@@ -5,7 +5,7 @@ import Glow from "../../ui/glow";
 import { Section } from "../../ui/section";
 
 export default function CTA({
-  title = "Start building",
+  title = "Start securing",
 
   buttons = [
     {
