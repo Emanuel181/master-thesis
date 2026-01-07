@@ -289,22 +289,16 @@ export const Turnstile = forwardRef(function Turnstile({
                 // Remove existing widget before creating new one
                 remove();
 
-                // Ensure turnstile is available before calling ready()
-                // This prevents the warning when ready() is called before script loads
+                // Ensure turnstile is available before rendering
                 if (!window.turnstile) {
                     throw new Error('Turnstile script loaded but API not available');
                 }
 
-                // Use turnstile.ready() as recommended by Cloudflare docs
-                // This ensures the API is fully ready before rendering
-                window.turnstile.ready(() => {
-                    if (!mountedRef.current || !containerRef.current) return;
-                    
-                    // Double-check turnstile is still available
-                    if (!window.turnstile) return;
-                    
-                    // Render the widget
-                    widgetIdRef.current = window.turnstile.render(containerRef.current, {
+                // Render the widget directly (don't use turnstile.ready() with async/defer scripts)
+                // The script is already loaded at this point via loadTurnstileScript()
+                if (!mountedRef.current || !containerRef.current) return;
+                
+                widgetIdRef.current = window.turnstile.render(containerRef.current, {
                         sitekey: resolvedSiteKey,
                         theme,
                         size,
@@ -345,11 +339,10 @@ export const Turnstile = forwardRef(function Turnstile({
                         },
                     });
 
-                    if (mountedRef.current) {
-                        setIsLoading(false);
-                        setError(null);
-                    }
-                });
+                if (mountedRef.current) {
+                    setIsLoading(false);
+                    setError(null);
+                }
             } catch (err) {
                 if (!mountedRef.current) return;
                 console.error('[Turnstile] Init error:', err);

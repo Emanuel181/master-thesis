@@ -311,9 +311,8 @@ export const FloatingNavbar = () => {
                     ) : (
                         <Button asChild size="sm" className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)] shadow-md shadow-[var(--brand-accent)]/20">
                             <a href="/login" className="flex items-center gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account">
-                                <span className="hidden xs:inline sm:hidden">Start</span>
+                                <span className="sm:hidden">Go</span>
                                 <span className="hidden sm:inline">Get started</span>
-                                <span className="xs:hidden">Go</span>
                                 <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
                             </a>
                         </Button>
