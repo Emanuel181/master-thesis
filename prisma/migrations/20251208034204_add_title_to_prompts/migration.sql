@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Prompt" ADD COLUMN     "title" TEXT NOT NULL DEFAULT 'Untitled';
