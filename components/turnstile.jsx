@@ -289,10 +289,19 @@ export const Turnstile = forwardRef(function Turnstile({
                 // Remove existing widget before creating new one
                 remove();
 
+                // Ensure turnstile is available before calling ready()
+                // This prevents the warning when ready() is called before script loads
+                if (!window.turnstile) {
+                    throw new Error('Turnstile script loaded but API not available');
+                }
+
                 // Use turnstile.ready() as recommended by Cloudflare docs
                 // This ensures the API is fully ready before rendering
                 window.turnstile.ready(() => {
                     if (!mountedRef.current || !containerRef.current) return;
+                    
+                    // Double-check turnstile is still available
+                    if (!window.turnstile) return;
                     
                     // Render the widget
                     widgetIdRef.current = window.turnstile.render(containerRef.current, {
@@ -453,8 +462,13 @@ export function useTurnstile(options = {}) {
 
     const execute = useCallback(() => {
         return new Promise((resolve, reject) => {
-            if (!isReady || !window.turnstile) {
+            if (!isReady) {
                 reject(new Error('Turnstile not ready'));
+                return;
+            }
+
+            if (!window.turnstile) {
+                reject(new Error('Turnstile API not available'));
                 return;
             }
 

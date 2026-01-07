@@ -416,6 +416,7 @@ html {
   /* Animation Utilities */
   --animate-move: move 5s linear infinite;
   --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-highlight: var(--highlight);
 
   @keyframes move {
@@ -479,6 +480,7 @@ html {
   --sidebar-ring: oklch(0.708 0 0);
   --highlight: oklch(0.852 0.199 91.936);
   --brand: oklch(0.623 0.214 259.815);
+  --brand-foreground: var(--brand-accent);
 }
 
 .dark {
@@ -530,6 +532,7 @@ html {
   --sidebar-ring: oklch(0.556 0 0);
   --highlight: oklch(0.852 0.199 91.936);
   --brand: oklch(0.707 0.165 254.624);
+  --brand-foreground: var(--brand-accent);
 }
 
 @layer base {
@@ -577,6 +580,38 @@ html {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Glow pulse animation - bottom to top */
+@keyframes glow-pulse {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-40px);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse-delayed {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-30px);
+    opacity: 0.8;
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-glow-pulse-delayed {
+  animation: glow-pulse-delayed 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: 1s;
 }
 
 .animate-fadeIn {

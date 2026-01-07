@@ -1799,32 +1799,61 @@ function FontSizeControls({ fontSize, adjustFontSize, resetFontSize, isDefault }
   );
 }
 
-// JSON-LD Schema component
+// JSON-LD Schema component for BlogPosting structured data
+// Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6
 function ArticleJsonLd({ post, url }) {
+  const siteUrl = "https://vulniq.org";
+  
+  // Format dates properly for JSON-LD
+  const formatDate = (dateStr) => {
+    if (!dateStr) return new Date().toISOString();
+    try {
+      // Handle various date formats
+      const date = new Date(dateStr);
+      return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  };
+
+  const publishedDate = formatDate(post.publishedAt || post.date);
+  const modifiedDate = formatDate(post.updatedAt || post.updatedDate || post.publishedAt || post.date);
+  
+  // Determine image URL
+  const imageUrl = post.coverImage 
+    ? (post.coverImage.startsWith('http') ? post.coverImage : `${siteUrl}${post.coverImage}`)
+    : `${siteUrl}/web-app-manifest-512x512.png`;
+
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": url || `${siteUrl}/blog/${post.slug}`
+    },
     "headline": post.title,
     "description": post.excerpt,
+    "image": imageUrl,
+    "dateCreated": publishedDate,
+    "datePublished": publishedDate,
+    "dateModified": modifiedDate,
     "author": {
-      "@type": "Organization",
-      "name": post.author,
-      "url": "https://vulniq.com"
+      "@type": "Person",
+      "name": post.author || "VulnIQ Team",
+      "url": `${siteUrl}/about`
     },
     "publisher": {
       "@type": "Organization",
       "name": "VulnIQ",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://vulniq.com/favicon.png"
+        "url": `${siteUrl}/web-app-manifest-512x512.png`,
+        "width": 512,
+        "height": 512
       }
     },
-    "datePublished": post.date,
-    "dateModified": post.updatedDate || post.date,
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": url
-    },
+    "inLanguage": "en-US",
+    "isFamilyFriendly": true,
     "articleSection": post.category,
     "wordCount": post.content?.split(/\s+/).length || 0,
     "timeRequired": post.readTime
@@ -1832,6 +1861,49 @@ function ArticleJsonLd({ post, url }) {
 
   // Safely serialize JSON-LD, escaping </script> to prevent XSS
   const safeJsonLd = JSON.stringify(jsonLd)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e');
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd }}
+    />
+  );
+}
+
+// BreadcrumbList JSON-LD Schema component for navigation hierarchy
+// Validates: Requirements 11.1, 11.2, 11.3, 11.4
+function BreadcrumbJsonLd({ post }) {
+  const siteUrl = "https://vulniq.org";
+  
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": siteUrl
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": `${siteUrl}/blog`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": post.title,
+        "item": `${siteUrl}/blog/${post.slug}`
+      }
+    ]
+  };
+
+  // Safely serialize JSON-LD
+  const safeJsonLd = JSON.stringify(breadcrumbSchema)
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e');
 
@@ -1907,6 +1979,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
   return (
     <>
       <ArticleJsonLd post={post} url={currentUrl} />
+      <BreadcrumbJsonLd post={post} />
 
       <ScrollArea className="h-screen" viewportRef={scrollRef}>
         <FloatingNavbar />

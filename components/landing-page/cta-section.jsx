@@ -4,21 +4,27 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Glow from "@/components/ui/glow";
 import { Section } from "@/components/ui/section";
-import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 
-export function CTASection({ 
-  title = "Start building", 
+export function CTASection({
+  title = "Start building",
   buttons = [
     {
-      href: "/demo",
+      href: "/login",
       text: "Get Started",
       variant: "default",
     },
   ],
-  className 
+  className
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <Section className={cn("group relative overflow-hidden", className)}>
+    <Section 
+      className={cn("relative overflow-visible mt-16 sm:mt-24 lg:mt-32", className)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="max-w-7xl relative z-10 mx-auto flex flex-col items-center gap-6 text-center sm:gap-8">
         <h2 className="max-w-[640px] text-3xl leading-tight font-semibold sm:text-5xl sm:leading-tight">
           {title}
@@ -42,11 +48,18 @@ export function CTASection({
           </div>
         )}
       </div>
-      <div className="absolute top-0 left-0 h-full w-full translate-y-[1rem] opacity-80 transition-all duration-500 ease-in-out group-hover:translate-y-[-2rem] group-hover:opacity-100">
+      <div 
+        className="absolute top-0 left-0 h-full w-full pointer-events-none"
+        style={{
+          transform: isHovered ? 'translateY(-2rem)' : 'translateY(1rem)',
+          transition: 'transform 1s ease-out'
+        }}
+      >
         <Glow variant="bottom" />
       </div>
     </Section>
   );
 }
+
 
 export default CTASection;

@@ -1,38 +1,45 @@
-"use client";
+import { cva } from "class-variance-authority";
+import React from "react";
 
 import { cn } from "@/lib/utils";
-import { cva } from "class-variance-authority";
 
-const glowVariants = cva(
-  "pointer-events-none absolute left-1/2 -translate-x-1/2 w-full",
-  {
-    variants: {
-      variant: {
-        top: "top-0",
-        above: "-top-[200px]",
-        center: "top-1/2 -translate-y-1/2",
-        bottom: "bottom-0",
-        below: "-bottom-[200px]",
-      },
+const glowVariants = cva("absolute w-full", {
+  variants: {
+    variant: {
+      top: "top-0",
+      above: "-top-[128px]",
+      bottom: "bottom-0",
+      below: "-bottom-[128px]",
+      center: "top-[50%]",
     },
-    defaultVariants: {
-      variant: "top",
-    },
-  }
-);
+  },
+  defaultVariants: {
+    variant: "top",
+  },
+});
 
-export default function Glow({ variant = "top", className }) {
+function Glow({
+  className,
+  variant,
+  ...props
+}) {
   return (
-    <div className={cn(glowVariants({ variant }), className)}>
+    <div
+      data-slot="glow"
+      className={cn(glowVariants({ variant }), className)}
+      {...props}>
       <div
-        className="mx-auto h-[400px] w-full max-w-[1200px]"
-        style={{
-          background:
-            "conic-gradient(from 230.29deg at 51.63% 52.16%, var(--brand-accent) 0deg, var(--brand-primary) 67.5deg, var(--brand-dark) 198.75deg, var(--brand-accent) 251.25deg, var(--brand-primary) 301.88deg, var(--brand-accent) 360deg)",
-          filter: "blur(128px)",
-          opacity: 0.5,
-        }}
-      />
+        className={cn(
+          "from-brand-foreground/50 to-brand-foreground/0 absolute left-1/2 h-[256px] w-[60%] -translate-x-1/2 scale-[2.5] rounded-[50%] bg-radial from-10% to-60% opacity-20 sm:h-[512px] dark:opacity-100",
+          variant === "center" && "-translate-y-1/2"
+        )} />
+      <div
+        className={cn(
+          "from-brand/30 to-brand-foreground/0 absolute left-1/2 h-[128px] w-[40%] -translate-x-1/2 scale-200 rounded-[50%] bg-radial from-10% to-60% opacity-20 sm:h-[256px] dark:opacity-100",
+          variant === "center" && "-translate-y-1/2"
+        )} />
     </div>
   );
 }
+
+export default Glow;

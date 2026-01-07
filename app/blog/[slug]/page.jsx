@@ -2,7 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import BlogPostContent from "./blog-post-content";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vulniq.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vulniq.org";
+
+// ISR: Revalidate blog posts every hour (3600 seconds)
+// This ensures content stays fresh while maintaining static performance
+export const revalidate = 3600;
 
 // Helper function to get post from database
 async function getPostFromDatabase(slug) {
@@ -25,6 +29,7 @@ async function getPostFromDatabase(slug) {
         coverType: true,
         readTime: true,
         publishedAt: true,
+        updatedAt: true,
         contentMarkdown: true,
         content: true,
         contentJson: true,
@@ -52,6 +57,9 @@ async function getPostFromDatabase(slug) {
             day: "numeric",
           })
         : null,
+      // Keep ISO dates for metadata
+      publishedAt: article.publishedAt ? article.publishedAt.toISOString() : null,
+      updatedAt: article.updatedAt ? article.updatedAt.toISOString() : null,
       readTime: article.readTime || "5 min read",
       iconName: article.iconName || "Shield",
       iconPosition: article.iconPosition || "center",
@@ -152,26 +160,28 @@ export async function generateMetadata({ params }) {
       "VulnIQ",
       ...post.title.toLowerCase().split(" ").filter(word => word.length > 4),
     ],
-    authors: [{ name: post.author }],
+    authors: [{ name: post.author, url: `${siteUrl}/about` }],
     creator: post.author,
     publisher: "VulnIQ",
     openGraph: {
       title: post.title,
       description: post.excerpt,
       type: "article",
-      publishedTime: post.date,
-      modifiedTime: post.updatedDate || post.date,
-      authors: [post.author],
+      publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt || post.publishedAt,
+      authors: [`${siteUrl}/about`],
       section: post.category,
-      tags: [post.category, "security", "vulnerability"],
+      tags: [post.category, "security", "vulnerability", "code security"],
       url: `${siteUrl}/blog/${slug}`,
       siteName: "VulnIQ",
+      locale: "en_US",
       images: [
         {
           url: ogImage,
           width: 1200,
           height: 630,
           alt: post.title,
+          type: "image/png",
         },
       ],
     },
@@ -181,6 +191,7 @@ export async function generateMetadata({ params }) {
       description: post.excerpt,
       images: [ogImage],
       creator: "@vulniqsecurity",
+      site: "@vulniqsecurity",
     },
     alternates: {
       canonical: `${siteUrl}/blog/${slug}`,

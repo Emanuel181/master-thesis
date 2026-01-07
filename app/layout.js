@@ -9,6 +9,55 @@ import { CookieConsentBanner } from "@/components/cookie-consent";
 // Google Tag Manager ID
 const GTM_ID = "GTM-KRHF2P8N";
 
+/**
+ * Core Web Vitals Reporting
+ * Validates: Requirements 12.1, 12.2, 12.3, 12.4
+ * 
+ * This function is called by Next.js to report web vitals metrics.
+ * Metrics include: LCP, INP, CLS, FCP, TTFB
+ */
+export function reportWebVitals(metric) {
+  // Log all web vitals for monitoring
+  if (metric.label === 'web-vital') {
+    // Log metric to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Web Vital] ${metric.name}: ${metric.value.toFixed(2)}`);
+    }
+    
+    // Warn on poor CLS (Cumulative Layout Shift)
+    if (metric.name === 'CLS' && metric.value > 0.1) {
+      console.warn(`[Web Vital Warning] High CLS detected: ${metric.value.toFixed(3)} (threshold: 0.1)`);
+    }
+    
+    // Warn on poor LCP (Largest Contentful Paint) - should be under 2.5s
+    if (metric.name === 'LCP' && metric.value > 2500) {
+      console.warn(`[Web Vital Warning] Slow LCP detected: ${metric.value.toFixed(0)}ms (threshold: 2500ms)`);
+    }
+    
+    // Warn on poor INP (Interaction to Next Paint) - should be under 200ms
+    if (metric.name === 'INP' && metric.value > 200) {
+      console.warn(`[Web Vital Warning] Slow INP detected: ${metric.value.toFixed(0)}ms (threshold: 200ms)`);
+    }
+    
+    // Optional: Send to analytics endpoint
+    // Uncomment to enable server-side tracking
+    // if (typeof window !== 'undefined') {
+    //   fetch('/api/vitals', {
+    //     method: 'POST',
+    //     body: JSON.stringify({
+    //       name: metric.name,
+    //       value: metric.value,
+    //       label: metric.label,
+    //       id: metric.id,
+    //       startTime: metric.startTime,
+    //       attribution: metric.attribution
+    //     }),
+    //     headers: { 'Content-Type': 'application/json' }
+    //   }).catch(() => {}); // Silently fail
+    // }
+  }
+}
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,6 +75,18 @@ const geistMono = Geist_Mono({
   adjustFontFallback: true,
 });
 
+// Viewport configuration (separate export in Next.js 14+)
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" }
+  ]
+};
+
 export const metadata = {
   title: {
     default: "VulnIQ",
@@ -37,6 +98,26 @@ export const metadata = {
   creator: "VulnIQ",
   publisher: "VulnIQ",
   metadataBase: new URL("https://vulniq.org"),
+  
+  // Application name for PWA and browser
+  applicationName: "VulnIQ",
+  
+  // Search engine verification tokens (replace with actual values)
+  verification: {
+    google: "YOUR_GOOGLE_VERIFICATION_CODE",
+    yandex: "YOUR_YANDEX_VERIFICATION_CODE",
+    other: {
+      "msvalidate.01": "YOUR_BING_VERIFICATION_CODE"
+    }
+  },
+  
+  // Apple Web App configuration
+  appleWebApp: {
+    title: "VulnIQ",
+    statusBarStyle: "default",
+    capable: true
+  },
+  
   alternates: {
     canonical: "/",
   },
@@ -49,10 +130,11 @@ export const metadata = {
     description: "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost.",
     images: [
       {
-        url: "/web-app-manifest-512x512.png",
-        width: 512,
-        height: 512,
-        alt: "VulnIQ Logo",
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "VulnIQ - Intelligent Security for the Modern Codebase",
+        type: "image/png",
       },
     ],
   },
@@ -60,15 +142,27 @@ export const metadata = {
     card: "summary_large_image",
     title: "VulnIQ - Intelligent Security for the Modern Codebase",
     description: "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta.",
-    images: ["/web-app-manifest-512x512.png"],
+    images: ["/og-default.png"],
   },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png" },
     ],
+    shortcut: [{ url: "/favicon.ico", type: "image/x-icon" }],
     apple: [
-      { url: "/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/apple-icon-57x57.png", sizes: "57x57", type: "image/png" },
+      { url: "/apple-icon-60x60.png", sizes: "60x60", type: "image/png" },
+      { url: "/apple-icon-72x72.png", sizes: "72x72", type: "image/png" },
+      { url: "/apple-icon-76x76.png", sizes: "76x76", type: "image/png" },
+      { url: "/apple-icon-114x114.png", sizes: "114x114", type: "image/png" },
+      { url: "/apple-icon-120x120.png", sizes: "120x120", type: "image/png" },
+      { url: "/apple-icon-144x144.png", sizes: "144x144", type: "image/png" },
+      { url: "/apple-icon-152x152.png", sizes: "152x152", type: "image/png" },
+      { url: "/apple-icon-180x180.png", sizes: "180x180", type: "image/png" },
     ],
   },
   manifest: "/manifest.json",
@@ -173,7 +267,6 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         <meta name="apple-mobile-web-app-title" content="VulnIQ" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
