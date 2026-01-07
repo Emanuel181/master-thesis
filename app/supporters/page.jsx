@@ -498,15 +498,18 @@ export default function SupportersPage() {
 
                 {/* Footer */}
                 <Footer onScrollToTop={() => {
+                    // Try multiple methods to scroll to top
                     const viewport = scrollRef.current;
                     if (viewport) {
-                        // Try smooth scroll first, fallback to immediate
-                        try {
-                            viewport.scrollTo({ top: 0, behavior: 'smooth' });
-                        } catch {
-                            viewport.scrollTop = 0;
-                        }
+                        viewport.scrollTop = 0;
                     }
+                    // Also try finding the viewport by data attribute
+                    const scrollViewport = document.querySelector('[data-slot="scroll-area-viewport"]');
+                    if (scrollViewport) {
+                        scrollViewport.scrollTop = 0;
+                    }
+                    // Fallback to window
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }} />
             </ScrollArea>
         </div>

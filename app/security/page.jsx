@@ -59,7 +59,8 @@ export default function SecurityPage() {
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to home
+                                <span className="sm:hidden">Back</span>
+                                <span className="hidden sm:inline">Back to home</span>
                             </Link>
                         </Button>
                         <button

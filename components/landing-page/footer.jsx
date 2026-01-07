@@ -6,16 +6,7 @@ import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink, MessageSquare, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { HexGridBackground } from "./hex-grid-background";
 
 const containerVariants = {
@@ -417,7 +408,7 @@ export function Footer({ onScrollToTop }) {
     );
 }
 
-// Footer Feedback Dialog Component - matches dashboard design
+// Footer Feedback Dialog Component - custom modal to avoid Radix scroll issues
 function FooterFeedbackDialog({ isOpen, onClose }) {
     const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -440,7 +431,7 @@ function FooterFeedbackDialog({ isOpen, onClose }) {
             if (response.ok) {
                 setFeedback('');
                 if (textareaRef.current) {
-                    textareaRef.current.textContent = '';
+                    textareaRef.current.value = '';
                 }
                 onClose?.();
             }
@@ -451,36 +442,63 @@ function FooterFeedbackDialog({ isOpen, onClose }) {
         }
     };
 
-    const handleInput = (e) => {
-        setFeedback(e.currentTarget.textContent || '');
-    };
+    // Close on escape key
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose?.();
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="w-[400px] max-w-[90vw]">
-                <DialogHeader>
-                    <DialogTitle>Share your feedback</DialogTitle>
-                    <DialogDescription>
+        <div className="fixed inset-0 z-50">
+            {/* Backdrop */}
+            <div 
+                className="fixed inset-0 bg-black/50 animate-in fade-in-0"
+                onClick={onClose}
+            />
+            {/* Modal Content */}
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[400px] max-w-[90vw] bg-background border rounded-lg p-6 shadow-lg animate-in fade-in-0 zoom-in-95">
+                {/* Close button */}
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="absolute top-4 right-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
+                    aria-label="Close"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+                
+                {/* Header */}
+                <div className="flex flex-col gap-2 text-center sm:text-left mb-4">
+                    <h2 className="text-lg font-semibold leading-none">Share your feedback</h2>
+                    <p className="text-muted-foreground text-sm">
                         We&apos;d love to hear your thoughts on how we can improve.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2">
-                    <Label htmlFor="footer-feedback">Your feedback</Label>
-                    <ScrollArea className="h-[120px] w-full rounded-md border border-input bg-transparent overflow-hidden">
-                        <div
-                            ref={textareaRef}
-                            contentEditable
-                            role="textbox"
-                            aria-multiline="true"
-                            id="footer-feedback"
-                            data-placeholder="Tell us what you think..."
-                            onInput={handleInput}
-                            className="min-h-[120px] w-full px-3 py-2 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground break-all"
-                            suppressContentEditableWarning
-                        />
-                    </ScrollArea>
+                    </p>
                 </div>
-                <DialogFooter>
+                
+                {/* Content */}
+                <div className="space-y-2 mb-4">
+                    <Label htmlFor="footer-feedback">Your feedback</Label>
+                    <textarea
+                        ref={textareaRef}
+                        id="footer-feedback"
+                        placeholder="Tell us what you think..."
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        className="w-full h-[120px] px-3 py-2 text-sm rounded-md border border-input bg-transparent resize-none outline-none focus:ring-2 focus:ring-ring"
+                    />
+                </div>
+                
+                {/* Footer */}
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <Button
                         type="button"
                         variant="outline"
@@ -489,11 +507,15 @@ function FooterFeedbackDialog({ isOpen, onClose }) {
                     >
                         Cancel
                     </Button>
-                    <Button type="button" onClick={handleSubmit} disabled={isSubmitting || !feedback.trim()}>
+                    <Button 
+                        type="button" 
+                        onClick={handleSubmit} 
+                        disabled={isSubmitting || !feedback.trim()}
+                    >
                         {isSubmitting ? "Submitting..." : "Submit Feedback"}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            </div>
+        </div>
     );
 }
