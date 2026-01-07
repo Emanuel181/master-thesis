@@ -152,16 +152,11 @@ const CommandPaletteContext = React.createContext(null);
 function CommandPaletteProvider({ children, onNavigate }) {
   const [open, setOpen] = React.useState(false);
 
+  // Listen for open-command-palette event (from quick actions menu)
   React.useEffect(() => {
-    const down = (e) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    const handler = () => setOpen(true);
+    window.addEventListener("open-command-palette", handler);
+    return () => window.removeEventListener("open-command-palette", handler);
   }, []);
 
   const value = React.useMemo(

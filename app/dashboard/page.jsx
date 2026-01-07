@@ -31,7 +31,7 @@ import { HomePage } from "@/components/home/home-page";
 import { ArticleEditor } from "@/components/dashboard/article-editor/article-editor";
 
 // New feature imports
-import { CommandPaletteProvider, useCommandPalette } from "@/components/ui/command";
+import { CommandPaletteProvider } from "@/components/ui/command";
 import { NotificationProvider, NotificationCenter } from "@/components/ui/notification-center";
 import { UnsavedChangesProvider } from "@/components/ui/unsaved-changes-provider";
 import { OnboardingProvider } from "@/components/ui/onboarding";
@@ -40,22 +40,21 @@ import { PageTransition } from "@/components/ui/page-transitions";
 import { QuickFileSwitcherProvider } from "@/components/ui/quick-file-switcher";
 import { SharedDndProvider } from "@/components/ui/dnd-provider";
 import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog";
+import { DashboardLoader } from "@/components/ui/dashboard-loader";
 import { Button } from "@/components/ui/button";
-import { Keyboard, PersonStanding } from "lucide-react";
+import { Search, PersonStanding } from "lucide-react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 
-// Command palette trigger button component
-function CommandPaletteTrigger() {
-    const { setOpen } = useCommandPalette()
-
+// Quick actions trigger button component
+function QuickActionsTrigger() {
     return (
         <Button
             variant="outline"
             size="icon"
-            onClick={() => setOpen(true)}
-            title="Command palette (Ctrl+K)"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
+            title="Quick actions"
         >
-            <Keyboard className="h-5 w-5" />
+            <Search className="h-5 w-5" />
         </Button>
     )
 }
@@ -339,7 +338,7 @@ function DashboardContent({ settings, mounted }) {
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                                                    <CommandPaletteTrigger />
+                                                    <QuickActionsTrigger />
                                                     <NotificationCenter />
                                                     <AccessibilityTrigger />
                                                     <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
@@ -372,12 +371,14 @@ export default function Page() {
     const { settings, mounted } = useSettings();
 
     return (
-        <SharedDndProvider>
-            <ProjectProvider>
-                <Suspense fallback={null}>
-                    <DashboardContent settings={settings} mounted={mounted} />
-                </Suspense>
-            </ProjectProvider>
-        </SharedDndProvider>
+        <DashboardLoader minLoadTime={2000}>
+            <SharedDndProvider>
+                <ProjectProvider>
+                    <Suspense fallback={null}>
+                        <DashboardContent settings={settings} mounted={mounted} />
+                    </Suspense>
+                </ProjectProvider>
+            </SharedDndProvider>
+        </DashboardLoader>
     );
 }

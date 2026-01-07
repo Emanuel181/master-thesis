@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Linkedin, Quote, User } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 export function SupporterCard({ supporter, className }) {
     const [showFullContribution, setShowFullContribution] = useState(false);
     const [showFullBio, setShowFullBio] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     // Truncate text helper
     const truncateText = (text, maxLength = 120) => {
@@ -26,6 +27,9 @@ export function SupporterCard({ supporter, className }) {
 
     const contribution = truncateText(supporter.contributionBio, 100);
     const bio = truncateText(supporter.personalBio, 100);
+
+    // Get initials for fallback
+    const initials = supporter.name.split(' ').map(n => n[0]).join('').slice(0, 2);
 
     return (
         <motion.div
@@ -37,17 +41,24 @@ export function SupporterCard({ supporter, className }) {
             <div className="group relative h-full flex flex-col rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/30 hover:shadow-lg hover:shadow-[var(--brand-accent)]/5">
                 {/* Header Section - Fixed Height */}
                 <div className="flex flex-col items-center text-center">
-                    {/* Avatar */}
-                    <Avatar className="h-20 w-20 rounded-xl ring-2 ring-border/50 group-hover:ring-[var(--brand-accent)]/30 transition-all shadow-lg">
-                        <AvatarImage
-                            src={supporter.avatarUrl} 
-                            alt={supporter.name}
-                            className="object-cover"
-                        />
-                        <AvatarFallback className="text-xl font-semibold bg-muted rounded-xl">
-                            {supporter.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                    </Avatar>
+                    {/* Avatar - Using Next.js Image for better mobile support */}
+                    <div className="relative h-20 w-20 rounded-xl ring-2 ring-border/50 group-hover:ring-[var(--brand-accent)]/30 transition-all shadow-lg overflow-hidden">
+                        {supporter.avatarUrl && !imageError ? (
+                            <Image
+                                src={supporter.avatarUrl}
+                                alt={supporter.name}
+                                fill
+                                sizes="80px"
+                                className="object-cover"
+                                loading="eager"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full w-full bg-muted text-xl font-semibold">
+                                {initials}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Name */}
                     <h3 className="font-semibold text-lg text-foreground mt-4">

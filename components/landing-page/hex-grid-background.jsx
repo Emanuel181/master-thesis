@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 
 // Grid configuration
 const HEX_SIZE = 100;
@@ -9,6 +9,12 @@ const INFLUENCE_RADIUS = 300;
 const DECAY_RATE = 0.96;
 const MAX_INTENSITY = 0.8;
 
+// Check if device is mobile/tablet (no hover capability)
+const isTouchDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
+
 export function HexGridBackground({ className = "" }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -16,6 +22,20 @@ export function HexGridBackground({ className = "" }) {
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
   const hexagonsRef = useRef([]);
   const lastTimeRef = useRef(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const autoAnimateRef = useRef({ angle: 0, radius: 0 });
+
+  // Check for mobile on mount
+  useEffect(() => {
+    setIsMobile(isTouchDevice() || window.innerWidth < 768);
+    
+    const handleResize = () => {
+      setIsMobile(isTouchDevice() || window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Hexagon points
   const getHexPoints = useCallback((cx, cy, size) => {
@@ -156,9 +176,22 @@ export function HexGridBackground({ className = "" }) {
     
     ctx.clearRect(0, 0, width, height);
     
-    const mouseX = mouseRef.current.x;
-    const mouseY = mouseRef.current.y;
-    const isActive = mouseRef.current.active;
+    let mouseX = mouseRef.current.x;
+    let mouseY = mouseRef.current.y;
+    let isActive = mouseRef.current.active;
+    
+    // Auto-animate on mobile - create a wandering glow effect
+    if (isMobile) {
+      autoAnimateRef.current.angle += 0.008;
+      autoAnimateRef.current.radius = Math.sin(time * 0.0005) * 100 + 150;
+      
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      mouseX = centerX + Math.cos(autoAnimateRef.current.angle) * autoAnimateRef.current.radius;
+      mouseY = centerY + Math.sin(autoAnimateRef.current.angle * 0.7) * autoAnimateRef.current.radius * 0.6;
+      isActive = true;
+    }
     
     lastTimeRef.current = time;
 
@@ -187,7 +220,7 @@ export function HexGridBackground({ className = "" }) {
     });
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [drawHexagon]);
+  }, [drawHexagon, isMobile]);
 
   const handleResize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -210,6 +243,8 @@ export function HexGridBackground({ className = "" }) {
 
   useEffect(() => {
     const handleMouseMove = (e) => {
+      if (isMobile) return; // Skip mouse tracking on mobile
+      
       const container = containerRef.current;
       if (!container) return;
       
@@ -222,6 +257,8 @@ export function HexGridBackground({ className = "" }) {
     };
 
     const handleTouchMove = (e) => {
+      if (isMobile) return; // Auto-animation handles mobile
+      
       const container = containerRef.current;
       if (!container || !e.touches[0]) return;
       
@@ -234,7 +271,9 @@ export function HexGridBackground({ className = "" }) {
     };
 
     const handleLeave = () => {
-      mouseRef.current = { ...mouseRef.current, active: false };
+      if (!isMobile) {
+        mouseRef.current = { ...mouseRef.current, active: false };
+      }
     };
 
     document.addEventListener("mousemove", handleMouseMove, { passive: true });
@@ -246,7 +285,7 @@ export function HexGridBackground({ className = "" }) {
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("mouseleave", handleLeave);
     };
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     handleResize();

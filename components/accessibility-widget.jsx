@@ -190,8 +190,8 @@ export function AccessibilityWidget() {
   // Use portal to render at document.body level to avoid z-index issues
   return createPortal(
     <>
-      {/* Floating Button - only show if not hidden by settings or page-level override */}
-      {!settings.hideFloatingButton && !forceHideFloating && (
+      {/* Floating Button - only show if not hidden by settings, page-level override, or mobile */}
+      {!settings.hideFloatingButton && !forceHideFloating && !isMobile && (
         <button
           ref={buttonRef}
           onMouseDown={handleMouseDown}

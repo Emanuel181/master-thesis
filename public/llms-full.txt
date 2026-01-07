@@ -1759,7 +1759,7 @@ A heartfelt thank you to everyone who has supported this project.
 
 Be the first to support this project!
 
-### Want to Support VulnIQ?
+### Want to support VulnIQ?
 
 Your support helps us continue developing cutting-edge security tools. Leave us a message to learn how you can contribute to the project.
 
@@ -1767,7 +1767,7 @@ Email (optional)
 
 Message \*
 
-Leave a Message
+Leave a message
 
 ## Cookie Preferences
 

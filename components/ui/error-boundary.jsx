@@ -157,16 +157,92 @@ export function useErrorBoundary() {
 /**
  * Page-level error boundary with customized messaging
  * Use this to wrap entire page content sections
+ * Includes auto-retry on first error (handles cold start issues)
  */
-export function PageErrorBoundary({ children, pageName = 'page' }) {
-    return (
-        <ErrorBoundary
-            title={`Error loading ${pageName}`}
-            message={`There was a problem loading this ${pageName.toLowerCase()}. Please try again.`}
-        >
-            {children}
-        </ErrorBoundary>
-    );
+export class PageErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            hasError: false,
+            error: null,
+            errorInfo: null,
+            retryCount: 0,
+        };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('PageErrorBoundary caught an error:', error, errorInfo);
+        this.setState({ errorInfo });
+
+        // Auto-retry once after a short delay (handles cold start issues)
+        if (this.state.retryCount === 0) {
+            setTimeout(() => {
+                this.setState({
+                    hasError: false,
+                    error: null,
+                    errorInfo: null,
+                    retryCount: 1,
+                });
+            }, 500);
+        }
+    }
+
+    handleReset = () => {
+        this.setState({
+            hasError: false,
+            error: null,
+            errorInfo: null,
+            retryCount: 0,
+        });
+    };
+
+    handleReload = () => {
+        window.location.reload();
+    };
+
+    render() {
+        const { pageName = 'page' } = this.props;
+
+        if (this.state.hasError) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full min-h-[200px] p-6 bg-background border border-border rounded-lg">
+                    <div className="flex items-center gap-2 text-destructive mb-4">
+                        <AlertTriangle className="h-6 w-6" />
+                        <h2 className="text-lg font-semibold">
+                            Error loading {pageName}
+                        </h2>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+                        There was a problem loading this {pageName.toLowerCase()}. Please try again.
+                    </p>
+
+                    <div className="flex gap-3">
+                        <Button
+                            variant="outline"
+                            onClick={this.handleReset}
+                            className="gap-2"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            Try Again
+                        </Button>
+                        <Button
+                            variant="default"
+                            onClick={this.handleReload}
+                        >
+                            Reload Page
+                        </Button>
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
 }
 
 export default ErrorBoundary;

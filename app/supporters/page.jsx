@@ -54,6 +54,11 @@ function MessageForm() {
         e.preventDefault();
         setError('');
 
+        if (!email.trim()) {
+            setError('Please enter your email');
+            return;
+        }
+
         if (!message.trim()) {
             setError('Please enter a message');
             return;
@@ -117,7 +122,7 @@ function MessageForm() {
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
             <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm text-muted-foreground">
-                    Email (optional)
+                    Email <span className="text-destructive">*</span>
                 </Label>
                 <Input
                     id="email"
@@ -125,6 +130,7 @@ function MessageForm() {
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                     className="bg-background/50 border-border/50 focus:border-[var(--brand-accent)] focus:ring-[var(--brand-accent)]/20"
                 />
             </div>
@@ -157,7 +163,7 @@ function MessageForm() {
                 ) : (
                     <>
                         <Send className="mr-2 h-4 w-4" />
-                        Leave a Message
+                        Leave a message
                     </>
                 )}
             </Button>
@@ -242,7 +248,8 @@ export default function SupportersPage() {
                         <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to home
+                                <span className="sm:hidden">Back</span>
+                                <span className="hidden sm:inline">Back to home</span>
                             </Link>
                         </Button>
                         <button
@@ -325,7 +332,7 @@ export default function SupportersPage() {
                     {/* Supporters Grid */}
                     {!loading && !error && supporters.length > 0 && (
                         <div className="space-y-10 sm:space-y-16">
-                            {/* Featured Supporters Section */}
+                            {/* Featured supporters Section */}
                             {featuredSupporters.length > 0 && (
                                 <div className="space-y-6">
                                     <div className="text-center">
@@ -335,11 +342,8 @@ export default function SupportersPage() {
                                             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mb-4"
                                         >
                                             <span className="text-amber-500 text-lg">★</span>
-                                            <span className="text-sm font-medium text-amber-500">Featured Supporters</span>
+                                            <span className="text-sm font-medium text-amber-500">Featured supporters</span>
                                         </motion.div>
-                                        <p className="text-sm text-muted-foreground">
-                                            Special recognition for outstanding contributions
-                                        </p>
                                     </div>
                                     <motion.div
                                         variants={containerVariants}
@@ -479,7 +483,7 @@ export default function SupportersPage() {
                         <Card className="max-w-2xl mx-auto border-[var(--brand-accent)]/20 bg-gradient-to-br from-[var(--brand-accent)]/5 to-transparent">
                             <CardContent className="p-4 sm:pt-6 sm:p-6 text-center">
                                 <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-2">
-                                    Want to Support VulnIQ?
+                                    Want to support VulnIQ?
                                 </h3>
                                 <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
                                     If you find VulnIQ useful, consider becoming a supporter. You can support the project by writing blogs,
@@ -493,7 +497,17 @@ export default function SupportersPage() {
                 </main>
 
                 {/* Footer */}
-                <Footer onScrollToTop={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} />
+                <Footer onScrollToTop={() => {
+                    const viewport = scrollRef.current;
+                    if (viewport) {
+                        // Try smooth scroll first, fallback to immediate
+                        try {
+                            viewport.scrollTo({ top: 0, behavior: 'smooth' });
+                        } catch {
+                            viewport.scrollTop = 0;
+                        }
+                    }
+                }} />
             </ScrollArea>
         </div>
     );
