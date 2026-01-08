@@ -1,15 +1,15 @@
-'use client'
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+export const metadata = {
+  title: "Demo",
+  description: "Try VulnIQ's AI-powered security code review demo. Experience vulnerability detection and automated remediation without signing up.",
+  openGraph: {
+    title: "Demo | VulnIQ",
+    description: "Try VulnIQ's AI-powered security code review demo. Experience vulnerability detection and automated remediation without signing up.",
+  },
+};
 
 export default function DemoPage() {
-    const router = useRouter();
-
-    useEffect(() => {
-        router.replace('/demo/home');
-    }, [router]);
-
-    return null;
+    redirect('/demo/home');
 }
 

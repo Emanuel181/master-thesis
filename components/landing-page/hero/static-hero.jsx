@@ -33,12 +33,12 @@ export function StaticHero() {
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.1] animate-fade-in-up"
               style={{ animationDelay: '100ms' }}
             >
-              <span className="text-[var(--brand-primary)] dark:text-foreground">Security</span>
-              <br />
-              <span className="text-[var(--brand-primary)] dark:text-foreground">remediation</span>
-              <br />
-              <span className="gradient-text">without</span>
-              <br />
+              <span className="text-[var(--brand-primary)] dark:text-foreground">Security </span>
+              <br className="hidden sm:block" />
+              <span className="text-[var(--brand-primary)] dark:text-foreground">remediation </span>
+              <br className="hidden sm:block" />
+              <span className="gradient-text">without </span>
+              <br className="hidden sm:block" />
               <span className="gradient-text">hallucinations.</span>
             </h1>
 

@@ -12,7 +12,7 @@ export function LampDemo() {
 
     return (
         <LampContainer>
-            <motion.h1
+            <motion.h2
                 initial={{ opacity: 0.5, y: 100 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{
@@ -23,7 +23,7 @@ export function LampDemo() {
                 className="mt-4 xs:mt-6 sm:mt-12 bg-gradient-to-br from-[var(--brand-dark)] to-[var(--brand-accent)] dark:from-[var(--brand-light)] dark:to-[var(--brand-accent)] py-4 xs:py-6 sm:py-8 bg-clip-text text-center text-5xl xs:text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold tracking-tight text-transparent px-4"
             >
                 VulnIQ
-            </motion.h1>
+            </motion.h2>
 
             <motion.p
                 initial={{ opacity: 0, y: 50 }}

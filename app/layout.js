@@ -40,11 +40,11 @@ export const viewport = {
 
 export const metadata = {
   title: {
-    default: "VulnIQ",
+    default: "AI Security Code Review & Vulnerability Remediation | VulnIQ",
     template: "%s | VulnIQ",
   },
-  description: "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost for intelligent security analysis.",
-  keywords: ["security", "code analysis", "vulnerability detection", "AI security", "code review", "OpenAI", "Anthropic", "Google", "Meta"],
+  description: "Autonomous AI agents that detect, patch, and verify code vulnerabilities. Every fix is grounded in your documentation using RAG. Try our free demo.",
+  keywords: ["AI security", "vulnerability remediation", "code review", "automated security", "vulnerability detection", "security code analysis", "RAG", "AI code fix"],
   authors: [{ name: "VulnIQ" }],
   creator: "VulnIQ",
   publisher: "VulnIQ",
@@ -73,22 +73,22 @@ export const metadata = {
     locale: "en_US",
     url: "https://vulniq.org",
     siteName: "VulnIQ",
-    title: "VulnIQ - Intelligent Security for the Modern Codebase",
-    description: "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost.",
+    title: "AI Security Code Review & Vulnerability Remediation | VulnIQ",
+    description: "Autonomous AI agents that detect, patch, and verify code vulnerabilities. Every fix is grounded in your documentation using RAG.",
     images: [
       {
         url: "/og-default.png",
         width: 1200,
         height: 630,
-        alt: "VulnIQ - Intelligent Security for the Modern Codebase",
+        alt: "VulnIQ - AI Security Code Review",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "VulnIQ - Intelligent Security for the Modern Codebase",
-    description: "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta.",
+    title: "AI Security Code Review & Vulnerability Remediation | VulnIQ",
+    description: "Autonomous AI agents that detect, patch, and verify code vulnerabilities. Every fix is grounded in your documentation using RAG.",
     images: ["/og-default.png"],
   },
   icons: {
@@ -96,6 +96,7 @@ export const metadata = {
       { url: "/favicon.ico", sizes: "any" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
       { url: "/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png" },
     ],
@@ -128,6 +129,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   // Structured data for Google (Organization + WebSite + SiteNavigationElement)
+  // Optimized for sitelinks generation - includes commercially important pages
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -149,33 +151,45 @@ export default function RootLayout({ children }) {
         "@id": "https://vulniq.org/#website",
         "url": "https://vulniq.org",
         "name": "VulnIQ",
-        "description": "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost.",
+        "description": "AI-powered security code review with autonomous vulnerability detection and remediation.",
         "publisher": {
           "@id": "https://vulniq.org/#organization"
-        },
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://vulniq.org/?s={search_term_string}",
-          "query-input": "required name=search_term_string"
         }
+        // Note: SearchAction removed - site doesn't support ?s= search parameter
       },
       {
         "@type": "WebPage",
         "@id": "https://vulniq.org/#webpage",
         "url": "https://vulniq.org",
-        "name": "VulnIQ - Intelligent Security for the Modern Codebase",
+        "name": "VulnIQ - AI Security Code Review",
         "isPartOf": {
           "@id": "https://vulniq.org/#website"
         },
         "about": {
           "@id": "https://vulniq.org/#organization"
         },
-        "description": "VulnIQ allows you to seamlessly switch between top-tier providers like OpenAI, Anthropic, Google, and Meta to find the perfect balance of performance and cost."
+        "description": "AI-powered security code review with autonomous vulnerability detection and remediation."
       },
+      // Primary navigation - commercially important pages first (Google favors these for sitelinks)
       {
         "@type": "SiteNavigationElement",
         "name": "Login",
         "url": "https://vulniq.org/login"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "name": "Demo",
+        "url": "https://vulniq.org/demo"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "name": "Security",
+        "url": "https://vulniq.org/security"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "name": "Blog",
+        "url": "https://vulniq.org/blog"
       },
       {
         "@type": "SiteNavigationElement",
@@ -189,12 +203,17 @@ export default function RootLayout({ children }) {
       },
       {
         "@type": "SiteNavigationElement",
+        "name": "Supporters",
+        "url": "https://vulniq.org/supporters"
+      },
+      {
+        "@type": "SiteNavigationElement",
         "name": "Privacy Policy",
         "url": "https://vulniq.org/privacy"
       },
       {
         "@type": "SiteNavigationElement",
-        "name": "Terms & Conditions",
+        "name": "Terms",
         "url": "https://vulniq.org/terms"
       }
     ]

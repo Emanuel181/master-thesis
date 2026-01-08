@@ -16,7 +16,7 @@ export const revalidate = 1800;
  */
 
 export const metadata = {
-  title: "Security Blog | VulnIQ",
+  title: "Blog",
   description: "Stay informed with the latest trends, best practices, and insights in code security and vulnerability management. Expert articles on AI-powered security analysis.",
   keywords: [
     "security blog",
