@@ -9,55 +9,6 @@ import { CookieConsentBanner } from "@/components/cookie-consent";
 // Google Tag Manager ID
 const GTM_ID = "GTM-KRHF2P8N";
 
-/**
- * Core Web Vitals Reporting
- * Validates: Requirements 12.1, 12.2, 12.3, 12.4
- * 
- * This function is called by Next.js to report web vitals metrics.
- * Metrics include: LCP, INP, CLS, FCP, TTFB
- */
-export function reportWebVitals(metric) {
-  // Log all web vitals for monitoring
-  if (metric.label === 'web-vital') {
-    // Log metric to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Web Vital] ${metric.name}: ${metric.value.toFixed(2)}`);
-    }
-    
-    // Warn on poor CLS (Cumulative Layout Shift)
-    if (metric.name === 'CLS' && metric.value > 0.1) {
-      console.warn(`[Web Vital Warning] High CLS detected: ${metric.value.toFixed(3)} (threshold: 0.1)`);
-    }
-    
-    // Warn on poor LCP (Largest Contentful Paint) - should be under 2.5s
-    if (metric.name === 'LCP' && metric.value > 2500) {
-      console.warn(`[Web Vital Warning] Slow LCP detected: ${metric.value.toFixed(0)}ms (threshold: 2500ms)`);
-    }
-    
-    // Warn on poor INP (Interaction to Next Paint) - should be under 200ms
-    if (metric.name === 'INP' && metric.value > 200) {
-      console.warn(`[Web Vital Warning] Slow INP detected: ${metric.value.toFixed(0)}ms (threshold: 200ms)`);
-    }
-    
-    // Optional: Send to analytics endpoint
-    // Uncomment to enable server-side tracking
-    // if (typeof window !== 'undefined') {
-    //   fetch('/api/vitals', {
-    //     method: 'POST',
-    //     body: JSON.stringify({
-    //       name: metric.name,
-    //       value: metric.value,
-    //       label: metric.label,
-    //       id: metric.id,
-    //       startTime: metric.startTime,
-    //       attribution: metric.attribution
-    //     }),
-    //     headers: { 'Content-Type': 'application/json' }
-    //   }).catch(() => {}); // Silently fail
-    // }
-  }
-}
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

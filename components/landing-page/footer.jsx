@@ -92,8 +92,8 @@ export function Footer({ onScrollToTop }) {
 
     return (
         <footer ref={ref} className="relative pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 md:px-8 bg-background w-full pb-safe overflow-hidden">
-            {/* Hex Grid Background */}
-            <HexGridBackground className="z-0 opacity-60" />
+            {/* Hex Grid Background - hidden on mobile for performance */}
+            <HexGridBackground className="z-0 opacity-60 hidden md:block" />
             
             <motion.div
                 className="max-w-7xl mx-auto relative z-10"

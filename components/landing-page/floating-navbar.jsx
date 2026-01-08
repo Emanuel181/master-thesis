@@ -136,6 +136,11 @@ export const FloatingNavbar = () => {
                                 ? 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10' 
                                 : 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
                     }`}
+                    style={{
+                        transitionProperty: 'background-color, border-color, box-shadow, color',
+                        transitionDuration: '500ms',
+                        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
                     layout
                 >
 
@@ -152,9 +157,14 @@ export const FloatingNavbar = () => {
                         <div className="absolute -inset-1 bg-[var(--brand-accent)]/20 rounded-xl blur-sm -z-10 opacity-0 group-hover:opacity-100 transition-opacity md:hidden"></div>
                     </div>
                     <span className={cn(
-                        "text-xs xs:text-sm font-semibold md:hidden transition-colors duration-500 ease-out",
+                        "text-xs xs:text-sm font-semibold md:hidden",
                         isAboveColoredSection ? "text-[#1fb6cf]" : "text-foreground"
-                    )}>VulnIQ</span>
+                    )}
+                    style={{
+                        transitionProperty: 'color',
+                        transitionDuration: '500ms',
+                        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}>VulnIQ</span>
                 </motion.a>
 
                 {/* CENTER: Navigation Menu */}
@@ -163,12 +173,19 @@ export const FloatingNavbar = () => {
                         <NavigationMenuList>
                             {/* Product Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className={cn(
-                                    "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
-                                    isAboveColoredSection 
-                                        ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}>
+                                <NavigationMenuTrigger 
+                                    className={cn(
+                                        "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm",
+                                        isAboveColoredSection 
+                                            ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    style={{
+                                        transitionProperty: 'color, background-color',
+                                        transitionDuration: '500ms',
+                                        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                                    }}
+                                >
                                     Product
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -195,21 +212,38 @@ export const FloatingNavbar = () => {
                                         <ListItem href="/#use-cases" title="Use cases" icon={Shield}>
                                             See how teams use VulnIQ for security.
                                         </ListItem>
-                                        <ListItem href="/#connect" title="Integrations" icon={GitBranch}>
-                                            Connect with GitHub, GitLab, and more.
-                                        </ListItem>
+                                        <li>
+                                            <div className="block select-none rounded-md p-3 leading-none no-underline outline-none">
+                                                <div className="flex items-center gap-2">
+                                                    <GitBranch className="h-4 w-4 text-[var(--brand-accent)]" />
+                                                    <div className="text-sm font-medium leading-none">
+                                                        Integrations
+                                                    </div>
+                                                </div>
+                                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1.5">
+                                                    Connect with GitHub, GitLab, and more.
+                                                </p>
+                                            </div>
+                                        </li>
                                     </ul>
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
 
                             {/* Resources Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className={cn(
-                                    "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
-                                    isAboveColoredSection 
-                                        ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}>
+                                <NavigationMenuTrigger 
+                                    className={cn(
+                                        "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm",
+                                        isAboveColoredSection 
+                                            ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    style={{
+                                        transitionProperty: 'color, background-color',
+                                        transitionDuration: '500ms',
+                                        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                                    }}
+                                >
                                     Resources
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -255,12 +289,19 @@ export const FloatingNavbar = () => {
 
                             {/* Company Dropdown */}
                             <NavigationMenuItem>
-                                <NavigationMenuTrigger className={cn(
-                                    "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
-                                    isAboveColoredSection 
-                                        ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}>
+                                <NavigationMenuTrigger 
+                                    className={cn(
+                                        "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm",
+                                        isAboveColoredSection 
+                                            ? "text-[#1fb6cf] hover:text-[#1fb6cf]" 
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    style={{
+                                        transitionProperty: 'color, background-color',
+                                        transitionDuration: '500ms',
+                                        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                                    }}
+                                >
                                     Company
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
@@ -395,15 +436,12 @@ export const FloatingNavbar = () => {
                                         <Shield className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
                                         <span className="text-xs font-medium text-foreground">Use cases</span>
                                     </motion.a>
-                                    <motion.a
-                                        href="/#connect"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        whileTap={{ scale: 0.95 }}
-                                        className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
+                                    <div
+                                        className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20"
                                     >
                                         <GitBranch className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
                                         <span className="text-xs font-medium text-foreground">Integrations</span>
-                                    </motion.a>
+                                    </div>
                                 </div>
                             </div>
 
