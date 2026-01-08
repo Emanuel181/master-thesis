@@ -28,10 +28,10 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Footer } from "@/components/landing-page/footer";
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { useAccessibility } from "@/contexts/accessibilityContext";
-import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { SupporterCard } from "@/components/ui/supporter-card";
 
 const containerVariants = {
@@ -182,8 +182,6 @@ export default function SupportersPage() {
     // Pagination settings: 3 per row × 3 rows = 9 per page
     const ITEMS_PER_PAGE = 9;
 
-    useScrollRestoration(scrollRef);
-
     // Hide floating accessibility widget on this page
     useEffect(() => {
         setForceHideFloating(true);
@@ -228,7 +226,7 @@ export default function SupportersPage() {
     }, [supporters.length]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background font-sans selection:bg-[var(--brand-accent)]/20">
+        <div className="h-screen flex flex-col bg-background font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
             {/* Background effects - matching landing page */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -349,11 +347,11 @@ export default function SupportersPage() {
                                         variants={containerVariants}
                                         initial="hidden"
                                         animate="visible"
-                                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-[1200px] mx-auto"
+                                        className="flex flex-wrap justify-center gap-4 sm:gap-6 max-w-[1200px] mx-auto"
                                     >
                                         {featuredSupporters.map(supporter => (
-                                            <div key={supporter.id} className="w-full flex justify-center">
-                                                <div className="w-full max-w-[380px] relative">
+                                            <div key={supporter.id} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-[380px] flex justify-center">
+                                                <div className="w-full relative">
                                                     {/* Featured badge */}
                                                     <div className="absolute -top-2 -right-2 z-10">
                                                         <span className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-500 text-white shadow-lg shadow-amber-500/30">
@@ -390,11 +388,11 @@ export default function SupportersPage() {
                                         variants={containerVariants}
                                         initial="hidden"
                                         animate="visible"
-                                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-[1200px] mx-auto"
+                                        className="flex flex-wrap justify-center gap-4 sm:gap-6 max-w-[1200px] mx-auto"
                                     >
                                         {paginatedSupporters.map(supporter => (
-                                            <div key={supporter.id} className="w-full flex justify-center">
-                                                <div className="w-full max-w-[380px]">
+                                            <div key={supporter.id} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-[380px] flex justify-center">
+                                                <div className="w-full">
                                                     <SupporterCard supporter={supporter} />
                                                 </div>
                                             </div>
@@ -498,18 +496,9 @@ export default function SupportersPage() {
 
                 {/* Footer */}
                 <Footer onScrollToTop={() => {
-                    // Try multiple methods to scroll to top
-                    const viewport = scrollRef.current;
-                    if (viewport) {
-                        viewport.scrollTop = 0;
+                    if (scrollRef.current) {
+                        scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
                     }
-                    // Also try finding the viewport by data attribute
-                    const scrollViewport = document.querySelector('[data-slot="scroll-area-viewport"]');
-                    if (scrollViewport) {
-                        scrollViewport.scrollTop = 0;
-                    }
-                    // Fallback to window
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }} />
             </ScrollArea>
         </div>

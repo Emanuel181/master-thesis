@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { FloatingNavbar } from "@/components/landing-page/floating-navbar";
 import { Footer } from "@/components/landing-page/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { 
     CheckCircle2, 
@@ -376,10 +377,11 @@ const changelogData = [
 ];
 
 export default function ChangelogPage() {
+    const scrollRef = useRef(null);
     const { openPanel } = useAccessibility();
     
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 relative">
+        <div className="h-screen flex flex-col bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
              {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -417,105 +419,111 @@ export default function ChangelogPage() {
                 </div>
             </header>
 
-            {/* Title Section */}
-            <div className="border-b border-border/50">
-                <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8 relative z-10">
-                    <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-                        Changelog
-                    </h1>
-                    <p className="text-muted-foreground mt-2">Track all updates and improvements to VulnIQ</p>
+            <ScrollArea className="flex-1" viewportRef={scrollRef}>
+                {/* Title Section */}
+                <div className="border-b border-border/50">
+                    <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8 relative z-10">
+                        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+                            Changelog
+                        </h1>
+                        <p className="text-muted-foreground mt-2">Track all updates and improvements to VulnIQ</p>
+                    </div>
                 </div>
-            </div>
 
-            {/* Timeline */}
-            <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-10 relative z-10">
-                <div className="relative">
-                    {changelogData.map((release, index) => (
-                        <div
-                            key={release.version}
-                            className="relative flex flex-col md:flex-row gap-y-6"
-                        >
-                            {/* Left side - Date and Version (sticky) */}
-                            <div className="md:w-48 flex-shrink-0">
-                                <div className="md:sticky md:top-8 pb-10">
-                                    <time className="text-sm font-medium text-muted-foreground block mb-3">
-                                        {release.date}
-                                    </time>
-                                    <div className="inline-flex relative z-10 items-center justify-center px-3 h-10 text-foreground border border-border rounded-lg text-sm font-bold bg-background">
-                                        {release.version}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right side - Content */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ duration: 0.5, delay: index * 0.05 }}
-                                className="flex-1 md:pl-8 relative pb-10"
+                {/* Timeline */}
+                <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-10 relative z-10">
+                    <div className="relative">
+                        {changelogData.map((release, index) => (
+                            <div
+                                key={release.version}
+                                className="relative flex flex-col md:flex-row gap-y-6"
                             >
-                                {/* Vertical timeline line */}
-                                <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-border">
-                                    {/* Timeline dot */}
-                                    <div className="absolute -translate-x-1/2 size-3 bg-[var(--brand-accent)] rounded-full z-10" />
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="relative z-10 flex flex-col gap-2">
-                                        <h2 className="text-2xl font-semibold tracking-tight text-balance">
-                                            {release.title}
-                                        </h2>
-
-                                        {/* Type badge */}
-                                        <div className="flex flex-wrap gap-2">
-                                            <span className={`h-6 w-fit px-2 text-xs font-medium rounded-full border flex items-center justify-center ${
-                                                release.type === 'major' 
-                                                    ? 'bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30' 
-                                                    : release.type === 'minor'
-                                                    ? 'bg-blue-500/10 text-blue-500 border-blue-500/30'
-                                                    : 'bg-muted text-muted-foreground border-border'
-                                            }`}>
-                                                {release.type === 'major' ? 'Major Release' : release.type === 'minor' ? 'Minor Update' : 'Initial Release'}
-                                            </span>
+                                {/* Left side - Date and Version (sticky) */}
+                                <div className="md:w-48 flex-shrink-0">
+                                    <div className="md:sticky md:top-8 pb-10">
+                                        <time className="text-sm font-medium text-muted-foreground block mb-3">
+                                            {release.date}
+                                        </time>
+                                        <div className="inline-flex relative z-10 items-center justify-center px-3 h-10 text-foreground border border-border rounded-lg text-sm font-bold bg-background">
+                                            {release.version}
                                         </div>
                                     </div>
-
-                                    {/* Description */}
-                                    <p className="text-muted-foreground leading-relaxed text-balance">
-                                        {release.description}
-                                    </p>
-
-                                    {/* Changes */}
-                                    <div className="space-y-4">
-                                        {release.changes.map((changeGroup, idx) => (
-                                            <div key={idx} className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-md bg-muted/50">
-                                                        {changeGroup.icon}
-                                                    </div>
-                                                    <h4 className="font-medium text-sm text-foreground">
-                                                        {changeGroup.category}
-                                                    </h4>
-                                                </div>
-                                                <ul className="list-disc space-y-1.5 pl-6 text-sm text-muted-foreground">
-                                                    {changeGroup.items.map((item, i) => (
-                                                        <li key={i} className="leading-relaxed pl-1">
-                                                            {item}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
-                            </motion.div>
-                        </div>
-                    ))}
-                </div>
-            </div>
 
-            <Footer />
+                                {/* Right side - Content */}
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, margin: "-50px" }}
+                                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                                    className="flex-1 md:pl-8 relative pb-10"
+                                >
+                                    {/* Vertical timeline line */}
+                                    <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-border">
+                                        {/* Timeline dot */}
+                                        <div className="absolute -translate-x-1/2 size-3 bg-[var(--brand-accent)] rounded-full z-10" />
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="relative z-10 flex flex-col gap-2">
+                                            <h2 className="text-2xl font-semibold tracking-tight text-balance">
+                                                {release.title}
+                                            </h2>
+
+                                            {/* Type badge */}
+                                            <div className="flex flex-wrap gap-2">
+                                                <span className={`h-6 w-fit px-2 text-xs font-medium rounded-full border flex items-center justify-center ${
+                                                    release.type === 'major' 
+                                                        ? 'bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30' 
+                                                        : release.type === 'minor'
+                                                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                                                        : 'bg-muted text-muted-foreground border-border'
+                                                }`}>
+                                                    {release.type === 'major' ? 'Major Release' : release.type === 'minor' ? 'Minor Update' : 'Initial Release'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Description */}
+                                        <p className="text-muted-foreground leading-relaxed text-balance">
+                                            {release.description}
+                                        </p>
+
+                                        {/* Changes */}
+                                        <div className="space-y-4">
+                                            {release.changes.map((changeGroup, idx) => (
+                                                <div key={idx} className="space-y-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="p-1.5 rounded-md bg-muted/50">
+                                                            {changeGroup.icon}
+                                                        </div>
+                                                        <h4 className="font-medium text-sm text-foreground">
+                                                            {changeGroup.category}
+                                                        </h4>
+                                                    </div>
+                                                    <ul className="list-disc space-y-1.5 pl-6 text-sm text-muted-foreground">
+                                                        {changeGroup.items.map((item, i) => (
+                                                            <li key={i} className="leading-relaxed pl-1">
+                                                                {item}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Footer onScrollToTop={() => {
+                    if (scrollRef.current) {
+                        scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }} />
+            </ScrollArea>
         </div>
     );
 }
