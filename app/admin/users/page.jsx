@@ -985,7 +985,9 @@ export default function AdminUsersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {users.map((user) => (
+                                    {users.map((user) => {
+                                        const isCurrentAdmin = user.email?.toLowerCase() === adminEmail?.toLowerCase();
+                                        return (
                                         <TableRow key={user.id} className="group">
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
@@ -994,7 +996,12 @@ export default function AdminUsersPage() {
                                                         <AvatarFallback className="bg-muted text-sm">{getUserInitials(user)}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="min-w-0">
-                                                        <p className="font-medium truncate">{user.name || user.firstName || 'Unnamed'}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-medium truncate">{user.name || user.firstName || 'Unnamed'}</p>
+                                                            {isCurrentAdmin && (
+                                                                <Badge variant="outline" className="text-xs bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30">You</Badge>
+                                                            )}
+                                                        </div>
                                                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                                     </div>
                                                 </div>
@@ -1030,7 +1037,7 @@ export default function AdminUsersPage() {
                                                             <TooltipContent>View Profile</TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
-                                                    {isMasterAdmin && (
+                                                    {isMasterAdmin && !isCurrentAdmin && (
                                                         <TooltipProvider>
                                                             <Tooltip>
                                                                 <TooltipTrigger asChild>
@@ -1042,20 +1049,22 @@ export default function AdminUsersPage() {
                                                             </Tooltip>
                                                         </TooltipProvider>
                                                     )}
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950" onClick={() => { setSelectedUser(user); setWarningReason(''); setIsWarningDialogOpen(true); }}>
-                                                                    <AlertTriangle className="h-4 w-4" />
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>Issue Warning</TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
+                                                    {!isCurrentAdmin && (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950" onClick={() => { setSelectedUser(user); setWarningReason(''); setIsWarningDialogOpen(true); }}>
+                                                                        <AlertTriangle className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Issue Warning</TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )})}
                                 </TableBody>
                             </Table>
                         )}
