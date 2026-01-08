@@ -184,8 +184,8 @@ export function AccessibilityWidget() {
       ? { left: position.x, top: position.y }
       : { left: position.x, bottom: position.bottom };
 
-  // Don't render anything on server or if floating button is hidden
-  if (!mounted) return null;
+  // Don't render anything on server - must check before createPortal
+  if (!mounted || typeof document === 'undefined') return null;
 
   // Use portal to render at document.body level to avoid z-index issues
   return createPortal(

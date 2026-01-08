@@ -201,21 +201,22 @@ const INITIAL_MOCK_ARTICLES = [
 
 export function DemoArticleEditor() {
   // Articles state - using mock data stored in localStorage for persistence
-  const [articles, setArticles] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("demo-articles");
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch {
-          return INITIAL_MOCK_ARTICLES;
-        }
-      }
-    }
-    return INITIAL_MOCK_ARTICLES;
-  });
+  // Initialize with default to avoid hydration mismatch, then load from localStorage after mount
+  const [articles, setArticles] = useState(INITIAL_MOCK_ARTICLES);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  // Load from localStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    const stored = localStorage.getItem("demo-articles");
+    if (stored) {
+      try {
+        setArticles(JSON.parse(stored));
+      } catch {
+        // Keep default articles
+      }
+    }
+  }, []);
 
   // UI state
   const [activeTab, setActiveTab] = useState("all");

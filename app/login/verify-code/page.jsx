@@ -152,21 +152,8 @@ function VerifyCodeContent() {
     const [isLocked, setIsLocked] = useState(false)
     const [lockoutEndTime, setLockoutEndTime] = useState(null)
     const [lockoutRemaining, setLockoutRemaining] = useState(0)
-    // Initialize resendCooldown from localStorage to persist across page refreshes
-    const [resendCooldown, setResendCooldown] = useState(() => {
-        if (typeof window === 'undefined') return 0 // SSR fallback
-        try {
-            const savedCooldown = localStorage.getItem(`otp_resend_cooldown_${email}`)
-            if (savedCooldown) {
-                const cooldownEndTime = parseInt(savedCooldown)
-                const remaining = Math.ceil((cooldownEndTime - Date.now()) / 1000)
-                return remaining > 0 ? remaining : 0
-            }
-        } catch {
-            // localStorage not available
-        }
-        return 0
-    })
+    // Initialize resendCooldown with 0 to avoid hydration mismatch, load from localStorage after mount
+    const [resendCooldown, setResendCooldown] = useState(0)
     // Initialize with default value to prevent hydration mismatch
     const [codeExpiry, setCodeExpiry] = useState(600)
     const [hydrated, setHydrated] = useState(false)
@@ -177,6 +164,22 @@ function VerifyCodeContent() {
     const inputRef = useRef(null)
     const hasInitializedTimer = useRef(false)
     const isVerifyingRef = useRef(false)
+
+    // Load resendCooldown from localStorage after mount to avoid hydration mismatch
+    useEffect(() => {
+        try {
+            const savedCooldown = localStorage.getItem(`otp_resend_cooldown_${email}`)
+            if (savedCooldown) {
+                const cooldownEndTime = parseInt(savedCooldown)
+                const remaining = Math.ceil((cooldownEndTime - Date.now()) / 1000)
+                if (remaining > 0) {
+                    setResendCooldown(remaining)
+                }
+            }
+        } catch {
+            // localStorage not available
+        }
+    }, [email])
 
     // Hydration: Load timer from localStorage after mount to prevent SSR mismatch
     useEffect(() => {

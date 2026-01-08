@@ -60,9 +60,11 @@ import {
 
 const LANGUAGE_STORAGE_KEY = 'vulniq_editor_language';
 
-// Helper to load saved language state
+// Default language
+const DEFAULT_LANGUAGE = { name: "JavaScript", prism: "javascript" };
+
+// Helper to load saved language state - only call on client
 const loadSavedLanguage = () => {
-    if (typeof window === 'undefined') return { name: "JavaScript", prism: "javascript" };
     try {
         const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
         if (saved) {
@@ -74,15 +76,21 @@ const loadSavedLanguage = () => {
     } catch (err) {
         console.error("Error loading language from localStorage:", err);
     }
-    return { name: "JavaScript", prism: "javascript" };
+    return DEFAULT_LANGUAGE;
 };
 
 export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLocked, onLockChange }) {
     // --- Configuration State ---
-    const [language, setLanguageState] = useState(() => loadSavedLanguage());
+    // Initialize with default to avoid hydration mismatch
+    const [language, setLanguageState] = useState(DEFAULT_LANGUAGE);
     const [isFormatting, setIsFormatting] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+
+    // Load saved language after mount to avoid hydration mismatch
+    useEffect(() => {
+        setLanguageState(loadSavedLanguage());
+    }, []);
 
     // --- Go to Line & Zoom State ---
     const [goToLineOpen, setGoToLineOpen] = useState(false);

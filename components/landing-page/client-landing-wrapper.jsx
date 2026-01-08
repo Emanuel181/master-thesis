@@ -153,10 +153,12 @@ function buildTechLogos() {
 function HeroCodeDemoOverlay() {
   const [mounted, setMounted] = useState(false);
   // Use a unique key to ensure the SecurityCodeDemo starts fresh on mount
-  const [instanceKey] = useState(() => Date.now());
+  // Initialize with stable value to avoid hydration mismatch, then set real key after mount
+  const [instanceKey, setInstanceKey] = useState('initial');
   
   useEffect(() => {
     setMounted(true);
+    setInstanceKey(Date.now().toString());
   }, []);
   
   if (!mounted) return null;

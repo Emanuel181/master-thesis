@@ -222,20 +222,13 @@ export function HomePage() {
     const DEMO_GITHUB_KEY = 'vulniq_demo_github_connected';
     const DEMO_GITLAB_KEY = 'vulniq_demo_gitlab_connected';
 
-    const getInitialDemoState = (key) => {
-        if (typeof window === 'undefined') return false;
-        try {
-            return localStorage.getItem(key) === 'true';
-        } catch {
-            return false;
-        }
-    };
+    // Default panel layout
+    const DEFAULT_PANEL_LAYOUT = { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
 
     const [repos, setRepos] = useState([])
     const [isLoadingRepos, setIsLoadingRepos] = useState(false)
-    const [isGithubConnected, setIsGithubConnected] = useState(() => 
-        isDemoMode ? getInitialDemoState(DEMO_GITHUB_KEY) : false
-    )
+    // Initialize with false to avoid hydration mismatch
+    const [isGithubConnected, setIsGithubConnected] = useState(false)
     const [isRefreshingRepos, setIsRefreshingRepos] = useState(false)
     const [githubSearchTerm, setGithubSearchTerm] = useState("")
 
@@ -244,24 +237,30 @@ export function HomePage() {
     // Add GitLab states
     const [gitlabRepos, setGitlabRepos] = useState([])
     const [isLoadingGitlabRepos, setIsLoadingGitlabRepos] = useState(false)
-    const [isGitlabConnected, setIsGitlabConnected] = useState(() => 
-        isDemoMode ? getInitialDemoState(DEMO_GITLAB_KEY) : false
-    )
+    // Initialize with false to avoid hydration mismatch
+    const [isGitlabConnected, setIsGitlabConnected] = useState(false)
     const [isRefreshingGitlabRepos, setIsRefreshingGitlabRepos] = useState(false)
     const [gitlabSearchTerm, setGitlabSearchTerm] = useState("")
 
     // Panel swap states (persisted to localStorage)
     const PANEL_LAYOUT_KEY = 'vulniq-panel-layout';
-    const getInitialPanelLayout = () => {
-        if (typeof window === 'undefined') return { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
+    const [panelLayout, setPanelLayout] = useState(DEFAULT_PANEL_LAYOUT);
+
+    // Load saved state from localStorage after mount to avoid hydration mismatch
+    useEffect(() => {
+        if (isDemoMode) {
+            try {
+                setIsGithubConnected(localStorage.getItem(DEMO_GITHUB_KEY) === 'true');
+                setIsGitlabConnected(localStorage.getItem(DEMO_GITLAB_KEY) === 'true');
+            } catch {}
+        }
         try {
             const saved = localStorage.getItem(PANEL_LAYOUT_KEY);
-            return saved ? JSON.parse(saved) : { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
-        } catch {
-            return { repoSwapped: false, rightSwapped: false, columnsSwapped: false };
-        }
-    };
-    const [panelLayout, setPanelLayout] = useState(getInitialPanelLayout);
+            if (saved) {
+                setPanelLayout(JSON.parse(saved));
+            }
+        } catch {}
+    }, [isDemoMode]);
 
     // Persist panel layout to localStorage
     useEffect(() => {

@@ -767,6 +767,11 @@ export function FullscreenEditor({ open, onOpenChange, article, onArticleUpdate,
     </div>
   );
 
+  // Don't render portal on server
+  if (!mounted || typeof document === 'undefined') {
+    return null;
+  }
+
   return createPortal(content, document.body);
 }
 

@@ -1974,7 +1974,8 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
   }, [post.isUserSubmitted, post.contentJson, post.content]);
 
   const markdownComponents = createMarkdownComponents(fontSize);
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://vulniq.com/blog/${post.slug}`;
+  // Use consistent URL for SSR - actual URL will be the same since it's based on slug
+  const currentUrl = `https://vulniq.org/blog/${post.slug}`;
 
   return (
     <>

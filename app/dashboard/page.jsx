@@ -75,9 +75,8 @@ function AccessibilityTrigger() {
     )
 }
 
-// Helper to load saved code state
+// Helper to load saved code state - only call on client
 const loadSavedCodeState = () => {
-    if (typeof window === 'undefined') return { code: '', codeType: '', isLocked: false };
     try {
         const saved = localStorage.getItem('vulniq_code_state');
         if (saved) {
@@ -94,9 +93,8 @@ const loadSavedCodeState = () => {
     return { code: '', codeType: '', isLocked: false };
 };
 
-// Helper to load saved active page from localStorage
+// Helper to load saved active page from localStorage - only call on client
 const loadSavedActivePage = () => {
-    if (typeof window === 'undefined') return 'Home';
     try {
         const saved = localStorage.getItem('vulniq_active_page');
         if (saved) {
@@ -114,12 +112,23 @@ function DashboardContent({ settings, mounted }) {
     const { setForceHideFloating } = useAccessibility();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
-    const [activeComponent, setActiveComponent] = useState(() => loadSavedActivePage())
+    // Initialize with defaults to avoid hydration mismatch, load from localStorage after mount
+    const [activeComponent, setActiveComponent] = useState('Home')
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
-    const [initialCode, setInitialCode] = useState(() => loadSavedCodeState().code);
-    const [codeType, setCodeType] = useState(() => loadSavedCodeState().codeType);
+    const [initialCode, setInitialCode] = useState('');
+    const [codeType, setCodeType] = useState('');
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    const [isCodeLocked, setIsCodeLocked] = useState(() => loadSavedCodeState().isLocked);
+    const [isCodeLocked, setIsCodeLocked] = useState(false);
+
+    // Load saved state from localStorage after mount to avoid hydration mismatch
+    useEffect(() => {
+        const savedPage = loadSavedActivePage();
+        const savedCodeState = loadSavedCodeState();
+        setActiveComponent(savedPage);
+        setInitialCode(savedCodeState.code);
+        setCodeType(savedCodeState.codeType);
+        setIsCodeLocked(savedCodeState.isLocked);
+    }, []);
 
     // Hide floating accessibility button on dashboard (use header icon instead)
     useEffect(() => {
