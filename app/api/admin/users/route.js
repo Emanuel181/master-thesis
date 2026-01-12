@@ -1,103 +1,117 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin-auth";
-import { securityHeaders } from "@/lib/api-security";
+/**
+ * Admin Users API Routes
+ * =======================
+ * 
+ * GET /api/admin/users - Get all users (admin only)
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all query parameters
+ * - Rate limiting enabled
+ * - Proper error handling without information leakage
+ */
 
-// GET /api/admin/users - Get all users
-// Requires admin authentication
-export async function GET(request) {
-  // Verify admin authentication
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error) return adminCheck.error;
+import { createAdminApiHandler } from '@/lib/admin-auth';
+import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import { paginationSchema } from '@/lib/validators/common';
 
-  try {
+// Query schema for GET /api/admin/users
+const adminUsersQuerySchema = paginationSchema.extend({
+    search: z.string()
+        .max(200, 'Search query too long')
+        .optional()
+        .default('')
+        // Sanitize search input
+        .transform(v => v.replace(/[<>]/g, '')),
+    filter: z.enum(['all', 'warned']).default('all'),
+});
 
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
-    const search = searchParams.get("search") || "";
-    const filter = searchParams.get("filter") || "all"; // all, warned
+/**
+ * GET /api/admin/users - Get all users
+ * Requires admin authentication
+ */
+export const GET = createAdminApiHandler(
+    async (request, { query }) => {
+        const { page, limit, search, filter } = query;
+        const skip = (page - 1) * limit;
 
-    const skip = (page - 1) * limit;
+        // Build where clause
+        const where = {};
 
-    // Build where clause
-    let where = {};
+        if (search) {
+            where.OR = [
+                { email: { contains: search, mode: 'insensitive' } },
+                { name: { contains: search, mode: 'insensitive' } },
+                { firstName: { contains: search, mode: 'insensitive' } },
+                { lastName: { contains: search, mode: 'insensitive' } },
+            ];
+        }
 
-    if (search) {
-      where.OR = [
-        { email: { contains: search, mode: "insensitive" } },
-        { name: { contains: search, mode: "insensitive" } },
-        { firstName: { contains: search, mode: "insensitive" } },
-        { lastName: { contains: search, mode: "insensitive" } },
-      ];
-    }
+        if (filter === 'warned') {
+            where.warningCount = { gt: 0 };
+        }
 
-    if (filter === "warned") {
-      where.warningCount = { gt: 0 };
-    }
+        // Parallel queries for better performance
+        const [users, total, totalUsersCount, warnedUsersCount, bannedIPsCount] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                    jobTitle: true,
+                    company: true,
+                    location: true,
+                    bio: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    warningCount: true,
+                    lastWarningAt: true,
+                    warnings: {
+                        orderBy: { createdAt: 'desc' },
+                        take: 5,
+                        select: {
+                            id: true,
+                            reason: true,
+                            warnedBy: true,
+                            createdAt: true,
+                        },
+                    },
+                },
+            }),
+            prisma.user.count({ where }),
+            prisma.user.count(),
+            prisma.user.count({ where: { warningCount: { gt: 0 } } }),
+            prisma.bannedIP.count(),
+        ]);
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          jobTitle: true,
-          company: true,
-          location: true,
-          bio: true,
-          createdAt: true,
-          updatedAt: true,
-          warningCount: true,
-          lastWarningAt: true,
-          warnings: {
-            orderBy: { createdAt: "desc" },
-            take: 5,
-            select: {
-              id: true,
-              reason: true,
-              warnedBy: true,
-              createdAt: true,
+        return {
+            users,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            stats: {
+                totalUsers: totalUsersCount,
+                warnedUsers: warnedUsersCount,
+                bannedIPs: bannedIPsCount,
             },
-          },
+        };
+    },
+    {
+        querySchema: adminUsersQuerySchema,
+        rateLimit: { 
+            limit: 100, 
+            windowMs: 60 * 1000, 
+            keyPrefix: 'admin:users:list' 
         },
-      }),
-      prisma.user.count({ where }),
-    ]);
-
-    // Get stats
-    const [totalUsersCount, warnedUsersCount, bannedIPsCount] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { warningCount: { gt: 0 } } }),
-      prisma.bannedIP.count(),
-    ]);
-
-    return NextResponse.json({
-      users,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      stats: {
-        totalUsers: totalUsersCount,
-        warnedUsers: warnedUsersCount,
-        bannedIPs: bannedIPsCount,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch users", details: error.message },
-      { status: 500, headers: securityHeaders }
-    );
-  }
-}
-
+    }
+);

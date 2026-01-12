@@ -1,5 +1,10 @@
-import { NextResponse } from 'next/server';
 import { verifyTurnstileToken, getClientIp } from '@/lib/turnstile';
+import { z } from 'zod';
+import { successResponse, errorResponse, generateRequestId } from '@/lib/api-handler';
+
+const bodySchema = z.object({
+    turnstileToken: z.string().min(1),
+});
 
 /**
  * POST /api/auth/verify-turnstile
@@ -16,16 +21,18 @@ import { verifyTurnstileToken, getClientIp } from '@/lib/turnstile';
  * - 403: { error: 'Verification failed message', code: 'TURNSTILE_VERIFICATION_FAILED' }
  */
 export async function POST(request) {
+    const requestId = generateRequestId();
+    
     try {
         const body = await request.json();
-        const { turnstileToken } = body;
-
-        if (!turnstileToken) {
-            return NextResponse.json(
-                { error: 'Missing security token' },
-                { status: 400 }
-            );
+        
+        // Validate body
+        const parseResult = bodySchema.safeParse(body);
+        if (!parseResult.success) {
+            return errorResponse('Missing security token', { status: 400, requestId });
         }
+        
+        const { turnstileToken } = parseResult.data;
 
         // Get client IP for enhanced verification
         const clientIp = getClientIp(request.headers);
@@ -34,23 +41,18 @@ export async function POST(request) {
         const result = await verifyTurnstileToken(turnstileToken, clientIp);
 
         if (!result.success) {
-            return NextResponse.json(
-                {
-                    error: result.error,
-                    code: 'TURNSTILE_VERIFICATION_FAILED',
-                },
-                { status: 403 }
-            );
+            return errorResponse(result.error, { 
+                status: 403, 
+                code: 'TURNSTILE_VERIFICATION_FAILED',
+                requestId 
+            });
         }
 
-        return NextResponse.json({ success: true });
+        return successResponse({ success: true }, { requestId });
 
     } catch (error) {
         console.error('[verify-turnstile] Error:', error);
-        return NextResponse.json(
-            { error: 'Verification service unavailable' },
-            { status: 500 }
-        );
+        return errorResponse('Verification service unavailable', { status: 500, requestId });
     }
 }
 

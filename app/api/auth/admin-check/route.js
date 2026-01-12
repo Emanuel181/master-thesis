@@ -1,11 +1,6 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-
-// List of allowed admin emails - supports both ADMIN_EMAILS (comma-separated) and ADMIN_EMAIL (single)
-const ADMIN_EMAILS = [
-  ...(process.env.ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []),
-  ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL.trim().toLowerCase()] : [])
-].filter(Boolean);
+import { successResponse } from "@/lib/api-handler";
+import { checkAdminStatus } from "@/lib/admin-auth";
 
 // GET /api/auth/admin-check - Check if current user is an admin
 export async function GET() {
@@ -13,15 +8,18 @@ export async function GET() {
     const session = await auth();
 
     if (!session?.user?.email) {
-      return NextResponse.json({ isAdmin: false });
+      return successResponse({ isAdmin: false, isMasterAdmin: false });
     }
 
-    const userEmail = session.user.email.toLowerCase();
-    const isAdmin = ADMIN_EMAILS.includes(userEmail);
+    // Use database-backed admin check
+    const adminStatus = await checkAdminStatus(session.user.email);
 
-    return NextResponse.json({ isAdmin });
+    return successResponse({ 
+      isAdmin: adminStatus.isAdmin,
+      isMasterAdmin: adminStatus.isMasterAdmin 
+    });
   } catch (error) {
     console.error("Error checking admin status:", error);
-    return NextResponse.json({ isAdmin: false });
+    return successResponse({ isAdmin: false, isMasterAdmin: false });
   }
 }

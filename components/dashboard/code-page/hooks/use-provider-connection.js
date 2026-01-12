@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { toast } from "sonner";
 import { DEMO_GITHUB_REPOS, DEMO_GITLAB_REPOS } from '@/contexts/demoContext';
+import { fetchRepoTree as apiFetchRepoTree } from '@/lib/github-api';
 
 /**
  * Custom hook for managing GitHub and GitLab provider connections
@@ -89,12 +90,36 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             setIsLoadingRepos(false);
             return;
         }
+        console.log('[GitHub] Loading repositories...');
         setIsLoadingRepos(true);
         try {
             const response = await fetch('/api/github/repos');
-            if (response.ok) setRepos(await response.json());
+            console.log('[GitHub] API response status:', response.status);
+            if (response.ok) {
+                const jsonResponse = await response.json();
+                console.log('[GitHub] Raw response:', jsonResponse);
+                
+                // Handle wrapped response from createApiHandler
+                const reposData = jsonResponse.data || jsonResponse;
+                console.log('[GitHub] Extracted repos data:', reposData);
+                
+                if (!Array.isArray(reposData)) {
+                    console.error('[GitHub] Repos data is not an array:', reposData);
+                    toast.error('Invalid response format from GitHub API');
+                    return;
+                }
+                
+                console.log('[GitHub] Loaded', reposData.length, 'repositories');
+                setRepos(reposData);
+                toast.success(`Loaded ${reposData.length} repositories`);
+            } else {
+                const error = await response.json().catch(() => ({ error: 'Failed to load repositories' }));
+                console.error('[GitHub] Failed to load repos:', error);
+                toast.error(error.error || 'Failed to load GitHub repositories');
+            }
         } catch (error) {
-            console.error(error);
+            console.error('[GitHub] Error loading repos:', error);
+            toast.error('Failed to connect to GitHub API');
         } finally {
             setIsLoadingRepos(false);
         }
@@ -113,9 +138,27 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         setIsLoadingRepos(true);
         try {
             const response = await fetch('/api/gitlab/repos');
-            if (response.ok) setGitlabRepos(await response.json());
+            if (response.ok) {
+                const jsonResponse = await response.json();
+                
+                // Handle wrapped response from createApiHandler
+                const reposData = jsonResponse.data || jsonResponse;
+                
+                if (!Array.isArray(reposData)) {
+                    console.error('[GitLab] Repos data is not an array:', reposData);
+                    toast.error('Invalid response format from GitLab API');
+                    return;
+                }
+                
+                setGitlabRepos(reposData);
+            } else {
+                const error = await response.json().catch(() => ({ error: 'Failed to load repositories' }));
+                console.error('Failed to load GitLab repos:', error);
+                toast.error(error.error || 'Failed to load GitLab repositories');
+            }
         } catch (error) {
-            console.error(error);
+            console.error('Error loading GitLab repos:', error);
+            toast.error('Failed to connect to GitLab API');
         } finally {
             setIsLoadingRepos(false);
         }
@@ -125,24 +168,64 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
     const refreshLinkedProviders = useCallback(async () => {
         if (isDemoMode) return; // Demo mode manages its own state
         if (!session) return;
+        console.log('[Providers] Refreshing linked providers...');
         try {
-            const res = await fetch('/api/providers/linked', { cache: 'no-store' });
-            const data = await res.json();
-            if (!res.ok) return;
-            const linked = new Set(data.providers || []);
+            const res = await fetch('/api/providers/linked', { 
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                }
+            });
+            
+            if (!res.ok) {
+                console.log('[Providers] Response not OK');
+                return;
+            }
+            
+            const response = await res.json();
+            console.log('[Providers] Full response object:', JSON.stringify(response, null, 2));
+            
+            // Handle wrapped response from createApiHandler
+            // The response could be: { success: true, data: { providers: [...] } }
+            // Or just: { providers: [...] }
+            let providers = []
+            
+            if (response.success && response.data && Array.isArray(response.data.providers)) {
+                providers = response.data.providers
+                console.log('[Providers] Extracted providers from response.data.providers:', providers)
+            } else if (Array.isArray(response.providers)) {
+                providers = response.providers
+                console.log('[Providers] Extracted providers from response.providers:', providers)
+            } else if (response.data && Array.isArray(response.data)) {
+                providers = response.data
+                console.log('[Providers] Extracted providers from response.data (array):', providers)
+            } else {
+                console.error('[Providers] Could not find providers array in response:', response)
+            }
+            
+            const linked = new Set(providers);
             const githubLinked = linked.has('github');
             const gitlabLinked = linked.has('gitlab');
             
+            console.log('[Providers] GitHub linked:', githubLinked, 'GitLab linked:', gitlabLinked);
+            
+            // Update GitHub connection state and load repos if newly connected
             setIsGithubConnected(prev => {
                 if (!prev && githubLinked) {
-                    loadRepos();
+                    console.log('[Providers] GitHub newly connected, loading repos...');
+                    // Use setTimeout to ensure state is updated before loading
+                    setTimeout(() => loadRepos(), 0);
                 }
                 return githubLinked;
             });
             
+            // Update GitLab connection state and load repos if newly connected
             setIsGitlabConnected(prev => {
                 if (!prev && gitlabLinked) {
-                    loadGitlabRepos();
+                    console.log('[Providers] GitLab newly connected, loading repos...');
+                    // Use setTimeout to ensure state is updated before loading
+                    setTimeout(() => loadGitlabRepos(), 0);
                 }
                 return gitlabLinked;
             });
@@ -150,7 +233,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             if (!githubLinked) setRepos([]);
             if (!gitlabLinked) setGitlabRepos([]);
         } catch (err) {
-            console.error('Error refreshing linked providers:', err);
+            console.error('[Providers] Error refreshing linked providers:', err);
         }
     }, [isDemoMode, session, loadRepos, loadGitlabRepos]);
 

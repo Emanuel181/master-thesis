@@ -188,20 +188,28 @@ model Folder {
 }
 
 model Pdf {
-  id        String                @id @default(cuid())
-  url       String
-  title     String
-  size      Int
-  s3Key     String
-  order     Int                   @default(0)
-  useCaseId String
-  folderId  String?
-  createdAt DateTime              @default(now())
-  folder    Folder?               @relation(fields: [folderId], references: [id])
-  useCase   KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
+  id                String                @id @default(cuid())
+  url               String
+  title             String
+  size              Int
+  s3Key             String
+  order             Int                   @default(0)
+  useCaseId         String
+  folderId          String?
+  createdAt         DateTime              @default(now())
+  // RAG-specific fields
+  vectorized        Boolean               @default(false) // Whether document has been vectorized
+  vectorizedAt      DateTime? // When vectorization completed
+  bedrockDataSourceId String? // Bedrock data source ID
+  embeddingStatus   String                @default("pending") // pending, processing, completed, failed
+  chunkCount        Int                   @default(0) // Number of chunks created
+  folder            Folder?               @relation(fields: [folderId], references: [id])
+  useCase           KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
 
   @@index([useCaseId])
   @@index([folderId])
+  @@index([vectorized])
+  @@index([embeddingStatus])
 }
 
 model Prompt {
@@ -418,4 +426,147 @@ model AdminPasskeyChallenge {
 
   @@index([email])
   @@index([expiresAt])
+}
+
+// Workflow Run - Tracks execution of agentic workflows
+model WorkflowRun {
+  id                String              @id @default(cuid())
+  userId            String
+  status            String              @default("pending") // pending, running, completed, failed
+  startedAt         DateTime            @default(now())
+  completedAt       DateTime?
+  totalUseCases     Int                 @default(0)
+  completedUseCases Int                 @default(0)
+  metadata          Json?               // Stores code, codeType, and other workflow metadata
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  vulnerabilities   Vulnerability[]
+  useCaseRuns       WorkflowUseCaseRun[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+// Workflow Use Case Run - Tracks individual use case execution within a workflow
+model WorkflowUseCaseRun {
+  id                  String       @id @default(cuid())
+  workflowRunId       String
+  useCaseId           String
+  useCaseTitle        String
+  status              String       @default("pending") // pending, running, completed, failed
+  reviewerCompleted   Boolean      @default(false)
+  implementerCompleted Boolean     @default(false)
+  testerCompleted     Boolean      @default(false)
+  reporterCompleted   Boolean      @default(false)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  workflowRun         WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+
+  @@index([workflowRunId])
+  @@index([useCaseId])
+  @@index([status])
+}
+
+// Vulnerability - Stores detected vulnerabilities from code analysis
+model Vulnerability {
+  id                String       @id @default(cuid())
+  workflowRunId     String
+  useCaseId         String
+  severity          String // Critical, High, Medium, Low
+  title             String
+  type              String // Security, Performance, Best Practice
+  details           String       @db.Text
+  fileName          String
+  // Detailed analysis fields
+  vulnerableCode    String?      @db.Text
+  explanation       String?      @db.Text
+  bestPractices     String?      @db.Text
+  exploitExamples   String?      @db.Text
+  attackPath        String?      @db.Text
+  cweId             String? // CWE identifier
+  // Metadata
+  lineNumber        Int?
+  columnNumber      Int?
+  confidence        Float        @default(1.0) // 0.0 to 1.0
+  falsePositive     Boolean      @default(false)
+  resolved          Boolean      @default(false)
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  workflowRun       WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  fixes             CodeFix[]
+
+  @@index([workflowRunId])
+  @@index([useCaseId])
+  @@index([severity])
+  @@index([resolved])
+  @@index([createdAt])
+}
+
+// Code Fix - Stores automated fixes for vulnerabilities
+model CodeFix {
+  id                String        @id @default(cuid())
+  vulnerabilityId   String
+  vulnerability     Vulnerability @relation(fields: [vulnerabilityId], references: [id], onDelete: Cascade)
+  
+  // Original code
+  fileName          String
+  originalCode      String        @db.Text
+  startLine         Int?
+  endLine           Int?
+  language          String?
+  
+  // Fixed code
+  fixedCode         String        @db.Text
+  changes           Json          // Detailed line-by-line changes
+  
+  // Fix metadata
+  explanation       String        @db.Text
+  confidence        Float         @default(1.0)
+  
+  // Status
+  status            FixStatus     @default(PENDING)
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  
+  // PR info
+  prUrl             String?
+  prNumber          Int?
+  branchName        String?
+  commitSha         String?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([vulnerabilityId])
+  @@index([status])
+  @@index([fileName])
+}
+
+enum FixStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  APPLIED
+  PR_CREATED
+}
+
+// Agent Configuration - Stores custom prompts and settings for each agent
+model AgentConfiguration {
+  id              String   @id @default(cuid())
+  userId          String
+  agentType       String // reviewer, implementer, tester, reporter
+  modelId         String? // Bedrock model ID
+  customPrompt    String?  @db.Text
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, agentType])
+  @@index([userId])
+  @@index([agentType])
 }

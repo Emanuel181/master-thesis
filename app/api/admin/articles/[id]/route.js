@@ -1,270 +1,214 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin-auth";
-import { securityHeaders } from "@/lib/api-security";
+/**
+ * Admin Article by ID API Routes
+ * ===============================
+ * 
+ * GET /api/admin/articles/[id] - Get a single article for admin review
+ * PATCH /api/admin/articles/[id] - Update article (master admin only)
+ * PUT /api/admin/articles/[id] - Full article update (master admin only)
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ * - Master admin checks for modifications
+ */
 
-// GET /api/admin/articles/[id] - Get a single article for admin review
-// Requires admin authentication
-export async function GET(request, { params }) {
-  // Verify admin authentication
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error) return adminCheck.error;
+import { createAdminApiHandler } from '@/lib/admin-auth';
+import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import { cuidSchema, textSchema } from '@/lib/validators/common';
+import { ApiErrors } from '@/lib/api-handler';
 
-  try {
+// Route params schema
+const paramsSchema = z.object({
+    id: cuidSchema,
+});
 
-    const { id } = await params;
+// PATCH body schema
+const patchBodySchema = z.object({
+    title: textSchema('Title', 200).optional(),
+    excerpt: textSchema('Excerpt', 500, { allowNewlines: true }).optional(),
+    category: z.string().max(50).optional(),
+    iconName: z.string().max(50).optional(),
+    gradient: z.string().max(100).nullable().optional(),
+    coverImage: z.string().url().max(2048).nullable().optional(),
+    coverType: z.enum(['gradient', 'image']).optional(),
+    content: z.string().max(500000).optional(),
+    contentJson: z.any().optional(),
+    contentMarkdown: z.string().max(500000).optional(),
+}).strict();
 
-    const article = await prisma.article.findUnique({
-      where: { id },
-      include: {
-        reactions: {
-          select: {
-            id: true,
-            type: true,
-            userId: true,
-            createdAt: true,
-          },
-        },
-        media: {
-          select: {
-            id: true,
-            type: true,
-            fileName: true,
-            url: true,
-          },
-        },
-      },
-    });
+// PUT body schema (full update)
+const putBodySchema = patchBodySchema.extend({
+    iconColor: z.string().max(50).optional(),
+    authorId: cuidSchema.optional(),
+    authorName: z.string().max(100).optional(),
+    authorEmail: z.string().email().max(254).optional(),
+    readTime: z.number().int().min(1).max(120).optional(),
+    featured: z.boolean().optional(),
+    showInMoreArticles: z.boolean().optional(),
+    featuredOrder: z.number().int().min(0).max(1000).optional(),
+});
 
-    if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ article });
-  } catch (error) {
-    console.error("Error fetching article for admin:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch article" },
-      { status: 500 }
-    );
-  }
-}
-
-// PATCH /api/admin/articles/[id] - Update article (admin can edit any field)
-// Requires MASTER admin authentication for content modifications
-export async function PATCH(request, { params }) {
-  // Verify admin authentication
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error) return adminCheck.error;
-
-  // SECURITY: Only master admins can modify article content
-  // Regular admins can only view articles and change status via the status endpoint
-  if (!adminCheck.isMasterAdmin) {
-    return NextResponse.json(
-      { error: "Insufficient permissions. Only master admins can modify articles." },
-      { status: 403, headers: securityHeaders }
-    );
-  }
-
-  try {
-
-    const { id } = await params;
-    const body = await request.json();
-
-    const existingArticle = await prisma.article.findUnique({
-      where: { id },
-    });
-
-    if (!existingArticle) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
-
-    const {
-      title,
-      excerpt,
-      category,
-      iconName,
-      gradient,
-      coverImage,
-      coverType,
-      content,
-      contentJson,
-      contentMarkdown,
-    } = body;
-
-    // Build update data
-    let updateData = {
-      ...(title !== undefined && { title }),
-      ...(excerpt !== undefined && { excerpt }),
-      ...(category !== undefined && { category }),
-      ...(iconName !== undefined && { iconName }),
-      ...(gradient !== undefined && { gradient }),
-      ...(coverImage !== undefined && { coverImage }),
-      ...(coverType !== undefined && { coverType }),
-      ...(content !== undefined && { content }),
-      ...(contentJson !== undefined && { contentJson }),
-      ...(contentMarkdown !== undefined && { contentMarkdown }),
-    };
-
-    // Generate new slug if title changed
-    if (title && title !== existingArticle.title) {
-      const baseSlug = title
+/**
+ * Generate unique slug from title
+ */
+async function generateUniqueSlug(title, excludeId) {
+    const baseSlug = title
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
 
-      const existingArticles = await prisma.article.findMany({
+    const existingArticles = await prisma.article.findMany({
         where: {
-          slug: { startsWith: baseSlug },
-          id: { not: id },
+            slug: { startsWith: baseSlug },
+            id: { not: excludeId },
         },
         select: { slug: true },
-      });
+    });
 
-      let slug = baseSlug;
-      if (existingArticles.length > 0) {
+    let slug = baseSlug;
+    if (existingArticles.length > 0) {
         const slugs = new Set(existingArticles.map((a) => a.slug));
         let counter = 1;
         while (slugs.has(slug)) {
-          slug = `${baseSlug}-${counter}`;
-          counter++;
+            slug = `${baseSlug}-${counter}`;
+            counter++;
         }
-      }
-      updateData.slug = slug;
     }
 
-    const article = await prisma.article.update({
-      where: { id },
-      data: updateData,
-    });
-
-    // SECURITY: Audit log for article modifications
-    console.log(`[Admin Audit] Article ${id} modified (PATCH) by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
-
-    return NextResponse.json({ article });
-  } catch (error) {
-    console.error("Error updating article:", error);
-    return NextResponse.json(
-      { error: "Failed to update article" },
-      { status: 500 }
-    );
-  }
+    return slug;
 }
 
-// PUT /api/admin/articles/[id] - Full article update including author reassignment
-// Requires MASTER admin authentication
-export async function PUT(request, { params }) {
-  // Verify admin authentication
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error) return adminCheck.error;
+/**
+ * GET /api/admin/articles/[id] - Get a single article for admin review
+ */
+export const GET = createAdminApiHandler(
+    async (request, { params, requestId }) => {
+        const { id } = params;
 
-  // SECURITY: Only master admins can perform full article updates
-  // This includes content modification and author reassignment
-  if (!adminCheck.isMasterAdmin) {
-    return NextResponse.json(
-      { error: "Insufficient permissions. Only master admins can fully modify articles." },
-      { status: 403, headers: securityHeaders }
-    );
-  }
+        const article = await prisma.article.findUnique({
+            where: { id },
+            include: {
+                reactions: {
+                    select: {
+                        id: true,
+                        type: true,
+                        userId: true,
+                        createdAt: true,
+                    },
+                },
+                media: {
+                    select: {
+                        id: true,
+                        type: true,
+                        fileName: true,
+                        url: true,
+                    },
+                },
+            },
+        });
 
-  try {
-
-    const { id } = await params;
-    const body = await request.json();
-
-    const existingArticle = await prisma.article.findUnique({
-      where: { id },
-    });
-
-    if (!existingArticle) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
-
-    const {
-      title,
-      excerpt,
-      category,
-      iconName,
-      iconColor,
-      gradient,
-      coverImage,
-      coverType,
-      content,
-      contentJson,
-      contentMarkdown,
-      authorId,
-      authorName,
-      authorEmail: newAuthorEmail,
-      readTime,
-      featured,
-      showInMoreArticles,
-      featuredOrder,
-    } = body;
-
-    // Build update data
-    let updateData = {
-      ...(title !== undefined && { title }),
-      ...(excerpt !== undefined && { excerpt }),
-      ...(category !== undefined && { category }),
-      ...(iconName !== undefined && { iconName }),
-      ...(iconColor !== undefined && { iconColor }),
-      ...(gradient !== undefined && { gradient }),
-      ...(coverImage !== undefined && { coverImage }),
-      ...(coverType !== undefined && { coverType }),
-      ...(content !== undefined && { content }),
-      ...(contentJson !== undefined && { contentJson }),
-      ...(contentMarkdown !== undefined && { contentMarkdown }),
-      ...(authorId !== undefined && { authorId }),
-      ...(authorName !== undefined && { authorName }),
-      ...(newAuthorEmail !== undefined && { authorEmail: newAuthorEmail }),
-      ...(readTime !== undefined && { readTime }),
-      ...(featured !== undefined && { featured }),
-      ...(showInMoreArticles !== undefined && { showInMoreArticles }),
-      ...(featuredOrder !== undefined && { featuredOrder }),
-    };
-
-    // Generate new slug if title changed
-    if (title && title !== existingArticle.title) {
-      const baseSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-
-      const existingArticles = await prisma.article.findMany({
-        where: {
-          slug: { startsWith: baseSlug },
-          id: { not: id },
-        },
-        select: { slug: true },
-      });
-
-      let slug = baseSlug;
-      if (existingArticles.length > 0) {
-        const slugs = new Set(existingArticles.map((a) => a.slug));
-        let counter = 1;
-        while (slugs.has(slug)) {
-          slug = `${baseSlug}-${counter}`;
-          counter++;
+        if (!article) {
+            return ApiErrors.notFound('Article', requestId);
         }
-      }
-      updateData.slug = slug;
+
+        return { article };
+    },
+    {
+        paramsSchema,
+        rateLimit: { limit: 100, windowMs: 60 * 1000, keyPrefix: 'admin:articles:get' },
     }
+);
 
-    const article = await prisma.article.update({
-      where: { id },
-      data: updateData,
-    });
+/**
+ * PATCH /api/admin/articles/[id] - Update article (master admin only)
+ */
+export const PATCH = createAdminApiHandler(
+    async (request, { params, body, requestId, isMasterAdmin, adminEmail }) => {
+        const { id } = params;
 
-    // SECURITY: Audit log for full article updates
-    console.log(`[Admin Audit] Article ${id} fully updated by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
+        // Only master admins can modify article content
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admins can modify articles');
+        }
 
-    return NextResponse.json({ article });
-  } catch (error) {
-    console.error("Error updating article (PUT):", error);
-    return NextResponse.json(
-      { error: "Failed to update article" },
-      { status: 500 }
-    );
-  }
-}
+        const existingArticle = await prisma.article.findUnique({
+            where: { id },
+        });
 
+        if (!existingArticle) {
+            return ApiErrors.notFound('Article', requestId);
+        }
+
+        // Build update data from validated body
+        const updateData = { ...body };
+
+        // Generate new slug if title changed
+        if (body.title && body.title !== existingArticle.title) {
+            updateData.slug = await generateUniqueSlug(body.title, id);
+        }
+
+        const article = await prisma.article.update({
+            where: { id },
+            data: updateData,
+        });
+
+        // Audit log
+        console.log(`[Admin Audit] Article ${id} modified (PATCH) by ${adminEmail} (master admin) at ${new Date().toISOString()}`);
+
+        return { article };
+    },
+    {
+        paramsSchema,
+        bodySchema: patchBodySchema,
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'admin:articles:patch' },
+    }
+);
+
+/**
+ * PUT /api/admin/articles/[id] - Full article update (master admin only)
+ */
+export const PUT = createAdminApiHandler(
+    async (request, { params, body, requestId, isMasterAdmin, adminEmail }) => {
+        const { id } = params;
+
+        // Only master admins can perform full updates
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admins can fully modify articles');
+        }
+
+        const existingArticle = await prisma.article.findUnique({
+            where: { id },
+        });
+
+        if (!existingArticle) {
+            return ApiErrors.notFound('Article', requestId);
+        }
+
+        // Build update data from validated body
+        const updateData = { ...body };
+
+        // Generate new slug if title changed
+        if (body.title && body.title !== existingArticle.title) {
+            updateData.slug = await generateUniqueSlug(body.title, id);
+        }
+
+        const article = await prisma.article.update({
+            where: { id },
+            data: updateData,
+        });
+
+        // Audit log
+        console.log(`[Admin Audit] Article ${id} fully updated by ${adminEmail} (master admin) at ${new Date().toISOString()}`);
+
+        return { article };
+    },
+    {
+        paramsSchema,
+        bodySchema: putBodySchema,
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 30, windowMs: 60 * 1000, keyPrefix: 'admin:articles:put' },
+    }
+);

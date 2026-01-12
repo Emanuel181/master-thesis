@@ -1,8 +1,14 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/api-handler";
 
 // GET /api/articles/published - Get all published articles for public display
 export async function GET(request) {
+  const requestId = generateRequestId();
+  
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit")) || 50;
@@ -87,18 +93,15 @@ export async function GET(request) {
       isUserSubmitted: true, // Flag to identify user-submitted articles
     }));
 
-    return NextResponse.json({
+    return successResponse({
       articles: transformedArticles,
       total,
       limit,
       offset,
-    });
+    }, { requestId });
   } catch (error) {
     console.error("Error fetching published articles:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch published articles" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch published articles", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 

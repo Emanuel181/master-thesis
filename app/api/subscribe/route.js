@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
 import { requireProductionMode } from "@/lib/api-middleware";
 import { z } from "zod";
-import { securityHeaders, isSameOrigin, readJsonBody } from "@/lib/api-security";
+import { isSameOrigin, readJsonBody, getClientIp } from "@/lib/api-security";
 import { rateLimit } from "@/lib/rate-limit";
+import { 
+    successResponse, 
+    errorResponse, 
+    generateRequestId 
+} from "@/lib/api-handler";
 
 // SECURITY: Hardcode Brevo API URL to prevent SSRF via environment variable manipulation
 // NEVER use NEXT_PUBLIC_* env vars for server-side API endpoints
@@ -17,8 +21,7 @@ const subscribeSchema = z.object({
 }).strict();
 
 export async function POST(request) {
-    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-    const headers = { ...securityHeaders, 'x-request-id': requestId };
+    const requestId = generateRequestId();
     
     const demoBlock = requireProductionMode(request, { requestId });
     if (demoBlock) return demoBlock;
@@ -26,40 +29,33 @@ export async function POST(request) {
     try {
         // CSRF protection
         if (!isSameOrigin(request)) {
-            return NextResponse.json(
-                { error: 'Forbidden', requestId },
-                { status: 403, headers }
-            );
+            return errorResponse('Forbidden', { status: 403, code: 'FORBIDDEN', requestId });
         }
 
-        // Rate limiting - 5 subscription attempts per hour per IP
-        const clientIp = request.headers.get('x-forwarded-for')?.split(',').pop()?.trim() || 'unknown';
+        // Rate limiting - 5 subscription attempts per hour per IP (using consistent extraction)
+        const clientIp = getClientIp(request);
         const rl = await rateLimit({
             key: `subscribe:${clientIp}`,
             limit: 5,
             windowMs: 60 * 60 * 1000
         });
         if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Too many subscription attempts. Please try again later.', retryAt: rl.resetAt, requestId },
-                { status: 429, headers }
-            );
+            return errorResponse('Too many subscription attempts. Please try again later.', {
+                status: 429,
+                code: 'RATE_LIMITED',
+                requestId,
+                headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+            });
         }
 
         const parsed = await readJsonBody(request);
         if (!parsed.ok) {
-            return NextResponse.json(
-                { error: "Invalid JSON body", requestId },
-                { status: 400, headers }
-            );
+            return errorResponse('Invalid JSON body', { status: 400, code: 'INVALID_JSON', requestId });
         }
 
         const validation = subscribeSchema.safeParse(parsed.body);
         if (!validation.success) {
-            return NextResponse.json(
-                { error: "Please provide a valid email address", requestId },
-                { status: 400, headers }
-            );
+            return errorResponse('Please provide a valid email address', { status: 400, code: 'VALIDATION_ERROR', requestId });
         }
 
         const { email } = validation.data;
@@ -68,10 +64,7 @@ export async function POST(request) {
 
         if (!BREVO_API_KEY) {
             console.error("BREVO_API_KEY is not configured");
-            return NextResponse.json(
-                { error: "Subscription service is not configured", requestId },
-                { status: 500, headers }
-            );
+            return errorResponse('Subscription service is not configured', { status: 500, code: 'CONFIG_ERROR', requestId });
         }
 
         // Add contact to Brevo - using hardcoded URL to prevent SSRF
@@ -93,38 +86,23 @@ export async function POST(request) {
         });
 
         if (response.ok) {
-            return NextResponse.json(
-                { message: "Successfully subscribed!", requestId },
-                { status: 200, headers }
-            );
+            return successResponse({ message: 'Successfully subscribed!' }, { requestId });
         }
 
         // Handle already existing contact (which is fine)
         if (response.status === 400) {
             const errorData = await response.json();
             if (errorData.code === "duplicate_parameter") {
-                return NextResponse.json(
-                    { message: "You're already subscribed!", requestId },
-                    { status: 200, headers }
-                );
+                return successResponse({ message: "You're already subscribed!" }, { requestId });
             }
-            return NextResponse.json(
-                { error: "Failed to subscribe", requestId },
-                { status: 400, headers }
-            );
+            return errorResponse('Failed to subscribe', { status: 400, code: 'SUBSCRIBE_FAILED', requestId });
         }
 
-        return NextResponse.json(
-            { error: "Failed to subscribe. Please try again later.", requestId },
-            { status: 502, headers }
-        );
+        return errorResponse('Failed to subscribe. Please try again later.', { status: 502, code: 'UPSTREAM_ERROR', requestId });
     } catch (error) {
         // SECURITY: Don't log full error object, may contain sensitive data
         console.error("[subscribe] Error:", error?.message || 'Unknown error');
-        return NextResponse.json(
-            { error: "An error occurred. Please try again later." },
-            { status: 500, headers }
-        );
+        return errorResponse('An error occurred. Please try again later.', { status: 500, code: 'INTERNAL_ERROR', requestId });
     }
 }
 

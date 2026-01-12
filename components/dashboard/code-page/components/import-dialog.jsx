@@ -52,6 +52,8 @@ export function ImportDialog({
     onDisconnectGitlab,
     onConnectGitHub,
     onConnectGitlab,
+    onRefreshGitHubRepos,
+    onRefreshGitLabRepos,
 }) {
     const pathname = usePathname();
     const isDemoMode = pathname?.startsWith('/demo');
@@ -161,10 +163,23 @@ export function ImportDialog({
                             {/* GitHub Projects */}
                             {isGithubConnected && (filterMode === 'all' || filterMode === 'github') && (
                                 <div className="space-y-2">
-                                    <Label className="flex items-center gap-2 text-xs">
-                                        <GitHubIcon className="h-3.5 w-3.5" />
-                                        GitHub
-                                    </Label>
+                                    <div className="flex items-center justify-between">
+                                        <Label className="flex items-center gap-2 text-xs">
+                                            <GitHubIcon className="h-3.5 w-3.5" />
+                                            GitHub
+                                        </Label>
+                                        {onRefreshGitHubRepos && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={onRefreshGitHubRepos}
+                                                disabled={isLoadingRepos}
+                                                className="h-6 px-2"
+                                            >
+                                                <RefreshCw className={`h-3 w-3 ${isLoadingRepos ? 'animate-spin' : ''}`} />
+                                            </Button>
+                                        )}
+                                    </div>
                                     <ScrollArea className="h-48 border rounded-md">
                                         <div className="p-2">
                                             {isLoadingRepos ? (
@@ -196,6 +211,23 @@ export function ImportDialog({
                             {/* GitLab Projects */}
                             {isGitlabConnected && (filterMode === 'all' || filterMode === 'gitlab') && (
                                 <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="flex items-center gap-2 text-xs">
+                                            <GitLabIcon className="h-3.5 w-3.5" />
+                                            GitLab
+                                        </Label>
+                                        {onRefreshGitLabRepos && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={onRefreshGitLabRepos}
+                                                disabled={isLoadingRepos}
+                                                className="h-6 px-2"
+                                            >
+                                                <RefreshCw className={`h-3 w-3 ${isLoadingRepos ? 'animate-spin' : ''}`} />
+                                            </Button>
+                                        )}
+                                    </div>
                                     <Label className="flex items-center gap-2 text-xs">
                                         <GitLabIcon className="h-3.5 w-3.5" />
                                         GitLab

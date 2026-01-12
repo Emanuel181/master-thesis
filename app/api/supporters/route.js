@@ -1,14 +1,19 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { rateLimit } from "@/lib/rate-limit";
-import { securityHeaders } from "@/lib/api-security";
-import { isAdminEmail } from "@/lib/supporters-data";
+import { checkAdminStatus } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
+import { 
+    successResponse, 
+    errorResponse, 
+    generateRequestId 
+} from "@/lib/api-handler";
 
 // GET - Fetch all visible supporters (public endpoint)
 export async function GET(request) {
+    const requestId = generateRequestId();
+    
     try {
-        // Rate limiting - 200 requests per minute (generous for public read-only endpoint)
+        // Rate limiting - 400 requests per minute (generous for public read-only endpoint)
         const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
         const rl = await rateLimit({
             key: `supporters:get:${clientIp}`,
@@ -16,15 +21,18 @@ export async function GET(request) {
             windowMs: 60 * 1000
         });
         if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
+            return errorResponse('Rate limit exceeded', {
+                status: 429,
+                code: 'RATE_LIMITED',
+                requestId,
+                headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+            });
         }
 
-        // Check if user is admin
+        // Check if user is admin (async database check)
         const session = await auth();
-        const isAdmin = isAdminEmail(session?.user?.email);
+        const adminStatus = await checkAdminStatus(session?.user?.email);
+        const isAdmin = adminStatus.isAdmin;
 
         // Get supporters from database (only visible ones, sorted by tier/order)
         const supporters = await prisma.supporter.findMany({
@@ -36,42 +44,34 @@ export async function GET(request) {
             ],
         });
 
-        return NextResponse.json({
-            supporters,
-            isAdmin
-        }, {
-            status: 200,
-            headers: {
-                ...securityHeaders,
-                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+        return successResponse(
+            { supporters, isAdmin },
+            { 
+                requestId,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+                }
             }
-        });
+        );
     } catch (error) {
         console.error('[Supporters GET Error]', error);
-        return NextResponse.json(
-            { error: 'Failed to fetch supporters' },
-            { status: 500, headers: securityHeaders }
-        );
+        return errorResponse('Failed to fetch supporters', { status: 500, code: 'INTERNAL_ERROR', requestId });
     }
 }
 
 // POST - Not available (supporters managed via data file)
 export async function POST(request) {
+    const requestId = generateRequestId();
     const session = await auth();
-    const isAdmin = isAdminEmail(session?.user?.email);
+    const adminStatus = await checkAdminStatus(session?.user?.email);
 
-    if (!isAdmin) {
-        return NextResponse.json(
-            { error: 'Unauthorized - Admin access required' },
-            { status: 403, headers: securityHeaders }
-        );
+    if (!adminStatus.isAdmin) {
+        return errorResponse('Unauthorized - Admin access required', { status: 403, code: 'FORBIDDEN', requestId });
     }
 
-    return NextResponse.json(
-        {
-            error: 'Supporters are managed via the data file',
-            info: 'Edit lib/supporters-data.js to add/modify supporters'
-        },
-        { status: 501, headers: securityHeaders }
-    );
+    return errorResponse('Supporters are managed via the data file', {
+        status: 501,
+        code: 'NOT_IMPLEMENTED',
+        requestId,
+    });
 }

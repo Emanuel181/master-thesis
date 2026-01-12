@@ -11,7 +11,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, PersonStanding, Loader2 } from "lucide-react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
-
 export default function LoginPage() {
     const { data: session, status } = useSession()
     const router = useRouter()

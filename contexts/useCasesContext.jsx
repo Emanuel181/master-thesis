@@ -86,11 +86,18 @@ export function UseCasesProvider({ children }) {
         
         throw new Error(errorData.error || 'Failed to fetch use cases');
       }
-      const data = await response.json();
+      
+      const jsonResponse = await response.json();
+      console.log('[UseCases] Fetch response:', jsonResponse);
+      
+      // Handle wrapped response from createApiHandler
+      const data = jsonResponse.data || jsonResponse;
+      console.log('[UseCases] Extracted data:', data);
+      
       setUseCases(data.useCases || []);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching use cases:', err);
+      console.error('[UseCases] Error fetching use cases:', err);
     } finally {
       setLoading(false);
       fetchInProgress.current = false;

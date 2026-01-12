@@ -1,20 +1,19 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
-import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
-import { rateLimit } from "@/lib/rate-limit";
-import { z } from "zod";
-import { requireProductionMode } from "@/lib/api-middleware";
+/**
+ * Folder [id] API Routes
+ * =======================
+ * 
+ * GET    - Get a single folder with its contents
+ * PATCH  - Update folder (rename, move)
+ * DELETE - Delete folder and all its contents
+ */
 
-// CUID validation pattern (starts with 'c', 25 chars, lowercase alphanumeric)
-const cuidSchema = z.string().regex(/^c[a-z0-9]{24}$/, 'Invalid ID format');
+import prisma from '@/lib/prisma';
+import { createApiHandler, ApiErrors, errorResponse } from '@/lib/api-handler';
+import { updateFolderSchema, folderIdParamsSchema } from '@/lib/validators/folders.js';
 
-const patchFolderSchema = z.object({
-    name: z.string().min(1).max(100).regex(/^[^<>:"/\\|?*\x00-\x1f]+$/, 'Folder name contains invalid characters').optional(),
-    parentId: z.union([cuidSchema, z.null()]).optional(),
-    order: z.number().int().min(0).max(100000).optional(),
-}).strict();
-
+/**
+ * BFS check if targetId is a descendant of rootId
+ */
 async function isDescendantBfs(db, { rootId, targetId, maxNodes = 2000 }) {
     if (!rootId || !targetId) return false;
     if (rootId === targetId) return true;
@@ -27,7 +26,7 @@ async function isDescendantBfs(db, { rootId, targetId, maxNodes = 2000 }) {
         const parentId = queue.shift();
         processed += 1;
         if (processed > maxNodes) {
-            // Defensive: avoid unbounded traversal; treat as unsafe.
+            // Defensive: avoid unbounded traversal; treat as unsafe
             return true;
         }
 
@@ -49,88 +48,58 @@ async function isDescendantBfs(db, { rootId, targetId, maxNodes = 2000 }) {
     return false;
 }
 
-// GET - Get a single folder with its contents
-export async function GET(request, { params }) {
-    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-    const headers = { ...securityHeaders, 'x-request-id': requestId };
-    const demoBlock = requireProductionMode(request, { requestId });
-    if (demoBlock) return demoBlock;
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401, headers });
-        }
-
-        const rl = await rateLimit({ key: `folders:id:get:${session.user.id}`, limit: 120, windowMs: 60 * 1000 });
-        if (!rl.allowed) {
-            return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers });
-        }
-
-        const { id } = await params;
+/**
+ * GET /api/folders/[id]
+ * Get a single folder with its contents
+ */
+export const GET = createApiHandler(
+    async (request, { session, params, requestId }) => {
+        const { id } = params;
 
         const folder = await prisma.folder.findFirst({
             where: { id },
             include: {
                 useCase: true,
                 children: {
-                    orderBy: { order: "asc" },
+                    orderBy: { order: 'asc' },
                 },
                 pdfs: {
-                    orderBy: { order: "asc" },
+                    orderBy: { order: 'asc' },
                 },
             },
         });
 
         if (!folder) {
-            return NextResponse.json({ error: "Folder not found", requestId }, { status: 404, headers });
+            return ApiErrors.notFound('Folder', requestId);
         }
 
         // Verify user owns this folder
         if (folder.useCase.userId !== session.user.id) {
-            return NextResponse.json({ error: "Unauthorized", requestId }, { status: 403, headers });
+            return ApiErrors.forbidden(requestId);
         }
 
-        return NextResponse.json({ folder, requestId }, { headers });
-    } catch (error) {
-        console.error("Error fetching folder:", error);
-        return NextResponse.json({ error: "Failed to fetch folder", requestId }, { status: 500, headers });
+        return { folder };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: folderIdParamsSchema,
+        rateLimit: {
+            limit: 120,
+            windowMs: 60 * 1000,
+            keyPrefix: 'folders:id:get',
+        },
     }
-}
+);
 
-// PATCH - Update folder (rename, move)
-export async function PATCH(request, { params }) {
-    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-    const headers = { ...securityHeaders, 'x-request-id': requestId };
-    const demoBlock = requireProductionMode(request, { requestId });
-    if (demoBlock) return demoBlock;
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401, headers });
-        }
-
-        const rl = await rateLimit({ key: `folders:id:patch:${session.user.id}`, limit: 120, windowMs: 60 * 1000 });
-        if (!rl.allowed) {
-            return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers });
-        }
-
-        // CSRF protection for state-changing operations
-        if (!isSameOrigin(request)) {
-            return NextResponse.json({ error: 'Forbidden', requestId }, { status: 403, headers });
-        }
-
-        const { id } = await params;
-        const parsed = await readJsonBody(request);
-        if (!parsed.ok) {
-            return NextResponse.json({ error: 'Invalid JSON body', requestId }, { status: 400, headers });
-        }
-
-        const validation = patchFolderSchema.safeParse(parsed.body);
-        if (!validation.success) {
-            return NextResponse.json({ error: 'Validation failed', requestId }, { status: 400, headers });
-        }
-
-        const { name, parentId, order } = validation.data;
+/**
+ * PATCH /api/folders/[id]
+ * Update folder (rename, move)
+ */
+export const PATCH = createApiHandler(
+    async (request, { session, body, params, requestId }) => {
+        const { id } = params;
+        const { name, parentId, order } = body;
 
         const folder = await prisma.folder.findFirst({
             where: { id },
@@ -140,12 +109,12 @@ export async function PATCH(request, { params }) {
         });
 
         if (!folder) {
-            return NextResponse.json({ error: "Folder not found", requestId }, { status: 404, headers });
+            return ApiErrors.notFound('Folder', requestId);
         }
 
         // Verify user owns this folder
         if (folder.useCase.userId !== session.user.id) {
-            return NextResponse.json({ error: "Unauthorized", requestId }, { status: 403, headers });
+            return ApiErrors.forbidden(requestId);
         }
 
         const updateData = {};
@@ -160,9 +129,13 @@ export async function PATCH(request, { params }) {
 
         // Handle moving to a different parent
         if (parentId !== undefined) {
-            // Prevent moving a folder into itself or its descendants
+            // Prevent moving a folder into itself
             if (parentId === id) {
-                return NextResponse.json({ error: "Cannot move folder into itself", requestId }, { status: 400, headers });
+                return errorResponse('Cannot move folder into itself', {
+                    status: 400,
+                    code: 'VALIDATION_ERROR',
+                    requestId,
+                });
             }
 
             if (parentId !== null) {
@@ -175,12 +148,16 @@ export async function PATCH(request, { params }) {
                 });
 
                 if (!newParent) {
-                    return NextResponse.json({ error: "Parent folder not found", requestId }, { status: 404, headers });
+                    return ApiErrors.notFound('Parent folder', requestId);
                 }
 
                 const isDesc = await isDescendantBfs(prisma, { rootId: id, targetId: parentId });
                 if (isDesc) {
-                    return NextResponse.json({ error: "Cannot move folder into its descendant", requestId }, { status: 400, headers });
+                    return errorResponse('Cannot move folder into its descendant', {
+                        status: 400,
+                        code: 'VALIDATION_ERROR',
+                        requestId,
+                    });
                 }
             }
 
@@ -192,36 +169,28 @@ export async function PATCH(request, { params }) {
             data: updateData,
         });
 
-        return NextResponse.json({ folder: updatedFolder, requestId }, { headers });
-    } catch (error) {
-        console.error("Error updating folder:", error);
-        return NextResponse.json({ error: "Failed to update folder", requestId }, { status: 500, headers });
+        return { folder: updatedFolder };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: updateFolderSchema,
+        paramsSchema: folderIdParamsSchema,
+        rateLimit: {
+            limit: 120,
+            windowMs: 60 * 1000,
+            keyPrefix: 'folders:id:patch',
+        },
     }
-}
+);
 
-// DELETE - Delete folder and all its contents
-export async function DELETE(request, { params }) {
-    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-    const headers = { ...securityHeaders, 'x-request-id': requestId };
-    const demoBlock = requireProductionMode(request, { requestId });
-    if (demoBlock) return demoBlock;
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401, headers });
-        }
-
-        const rl = await rateLimit({ key: `folders:id:delete:${session.user.id}`, limit: 60, windowMs: 60 * 60 * 1000 });
-        if (!rl.allowed) {
-            return NextResponse.json({ error: 'Rate limit exceeded', retryAt: rl.resetAt, requestId }, { status: 429, headers });
-        }
-
-        // CSRF protection for state-changing operations
-        if (!isSameOrigin(request)) {
-            return NextResponse.json({ error: 'Forbidden', requestId }, { status: 403, headers });
-        }
-
-        const { id } = await params;
+/**
+ * DELETE /api/folders/[id]
+ * Delete folder and all its contents
+ */
+export const DELETE = createApiHandler(
+    async (request, { session, params, requestId }) => {
+        const { id } = params;
 
         const folder = await prisma.folder.findFirst({
             where: { id },
@@ -231,12 +200,12 @@ export async function DELETE(request, { params }) {
         });
 
         if (!folder) {
-            return NextResponse.json({ error: "Folder not found", requestId }, { status: 404, headers });
+            return ApiErrors.notFound('Folder', requestId);
         }
 
         // Verify user owns this folder
         if (folder.useCase.userId !== session.user.id) {
-            return NextResponse.json({ error: "Unauthorized", requestId }, { status: 403, headers });
+            return ApiErrors.forbidden(requestId);
         }
 
         // Delete folder (cascade will handle children and PDF relations)
@@ -244,9 +213,16 @@ export async function DELETE(request, { params }) {
             where: { id },
         });
 
-        return NextResponse.json({ success: true, requestId }, { headers });
-    } catch (error) {
-        console.error("Error deleting folder:", error);
-        return NextResponse.json({ error: "Failed to delete folder", requestId }, { status: 500, headers });
+        return { success: true };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: folderIdParamsSchema,
+        rateLimit: {
+            limit: 60,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'folders:id:delete',
+        },
     }
-}
+);

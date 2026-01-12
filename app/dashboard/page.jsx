@@ -24,6 +24,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
 import { ProjectProvider, useProject } from "@/contexts/projectContext";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { startSecurityAnalysis, getSelectedGroups } from "@/lib/start-analysis";
+import { toast } from "sonner";
 
 import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
@@ -108,8 +112,10 @@ const loadSavedActivePage = () => {
 
 // Inner component that can use useProject context
 function DashboardContent({ settings, mounted }) {
-    const { projectClearCounter, projectStructure, setSelectedFile } = useProject();
+    const { projectClearCounter, projectStructure, setSelectedFile, currentRepo } = useProject();
     const { setForceHideFloating } = useAccessibility();
+    const { data: session } = useSession();
+    const router = useRouter();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     // Initialize with defaults to avoid hydration mismatch, load from localStorage after mount
@@ -119,6 +125,7 @@ function DashboardContent({ settings, mounted }) {
     const [codeType, setCodeType] = useState('');
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [isCodeLocked, setIsCodeLocked] = useState(false);
+    const [isStartingReview, setIsStartingReview] = useState(false);
 
     // Load saved state from localStorage after mount to avoid hydration mismatch
     useEffect(() => {
@@ -129,6 +136,19 @@ function DashboardContent({ settings, mounted }) {
         setCodeType(savedCodeState.codeType);
         setIsCodeLocked(savedCodeState.isLocked);
     }, []);
+
+    // Auto-save selected group to localStorage when codeType changes
+    useEffect(() => {
+        if (codeType) {
+            try {
+                // Save the selected group as an array (the system expects an array of group IDs)
+                localStorage.setItem('vulniq_selected_groups', JSON.stringify([codeType]));
+                console.log('[Dashboard] Auto-saved selected group:', codeType);
+            } catch (err) {
+                console.error('[Dashboard] Error auto-saving selected group:', err);
+            }
+        }
+    }, [codeType]);
 
     // Hide floating accessibility button on dashboard (use header icon instead)
     useEffect(() => {
@@ -258,21 +278,270 @@ function DashboardContent({ settings, mounted }) {
         setActiveComponent(item.title)
     }, [isCodeLocked, setIsModelsDialogOpen, setIsFeedbackOpen, setBreadcrumbs, setActiveComponent]);
 
+    // Handler for starting security review with orchestrator
+    const handleStartReview = useCallback(async (code, codeType) => {
+        if (!session?.user?.id) {
+            toast.error('Please sign in to start a review');
+            return;
+        }
+
+        // Check if we have either single file code or a project (from context)
+        const hasSingleFile = code && code.trim().length > 0;
+        const hasProject = projectStructure && Object.keys(projectStructure).length > 0;
+        
+        if (!hasSingleFile && !hasProject) {
+            toast.error('Please enter code or import a project to review');
+            return;
+        }
+
+        // For single file mode, require lock
+        if (hasSingleFile && !hasProject && !isCodeLocked) {
+            toast.error('Please lock your code first');
+            return;
+        }
+
+        setIsStartingReview(true);
+
+        try {
+            // Get selected groups from workflow configuration or use the codeType
+            let groupIds = getSelectedGroups();
+            
+            // If no groups selected in workflow config, but codeType is provided, use it
+            if (groupIds.length === 0 && codeType) {
+                groupIds = [codeType];
+                // Save it to localStorage for consistency
+                localStorage.setItem('vulniq_selected_groups', JSON.stringify(groupIds));
+            }
+            
+            if (groupIds.length === 0) {
+                toast.error('Please select a group in Code Input first');
+                setIsStartingReview(false);
+                return;
+            }
+
+            toast.loading('Starting security analysis...');
+
+            // Prepare code payload
+            let codePayload;
+            if (hasProject) {
+                try {
+                    // Load all file contents from the project
+                    const loadingToast = toast.loading('Loading project files...');
+                    const filesWithContent = await loadAllProjectFiles(projectStructure, currentRepo);
+                    
+                    console.log('[handleStartReview] Loaded files:', filesWithContent.length);
+                    
+                    toast.dismiss(loadingToast);
+                    
+                    if (filesWithContent.length === 0) {
+                        toast.error('No files found in project or failed to load files');
+                        setIsStartingReview(false);
+                        return;
+                    }
+                    
+                    // Extract all files from project structure (from context)
+                    codePayload = {
+                        type: 'project',
+                        files: filesWithContent,
+                        projectName: currentRepo?.repo || 'Imported Project'
+                    };
+                    toast.loading(`Starting analysis of ${codePayload.files.length} files...`);
+                } catch (loadError) {
+                    console.error('[handleStartReview] Error loading files:', loadError);
+                    toast.dismiss();
+                    toast.error(`Failed to load project files: ${loadError.message}`);
+                    setIsStartingReview(false);
+                    return;
+                }
+            } else {
+                // Single file
+                codePayload = {
+                    type: 'single',
+                    content: code,
+                    fileName: 'main'
+                };
+            }
+
+            // Start the analysis
+            const result = await startSecurityAnalysis({
+                userId: session.user.id,
+                groupIds,
+                code: codePayload,
+                codeType: codeType || 'Unknown',
+            });
+
+            toast.dismiss();
+            toast.success('Analysis started!');
+            
+            // Store runId in localStorage for results page
+            localStorage.setItem('vulniq_current_run_id', result.runId);
+            
+            // Switch to Results component (no route change)
+            setActiveComponent('Results');
+        } catch (error) {
+            toast.dismiss();
+            toast.error(error.message || 'Failed to start analysis');
+            console.error('Start analysis error:', error);
+        } finally {
+            setIsStartingReview(false);
+        }
+    }, [session, isCodeLocked, currentRepo, projectStructure]);
+
+    // Helper function to load all files from project with their content
+    const loadAllProjectFiles = async (structure, repo) => {
+        console.log('[loadAllProjectFiles] Starting, repo:', repo);
+        console.log('[loadAllProjectFiles] Structure:', structure);
+        
+        const files = [];
+        const { fetchFileContent } = await import('@/lib/github-api');
+        
+        // File extensions to analyze (code files only)
+        const analyzableExtensions = new Set([
+            'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs', 
+            'php', 'rb', 'swift', 'kt', 'scala', 'sql', 'sh', 'bash', 'html', 'css',
+            'vue', 'svelte', 'json', 'yaml', 'yml', 'xml', 'md', 'txt'
+        ]);
+        
+        const isAnalyzableFile = (fileName) => {
+            const ext = fileName.split('.').pop()?.toLowerCase();
+            return ext && analyzableExtensions.has(ext);
+        };
+        
+        // Collect all file nodes first
+        const fileNodes = [];
+        const collectFiles = (node) => {
+            if (!node) return;
+            
+            if (node.type === 'file' && isAnalyzableFile(node.name)) {
+                fileNodes.push(node);
+            } else if (node.type === 'folder' && node.children) {
+                node.children.forEach(child => collectFiles(child));
+            }
+        };
+        
+        collectFiles(structure);
+        console.log('[loadAllProjectFiles] Found', fileNodes.length, 'analyzable files');
+        
+        // Load files in batches with delay to avoid rate limiting
+        const BATCH_SIZE = 5;
+        const DELAY_MS = 1000; // 1 second between batches
+        
+        for (let i = 0; i < fileNodes.length; i += BATCH_SIZE) {
+            const batch = fileNodes.slice(i, i + BATCH_SIZE);
+            console.log(`[loadAllProjectFiles] Loading batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(fileNodes.length / BATCH_SIZE)}`);
+            
+            const batchPromises = batch.map(async (node) => {
+                try {
+                    console.log('[loadAllProjectFiles] Loading file:', node.path);
+                    const fileWithContent = await fetchFileContent(
+                        repo.owner, 
+                        repo.repo, 
+                        node.path, 
+                        repo.provider || 'github'
+                    );
+                    
+                    // Only include if content is not too large (max 1MB per file)
+                    if (fileWithContent.content && fileWithContent.content.length < 1024 * 1024) {
+                        console.log('[loadAllProjectFiles] Loaded file:', node.path, 'size:', fileWithContent.content.length);
+                        return {
+                            path: node.path,
+                            content: fileWithContent.content,
+                            language: detectLanguage(node.name)
+                        };
+                    } else {
+                        console.log('[loadAllProjectFiles] Skipped large file:', node.path);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error(`[loadAllProjectFiles] Failed to load file ${node.path}:`, error.message);
+                    return null;
+                }
+            });
+            
+            const batchResults = await Promise.all(batchPromises);
+            files.push(...batchResults.filter(f => f !== null));
+            
+            // Add delay between batches (except for the last batch)
+            if (i + BATCH_SIZE < fileNodes.length) {
+                console.log(`[loadAllProjectFiles] Waiting ${DELAY_MS}ms before next batch...`);
+                await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+            }
+        }
+        
+        console.log('[loadAllProjectFiles] Total files loaded:', files.length);
+        return files;
+    };
+
+    // Helper function to extract all files from project structure (for already loaded content)
+    const extractFilesFromProject = (structure) => {
+        const files = [];
+        
+        const traverse = (node, path = '') => {
+            if (!node) return;
+            
+            if (node.type === 'file' && node.content) {
+                files.push({
+                    path: path + node.name,
+                    content: node.content,
+                    language: node.language || detectLanguage(node.name)
+                });
+            } else if (node.type === 'folder' && node.children) {
+                const folderPath = path + node.name + '/';
+                node.children.forEach(child => traverse(child, folderPath));
+            } else if (Array.isArray(node)) {
+                node.forEach(item => traverse(item, path));
+            } else if (typeof node === 'object') {
+                Object.values(node).forEach(item => traverse(item, path));
+            }
+        };
+        
+        traverse(structure);
+        return files;
+    };
+    
+    // Helper to detect language from file extension
+    const detectLanguage = (fileName) => {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        const langMap = {
+            'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+            'py': 'python', 'java': 'java', 'cpp': 'cpp', 'c': 'c', 'cs': 'csharp',
+            'go': 'go', 'rs': 'rust', 'php': 'php', 'rb': 'ruby', 'swift': 'swift',
+            'kt': 'kotlin', 'scala': 'scala', 'sql': 'sql', 'sh': 'shell', 'bash': 'shell'
+        };
+        return langMap[ext] || 'plaintext';
+    };
+
     const renderComponent = () => {
         const content = (() => {
             switch (activeComponent) {
                 case "Code input":
-                    return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
+                    return <CodeInput 
+                        code={initialCode} 
+                        setCode={setInitialCode} 
+                        codeType={codeType} 
+                        setCodeType={setCodeType} 
+                        isLocked={isCodeLocked} 
+                        onLockChange={setIsCodeLocked}
+                        onStart={handleStartReview}
+                    />
                 case "Knowledge base":
                     return <KnowledgeBaseVisualization />
                 case "Results":
-                    return <Results initialCode={initialCode} />
+                    return <Results runId={localStorage.getItem('vulniq_current_run_id')} />
                 case "Write article":
                     return <ArticleEditor />
                 case "Home":
                     return <HomePage />
                 default:
-                    return <CodeInput code={initialCode} setCode={setInitialCode} codeType={codeType} setCodeType={setCodeType} isLocked={isCodeLocked} onLockChange={setIsCodeLocked} />
+                    return <CodeInput 
+                        code={initialCode} 
+                        setCode={setInitialCode} 
+                        codeType={codeType} 
+                        setCodeType={setCodeType} 
+                        isLocked={isCodeLocked} 
+                        onLockChange={setIsCodeLocked}
+                        onStart={handleStartReview}
+                    />
             }
         })();
 

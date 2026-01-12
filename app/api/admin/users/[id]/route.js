@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { requireAdmin } from "@/lib/admin-auth";
-import { isAdminEmail } from "@/lib/supporters-data";
+import { requireAdmin, checkAdminStatus } from "@/lib/admin-auth";
 import { securityHeaders } from "@/lib/api-security";
 
 // GET /api/admin/users/[id] - Get user details
@@ -70,8 +69,9 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Prevent warning admin users
-    if (isAdminEmail(user.email)) {
+    // Prevent warning admin users (async database check)
+    const userAdminStatus = await checkAdminStatus(user.email);
+    if (userAdminStatus.isAdmin) {
       return NextResponse.json(
         { error: "Cannot warn admin users" },
         { status: 403 }

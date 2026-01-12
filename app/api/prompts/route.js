@@ -1,47 +1,22 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+/**
+ * Prompts API Routes
+ * ===================
+ * 
+ * GET  - List all prompts grouped by agent
+ * POST - Create a new prompt
+ */
+
 import prisma from '@/lib/prisma';
 import { uploadTextToS3, generatePromptS3Key } from '@/lib/s3';
-import { z } from 'zod';
-import { rateLimit } from '@/lib/rate-limit';
-import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
-import { requireProductionMode } from '@/lib/api-middleware';
+import { createApiHandler } from '@/lib/api-handler';
+import { createPromptSchema, VALID_AGENTS } from '@/lib/validators/prompts.js';
 
-// Input validation schemas
-const VALID_AGENTS = ["reviewer", "implementation", "tester", "report"];
-
-const createPromptSchema = z.object({
-    agent: z.enum(VALID_AGENTS, `Agent must be one of: ${VALID_AGENTS.join(', ')}`),
-    title: z.string().max(200, 'Title must be less than 200 characters').optional(),
-    text: z.string()
-        .min(1, 'Text is required')
-        .max(50000, 'Text must be less than 50000 characters'),
-});
-
-export async function GET(request) {
-    // SECURITY: Block demo mode from accessing production prompts API
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-    
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: securityHeaders });
-        }
-
-        // Rate limiting - 60 requests per minute
-        const rl = await rateLimit({
-            key: `prompts:get:${session.user.id}`,
-            limit: 60,
-            windowMs: 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
+/**
+ * GET /api/prompts
+ * List all prompts for the authenticated user, grouped by agent
+ */
+export const GET = createApiHandler(
+    async (request, { session }) => {
         const userId = session.user.id;
 
         // Try to order by 'order' field if it exists, fallback to createdAt only
@@ -61,9 +36,8 @@ export async function GET(request) {
         }
 
         // Group by agent
-        const agents = ["reviewer", "implementation", "tester", "report"];
         const grouped = {};
-        agents.forEach(agent => grouped[agent] = []);
+        VALID_AGENTS.forEach(agent => grouped[agent] = []);
 
         prompts.forEach(prompt => {
             if (grouped[prompt.agent]) {
@@ -76,60 +50,27 @@ export async function GET(request) {
             }
         });
 
-        return NextResponse.json(grouped, { headers: securityHeaders });
-    } catch (error) {
-        console.error('Error fetching prompts:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: securityHeaders });
+        return grouped;
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        rateLimit: {
+            limit: 60,
+            windowMs: 60 * 1000,
+            keyPrefix: 'prompts:get',
+        },
     }
-}
+);
 
-export async function POST(request) {
-    // SECURITY: Block demo mode from accessing production prompts API
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-    
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: securityHeaders });
-        }
-
-        // CSRF protection for state-changing operations
-        if (!isSameOrigin(request)) {
-            return NextResponse.json(
-                { error: 'Forbidden' },
-                { status: 403, headers: securityHeaders }
-            );
-        }
-
-        // Rate limiting - 30 prompts created per hour
-        const rl = await rateLimit({
-            key: `prompts:create:${session.user.id}`,
-            limit: 30,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
+/**
+ * POST /api/prompts
+ * Create a new prompt
+ */
+export const POST = createApiHandler(
+    async (request, { session, body }) => {
         const userId = session.user.id;
-        const parsed = await readJsonBody(request);
-        if (!parsed.ok) {
-            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
-        }
-
-        // Validate input
-        const validationResult = createPromptSchema.safeParse(parsed.body);
-        if (!validationResult.success) {
-            return NextResponse.json({
-                error: 'Validation failed',
-            }, { status: 400, headers: securityHeaders });
-        }
-
-        const { agent, title, text } = validationResult.data;
+        const { agent, title, text } = body;
 
         // Upload to S3
         const s3Key = generatePromptS3Key(userId, agent);
@@ -138,20 +79,27 @@ export async function POST(request) {
         const prompt = await prisma.prompt.create({
             data: {
                 agent,
-                title: title || "Untitled",
+                title: title || 'Untitled',
                 text,
                 userId,
                 s3Key,
             },
         });
 
-        return NextResponse.json({
+        return {
             id: prompt.id,
             title: prompt.title,
             text: prompt.text,
-        }, { headers: securityHeaders });
-    } catch (error) {
-        console.error('Error creating prompt:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: securityHeaders });
+        };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: createPromptSchema,
+        rateLimit: {
+            limit: 30,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'prompts:create',
+        },
     }
-}
+);

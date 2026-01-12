@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma"
-import { NextResponse } from "next/server"
 import { createHash } from "crypto"
+import { z } from "zod"
+import { createApiHandler, errorResponse, successResponse, generateRequestId } from "@/lib/api-handler"
 import { rateLimit } from "@/lib/rate-limit"
 import { getClientIp, securityHeaders } from "@/lib/api-security"
 import { requireProductionMode } from "@/lib/api-middleware"
@@ -18,8 +19,13 @@ function hashForLog(value) {
     return createHash("sha256").update(value).digest("hex").substring(0, 8);
 }
 
+const bodySchema = z.object({
+    email: z.string().email(),
+    code: z.string().min(1),
+});
+
 export async function POST(req) {
-    const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}`;
+    const requestId = generateRequestId();
     
     // SECURITY: Block demo mode from accessing production auth verify-code API
     const demoBlock = requireProductionMode(req);
@@ -30,11 +36,14 @@ export async function POST(req) {
         
         // Parse body early to get email for rate limiting
         const body = await req.json();
-        const { email, code } = body;
-
-        if (!email || !code) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: securityHeaders })
+        
+        // Validate body
+        const parseResult = bodySchema.safeParse(body);
+        if (!parseResult.success) {
+            return errorResponse("Missing required fields", { status: 400, requestId });
         }
+        
+        const { email, code } = parseResult.data;
 
         // Normalize the code and email (trim whitespace, lowercase email)
         const normalizedCode = code.trim()
@@ -48,10 +57,7 @@ export async function POST(req) {
         });
         
         if (!ipRl.allowed) {
-            return NextResponse.json(
-                { error: "Too many attempts. Please try again later." }, 
-                { status: 429, headers: securityHeaders }
-            );
+            return errorResponse("Too many attempts. Please try again later.", { status: 429, requestId });
         }
 
         // SECURITY: Rate limit by email (prevents distributed attacks on a single email)
@@ -65,10 +71,7 @@ export async function POST(req) {
         });
         
         if (!emailRl.allowed) {
-            return NextResponse.json(
-                { error: "Too many attempts for this email. Please try again later." }, 
-                { status: 429, headers: securityHeaders }
-            );
+            return errorResponse("Too many attempts for this email. Please try again later.", { status: 429, requestId });
         }
 
         // Hash the code the same way NextAuth does
@@ -92,7 +95,7 @@ export async function POST(req) {
             if (process.env.NODE_ENV === 'development') {
                 console.log(`[verify-code] No token found. RequestId: ${requestId}`);
             }
-            return NextResponse.json({ error: "Invalid code. Please check and try again." }, { status: 400, headers: securityHeaders })
+            return errorResponse("Invalid code. Please check and try again.", { status: 400, requestId });
         }
 
         // Check if token has expired
@@ -100,17 +103,17 @@ export async function POST(req) {
             if (process.env.NODE_ENV === 'development') {
                 console.log(`[verify-code] Token expired. RequestId: ${requestId}`);
             }
-            return NextResponse.json({ error: "Code has expired. Please request a new one." }, { status: 400, headers: securityHeaders })
+            return errorResponse("Code has expired. Please request a new one.", { status: 400, requestId });
         }
 
         // Token is valid - log without PII
         if (process.env.NODE_ENV === 'development') {
             console.log(`[verify-code] Token valid. RequestId: ${requestId}`);
         }
-        return NextResponse.json({ success: true }, { headers: securityHeaders })
+        return successResponse({ success: true }, { requestId });
 
     } catch (error) {
         console.error("[verify-code] Verification error:", error.message)
-        return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: securityHeaders })
+        return errorResponse("Internal server error", { status: 500, requestId });
     }
 }

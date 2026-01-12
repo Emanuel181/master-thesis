@@ -1,8 +1,13 @@
-import { NextResponse } from "next/server";
-import { securityHeaders, readJsonBody } from "@/lib/api-security";
+import { readJsonBody } from "@/lib/api-security";
 import { requireAdmin } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { 
+    successResponse, 
+    errorResponse, 
+    validationErrorResponse,
+    generateRequestId 
+} from "@/lib/api-handler";
 
 // Validation schema
 const supporterSchema = z.object({
@@ -26,6 +31,8 @@ const supporterSchema = z.object({
  * Requires admin authentication
  */
 export async function GET() {
+    const requestId = generateRequestId();
+    
     // Verify admin authentication
     const adminCheck = await requireAdmin();
     if (adminCheck.error) return adminCheck.error;
@@ -39,16 +46,10 @@ export async function GET() {
             ],
         });
 
-        return NextResponse.json(
-            { supporters },
-            { status: 200, headers: securityHeaders }
-        );
+        return successResponse({ supporters }, { requestId });
     } catch (error) {
         console.error('[Admin Supporters GET Error]', error);
-        return NextResponse.json(
-            { error: 'Failed to fetch supporters' },
-            { status: 500, headers: securityHeaders }
-        );
+        return errorResponse('Failed to fetch supporters', { status: 500, code: 'INTERNAL_ERROR', requestId });
     }
 }
 
@@ -58,6 +59,8 @@ export async function GET() {
  * Requires admin authentication
  */
 export async function POST(request) {
+    const requestId = generateRequestId();
+    
     // Verify admin authentication
     const adminCheck = await requireAdmin();
     if (adminCheck.error) return adminCheck.error;
@@ -65,18 +68,12 @@ export async function POST(request) {
     try {
         const bodyResult = await readJsonBody(request);
         if (!bodyResult.ok) {
-            return NextResponse.json(
-                { error: 'Invalid request body' },
-                { status: 400, headers: securityHeaders }
-            );
+            return errorResponse('Invalid request body', { status: 400, code: 'INVALID_JSON', requestId });
         }
 
         const validation = supporterSchema.safeParse(bodyResult.body);
         if (!validation.success) {
-            return NextResponse.json(
-                { error: 'Validation failed', details: validation.error.errors },
-                { status: 400, headers: securityHeaders }
-            );
+            return validationErrorResponse(validation.error, { requestId });
         }
 
         const newSupporter = await prisma.supporter.create({
@@ -97,16 +94,13 @@ export async function POST(request) {
             },
         });
 
-        return NextResponse.json(
-            { supporter: newSupporter, message: 'Supporter created successfully' },
-            { status: 201, headers: securityHeaders }
+        return successResponse(
+            { supporter: newSupporter, message: 'Supporter created successfully' }, 
+            { status: 201, requestId }
         );
 
     } catch (error) {
         console.error('[Admin Supporters POST Error]', error);
-        return NextResponse.json(
-            { error: 'Failed to create supporter' },
-            { status: 500, headers: securityHeaders }
-        );
+        return errorResponse('Failed to create supporter', { status: 500, code: 'INTERNAL_ERROR', requestId });
     }
 }

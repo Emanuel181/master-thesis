@@ -52,6 +52,7 @@ function SelectContent({
   children,
   position = "item-aligned",
   align = "center",
+  onPointerDownOutside,
   ...props
 }) {
   return (
@@ -66,6 +67,7 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        onPointerDownOutside={onPointerDownOutside}
         {...props}>
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport

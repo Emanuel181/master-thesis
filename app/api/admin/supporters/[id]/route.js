@@ -1,10 +1,28 @@
-import { NextResponse } from "next/server";
-import { securityHeaders, readJsonBody } from "@/lib/api-security";
-import { requireAdmin } from "@/lib/admin-auth";
-import prisma from "@/lib/prisma";
-import { z } from "zod";
+/**
+ * Admin Supporters by ID API Routes
+ * ===================================
+ * 
+ * PUT /api/admin/supporters/[id] - Update a supporter
+ * DELETE /api/admin/supporters/[id] - Delete a supporter
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ */
 
-// Validation schema for updates
+import { createAdminApiHandler } from '@/lib/admin-auth';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+import { ApiErrors } from '@/lib/api-handler';
+import { cuidSchema } from '@/lib/validators/common';
+
+// Route params schema
+const paramsSchema = z.object({
+    id: cuidSchema,
+});
+
+// PUT body schema
 const updateSupporterSchema = z.object({
     name: z.string().min(1).max(100).optional(),
     avatarUrl: z.string().url().optional().nullable().or(z.literal('')),
@@ -19,20 +37,14 @@ const updateSupporterSchema = z.object({
     featured: z.boolean().optional(),
     order: z.number().int().min(0).max(1000).optional(),
     visible: z.boolean().optional(),
-});
+}).strict();
 
 /**
- * PUT /api/admin/supporters/[id]
- * Update a supporter in database
- * Requires admin authentication
+ * PUT /api/admin/supporters/[id] - Update a supporter
  */
-export async function PUT(request, { params }) {
-    // Verify admin authentication
-    const adminCheck = await requireAdmin();
-    if (adminCheck.error) return adminCheck.error;
-
-    try {
-        const { id } = await params;
+export const PUT = createAdminApiHandler(
+    async (request, { params, body, requestId }) => {
+        const { id } = params;
 
         // Check if supporter exists
         const existing = await prisma.supporter.findUnique({
@@ -40,75 +52,48 @@ export async function PUT(request, { params }) {
         });
 
         if (!existing) {
-            return NextResponse.json(
-                { error: 'Supporter not found' },
-                { status: 404, headers: securityHeaders }
-            );
+            return ApiErrors.notFound('Supporter', requestId);
         }
 
-        const bodyResult = await readJsonBody(request);
-        if (!bodyResult.ok) {
-            return NextResponse.json(
-                { error: 'Invalid request body' },
-                { status: 400, headers: securityHeaders }
-            );
-        }
-
-        const validation = updateSupporterSchema.safeParse(bodyResult.body);
-        if (!validation.success) {
-            return NextResponse.json(
-                { error: 'Validation failed', details: validation.error.errors },
-                { status: 400, headers: securityHeaders }
-            );
-        }
-
-        // Build update data (only include provided fields)
+        // Build update data (only include provided fields, convert empty strings to null)
         const updateData = {};
-        if (validation.data.name !== undefined) updateData.name = validation.data.name;
-        if (validation.data.avatarUrl !== undefined) updateData.avatarUrl = validation.data.avatarUrl || null;
-        if (validation.data.occupation !== undefined) updateData.occupation = validation.data.occupation;
-        if (validation.data.company !== undefined) updateData.company = validation.data.company || null;
-        if (validation.data.companyUrl !== undefined) updateData.companyUrl = validation.data.companyUrl || null;
-        if (validation.data.contributionBio !== undefined) updateData.contributionBio = validation.data.contributionBio;
-        if (validation.data.personalBio !== undefined) updateData.personalBio = validation.data.personalBio || null;
-        if (validation.data.linkedinUrl !== undefined) updateData.linkedinUrl = validation.data.linkedinUrl || null;
-        if (validation.data.websiteUrl !== undefined) updateData.websiteUrl = validation.data.websiteUrl || null;
-        if (validation.data.tier !== undefined) updateData.tier = validation.data.tier;
-        if (validation.data.featured !== undefined) updateData.featured = validation.data.featured;
-        if (validation.data.order !== undefined) updateData.order = validation.data.order;
-        if (validation.data.visible !== undefined) updateData.visible = validation.data.visible;
+        if (body.name !== undefined) updateData.name = body.name;
+        if (body.avatarUrl !== undefined) updateData.avatarUrl = body.avatarUrl || null;
+        if (body.occupation !== undefined) updateData.occupation = body.occupation;
+        if (body.company !== undefined) updateData.company = body.company || null;
+        if (body.companyUrl !== undefined) updateData.companyUrl = body.companyUrl || null;
+        if (body.contributionBio !== undefined) updateData.contributionBio = body.contributionBio;
+        if (body.personalBio !== undefined) updateData.personalBio = body.personalBio || null;
+        if (body.linkedinUrl !== undefined) updateData.linkedinUrl = body.linkedinUrl || null;
+        if (body.websiteUrl !== undefined) updateData.websiteUrl = body.websiteUrl || null;
+        if (body.tier !== undefined) updateData.tier = body.tier;
+        if (body.featured !== undefined) updateData.featured = body.featured;
+        if (body.order !== undefined) updateData.order = body.order;
+        if (body.visible !== undefined) updateData.visible = body.visible;
 
         const updatedSupporter = await prisma.supporter.update({
             where: { id },
             data: updateData,
         });
 
-        return NextResponse.json(
-            { supporter: updatedSupporter, message: 'Supporter updated successfully' },
-            { status: 200, headers: securityHeaders }
-        );
-
-    } catch (error) {
-        console.error('[Admin Supporters PUT Error]', error);
-        return NextResponse.json(
-            { error: 'Failed to update supporter' },
-            { status: 500, headers: securityHeaders }
-        );
+        return { 
+            supporter: updatedSupporter, 
+            message: 'Supporter updated successfully' 
+        };
+    },
+    {
+        paramsSchema,
+        bodySchema: updateSupporterSchema,
+        rateLimit: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'admin:supporters:update' },
     }
-}
+);
 
 /**
- * DELETE /api/admin/supporters/[id]
- * Delete a supporter from database
- * Requires admin authentication
+ * DELETE /api/admin/supporters/[id] - Delete a supporter
  */
-export async function DELETE(request, { params }) {
-    // Verify admin authentication
-    const adminCheck = await requireAdmin();
-    if (adminCheck.error) return adminCheck.error;
-
-    try {
-        const { id } = await params;
+export const DELETE = createAdminApiHandler(
+    async (request, { params, requestId }) => {
+        const { id } = params;
 
         // Check if supporter exists
         const existing = await prisma.supporter.findUnique({
@@ -116,26 +101,17 @@ export async function DELETE(request, { params }) {
         });
 
         if (!existing) {
-            return NextResponse.json(
-                { error: 'Supporter not found' },
-                { status: 404, headers: securityHeaders }
-            );
+            return ApiErrors.notFound('Supporter', requestId);
         }
 
         await prisma.supporter.delete({
             where: { id },
         });
 
-        return NextResponse.json(
-            { message: 'Supporter deleted successfully' },
-            { status: 200, headers: securityHeaders }
-        );
-
-    } catch (error) {
-        console.error('[Admin Supporters DELETE Error]', error);
-        return NextResponse.json(
-            { error: 'Failed to delete supporter' },
-            { status: 500, headers: securityHeaders }
-        );
+        return { message: 'Supporter deleted successfully' };
+    },
+    {
+        paramsSchema,
+        rateLimit: { limit: 30, windowMs: 60 * 1000, keyPrefix: 'admin:supporters:delete' },
     }
-}
+);

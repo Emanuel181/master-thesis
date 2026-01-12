@@ -125,7 +125,29 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
 
     // --- Contexts ---
     const { useCases, refresh: refreshUseCases } = useUseCases();
+    // Use projectStructure from context (not props) to avoid conflicts
     const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo, clearProject } = useProject();
+
+    // --- Fetch Groups ---
+    const [useCaseGroups, setUseCaseGroups] = React.useState([]);
+    
+    const refreshGroups = React.useCallback(async () => {
+        try {
+            const response = await fetch('/api/use-case-groups');
+            if (response.ok) {
+                const data = await response.json();
+                const groups = data.data?.groups || data.groups || [];
+                setUseCaseGroups(groups);
+            }
+        } catch (error) {
+            console.error('Error fetching groups:', error);
+            throw error;
+        }
+    }, []);
+    
+    React.useEffect(() => {
+        refreshGroups();
+    }, [refreshGroups]);
 
     // --- Editor Tabs Hook (needs to be before useProviderConnection to get closeAllTabs) ---
     const {
@@ -187,7 +209,9 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const { editorConfig, buildMonacoTheme } = useEditorConfig();
     const { theme, font, fontSize, ligatures, minimap, themeKey } = editorConfig;
 
-    const codeTypes = useCases.map(uc => ({ value: uc.id, label: uc.title }));
+    const codeTypes = useCaseGroups
+        .filter(group => group.id !== 'ungrouped') // Exclude ungrouped
+        .map(group => ({ value: group.id, label: group.name }));
 
     const hasCode = code && code.trim().length > 0;
     const [isPlaceholder, setIsPlaceholder] = useState(!hasCode);
@@ -206,27 +230,64 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     }, [isImportDialogOpen, session, isGitlabConnected, gitlabRepos.length, loadGitlabRepos]);
 
     // --- Effect: Auto-Detect Language on Code Change ---
+    // REMOVED: Automatic language detection
+    // Users must manually select language from dropdown
+
+    // --- Effect: Auto-Select Group in Workflow Configuration ---
     useEffect(() => {
-        if (!code || isPlaceholder) return;
+        if (!codeType) return;
 
-        const lang = detectLanguageFromContent(selectedFile?.name, code);
-        if (lang) {
-            setDetectedLanguage(lang);
+        // When a group is selected, automatically select it and all its use cases/PDFs in workflow configuration
+        const selectGroupInWorkflow = async () => {
+            try {
+                // 1. Set the selected group
+                localStorage.setItem('vulniq_selected_groups', JSON.stringify([codeType]));
 
-            // Check support
-            const match = supportedLanguages.find(s => s.prism === lang);
-            const isSupported = Boolean(match);
-            setIsLanguageSupported(isSupported);
+                // 2. Fetch all use cases for this group
+                const useCasesResponse = await fetch(`/api/use-cases?groupId=${codeType}`);
+                if (useCasesResponse.ok) {
+                    const useCasesData = await useCasesResponse.json();
+                    const useCases = useCasesData.data?.useCases || useCasesData.useCases || [];
 
-            // Auto-switch editor highlighter if supported
-            if (isSupported && match && match.prism !== language.prism) {
-                setLanguage(match);
+                    // 3. Fetch all PDFs for each use case and collect their IDs
+                    const allPdfIds = [];
+                    for (const useCase of useCases) {
+                        const pdfsResponse = await fetch(`/api/folders?useCaseId=${useCase.id}`);
+                        if (pdfsResponse.ok) {
+                            const pdfsData = await pdfsResponse.json();
+                            const folders = pdfsData.data?.folders || pdfsData.folders || [];
+                            
+                            // Extract all PDF IDs from the folder tree
+                            const extractPdfIds = (items) => {
+                                let ids = [];
+                                items.forEach(item => {
+                                    if (item.type === 'pdf') {
+                                        ids.push(item.id);
+                                    }
+                                    if (item.children) {
+                                        ids = ids.concat(extractPdfIds(item.children));
+                                    }
+                                });
+                                return ids;
+                            };
+                            
+                            const pdfIds = extractPdfIds(folders);
+                            allPdfIds.push(...pdfIds);
+                        }
+                    }
+
+                    // 4. Save all PDF IDs to localStorage
+                    localStorage.setItem('vulniq_selected_documents', JSON.stringify(allPdfIds));
+                    
+                    console.log(`Auto-selected group ${codeType} with ${useCases.length} use cases and ${allPdfIds.length} documents`);
+                }
+            } catch (error) {
+                console.error('Error auto-selecting group in workflow:', error);
             }
-        } else {
-            setDetectedLanguage(null);
-            setIsLanguageSupported(false);
-        }
-    }, [code, isPlaceholder, selectedFile, language.prism, setLanguage]);
+        };
+
+        selectGroupInWorkflow();
+    }, [codeType]);
 
     // Effect for active tab language
     useEffect(() => {
@@ -439,17 +500,11 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         isLocked={isLocked}
                         onLockChange={onLockChange}
                         isViewOnly={isViewOnly}
-                        displayLanguage={displayLanguage}
-                        displayLanguages={displayLanguages}
-                        language={language}
-                        setLanguage={setLanguage}
-                        setDetectedLanguage={setDetectedLanguage}
-                        setIsLanguageSupported={setIsLanguageSupported}
                         codeType={codeType}
                         setCodeType={setCodeType}
                         codeTypes={codeTypes}
                         isRefreshing={isRefreshing}
-                        refreshUseCases={refreshUseCases}
+                        refreshUseCases={refreshGroups}
                         setIsRefreshing={setIsRefreshing}
                         isFormatting={isFormatting}
                         handleFormat={handleFormat}
@@ -458,7 +513,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         handleCopy={handleCopy}
                         hasCode={hasCode}
                         isReviewable={isReviewable}
-                        onStart={onStart}
+                        onStart={() => onStart(code, codeType)}
                         activeTab={activeTab}
                         code={code}
                         // Tab group props
@@ -488,6 +543,8 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                         onDisconnectGitlab={handleDisconnectGitlab}
                         onConnectGitHub={handleConnectGitHub}
                         onConnectGitlab={handleConnectGitlab}
+                        onRefreshGitHubRepos={loadRepos}
+                        onRefreshGitLabRepos={loadGitlabRepos}
                     />
 
                     {/* Content Body */}

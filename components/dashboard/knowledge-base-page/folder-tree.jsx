@@ -290,6 +290,7 @@ const FolderTree = forwardRef(function FolderTree({
     const fetchFolders = useCallback(async () => {
         if (!useCaseId) return;
 
+        console.log('[FolderTree] Fetching folders for use case:', useCaseId);
         setIsLoading(true);
         try {
             // Demo mode - use mock data from DEMO_DOCUMENTS
@@ -337,7 +338,25 @@ const FolderTree = forwardRef(function FolderTree({
             if (!response.ok) throw new Error("Failed to fetch folders");
 
             const data = await response.json();
-            setTreeData(data.folders || []);
+            console.log('[FolderTree] API response:', data);
+            
+            const folders = data.data?.folders || data.folders || [];
+            console.log('[FolderTree] Extracted folders:', folders);
+            console.log('[FolderTree] Folders count:', folders.length);
+            
+            // Count PDFs in the tree for debugging
+            const countPdfs = (items) => {
+                let count = 0;
+                items.forEach(item => {
+                    if (item.type === 'pdf') count++;
+                    if (item.children) count += countPdfs(item.children);
+                });
+                return count;
+            };
+            console.log('[FolderTree] Total PDFs in tree:', countPdfs(folders));
+            console.log('[FolderTree] Root level items:', folders.map(f => ({ id: f.id, name: f.name || f.title, type: f.type })));
+            
+            setTreeData(folders);
         } catch (error) {
             console.error("Error fetching folders:", error);
             toast.error("Failed to load folders");

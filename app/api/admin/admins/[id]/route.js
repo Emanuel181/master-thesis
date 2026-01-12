@@ -1,112 +1,124 @@
 /**
  * Admin Management - Individual Admin Operations
+ * ================================================
  * 
  * DELETE /api/admin/admins/[id] - Delete an admin account
  * POST /api/admin/admins/[id] - Resend verification email
  * 
  * Only accessible by the master admin (determined by isMasterAdmin field in database).
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ * - Master admin requirement enforced
  */
 
-import { NextResponse } from 'next/server';
+import { createAdminApiHandler } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
 import crypto from 'crypto';
 import { sendEmail } from '@/lib/article-emails';
-import { requireAdmin } from '@/lib/admin-auth';
+import { ApiErrors } from '@/lib/api-handler';
+import { cuidSchema } from '@/lib/validators/common';
 
 // Verification token expiry (24 hours)
 const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
+// Route params schema
+const paramsSchema = z.object({
+    id: cuidSchema,
+});
+
+// POST body schema
+const actionSchema = z.object({
+    action: z.literal('resend-verification'),
+}).strict();
+
 /**
- * DELETE - Remove an admin account
+ * DELETE /api/admin/admins/[id] - Remove an admin account
  */
-export async function DELETE(request, { params }) {
-    try {
-        // Use secure cookie-based authentication
-        const adminCheck = await requireAdmin();
-        if (adminCheck.error) return adminCheck.error;
-        
-        // Check if requester is master admin (from database)
-        if (!adminCheck.isMasterAdmin) {
-            return NextResponse.json({ error: 'Only master admin can delete admins' }, { status: 403 });
+export const DELETE = createAdminApiHandler(
+    async (request, { params, requestId, isMasterAdmin }) => {
+        // Only master admin can delete admins
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admin can delete admins');
         }
-        
-        const { id } = await params;
-        
+
+        const { id } = params;
+
         // Get the admin to delete
         const admin = await prisma.adminAccount.findUnique({
             where: { id }
         });
-        
+
         if (!admin) {
-            return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+            return ApiErrors.notFound('Admin', requestId);
         }
-        
+
         // Prevent deleting master admin
         if (admin.isMasterAdmin) {
-            return NextResponse.json({ error: 'Cannot delete master admin' }, { status: 403 });
+            return ApiErrors.forbidden(requestId, 'Cannot delete master admin');
         }
-        
+
         // Delete associated passkeys first
         await prisma.adminPasskey.deleteMany({
             where: { email: admin.email.toLowerCase() }
         });
-        
+
         // Delete associated challenges
         await prisma.adminPasskeyChallenge.deleteMany({
             where: { email: admin.email.toLowerCase() }
         });
-        
+
         // Delete the admin account
         await prisma.adminAccount.delete({
             where: { id }
         });
-        
-        return NextResponse.json({ success: true, message: 'Admin deleted successfully' });
-        
-    } catch (error) {
-        console.error('Error deleting admin:', error);
-        return NextResponse.json({ error: 'Failed to delete admin' }, { status: 500 });
+
+        return { message: 'Admin deleted successfully' };
+    },
+    {
+        paramsSchema,
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 30, windowMs: 60 * 1000, keyPrefix: 'admin:admins:delete' },
     }
-}
+);
 
 /**
- * POST - Resend verification email
+ * POST /api/admin/admins/[id] - Resend verification email
  */
-export async function POST(request, { params }) {
-    try {
-        // Use secure cookie-based authentication
-        const adminCheck = await requireAdmin();
-        if (adminCheck.error) return adminCheck.error;
-        
-        // Check if requester is master admin (from database)
-        if (!adminCheck.isMasterAdmin) {
-            return NextResponse.json({ error: 'Only master admin can resend verification' }, { status: 403 });
+export const POST = createAdminApiHandler(
+    async (request, { params, body, requestId, isMasterAdmin }) => {
+        // Only master admin can resend verification
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admin can resend verification');
         }
-        
-        const { id } = await params;
-        const { action } = await request.json();
-        
+
+        const { id } = params;
+        const { action } = body;
+
         if (action !== 'resend-verification') {
-            return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+            return ApiErrors.forbidden(requestId, 'Invalid action');
         }
-        
+
         // Get the admin
         const admin = await prisma.adminAccount.findUnique({
             where: { id }
         });
-        
+
         if (!admin) {
-            return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+            return ApiErrors.notFound('Admin', requestId);
         }
-        
+
         if (admin.emailVerified) {
-            return NextResponse.json({ error: 'Email already verified' }, { status: 400 });
+            return ApiErrors.forbidden(requestId, 'Email already verified');
         }
-        
+
         // Generate new verification token
         const verificationToken = crypto.randomBytes(32).toString('hex');
         const verificationExpires = new Date(Date.now() + VERIFICATION_EXPIRY_MS);
-        
+
         await prisma.adminAccount.update({
             where: { id },
             data: {
@@ -114,11 +126,11 @@ export async function POST(request, { params }) {
                 verificationExpires,
             }
         });
-        
+
         // Send verification email
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const verificationLink = `${appUrl}/api/admin/verify-email?token=${verificationToken}`;
-        
+
         await sendEmail({
             to: admin.email,
             subject: 'VulnIQ Admin Invitation - Verify Your Email',
@@ -139,11 +151,13 @@ export async function POST(request, { params }) {
             `,
             text: `Verify your email: ${verificationLink}`
         });
-        
-        return NextResponse.json({ success: true, message: 'Verification email resent' });
-        
-    } catch (error) {
-        console.error('Error resending verification:', error);
-        return NextResponse.json({ error: 'Failed to resend verification' }, { status: 500 });
+
+        return { message: 'Verification email resent' };
+    },
+    {
+        paramsSchema,
+        bodySchema: actionSchema,
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 10, windowMs: 60 * 60 * 1000, keyPrefix: 'admin:admins:resend' },
     }
-}
+);

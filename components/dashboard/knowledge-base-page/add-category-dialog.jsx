@@ -91,7 +91,17 @@ export function AddCategoryDialog({ onAddCategory, groups = [] }) {
         throw new Error(error.error || "Failed to create use case")
       }
 
-      const { useCase } = await response.json()
+      const jsonResponse = await response.json()
+      console.log('[AddCategory] Create response:', jsonResponse)
+      
+      // Handle wrapped response from createApiHandler
+      const data = jsonResponse.data || jsonResponse
+      console.log('[AddCategory] Extracted data:', data)
+      const useCase = data.useCase
+      
+      if (!useCase) {
+        throw new Error("Invalid response from server")
+      }
 
       // Call the callback with the created use case
       onAddCategory({

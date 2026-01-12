@@ -4,15 +4,17 @@ import { auth } from "@/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { readJsonBody, securityHeaders } from "@/lib/api-security";
+import { checkAdminStatus } from "@/lib/admin-auth";
 
-// Admin email(s) - only these users can manage supporters
-const ADMIN_EMAILS = [
-    process.env.ADMIN_EMAIL,
-    'rusuemanuelemanuel@gmail.com'
-].filter(Boolean);
-
-function isAdmin(session) {
-    return session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+/**
+ * Check if user is admin (async database check)
+ * @param {Object} session - Auth session
+ * @returns {Promise<boolean>}
+ */
+async function isAdmin(session) {
+    if (!session?.user?.email) return false;
+    const adminStatus = await checkAdminStatus(session.user.email);
+    return adminStatus.isAdmin;
 }
 
 const normalizeText = (value) => {
@@ -116,7 +118,7 @@ export async function GET(request, { params }) {
 
         // Only show hidden supporters to admins
         const session = await auth();
-        if (!supporter.visible && !isAdmin(session)) {
+        if (!supporter.visible && !(await isAdmin(session))) {
             return NextResponse.json(
                 { error: 'Supporter not found' },
                 { status: 404, headers: securityHeaders }
@@ -155,7 +157,7 @@ export async function PUT(request, { params }) {
         const { id } = await params;
         const session = await auth();
 
-        if (!isAdmin(session)) {
+        if (!(await isAdmin(session))) {
             return NextResponse.json(
                 { error: 'Unauthorized - Admin access required' },
                 { status: 403, headers: securityHeaders }
@@ -222,7 +224,7 @@ export async function DELETE(request, { params }) {
         const { id } = await params;
         const session = await auth();
 
-        if (!isAdmin(session)) {
+        if (!(await isAdmin(session))) {
             return NextResponse.json(
                 { error: 'Unauthorized - Admin access required' },
                 { status: 403, headers: securityHeaders }

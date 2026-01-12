@@ -189,10 +189,11 @@ export default function KnowledgeBaseVisualization() {
             if (!response.ok) {
                 throw new Error("Failed to fetch use cases");
             }
-            const data = await response.json();
+            const result = await response.json();
+            const data = result.data || result;
 
             // Transform data to match expected format
-            const transformedUseCases = data.useCases.map(uc => ({
+            const transformedUseCases = (data.useCases || []).map(uc => ({
                 id: uc.id,
                 name: uc.title,
                 description: uc.shortDescription || uc.shortContent || uc.content, // Display truncated
@@ -242,11 +243,22 @@ export default function KnowledgeBaseVisualization() {
             if (!response.ok) {
                 throw new Error("Failed to fetch groups");
             }
-            const data = await response.json();
-            setUseCaseGroups(data.groups || []);
+            const jsonResponse = await response.json();
+            console.log('[KnowledgeBase] Fetch groups response:', jsonResponse);
+            
+            // The API returns { success: true, data: { groups: [...] } }
+            const groups = jsonResponse.data?.groups || jsonResponse.groups || [];
+            console.log('[KnowledgeBase] Extracted groups:', groups);
+            console.log('[KnowledgeBase] Groups count:', groups.length);
+            
+            // Filter out any null/undefined values
+            const validGroups = groups.filter(g => g && g.id);
+            console.log('[KnowledgeBase] Valid groups after filtering:', validGroups);
+            setUseCaseGroups(validGroups);
         } catch (error) {
-            console.error("Error fetching use case groups:", error);
+            console.error("[KnowledgeBase] Error fetching use case groups:", error);
             // Don't show error toast - groups are optional
+            setUseCaseGroups([]);
         }
     };
 
@@ -602,7 +614,14 @@ export default function KnowledgeBaseVisualization() {
                     throw new Error(errorData.error || "Failed to get upload URL");
                 }
 
-                const { uploadUrl, s3Key } = await presignedResponse.json();
+                const presignedData = await presignedResponse.json();
+                const { uploadUrl, s3Key } = presignedData.data || presignedData;
+                
+                if (!uploadUrl || !s3Key) {
+                    console.error("Invalid presigned response:", presignedData);
+                    throw new Error("Failed to get upload URL from server");
+                }
+                
                 setUploadState(prev => ({ ...prev, progress: 30 }));
 
                 // Step 2: Upload file directly to S3
@@ -635,10 +654,18 @@ export default function KnowledgeBaseVisualization() {
                 });
 
                 if (!confirmResponse.ok) {
-                    throw new Error("Failed to confirm upload");
+                    const errorData = await confirmResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || "Failed to confirm upload");
                 }
 
-                const { pdf } = await confirmResponse.json();
+                const confirmData = await confirmResponse.json();
+                const pdf = confirmData.data?.pdf || confirmData.pdf;
+                
+                if (!pdf) {
+                    console.error("Invalid confirm response:", confirmData);
+                    throw new Error("Failed to confirm upload");
+                }
+                
                 setUploadState(prev => ({ ...prev, progress: 100 }));
 
                 // Add document to local state
@@ -656,6 +683,9 @@ export default function KnowledgeBaseVisualization() {
                     ...prev,
                     [selectedUseCase]: [...(prev[selectedUseCase] || []), newDoc]
                 }));
+
+                // Refresh folder tree
+                folderTreeRef.current?.refresh();
 
                 setUploadState({ file: null, progress: 0, uploading: false });
 

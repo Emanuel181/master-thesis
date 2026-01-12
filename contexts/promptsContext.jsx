@@ -66,13 +66,27 @@ export function PromptsProvider({ children }) {
             setLoading(true);
             const response = await fetch("/api/prompts");
             if (response.ok) {
-                const data = await response.json();
-                setPrompts(data);
+                const jsonResponse = await response.json();
+                console.log('[Prompts] Fetch prompts response:', jsonResponse);
+                
+                // The API returns { success: true, data: { agent: [...prompts] } }
+                const data = jsonResponse.data || jsonResponse;
+                console.log('[Prompts] Extracted prompts data:', data);
+                
+                // Validate that data is an object with agent keys
+                if (data && typeof data === 'object') {
+                    setPrompts(data);
+                } else {
+                    console.error('[Prompts] Invalid prompts data structure:', jsonResponse);
+                    setError('Invalid prompts data structure');
+                }
             } else {
-                setError('Failed to load prompts');
+                const error = await response.json().catch(() => ({ error: 'Failed to load prompts' }));
+                console.error('[Prompts] Failed to load prompts:', error);
+                setError(error.error || 'Failed to load prompts');
             }
         } catch (err) {
-            console.error("Error loading prompts:", err);
+            console.error("[Prompts] Error loading prompts:", err);
             setError('Error loading prompts');
         } finally {
             setLoading(false);
@@ -145,17 +159,31 @@ export function PromptsProvider({ children }) {
                 body: JSON.stringify({ agent, title: promptData.title, text: promptData.text })
             });
             if (response.ok) {
-                const newPrompt = await response.json();
-                setPrompts(prev => ({
-                    ...prev,
-                    [agent]: [...(prev[agent] || []), newPrompt]
-                }));
-                return { success: true };
+                const jsonResponse = await response.json();
+                console.log('[Prompts] Add prompt response:', jsonResponse);
+                
+                // The API returns { success: true, data: { prompt } }
+                const newPrompt = jsonResponse.data || jsonResponse;
+                console.log('[Prompts] Extracted prompt data:', newPrompt);
+                
+                // Ensure we have a valid prompt object with required fields
+                if (newPrompt && newPrompt.id) {
+                    setPrompts(prev => ({
+                        ...prev,
+                        [agent]: [...(prev[agent] || []), newPrompt]
+                    }));
+                    return { success: true };
+                } else {
+                    console.error('[Prompts] Invalid prompt response:', jsonResponse);
+                    return { success: false, error: 'Invalid prompt response from server' };
+                }
             } else {
-                return { success: false, error: 'Failed to add prompt' };
+                const error = await response.json().catch(() => ({ error: 'Failed to add prompt' }));
+                console.error('[Prompts] Failed to add prompt:', error);
+                return { success: false, error: error.error || 'Failed to add prompt' };
             }
         } catch (err) {
-            console.error('Error adding prompt:', err);
+            console.error('[Prompts] Error adding prompt:', err);
             return { success: false, error: 'Error adding prompt' };
         }
     }, [isDemoMode, prompts]);
@@ -294,16 +322,22 @@ export function PromptsProvider({ children }) {
                 body: JSON.stringify({ title: promptData.title, text: promptData.text })
             });
             if (response.ok) {
+                const jsonResponse = await response.json();
+                console.log('[Prompts] Edit prompt response:', jsonResponse);
+                
+                // Update local state with the edited prompt
                 setPrompts(prev => ({
                     ...prev,
                     [agent]: (prev[agent] || []).map(p => p.id === promptId ? { ...p, title: promptData.title, text: promptData.text } : p)
                 }));
                 return { success: true };
             } else {
-                return { success: false, error: 'Failed to edit prompt' };
+                const error = await response.json().catch(() => ({ error: 'Failed to edit prompt' }));
+                console.error('[Prompts] Failed to edit prompt:', error);
+                return { success: false, error: error.error || 'Failed to edit prompt' };
             }
         } catch (err) {
-            console.error('Error editing prompt:', err);
+            console.error('[Prompts] Error editing prompt:', err);
             return { success: false, error: 'Error editing prompt' };
         }
     }, [isDemoMode]);

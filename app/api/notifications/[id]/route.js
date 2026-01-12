@@ -1,31 +1,29 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { createApiHandler, ApiErrors } from "@/lib/api-handler";
 import { markNotificationAsRead } from "@/lib/notifications";
+import { z } from "zod";
+
+const paramsSchema = z.object({
+  id: z.string().min(1),
+});
 
 // PATCH /api/notifications/[id] - Mark notification as read
-export async function PATCH(request, { params }) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const PATCH = createApiHandler(
+  async (request, { session, params, requestId }) => {
+    try {
+      const notification = await markNotificationAsRead(params.id, session.user.id);
+      return { notification };
+    } catch (error) {
+      if (error.message === "Notification not found or unauthorized") {
+        return ApiErrors.notFound("Notification", requestId);
+      }
+      throw error;
     }
-
-    const { id } = await params;
-
-    const notification = await markNotificationAsRead(id, session.user.id);
-
-    return NextResponse.json({ notification });
-  } catch (error) {
-    console.error("Error marking notification as read:", error);
-
-    if (error.message === "Notification not found or unauthorized") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      { error: "Failed to update notification" },
-      { status: 500 }
-    );
+  },
+  {
+    requireAuth: true,
+    requireProductionMode: false,
+    paramsSchema,
+    rateLimit: { limit: 60, windowMs: 60 * 1000, keyPrefix: "notifications:read" },
   }
-}
+);
 

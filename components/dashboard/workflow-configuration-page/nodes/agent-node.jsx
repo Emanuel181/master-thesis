@@ -124,12 +124,11 @@ export function AgentNode({ data }) {
                         value={data.model}
                         onValueChange={(value) => data.onModelChange(data.id, value)}
                     >
-                        <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
+                        <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs" onClick={(e) => e.stopPropagation()}>
                             <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent
-                            onPointerDownOutside={(e) => e.stopPropagation()}
-                            onInteractOutside={(e) => e.stopPropagation()}
+                            className="z-[9999]"
                         >
                             <div onWheelCapture={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                                 <div className="p-2 border-b relative">

@@ -1,13 +1,19 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/api-handler";
 
 // GET /api/articles/saved - Get user's saved articles
 export async function GET(request) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { searchParams } = new URL(request.url);
@@ -57,32 +63,28 @@ export async function GET(request) {
       savedAt: sa.createdAt,
     }));
 
-    return NextResponse.json({ articles, total });
+    return successResponse({ articles, total }, { requestId });
   } catch (error) {
     console.error("Error fetching saved articles:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch saved articles" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch saved articles", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 
 // POST /api/articles/saved - Save an article
 export async function POST(request) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const body = await request.json();
     const { articleId } = body;
     
     if (!articleId) {
-      return NextResponse.json(
-        { error: "Article ID is required" },
-        { status: 400 }
-      );
+      return errorResponse("Article ID is required", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     // Check if article exists and is published
@@ -92,7 +94,7 @@ export async function POST(request) {
     });
 
     if (!article || article.status !== "PUBLISHED") {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     // Check if already saved
@@ -106,7 +108,7 @@ export async function POST(request) {
     });
 
     if (existing) {
-      return NextResponse.json({ message: "Already saved", saved: true });
+      return successResponse({ message: "Already saved", saved: true }, { requestId });
     }
 
     await prisma.savedArticle.create({
@@ -116,32 +118,28 @@ export async function POST(request) {
       },
     });
 
-    return NextResponse.json({ message: "Article saved", saved: true });
+    return successResponse({ message: "Article saved", saved: true }, { requestId });
   } catch (error) {
     console.error("Error saving article:", error.message, error.stack);
-    return NextResponse.json(
-      { error: "Failed to save article", details: error.message },
-      { status: 500 }
-    );
+    return errorResponse("Failed to save article", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 
 // DELETE /api/articles/saved - Unsave an article
 export async function DELETE(request) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { searchParams } = new URL(request.url);
     const articleId = searchParams.get("articleId");
 
     if (!articleId) {
-      return NextResponse.json(
-        { error: "Article ID is required" },
-        { status: 400 }
-      );
+      return errorResponse("Article ID is required", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     await prisma.savedArticle.deleteMany({
@@ -151,12 +149,9 @@ export async function DELETE(request) {
       },
     });
 
-    return NextResponse.json({ message: "Article unsaved", saved: false });
+    return successResponse({ message: "Article unsaved", saved: false }, { requestId });
   } catch (error) {
     console.error("Error unsaving article:", error);
-    return NextResponse.json(
-      { error: "Failed to unsave article" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to unsave article", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }

@@ -68,6 +68,13 @@ export function UseCaseGroupsPanel({
     const pathname = usePathname()
     const isDemoMode = pathname?.startsWith('/demo')
 
+    // Debug logging
+    useEffect(() => {
+        console.log('[UseCaseGroupsPanel] Received groups:', groups);
+        console.log('[UseCaseGroupsPanel] Groups length:', groups?.length);
+        console.log('[UseCaseGroupsPanel] Received useCases:', useCases);
+    }, [groups, useCases]);
+
     const [isLoading, setIsLoading] = useState(false)
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -150,8 +157,15 @@ export function UseCaseGroupsPanel({
                 }
 
                 const { group } = await response.json()
-                onGroupsChange?.([...groups, group])
+                
+                // Force immediate UI update
+                const updatedGroups = [...groups, group]
+                onGroupsChange?.(updatedGroups)
+                
                 toast.success("Group created successfully")
+                
+                // Force a page refresh to ensure data consistency
+                window.location.reload()
             }
 
             setCreateDialogOpen(false)
@@ -266,12 +280,22 @@ export function UseCaseGroupsPanel({
 
     // Filter groups and use cases based on search term
     const filteredData = useMemo(() => {
+        // Ensure groups is always an array and filter out any undefined/null values
+        const validGroups = Array.isArray(groups) ? groups.filter(g => g && g.id) : []
+        const validUseCases = Array.isArray(useCases) ? useCases.filter(uc => uc && uc.id) : []
+        
+        console.log('[UseCaseGroupsPanel] filteredData - validGroups:', validGroups);
+        console.log('[UseCaseGroupsPanel] filteredData - validUseCases:', validUseCases);
+        console.log('[UseCaseGroupsPanel] filteredData - searchTerm:', searchTerm);
+        
         if (!searchTerm.trim()) {
-            return {
-                groups: groups,
+            const result = {
+                groups: validGroups,
                 ungroupedUseCases: getUngroupedUseCases(),
                 matchedUseCaseIds: new Set(),
-            }
+            };
+            console.log('[UseCaseGroupsPanel] filteredData result (no search):', result);
+            return result;
         }
 
         const search = searchTerm.toLowerCase()
@@ -279,7 +303,7 @@ export function UseCaseGroupsPanel({
         const matchedGroupIds = new Set()
 
         // Search through use cases (name and description)
-        useCases.forEach(uc => {
+        validUseCases.forEach(uc => {
             const nameMatch = uc.name?.toLowerCase().includes(search)
             const descMatch = uc.description?.toLowerCase().includes(search)
             // Also search through PDFs if available
@@ -297,17 +321,17 @@ export function UseCaseGroupsPanel({
         })
 
         // Search through group names
-        groups.forEach(group => {
+        validGroups.forEach(group => {
             if (group.name?.toLowerCase().includes(search)) {
                 matchedGroupIds.add(group.id)
             }
         })
 
         // Filter groups that either match by name or contain matching use cases
-        const filteredGroups = groups.filter(group => matchedGroupIds.has(group.id))
+        const filteredGroups = validGroups.filter(group => matchedGroupIds.has(group.id))
 
         // Filter ungrouped use cases
-        const filteredUngrouped = useCases.filter(uc =>
+        const filteredUngrouped = validUseCases.filter(uc =>
             !uc.groupId && matchedUseCaseIds.has(uc.id)
         )
 

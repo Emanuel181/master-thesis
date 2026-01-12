@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { securityHeaders, readJsonBody } from "@/lib/api-security";
-import { isAdminEmail } from "@/lib/supporters-data";
+import { checkAdminStatus } from "@/lib/admin-auth";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import {
     storeVerificationCode,
@@ -64,7 +64,9 @@ export async function POST(request) {
         }
 
         // Check if email is in admin list - only whitelisted emails can receive OTP
-        if (!isAdminEmail(email)) {
+        // Uses async database check for proper admin verification
+        const adminStatus = await checkAdminStatus(email);
+        if (!adminStatus.isAdmin) {
             return NextResponse.json(
                 { error: 'This email is not authorized for admin access.' },
                 { status: 403, headers: securityHeaders }

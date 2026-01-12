@@ -1,49 +1,51 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-import { z } from "zod";
-import { rateLimit } from "@/lib/rate-limit";
-import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
-import { requireProductionMode } from "@/lib/api-middleware";
+/**
+ * Use Case Group [id] API Routes
+ * ===============================
+ * 
+ * GET    - Fetch a single group
+ * PUT    - Update a group
+ * DELETE - Delete a group (use cases will be ungrouped)
+ */
 
-// Normalize text to prevent XSS
-const normalizeText = (value) => {
-    if (typeof value !== 'string') return value;
-    return value.replace(/[\0\x08\x1a\x0b\x0c]/g, '').trim();
-};
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+import { createApiHandler, ApiErrors, errorResponse } from '@/lib/api-handler';
+import { textSchema, cuidSchema } from '@/lib/validators/common.js';
 
-// Input validation schema for updates
+/**
+ * Group ID params schema
+ */
+const groupIdParamsSchema = z.object({
+    id: cuidSchema,
+});
+
+/**
+ * Update group schema
+ */
 const updateGroupSchema = z.object({
-    name: z.string()
-        .min(1, 'Name is required')
-        .max(100, 'Name must be less than 100 characters')
-        .transform(normalizeText)
-        .refine(v => !/[<>]/.test(v), { message: 'Name must not contain < or >' })
-        .optional(),
+    name: textSchema('Name', 100).optional(),
     icon: z.string().max(50).optional(),
     color: z.string().max(50).optional(),
     parentId: z.string().max(50).nullable().optional(),
     order: z.number().int().min(0).optional(),
 });
 
-// GET - Fetch a single group
-export async function GET(request, { params }) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-
-    try {
-        const session = await auth();
-
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
+/**
+ * GET /api/use-case-groups/[id]
+ * Fetch a single group
+ */
+export const GET = createApiHandler(
+    async (request, { session, params, requestId }) => {
         // Check if useCaseGroup model is available
         if (!prisma.useCaseGroup) {
-            return NextResponse.json({ error: "Feature not available" }, { status: 503, headers: securityHeaders });
+            return errorResponse('Feature not available', {
+                status: 503,
+                code: 'SERVICE_UNAVAILABLE',
+                requestId,
+            });
         }
 
-        const { id } = await params;
+        const { id } = params;
 
         const group = await prisma.useCaseGroup.findFirst({
             where: { id, userId: session.user.id },
@@ -55,94 +57,73 @@ export async function GET(request, { params }) {
                         content: true,
                         icon: true,
                         color: true,
-                    }
+                    },
                 },
                 children: true,
-            }
+            },
         });
 
         if (!group) {
-            return NextResponse.json({ error: "Group not found" }, { status: 404, headers: securityHeaders });
+            return ApiErrors.notFound('Group', requestId);
         }
 
-        return NextResponse.json({ group }, { headers: securityHeaders });
-    } catch (error) {
-        console.error("Error fetching group:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch group" },
-            { status: 500, headers: securityHeaders }
-        );
+        return { group };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: groupIdParamsSchema,
+        rateLimit: {
+            limit: 60,
+            windowMs: 60 * 1000,
+            keyPrefix: 'use-case-groups:get',
+        },
     }
-}
+);
 
-// PUT - Update a group
-export async function PUT(request, { params }) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-
-    try {
-        const session = await auth();
-
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
+/**
+ * PUT /api/use-case-groups/[id]
+ * Update a group
+ */
+export const PUT = createApiHandler(
+    async (request, { session, body, params, requestId }) => {
         // Check if useCaseGroup model is available
         if (!prisma.useCaseGroup) {
-            return NextResponse.json({ error: "Feature not available" }, { status: 503, headers: securityHeaders });
+            return errorResponse('Feature not available', {
+                status: 503,
+                code: 'SERVICE_UNAVAILABLE',
+                requestId,
+            });
         }
 
-        if (!isSameOrigin(request)) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: securityHeaders });
-        }
-
-        const rl = await rateLimit({
-            key: `use-case-groups:update:${session.user.id}`,
-            limit: 30,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
-        const { id } = await params;
+        const { id } = params;
+        const { name, icon, color, parentId, order } = body;
 
         // Verify ownership
         const existingGroup = await prisma.useCaseGroup.findFirst({
-            where: { id, userId: session.user.id }
+            where: { id, userId: session.user.id },
         });
 
         if (!existingGroup) {
-            return NextResponse.json({ error: "Group not found" }, { status: 404, headers: securityHeaders });
+            return ApiErrors.notFound('Group', requestId);
         }
-
-        const parsed = await readJsonBody(request);
-        if (!parsed.ok) {
-            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
-        }
-
-        const validationResult = updateGroupSchema.safeParse(parsed.body);
-        if (!validationResult.success) {
-            return NextResponse.json({ error: "Validation failed" }, { status: 400, headers: securityHeaders });
-        }
-
-        const { name, icon, color, parentId, order } = validationResult.data;
 
         // Prevent setting self as parent
         if (parentId === id) {
-            return NextResponse.json({ error: "Cannot set group as its own parent" }, { status: 400, headers: securityHeaders });
+            return errorResponse('Cannot set group as its own parent', {
+                status: 400,
+                code: 'VALIDATION_ERROR',
+                requestId,
+            });
         }
 
         // Verify new parent belongs to user if provided
         if (parentId) {
             const parentGroup = await prisma.useCaseGroup.findFirst({
-                where: { id: parentId, userId: session.user.id }
+                where: { id: parentId, userId: session.user.id },
             });
             if (!parentGroup) {
-                return NextResponse.json({ error: "Parent group not found" }, { status: 404, headers: securityHeaders });
+                return ApiErrors.notFound('Parent group', requestId);
             }
         }
 
@@ -157,83 +138,73 @@ export async function PUT(request, { params }) {
             },
         });
 
-        return NextResponse.json({ group: updatedGroup }, { headers: securityHeaders });
-    } catch (error) {
-        console.error("Error updating group:", error);
-        return NextResponse.json(
-            { error: "Failed to update group" },
-            { status: 500, headers: securityHeaders }
-        );
+        return { group: updatedGroup };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: updateGroupSchema,
+        paramsSchema: groupIdParamsSchema,
+        rateLimit: {
+            limit: 30,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'use-case-groups:update',
+        },
     }
-}
+);
 
-// DELETE - Delete a group (use cases will be ungrouped, not deleted)
-export async function DELETE(request, { params }) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-
-    try {
-        const session = await auth();
-
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
+/**
+ * DELETE /api/use-case-groups/[id]
+ * Delete a group (use cases will be ungrouped, not deleted)
+ */
+export const DELETE = createApiHandler(
+    async (request, { session, params, requestId }) => {
         // Check if useCaseGroup model is available
         if (!prisma.useCaseGroup) {
-            return NextResponse.json({ error: "Feature not available" }, { status: 503, headers: securityHeaders });
+            return errorResponse('Feature not available', {
+                status: 503,
+                code: 'SERVICE_UNAVAILABLE',
+                requestId,
+            });
         }
 
-        if (!isSameOrigin(request)) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: securityHeaders });
-        }
-
-        const rl = await rateLimit({
-            key: `use-case-groups:delete:${session.user.id}`,
-            limit: 10,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
-        const { id } = await params;
+        const { id } = params;
 
         const group = await prisma.useCaseGroup.findFirst({
-            where: { id, userId: session.user.id }
+            where: { id, userId: session.user.id },
         });
 
         if (!group) {
-            return NextResponse.json({ error: "Group not found" }, { status: 404, headers: securityHeaders });
+            return ApiErrors.notFound('Group', requestId);
         }
 
-        // Ungroup all use cases belonging to this user (set groupId to null)
+        // Ungroup all use cases belonging to this user
         await prisma.knowledgeBaseCategory.updateMany({
             where: { groupId: id, userId: session.user.id },
-            data: { groupId: null }
+            data: { groupId: null },
         });
 
-        // Move child groups belonging to this user to parent (or root if no parent)
+        // Move child groups to parent (or root if no parent)
         await prisma.useCaseGroup.updateMany({
             where: { parentId: id, userId: session.user.id },
-            data: { parentId: group.parentId }
+            data: { parentId: group.parentId },
         });
 
         // Delete the group
         await prisma.useCaseGroup.delete({
-            where: { id }
+            where: { id },
         });
 
-        return NextResponse.json({ message: "Group deleted successfully" }, { headers: securityHeaders });
-    } catch (error) {
-        console.error("Error deleting group:", error);
-        return NextResponse.json(
-            { error: "Failed to delete group" },
-            { status: 500, headers: securityHeaders }
-        );
+        return { message: 'Group deleted successfully' };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: groupIdParamsSchema,
+        rateLimit: {
+            limit: 10,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'use-case-groups:delete',
+        },
     }
-}
-
+);

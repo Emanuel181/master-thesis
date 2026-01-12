@@ -1,7 +1,13 @@
 import { google } from 'googleapis';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
-import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
+import { isSameOrigin, readJsonBody, getClientIp } from '@/lib/api-security';
+import { 
+    successResponse, 
+    errorResponse, 
+    validationErrorResponse,
+    generateRequestId 
+} from '@/lib/api-handler';
 
 // Input validation schema for public feedback
 const feedbackSchema = z.object({
@@ -19,28 +25,16 @@ const feedbackSchema = z.object({
         .default('landing')
 });
 
-function formatZodErrors(zodError) {
-    const fieldErrors = {};
-    for (const issue of zodError.issues || []) {
-        const key = issue.path?.[0] ? String(issue.path[0]) : 'form';
-        if (!fieldErrors[key]) fieldErrors[key] = [];
-        fieldErrors[key].push(issue.message);
-    }
-    return fieldErrors;
-}
-
 export async function POST(request) {
+    const requestId = generateRequestId();
+    
     try {
-        // Get client IP for rate limiting (no auth required for public feedback)
-        const forwardedFor = request.headers.get('x-forwarded-for');
-        const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
+        // Get client IP for rate limiting using consistent extraction
+        const clientIp = getClientIp(request);
 
         // CSRF protection for state-changing operations
         if (!isSameOrigin(request)) {
-            return new Response(JSON.stringify({ error: 'Forbidden' }), {
-                status: 403,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
-            });
+            return errorResponse('Forbidden', { status: 403, code: 'FORBIDDEN', requestId });
         }
 
         // Rate limiting - 3 feedback submissions per hour per IP
@@ -50,33 +44,23 @@ export async function POST(request) {
             windowMs: 60 * 60 * 1000 // 1 hour
         });
         if (!rl.allowed) {
-            return new Response(JSON.stringify({
-                error: 'Too many feedback submissions. Please try again later.',
-                retryAt: rl.resetAt
-            }), {
+            return errorResponse('Too many feedback submissions. Please try again later.', {
                 status: 429,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
+                code: 'RATE_LIMITED',
+                requestId,
+                headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
             });
         }
 
         const parsed = await readJsonBody(request);
         if (!parsed.ok) {
-            return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
-            });
+            return errorResponse('Invalid JSON body', { status: 400, code: 'INVALID_JSON', requestId });
         }
 
         // Validate input with Zod
         const validationResult = feedbackSchema.safeParse(parsed.body);
         if (!validationResult.success) {
-            return new Response(JSON.stringify({
-                error: 'Validation failed',
-                fieldErrors: formatZodErrors(validationResult.error)
-            }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
-            });
+            return validationErrorResponse(validationResult.error, { requestId });
         }
 
         const { feedback, email, page } = validationResult.data;
@@ -84,19 +68,13 @@ export async function POST(request) {
         const spreadsheetId = process.env.FEEDBACK_SPREADSHEET_ID;
         if (!spreadsheetId) {
             console.error('[public-feedback] FEEDBACK_SPREADSHEET_ID is not set');
-            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
-            });
+            return errorResponse('Server configuration error', { status: 500, code: 'CONFIG_ERROR', requestId });
         }
 
         const rawCreds = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
         if (!rawCreds) {
             console.error('[public-feedback] GOOGLE_SERVICE_ACCOUNT_KEY is not set');
-            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
-            });
+            return errorResponse('Server configuration error', { status: 500, code: 'CONFIG_ERROR', requestId });
         }
 
         let credentials;
@@ -104,10 +82,7 @@ export async function POST(request) {
             credentials = JSON.parse(rawCreds);
         } catch {
             console.error('[public-feedback] GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON');
-            return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json', ...securityHeaders }
-            });
+            return errorResponse('Server configuration error', { status: 500, code: 'CONFIG_ERROR', requestId });
         }
 
         // Google Sheets API setup
@@ -129,15 +104,9 @@ export async function POST(request) {
             resource: { values },
         });
 
-        return new Response(JSON.stringify({ message: 'Feedback submitted successfully' }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json', ...securityHeaders }
-        });
+        return successResponse({ message: 'Feedback submitted successfully' }, { requestId });
     } catch (error) {
         console.error('[public-feedback] Error submitting feedback:', error);
-        return new Response(JSON.stringify({ error: 'Internal server error' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json', ...securityHeaders }
-        });
+        return errorResponse('Internal server error', { status: 500, code: 'INTERNAL_ERROR', requestId });
     }
 }

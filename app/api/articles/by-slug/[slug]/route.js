@@ -1,8 +1,14 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/api-handler";
 
 // GET /api/articles/by-slug/[slug] - Get a single published article by slug
 export async function GET(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const { slug } = await params;
 
@@ -32,12 +38,12 @@ export async function GET(request, { params }) {
     });
 
     if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     // Only return published articles to the public
     if (article.status !== "PUBLISHED") {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     // Transform to match the blog post structure
@@ -69,13 +75,10 @@ export async function GET(request, { params }) {
       isUserSubmitted: true,
     };
 
-    return NextResponse.json(transformedArticle);
+    return successResponse(transformedArticle, { requestId });
   } catch (error) {
     console.error("Error fetching article by slug:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch article" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch article", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 

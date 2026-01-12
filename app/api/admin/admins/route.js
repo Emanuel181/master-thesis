@@ -1,35 +1,45 @@
 /**
  * Admin Management API
+ * =====================
  * 
  * GET /api/admin/admins - List all admin accounts
  * POST /api/admin/admins - Create/invite a new admin
  * 
  * Only accessible by the master admin (determined by isMasterAdmin field in database).
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ * - Master admin requirement enforced
  */
 
-import { NextResponse } from 'next/server';
+import { createAdminApiHandler } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
 import crypto from 'crypto';
 import { sendEmail } from '@/lib/article-emails';
-import { requireAdmin } from '@/lib/admin-auth';
+import { ApiErrors } from '@/lib/api-handler';
+import { emailSchema } from '@/lib/validators/common';
 
 // Verification token expiry (24 hours)
 const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
+// POST body schema
+const createAdminSchema = z.object({
+    email: emailSchema,
+}).strict();
+
 /**
- * GET - List all admin accounts
+ * GET /api/admin/admins - List all admin accounts
  */
-export async function GET(request) {
-    try {
-        // Use secure cookie-based authentication
-        const adminCheck = await requireAdmin();
-        if (adminCheck.error) return adminCheck.error;
-        
-        // Check if requester is master admin (from database)
-        if (!adminCheck.isMasterAdmin) {
-            return NextResponse.json({ error: 'Only master admin can manage admins' }, { status: 403 });
+export const GET = createAdminApiHandler(
+    async (request, { requestId, isMasterAdmin }) => {
+        // Only master admin can list admins
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admin can manage admins');
         }
-        
+
         const admins = await prisma.adminAccount.findMany({
             select: {
                 id: true,
@@ -41,8 +51,8 @@ export async function GET(request) {
             },
             orderBy: { createdAt: 'desc' }
         });
-        
-        // Also get passkey count for each admin
+
+        // Get passkey count for each admin in parallel
         const adminsWithPasskeys = await Promise.all(
             admins.map(async (admin) => {
                 const passkeyCount = await prisma.adminPasskey.count({
@@ -51,72 +61,56 @@ export async function GET(request) {
                 return { ...admin, passkeyCount };
             })
         );
-        
-        return NextResponse.json({ admins: adminsWithPasskeys });
-        
-    } catch (error) {
-        console.error('Error fetching admins:', error);
-        return NextResponse.json({ error: 'Failed to fetch admins' }, { status: 500 });
+
+        return { admins: adminsWithPasskeys };
+    },
+    {
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'admin:admins:list' },
     }
-}
+);
 
 /**
- * POST - Create/invite a new admin
+ * POST /api/admin/admins - Create/invite a new admin
  */
-export async function POST(request) {
-    try {
-        // Use secure cookie-based authentication
-        const adminCheck = await requireAdmin();
-        if (adminCheck.error) return adminCheck.error;
-        
-        // Check if requester is master admin (from database)
-        if (!adminCheck.isMasterAdmin) {
-            return NextResponse.json({ error: 'Only master admin can create admins' }, { status: 403 });
+export const POST = createAdminApiHandler(
+    async (request, { body, requestId, isMasterAdmin }) => {
+        // Only master admin can create admins
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admin can create admins');
         }
-        
-        const { email } = await request.json();
-        
-        if (!email || typeof email !== 'string') {
-            return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-        }
-        
-        const normalizedEmail = email.toLowerCase().trim();
-        
-        // Check if email is valid
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(normalizedEmail)) {
-            return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
-        }
-        
+
+        const { email } = body;
+
         // Check if admin already exists
         const existingAdmin = await prisma.adminAccount.findUnique({
-            where: { email: normalizedEmail }
+            where: { email }
         });
-        
+
         if (existingAdmin) {
-            return NextResponse.json({ error: 'Admin with this email already exists' }, { status: 409 });
+            return ApiErrors.forbidden(requestId, 'Admin with this email already exists');
         }
-        
+
         // Generate verification token
         const verificationToken = crypto.randomBytes(32).toString('hex');
         const verificationExpires = new Date(Date.now() + VERIFICATION_EXPIRY_MS);
-        
+
         // Create admin account (pending verification)
         const newAdmin = await prisma.adminAccount.create({
             data: {
-                email: normalizedEmail,
+                email,
                 verificationToken,
                 verificationExpires,
                 emailVerified: false,
             }
         });
-        
+
         // Send verification email
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const verificationLink = `${appUrl}/api/admin/verify-email?token=${verificationToken}`;
-        
+
         await sendEmail({
-            to: normalizedEmail,
+            to: email,
             subject: 'VulnIQ Admin Invitation - Verify Your Email',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -153,9 +147,8 @@ export async function POST(request) {
                 If you didn't expect this invitation, you can safely ignore this email.
             `
         });
-        
-        return NextResponse.json({
-            success: true,
+
+        return {
             message: 'Invitation sent successfully',
             admin: {
                 id: newAdmin.id,
@@ -163,10 +156,11 @@ export async function POST(request) {
                 emailVerified: false,
                 createdAt: newAdmin.createdAt,
             }
-        });
-        
-    } catch (error) {
-        console.error('Error creating admin:', error);
-        return NextResponse.json({ error: 'Failed to create admin' }, { status: 500 });
+        };
+    },
+    {
+        bodySchema: createAdminSchema,
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 10, windowMs: 60 * 60 * 1000, keyPrefix: 'admin:admins:create' },
     }
-}
+);

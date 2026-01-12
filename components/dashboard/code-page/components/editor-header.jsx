@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -23,10 +22,8 @@ import {
     Lock,
     Unlock,
     Check,
-    FileCode2,
     MoreVertical,
     Settings2,
-    Code2,
     ChevronDown,
     FolderPlus,
     FolderX,
@@ -46,12 +43,6 @@ export function EditorHeader({
     isLocked,
     onLockChange,
     isViewOnly,
-    displayLanguage,
-    displayLanguages,
-    language,
-    setLanguage,
-    setDetectedLanguage,
-    setIsLanguageSupported,
     codeType,
     setCodeType,
     codeTypes,
@@ -95,6 +86,8 @@ export function EditorHeader({
     onDisconnectGitlab,
     onConnectGitHub,
     onConnectGitlab,
+    onRefreshGitHubRepos,
+    onRefreshGitLabRepos,
 }) {
     return (
         <CardHeader className="py-2 px-2 sm:py-2.5 sm:px-4 shrink-0 border-b bg-card/50">
@@ -187,96 +180,54 @@ export function EditorHeader({
                     )}
                 </div>
 
-                {/* Center Section: Language + Use Case */}
-                {!isPlaceholder && hasContent && (
+                {/* Center Section: Group Only */}
+                {!isPlaceholder && hasContent && !isViewOnly && (
                     <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg">
-                        {/* Language */}
+                        {/* Group */}
                         <div className="flex items-center gap-1.5">
-                            <FileCode2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        disabled={isLocked}
-                                        className="h-7 px-2 gap-1 text-xs font-medium hover:bg-background/80"
-                                    >
-                                        {displayLanguage}
-                                        <ChevronDown className="h-3 w-3 opacity-50" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="center" className="w-48">
-                                    <DropdownMenuLabel className="text-xs">Select Language</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <ScrollArea className="h-64">
-                                        {displayLanguages.map((lang) => (
-                                            <DropdownMenuItem
-                                                key={lang.name}
-                                                onClick={() => {
-                                                    setLanguage(lang);
-                                                    setDetectedLanguage(lang.prism);
-                                                    setIsLanguageSupported(true);
-                                                }}
-                                                className="text-xs"
-                                            >
-                                                {lang.name}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </ScrollArea>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-
-                        {/* Divider */}
-                        {!isViewOnly && <div className="h-4 w-px bg-border/60" />}
-
-                        {/* Use Case */}
-                        {!isViewOnly && (
-                            <div className="flex items-center gap-1.5">
-                                <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                <Select value={codeType} onValueChange={setCodeType} disabled={isLocked}>
-                                    <SelectTrigger className="w-[130px] h-7 text-xs border-0 bg-transparent hover:bg-background/80 focus:ring-0 focus:ring-offset-0">
-                                        <SelectValue placeholder="Use case..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {codeTypes.map((type) => (
-                                            <SelectItem key={type.value} value={type.value} className="text-xs">
-                                                {type.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 hover:bg-background/80"
-                                                onClick={async () => {
-                                                    setIsRefreshing(true);
-                                                    try {
-                                                        if (isDemoMode) {
-                                                            await new Promise(resolve => setTimeout(resolve, 800));
-                                                        }
-                                                        await refreshUseCases();
-                                                        toast.success("Use cases refreshed successfully!");
-                                                    } catch (err) {
-                                                        toast.error("Failed to refresh use cases");
-                                                    } finally {
-                                                        setIsRefreshing(false);
+                            <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Select value={codeType} onValueChange={setCodeType} disabled={isLocked}>
+                                <SelectTrigger className="w-[130px] h-7 text-xs border-0 bg-transparent hover:bg-background/80 focus:ring-0 focus:ring-offset-0">
+                                    <SelectValue placeholder="Group..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {codeTypes.map((type) => (
+                                        <SelectItem key={type.value} value={type.value} className="text-xs">
+                                            {type.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 hover:bg-background/80"
+                                            onClick={async () => {
+                                                setIsRefreshing(true);
+                                                try {
+                                                    if (isDemoMode) {
+                                                        await new Promise(resolve => setTimeout(resolve, 800));
                                                     }
-                                                }}
-                                                disabled={isRefreshing || isLocked}
-                                            >
-                                                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Refresh use cases</TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </div>
-                        )}
+                                                    await refreshUseCases();
+                                                    toast.success("Groups refreshed successfully!");
+                                                } catch (err) {
+                                                    toast.error("Failed to refresh groups");
+                                                } finally {
+                                                    setIsRefreshing(false);
+                                                }
+                                            }}
+                                            disabled={isRefreshing || isLocked}
+                                        >
+                                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Refresh groups</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                     </div>
                 )}
 
@@ -349,7 +300,7 @@ export function EditorHeader({
                             <Button
                                 size="sm"
                                 className={`h-7 px-3 ml-1 gap-1.5 ${(!isLocked || !isReviewable) ? "opacity-60" : ""}`}
-                                onClick={() => onStart(activeTab ? activeTab.content : code, language, codeType)}
+                                onClick={() => onStart(activeTab ? activeTab.content : code, codeType)}
                                 disabled={!hasCode || !isLocked || !isReviewable}
                             >
                                 <Play className="h-3.5 w-3.5" />
@@ -435,7 +386,7 @@ export function EditorHeader({
                             <Button
                                 size="sm"
                                 className={`h-7 px-2 ${(!isLocked || !isReviewable) ? "opacity-70" : ""}`}
-                                onClick={() => onStart(activeTab ? activeTab.content : code, language, codeType)}
+                                onClick={() => onStart(activeTab ? activeTab.content : code, codeType)}
                                 disabled={!hasCode || !isLocked || !isReviewable}
                             >
                                 <Play className="h-3.5 w-3.5" />
@@ -450,47 +401,17 @@ export function EditorHeader({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
-                                {/* Language Section */}
-                                <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                                    <FileCode2 className="h-3.5 w-3.5" />
-                                    Language: {displayLanguage}
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-
-                                {/* Language options with ScrollArea */}
-                                <ScrollArea className="h-40">
-                                    <div className="py-1">
-                                        {displayLanguages.map((lang) => (
-                                            <DropdownMenuItem
-                                                key={lang.name}
-                                                disabled={isLocked}
-                                                onClick={() => {
-                                                    setLanguage(lang);
-                                                    setDetectedLanguage(lang.prism);
-                                                    setIsLanguageSupported(true);
-                                                }}
-                                                className="text-xs"
-                                            >
-                                                <Code2 className="h-3 w-3 mr-2" />
-                                                {lang.name}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-
-                                <DropdownMenuSeparator />
-
-                                {/* Use Case Section */}
+                                {/* Group Section */}
                                 {!isViewOnly && (
                                     <>
                                         <DropdownMenuLabel className="flex items-center gap-2 text-xs">
                                             <Settings2 className="h-3.5 w-3.5" />
-                                            Use Case
+                                            Group
                                         </DropdownMenuLabel>
                                         <div className="px-2 py-1.5">
                                             <Select value={codeType} onValueChange={setCodeType} disabled={isLocked}>
                                                 <SelectTrigger className="w-full h-8 text-xs">
-                                                    <SelectValue placeholder="Select use case..." />
+                                                    <SelectValue placeholder="Select group..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {codeTypes.map((type) => (
@@ -535,9 +456,9 @@ export function EditorHeader({
                                                 await new Promise(resolve => setTimeout(resolve, 800));
                                             }
                                             await refreshUseCases();
-                                            toast.success("Use cases refreshed successfully!");
+                                            toast.success("Groups refreshed successfully!");
                                         } catch (err) {
-                                            toast.error("Failed to refresh use cases");
+                                            toast.error("Failed to refresh groups");
                                         } finally {
                                             setIsRefreshing(false);
                                         }
@@ -546,7 +467,7 @@ export function EditorHeader({
                                     className="text-xs"
                                 >
                                     <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                    Refresh use cases
+                                    Refresh groups
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -572,6 +493,8 @@ export function EditorHeader({
                     onDisconnectGitlab={onDisconnectGitlab}
                     onConnectGitHub={onConnectGitHub}
                     onConnectGitlab={onConnectGitlab}
+                    onRefreshGitHubRepos={onRefreshGitHubRepos}
+                    onRefreshGitLabRepos={onRefreshGitLabRepos}
                 />
             )}
         </CardHeader>

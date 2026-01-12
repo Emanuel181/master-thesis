@@ -1,155 +1,142 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin-auth";
-import { securityHeaders } from "@/lib/api-security";
+/**
+ * Admin Featured Articles API Routes
+ * ====================================
+ * 
+ * GET /api/admin/articles/featured - Get all published articles with featured status
+ * POST /api/admin/articles/featured - Update featured article settings
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ */
 
-// GET /api/admin/articles/featured - Get all published articles with featured status
-// Requires admin authentication
-export async function GET(request) {
-  // Verify admin authentication
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error) return adminCheck.error;
+import { createAdminApiHandler } from '@/lib/admin-auth';
+import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import { cuidSchema } from '@/lib/validators/common';
+import { ApiErrors } from '@/lib/api-handler';
 
-  try {
+// POST body schema
+const featuredActionSchema = z.object({
+    articleId: cuidSchema,
+    action: z.enum(['setFeatured', 'toggleMoreArticles', 'updateOrder']),
+    value: z.boolean().optional(),
+    featuredOrder: z.number().int().min(0).max(1000).optional(),
+}).strict();
 
-    // Get all published articles
-    const articles = await prisma.article.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: [
-        { featured: "desc" },
-        { featuredOrder: "asc" },
-        { publishedAt: "desc" },
-      ],
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,
-        category: true,
-        iconName: true,
-        gradient: true,
-        coverImage: true,
-        coverType: true,
-        authorName: true,
-        readTime: true,
-        featured: true,
-        showInMoreArticles: true,
-        featuredOrder: true,
-        publishedAt: true,
-      },
-    });
+/**
+ * GET /api/admin/articles/featured - Get all published articles with featured status
+ */
+export const GET = createAdminApiHandler(
+    async () => {
+        // Get all published articles
+        const articles = await prisma.article.findMany({
+            where: { status: 'PUBLISHED' },
+            orderBy: [
+                { featured: 'desc' },
+                { featuredOrder: 'asc' },
+                { publishedAt: 'desc' },
+            ],
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                excerpt: true,
+                category: true,
+                iconName: true,
+                gradient: true,
+                coverImage: true,
+                coverType: true,
+                authorName: true,
+                readTime: true,
+                featured: true,
+                showInMoreArticles: true,
+                featuredOrder: true,
+                publishedAt: true,
+            },
+        });
 
-    // Get the main featured article
-    const mainFeatured = articles.find(a => a.featured) || null;
+        // Get the main featured article
+        const mainFeatured = articles.find(a => a.featured) || null;
 
-    // Get articles shown in "More Articles"
-    const moreArticles = articles.filter(a => a.showInMoreArticles && (!a.featured || articles.filter(x => x.featured).length === 0));
-
-    return NextResponse.json({
-      articles,
-      mainFeatured,
-      moreArticlesCount: moreArticles.length,
-    });
-  } catch (error) {
-    console.error("Error fetching featured articles:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch featured articles" },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/admin/articles/featured - Update featured article settings
-// Requires admin authentication
-export async function POST(request) {
-  // Verify admin authentication
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error) return adminCheck.error;
-
-  try {
-
-    const body = await request.json();
-    const { articleId, action, value, featuredOrder } = body;
-
-    if (!articleId || !action) {
-      return NextResponse.json(
-        { error: "articleId and action are required" },
-        { status: 400 }
-      );
-    }
-
-    const article = await prisma.article.findUnique({
-      where: { id: articleId },
-    });
-
-    if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
-
-    if (article.status !== "PUBLISHED") {
-      return NextResponse.json(
-        { error: "Only published articles can be featured" },
-        { status: 400 }
-      );
-    }
-
-    let updateData = {};
-
-    switch (action) {
-      case "setFeatured":
-        // If setting as featured, unset all other featured articles first
-        if (value === true) {
-          await prisma.article.updateMany({
-            where: { featured: true },
-            data: { featured: false },
-          });
-        }
-        updateData = { featured: value === true };
-        break;
-
-      case "toggleMoreArticles":
-        updateData = { showInMoreArticles: value === true };
-        break;
-
-      case "updateOrder":
-        if (typeof featuredOrder !== "number") {
-          return NextResponse.json(
-            { error: "featuredOrder must be a number" },
-            { status: 400 }
-          );
-        }
-        updateData = { featuredOrder };
-        break;
-
-      default:
-        return NextResponse.json(
-          { error: "Invalid action. Use: setFeatured, toggleMoreArticles, or updateOrder" },
-          { status: 400 }
+        // Get articles shown in "More Articles"
+        const moreArticles = articles.filter(a => 
+            a.showInMoreArticles && (!a.featured || articles.filter(x => x.featured).length === 0)
         );
+
+        return {
+            articles,
+            mainFeatured,
+            moreArticlesCount: moreArticles.length,
+        };
+    },
+    {
+        rateLimit: { limit: 100, windowMs: 60 * 1000, keyPrefix: 'admin:articles:featured:list' },
     }
+);
 
-    const updatedArticle = await prisma.article.update({
-      where: { id: articleId },
-      data: updateData,
-      select: {
-        id: true,
-        title: true,
-        featured: true,
-        showInMoreArticles: true,
-        featuredOrder: true,
-      },
-    });
+/**
+ * POST /api/admin/articles/featured - Update featured article settings
+ */
+export const POST = createAdminApiHandler(
+    async (request, { body, requestId }) => {
+        const { articleId, action, value, featuredOrder } = body;
 
-    return NextResponse.json({
-      success: true,
-      article: updatedArticle,
-    });
-  } catch (error) {
-    console.error("Error updating featured article:", error);
-    return NextResponse.json(
-      { error: "Failed to update featured article" },
-      { status: 500 }
-    );
-  }
-}
+        const article = await prisma.article.findUnique({
+            where: { id: articleId },
+        });
 
+        if (!article) {
+            return ApiErrors.notFound('Article', requestId);
+        }
+
+        if (article.status !== 'PUBLISHED') {
+            return ApiErrors.forbidden(requestId, 'Only published articles can be featured');
+        }
+
+        let updateData = {};
+
+        switch (action) {
+            case 'setFeatured':
+                // If setting as featured, unset all other featured articles first
+                if (value === true) {
+                    await prisma.article.updateMany({
+                        where: { featured: true },
+                        data: { featured: false },
+                    });
+                }
+                updateData = { featured: value === true };
+                break;
+
+            case 'toggleMoreArticles':
+                updateData = { showInMoreArticles: value === true };
+                break;
+
+            case 'updateOrder':
+                if (typeof featuredOrder !== 'number') {
+                    return ApiErrors.forbidden(requestId, 'featuredOrder must be a number');
+                }
+                updateData = { featuredOrder };
+                break;
+        }
+
+        const updatedArticle = await prisma.article.update({
+            where: { id: articleId },
+            data: updateData,
+            select: {
+                id: true,
+                title: true,
+                featured: true,
+                showInMoreArticles: true,
+                featuredOrder: true,
+            },
+        });
+
+        return { article: updatedArticle };
+    },
+    {
+        bodySchema: featuredActionSchema,
+        rateLimit: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'admin:articles:featured:update' },
+    }
+);

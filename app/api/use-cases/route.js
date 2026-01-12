@@ -1,35 +1,32 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-import { z } from "zod";
-import { rateLimit } from "@/lib/rate-limit";
-import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
-import { requireProductionMode } from "@/lib/api-middleware";
+/**
+ * Use Cases API Routes
+ * =====================
+ * 
+ * GET  - Fetch all use cases for the current user
+ * POST - Create a new use case
+ */
 
-// Normalize text to prevent XSS - defense-in-depth
-const normalizeText = (value) => {
-    if (typeof value !== 'string') return value;
-    // Remove control characters except newlines/tabs
-    return value.replace(/[\0\x08\x1a\x0b\x0c]/g, '').trim();
-};
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+import { createApiHandler, ApiErrors } from '@/lib/api-handler';
+import { textSchema, cuidSchema } from '@/lib/validators/common.js';
 
-// Input validation schema with XSS protection
+/**
+ * Create use case schema
+ */
 const createUseCaseSchema = z.object({
-    title: z.string()
-        .min(1, 'Title is required')
-        .max(200, 'Title must be less than 200 characters')
-        .transform(normalizeText)
-        .refine(v => !/[<>]/.test(v), { message: 'Title must not contain < or >' }),
+    title: textSchema('Title', 200),
     content: z.string()
         .min(1, 'Content is required')
-        .max(10000, 'Content must be less than 10000 characters')
-        .transform(normalizeText),
+        .max(10000, 'Content must be less than 10000 characters'),
     icon: z.string().max(50).optional(),
     color: z.string().max(50).optional(),
     groupId: z.string().max(50).nullable().optional(),
 });
 
-// Helper to format file size
+/**
+ * Helper to format file size
+ */
 function formatFileSize(bytes) {
     if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
@@ -38,14 +35,18 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-// Helper to truncate description
+/**
+ * Helper to truncate description
+ */
 function truncateText(text, maxLength = 100) {
     if (!text) return null;
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
 }
 
-// Helper to truncate description by words
+/**
+ * Helper to truncate description by words
+ */
 function truncateByWords(text, maxWords = 20) {
     if (!text) return null;
     const words = text.split(/\s+/);
@@ -53,34 +54,13 @@ function truncateByWords(text, maxWords = 20) {
     return words.slice(0, maxWords).join(' ') + '...';
 }
 
-// GET - Fetch all use cases for the current user
-export async function GET(request) {
-    // SECURITY: Block demo mode from accessing production use-cases API
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-    
-    try {
-        const session = await auth(); // ⬅ replaces getServerSession
-
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
-        // Rate limiting - 60 requests per minute
-        const rl = await rateLimit({
-            key: `use-cases:get:${session.user.id}`,
-            limit: 60,
-            windowMs: 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
-        // Optimized query: limit fields and add pagination to prevent N+1 at scale
-        // Only fetch essential fields and limit to 50 use cases per request
+/**
+ * GET /api/use-cases
+ * Fetch all use cases for the current user
+ */
+export const GET = createApiHandler(
+    async (request, { session }) => {
+        // Optimized query: limit fields and add pagination
         const useCases = await prisma.knowledgeBaseCategory.findMany({
             where: { userId: session.user.id },
             select: {
@@ -93,7 +73,6 @@ export async function GET(request) {
                 order: true,
                 createdAt: true,
                 updatedAt: true,
-                // Only fetch essential PDF fields, limit to 20 per use case
                 pdfs: {
                     select: {
                         id: true,
@@ -105,18 +84,16 @@ export async function GET(request) {
                     take: 20,
                     orderBy: { createdAt: 'desc' },
                 },
-                // Efficient count without loading all PDFs
                 _count: {
                     select: { pdfs: true },
                 },
             },
             orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-            take: 50, // Pagination limit - prevents loading thousands of records
+            take: 50,
         });
 
-
         if (!useCases) {
-            return NextResponse.json({ useCases: [] }, { headers: securityHeaders });
+            return { useCases: [] };
         }
 
         // Transform the response to include formatted data
@@ -127,122 +104,72 @@ export async function GET(request) {
             icon: uc.icon,
             color: uc.color,
             groupId: uc.groupId || null,
-            group: null, // Will be populated if needed
+            group: null,
             order: uc.order || 0,
             createdAt: uc.createdAt,
             updatedAt: uc.updatedAt,
-            fullContent: uc.content, // Keep full content for "Show More"
-            shortContent: truncateText(uc.content, 100), // Character-based truncation
-            shortDescription: truncateByWords(uc.content, 20), // Word-based truncation for cards
+            fullContent: uc.content,
+            shortContent: truncateText(uc.content, 100),
+            shortDescription: truncateByWords(uc.content, 20),
             pdfs: (uc.pdfs || []).map(pdf => ({
                 ...pdf,
                 formattedSize: formatFileSize(pdf.size),
             })),
-            pdfCount: uc._count?.pdfs || 0, // Use efficient count
+            pdfCount: uc._count?.pdfs || 0,
             totalSize: (uc.pdfs || []).reduce((sum, pdf) => sum + (pdf.size || 0), 0),
             formattedTotalSize: formatFileSize((uc.pdfs || []).reduce((sum, pdf) => sum + (pdf.size || 0), 0)),
         }));
 
-        return NextResponse.json({ useCases: transformedUseCases }, { headers: securityHeaders });
-    } catch (error) {
-        console.error("Error fetching use cases:", error);
-        console.error("Error details:", {
-            message: error.message,
-            name: error.name,
-            stack: error.stack?.split('\n').slice(0, 5).join('\n'),
-        });
-        return NextResponse.json(
-            { error: "Failed to fetch use cases", details: process.env.NODE_ENV === 'development' ? error.message : undefined },
-            { status: 500, headers: securityHeaders }
-        );
+        return { useCases: transformedUseCases };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        rateLimit: {
+            limit: 60,
+            windowMs: 60 * 1000,
+            keyPrefix: 'use-cases:get',
+        },
     }
-}
+);
 
-// POST - Create a new use case
-export async function POST(request) {
-    // SECURITY: Block demo mode from accessing production use-cases API
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-    
-    try {
-        const session = await auth();
-
-        // Debug logging in development
-        if (process.env.NODE_ENV === 'development') {
-            console.log('[use-cases POST] Session check:', {
-                hasSession: !!session,
-                hasUser: !!session?.user,
-                hasUserId: !!session?.user?.id
-            });
-        }
-
-        if (!session?.user?.id) {
-            console.warn('[use-cases POST] Unauthorized: No valid session or user ID');
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
-        // CSRF protection for state-changing operations
-        if (!isSameOrigin(request)) {
-            return NextResponse.json(
-                { error: 'Forbidden' },
-                { status: 403, headers: securityHeaders }
-            );
-        }
-
-        // Rate limiting - 20 use cases per hour
-        const rl = await rateLimit({
-            key: `use-cases:create:${session.user.id}`,
-            limit: 20,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
+/**
+ * POST /api/use-cases
+ * Create a new use case
+ */
+export const POST = createApiHandler(
+    async (request, { session, body, requestId }) => {
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
         });
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404, headers: securityHeaders });
+            return ApiErrors.notFound('User', requestId);
         }
 
-        const parsed = await readJsonBody(request);
-        if (!parsed.ok) {
-            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
-        }
-
-        // Validate input with Zod
-        const validationResult = createUseCaseSchema.safeParse(parsed.body);
-        if (!validationResult.success) {
-            return NextResponse.json(
-                { error: "Validation failed" },
-                { status: 400, headers: securityHeaders }
-            );
-        }
-
-        const { title, content, icon, color, groupId } = validationResult.data;
+        const { title, content, icon, color, groupId } = body;
 
         const useCase = await prisma.knowledgeBaseCategory.create({
             data: {
                 title,
                 content,
-                icon: icon || "File",
-                color: color || "default",
+                icon: icon || 'File',
+                color: color || 'default',
                 groupId: groupId || null,
                 userId: user.id,
             },
         });
 
-        return NextResponse.json({ useCase }, { status: 201, headers: securityHeaders });
-    } catch (error) {
-        console.error("Error creating use case:", error);
-        return NextResponse.json(
-            { error: "Failed to create use case" },
-            { status: 500, headers: securityHeaders }
-        );
+        return { useCase };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: createUseCaseSchema,
+        rateLimit: {
+            limit: 20,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'use-cases:create',
+        },
     }
-}
+);

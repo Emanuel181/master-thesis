@@ -1,58 +1,36 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-import { z } from "zod";
-import { rateLimit } from "@/lib/rate-limit";
-import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
-import { requireProductionMode } from "@/lib/api-middleware";
+/**
+ * Use Case Groups API Routes
+ * ===========================
+ * 
+ * GET  - Fetch all use case groups for the current user
+ * POST - Create a new use case group
+ */
 
-// Normalize text to prevent XSS
-const normalizeText = (value) => {
-    if (typeof value !== 'string') return value;
-    return value.replace(/[\0\x08\x1a\x0b\x0c]/g, '').trim();
-};
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+import { createApiHandler, ApiErrors, errorResponse, successResponse } from '@/lib/api-handler';
+import { textSchema, cuidSchema } from '@/lib/validators/common.js';
 
-// Input validation schema
+/**
+ * Create group schema
+ */
 const createGroupSchema = z.object({
-    name: z.string()
-        .min(1, 'Name is required')
-        .max(100, 'Name must be less than 100 characters')
-        .transform(normalizeText)
-        .refine(v => !/[<>]/.test(v), { message: 'Name must not contain < or >' }),
+    name: textSchema('Name', 100),
     icon: z.string().max(50).optional(),
     color: z.string().max(50).optional(),
     parentId: z.string().max(50).nullable().optional(),
 });
 
-// GET - Fetch all use case groups for the current user
-export async function GET(request) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-
-    try {
-        const session = await auth();
-
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
-        // Rate limiting
-        const rl = await rateLimit({
-            key: `use-case-groups:get:${session.user.id}`,
-            limit: 60,
-            windowMs: 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
-        // Check if useCaseGroup model is available (might not be if client is cached)
+/**
+ * GET /api/use-case-groups
+ * Fetch all use case groups for the current user
+ */
+export const GET = createApiHandler(
+    async (request, { session }) => {
+        // Check if useCaseGroup model is available
         if (!prisma.useCaseGroup) {
-            console.warn("UseCaseGroup model not available - Prisma client may need regeneration. Restart the dev server.");
-            return NextResponse.json({ groups: [] }, { headers: securityHeaders });
+            console.warn('UseCaseGroup model not available - Prisma client may need regeneration');
+            return { groups: [] };
         }
 
         const groups = await prisma.useCaseGroup.findMany({
@@ -64,7 +42,7 @@ export async function GET(request) {
                         title: true,
                         icon: true,
                         color: true,
-                    }
+                    },
                 },
                 children: {
                     select: {
@@ -72,112 +50,79 @@ export async function GET(request) {
                         name: true,
                         icon: true,
                         color: true,
-                    }
-                }
+                    },
+                },
             },
             orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
         });
 
-        return NextResponse.json({ groups }, { headers: securityHeaders });
-    } catch (error) {
-        console.error("Error fetching use case groups:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch groups" },
-            { status: 500, headers: securityHeaders }
-        );
+        return { groups };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        rateLimit: {
+            limit: 60,
+            windowMs: 60 * 1000,
+            keyPrefix: 'use-case-groups:get',
+        },
     }
-}
+);
 
-// POST - Create a new use case group
-export async function POST(request) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-
-    try {
-        const session = await auth();
-
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: securityHeaders });
-        }
-
+/**
+ * POST /api/use-case-groups
+ * Create a new use case group
+ */
+export const POST = createApiHandler(
+    async (request, { session, body, requestId }) => {
         // Check if useCaseGroup model is available
         if (!prisma.useCaseGroup) {
-            return NextResponse.json({ error: "Feature not available" }, { status: 503, headers: securityHeaders });
+            return errorResponse('Feature not available', {
+                status: 503,
+                code: 'SERVICE_UNAVAILABLE',
+                requestId,
+            });
         }
 
-        // CSRF protection
-        if (!isSameOrigin(request)) {
-            return NextResponse.json(
-                { error: 'Forbidden' },
-                { status: 403, headers: securityHeaders }
-            );
-        }
-
-        // Rate limiting
-        const rl = await rateLimit({
-            key: `use-case-groups:create:${session.user.id}`,
-            limit: 20,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
-        const parsed = await readJsonBody(request);
-        if (!parsed.ok) {
-            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
-        }
-
-        const validationResult = createGroupSchema.safeParse(parsed.body);
-        if (!validationResult.success) {
-            return NextResponse.json(
-                { error: "Validation failed" },
-                { status: 400, headers: securityHeaders }
-            );
-        }
-
-        const { name, icon, color, parentId } = validationResult.data;
+        const { name, icon, color, parentId } = body;
 
         // Verify parent belongs to user if provided
         if (parentId) {
             const parentGroup = await prisma.useCaseGroup.findFirst({
-                where: { id: parentId, userId: session.user.id }
+                where: { id: parentId, userId: session.user.id },
             });
             if (!parentGroup) {
-                return NextResponse.json(
-                    { error: "Parent group not found" },
-                    { status: 404, headers: securityHeaders }
-                );
+                return ApiErrors.notFound('Parent group', requestId);
             }
         }
 
         // Get max order for positioning
         const maxOrder = await prisma.useCaseGroup.aggregate({
             where: { userId: session.user.id, parentId: parentId || null },
-            _max: { order: true }
+            _max: { order: true },
         });
 
         const group = await prisma.useCaseGroup.create({
             data: {
                 name,
-                icon: icon || "Folder",
-                color: color || "default",
+                icon: icon || 'Folder',
+                color: color || 'default',
                 parentId: parentId || null,
                 order: (maxOrder._max.order ?? -1) + 1,
                 userId: session.user.id,
             },
         });
 
-        return NextResponse.json({ group }, { status: 201, headers: securityHeaders });
-    } catch (error) {
-        console.error("Error creating use case group:", error);
-        return NextResponse.json(
-            { error: "Failed to create group" },
-            { status: 500, headers: securityHeaders }
-        );
+        return { group };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: createGroupSchema,
+        rateLimit: {
+            limit: 20,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'use-case-groups:create',
+        },
     }
-}
-
+);

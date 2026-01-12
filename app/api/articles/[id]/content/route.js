@@ -1,13 +1,19 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/api-handler";
 
 // GET /api/articles/[id]/content - Get article content
 export async function GET(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { id } = await params;
@@ -24,12 +30,12 @@ export async function GET(request, { params }) {
     });
 
     if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     // Only allow author to see non-published articles
     if (article.authorId !== session.user.id && article.status !== "APPROVED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return errorResponse("Unauthorized", { status: 403, code: "FORBIDDEN", requestId });
     }
 
     // Sanitize output to prevent accidental exposure of secrets
@@ -86,25 +92,24 @@ export async function GET(request, { params }) {
     const safeContentJson = sanitizeValue(article.contentJson, "contentJson");
     const safeContent = sanitizeText(article.content);
 
-    return NextResponse.json({
+    return successResponse({
       contentJson: safeContentJson,
       content: safeContent,
-    });
+    }, { requestId });
   } catch (error) {
     console.error("Error fetching article content");
-    return NextResponse.json(
-      { error: "Failed to fetch article content" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch article content", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 
 // PUT /api/articles/[id]/content - Update article content (autosave)
 export async function PUT(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { id } = await params;
@@ -118,19 +123,16 @@ export async function PUT(request, { params }) {
     });
 
     if (!existingArticle) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     if (existingArticle.authorId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return errorResponse("Unauthorized", { status: 403, code: "FORBIDDEN", requestId });
     }
 
     // Don't allow editing approved articles
     if (existingArticle.status === "APPROVED") {
-      return NextResponse.json(
-        { error: "Cannot edit published articles" },
-        { status: 400 }
-      );
+      return errorResponse("Cannot edit published articles", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     // Calculate read time from content (rough estimate: 200 words per minute)
@@ -157,17 +159,13 @@ export async function PUT(request, { params }) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       updatedAt: article.updatedAt,
       readTime: article.readTime,
-    });
+    }, { requestId });
   } catch (error) {
     console.error("Error updating article content:", error);
-    return NextResponse.json(
-      { error: "Failed to update article content" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to update article content", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 

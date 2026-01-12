@@ -1,13 +1,19 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/api-handler";
 
 // POST /api/articles/[id]/submit - Submit article for review
 export async function POST(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { id } = await params;
@@ -26,11 +32,11 @@ export async function POST(request, { params }) {
     });
 
     if (!existingArticle) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     if (existingArticle.authorId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return errorResponse("Unauthorized", { status: 403, code: "FORBIDDEN", requestId });
     }
 
     // Check current status and apply rules:
@@ -38,12 +44,9 @@ export async function POST(request, { params }) {
     // - PENDING_REVIEW: Can resubmit (overwrites previous submission)
     // - DRAFT, REJECTED, SCHEDULED_FOR_DELETION: Can submit
     if (existingArticle.status === "IN_REVIEW") {
-      return NextResponse.json(
-        {
-          error: "Article is currently being reviewed. Please wait until the review is complete before making changes.",
-          code: "IN_REVIEW",
-        },
-        { status: 400 }
+      return errorResponse(
+        "Article is currently being reviewed. Please wait until the review is complete before making changes.",
+        { status: 400, code: "IN_REVIEW", requestId }
       );
     }
 
@@ -56,32 +59,24 @@ export async function POST(request, { params }) {
         "SCHEDULED_FOR_DELETION",
       ].includes(existingArticle.status)
     ) {
-      return NextResponse.json(
-        { error: "Cannot submit this article. It may already be published." },
-        { status: 400 }
-      );
+      return errorResponse("Cannot submit this article. It may already be published.", { 
+        status: 400, 
+        code: "VALIDATION_ERROR", 
+        requestId 
+      });
     }
 
     // Validate required fields
     if (!existingArticle.title || existingArticle.title === "Untitled Article") {
-      return NextResponse.json(
-        { error: "Please provide a title for your article" },
-        { status: 400 }
-      );
+      return errorResponse("Please provide a title for your article", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     if (!existingArticle.excerpt) {
-      return NextResponse.json(
-        { error: "Please provide an excerpt for your article" },
-        { status: 400 }
-      );
+      return errorResponse("Please provide an excerpt for your article", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     if (!existingArticle.content && !existingArticle.contentJson) {
-      return NextResponse.json(
-        { error: "Please add content to your article" },
-        { status: 400 }
-      );
+      return errorResponse("Please add content to your article", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     const article = await prisma.article.update({
@@ -95,8 +90,7 @@ export async function POST(request, { params }) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       article: {
         id: article.id,
         status: article.status,
@@ -106,13 +100,10 @@ export async function POST(request, { params }) {
         existingArticle.status === "PENDING_REVIEW"
           ? "Article resubmitted successfully. Your changes will replace the previous submission."
           : "Article submitted for review successfully.",
-    });
+    }, { requestId });
   } catch (error) {
     console.error("Error submitting article:", error);
-    return NextResponse.json(
-      { error: "Failed to submit article" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to submit article", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 

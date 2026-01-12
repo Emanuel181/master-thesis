@@ -1,39 +1,43 @@
 /**
  * Promote User to Admin API
+ * ==========================
  * 
  * POST /api/admin/admins/promote - Promote a registered user to admin
  * 
  * Only accessible by the master admin (determined by isMasterAdmin field in database).
  * This allows converting existing app users to admin accounts.
+ * 
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ * - Master admin requirement enforced
  */
 
-import { NextResponse } from 'next/server';
+import { createAdminApiHandler } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/admin-auth';
+import { z } from 'zod';
 import { sendEmail } from '@/lib/article-emails';
+import { ApiErrors } from '@/lib/api-handler';
+import { cuidSchema } from '@/lib/validators/common';
+
+// POST body schema
+const promoteSchema = z.object({
+    userId: cuidSchema,
+}).strict();
 
 /**
- * POST - Promote a user to admin
- * 
- * Body: { userId: string }
+ * POST /api/admin/admins/promote - Promote a user to admin
  */
-export async function POST(request) {
-    try {
-        // Use secure cookie-based authentication
-        const adminCheck = await requireAdmin();
-        if (adminCheck.error) return adminCheck.error;
-        
-        // Check if requester is master admin (from database)
-        if (!adminCheck.isMasterAdmin) {
-            return NextResponse.json({ error: 'Only master admin can promote users to admin' }, { status: 403 });
+export const POST = createAdminApiHandler(
+    async (request, { body, requestId, isMasterAdmin }) => {
+        // Only master admin can promote users
+        if (!isMasterAdmin) {
+            return ApiErrors.forbidden(requestId, 'Only master admin can promote users to admin');
         }
-        
-        const { userId } = await request.json();
-        
-        if (!userId || typeof userId !== 'string') {
-            return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-        }
-        
+
+        const { userId } = body;
+
         // Find the user
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -44,26 +48,26 @@ export async function POST(request) {
                 firstName: true,
             }
         });
-        
+
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return ApiErrors.notFound('User', requestId);
         }
-        
+
         if (!user.email) {
-            return NextResponse.json({ error: 'User does not have an email address' }, { status: 400 });
+            return ApiErrors.forbidden(requestId, 'User does not have an email address');
         }
-        
+
         const normalizedEmail = user.email.toLowerCase().trim();
-        
+
         // Check if admin account already exists
         const existingAdmin = await prisma.adminAccount.findUnique({
             where: { email: normalizedEmail }
         });
-        
+
         if (existingAdmin) {
-            return NextResponse.json({ error: 'User is already an admin' }, { status: 409 });
+            return ApiErrors.forbidden(requestId, 'User is already an admin');
         }
-        
+
         // Create admin account (already verified since they're a registered user)
         const newAdmin = await prisma.adminAccount.create({
             data: {
@@ -71,12 +75,12 @@ export async function POST(request) {
                 emailVerified: true, // Already verified as they have an account
             }
         });
-        
-        // Send notification email
+
+        // Send notification email (fire-and-forget)
         try {
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
             const adminLoginUrl = `${appUrl}/admin/articles`;
-            
+
             await sendEmail({
                 to: normalizedEmail,
                 subject: 'VulnIQ - You have been granted Admin privileges',
@@ -113,12 +117,11 @@ export async function POST(request) {
                 `
             });
         } catch (emailError) {
-            console.error('Failed to send admin notification email:', emailError);
+            console.error('Failed to send admin notification email:', emailError?.message || 'Unknown error');
             // Don't fail the request if email fails
         }
-        
-        return NextResponse.json({
-            success: true,
+
+        return {
             message: `User ${user.email} has been promoted to admin`,
             admin: {
                 id: newAdmin.id,
@@ -127,10 +130,11 @@ export async function POST(request) {
                 createdAt: newAdmin.createdAt,
                 userName: user.name || user.firstName,
             }
-        });
-        
-    } catch (error) {
-        console.error('Error promoting user to admin:', error);
-        return NextResponse.json({ error: 'Failed to promote user to admin' }, { status: 500 });
+        };
+    },
+    {
+        bodySchema: promoteSchema,
+        requireMasterAdmin: false, // We check manually for better error message
+        rateLimit: { limit: 10, windowMs: 60 * 60 * 1000, keyPrefix: 'admin:admins:promote' },
     }
-}
+);

@@ -1,289 +1,194 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { deleteFromS3 } from "@/lib/s3";
-import { auth } from "@/auth";
-import { z } from "zod";
-import { rateLimit } from "@/lib/rate-limit";
-import { isSameOrigin, readJsonBody, securityHeaders } from "@/lib/api-security";
-import { requireProductionMode } from "@/lib/api-middleware";
+/**
+ * Use Case [id] API Routes
+ * =========================
+ * 
+ * GET    - Fetch a single use case
+ * PUT    - Update a use case
+ * DELETE - Delete a use case and its associated PDFs
+ */
 
-// Normalize text to prevent XSS - defense-in-depth
-const normalizeText = (value) => {
-    if (typeof value !== 'string') return value;
-    return value.replace(/[\0\x08\x1a\x0b\x0c]/g, '').trim();
-};
+import prisma from '@/lib/prisma';
+import { deleteFromS3 } from '@/lib/s3';
+import { z } from 'zod';
+import { createApiHandler, ApiErrors } from '@/lib/api-handler';
+import { textSchema, cuidSchema } from '@/lib/validators/common.js';
 
-// Input validation schema for updates with XSS protection
+/**
+ * Use case ID params schema
+ */
+const useCaseIdParamsSchema = z.object({
+    id: cuidSchema,
+});
+
+/**
+ * Update use case schema
+ */
 const updateUseCaseSchema = z.object({
-    title: z.string()
-        .min(1, 'Title is required')
-        .max(200, 'Title must be less than 200 characters')
-        .transform(normalizeText)
-        .refine(v => !/[<>]/.test(v), { message: 'Title must not contain < or >' })
-        .optional(),
+    title: textSchema('Title', 200).optional(),
     content: z.string()
         .max(10000, 'Content must be less than 10000 characters')
-        .transform(normalizeText)
         .optional(),
     icon: z.string().max(50).optional(),
     color: z.string().max(50).optional(),
     groupId: z.string().max(50).nullable().optional(),
 });
 
-// GET - Fetch a single use case
-export async function GET(request, { params }) {
-  const demoBlock = requireProductionMode(request);
-  if (demoBlock) return demoBlock;
-  try {
-    const session = await auth();
+/**
+ * GET /api/use-cases/[id]
+ * Fetch a single use case
+ */
+export const GET = createApiHandler(
+    async (request, { session, params, requestId }) => {
+        const { id } = params;
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401, headers: securityHeaders }
-      );
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
+
+        if (!user) {
+            return ApiErrors.notFound('User', requestId);
+        }
+
+        const useCase = await prisma.knowledgeBaseCategory.findFirst({
+            where: {
+                id,
+                userId: user.id,
+            },
+            include: {
+                pdfs: true,
+            },
+        });
+
+        if (!useCase) {
+            return ApiErrors.notFound('Use case', requestId);
+        }
+
+        return { useCase };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: useCaseIdParamsSchema,
+        rateLimit: {
+            limit: 60,
+            windowMs: 60 * 1000,
+            keyPrefix: 'use-cases:get',
+        },
     }
+);
 
-    // Rate limiting - 60 requests per minute
-    const rl = await rateLimit({
-      key: `use-cases:get:${session.user.id}`,
-      limit: 60,
-      windowMs: 60 * 1000
-    });
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429, headers: securityHeaders }
-      );
+/**
+ * PUT /api/use-cases/[id]
+ * Update a use case
+ */
+export const PUT = createApiHandler(
+    async (request, { session, body, params, requestId }) => {
+        const { id } = params;
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
+
+        if (!user) {
+            return ApiErrors.notFound('User', requestId);
+        }
+
+        // Check if the use case belongs to the user
+        const existingUseCase = await prisma.knowledgeBaseCategory.findFirst({
+            where: {
+                id,
+                userId: user.id,
+            },
+        });
+
+        if (!existingUseCase) {
+            return ApiErrors.notFound('Use case', requestId);
+        }
+
+        const { title, content, icon, color, groupId } = body;
+
+        const updatedUseCase = await prisma.knowledgeBaseCategory.update({
+            where: { id },
+            data: {
+                ...(title && { title }),
+                ...(content && { content }),
+                ...(icon && { icon }),
+                ...(color && { color }),
+                ...(groupId !== undefined && { groupId: groupId || null }),
+            },
+        });
+
+        return { useCase: updatedUseCase };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: updateUseCaseSchema,
+        paramsSchema: useCaseIdParamsSchema,
+        rateLimit: {
+            limit: 20,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'use-cases:update',
+        },
     }
+);
 
-    const { id } = await params;
+/**
+ * DELETE /api/use-cases/[id]
+ * Delete a use case and its associated PDFs from S3
+ */
+export const DELETE = createApiHandler(
+    async (request, { session, params, requestId }) => {
+        const { id } = params;
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404, headers: securityHeaders }
-      );
+        if (!user) {
+            return ApiErrors.notFound('User', requestId);
+        }
+
+        // Check if the use case belongs to the user and get associated PDFs
+        const useCase = await prisma.knowledgeBaseCategory.findFirst({
+            where: {
+                id,
+                userId: user.id,
+            },
+            include: {
+                pdfs: true,
+            },
+        });
+
+        if (!useCase) {
+            return ApiErrors.notFound('Use case', requestId);
+        }
+
+        // Delete all PDFs from S3
+        for (const pdf of useCase.pdfs) {
+            try {
+                await deleteFromS3(pdf.s3Key);
+            } catch (s3Error) {
+                console.error(`Failed to delete PDF from S3: ${pdf.s3Key}`, s3Error);
+                // Continue with deletion even if S3 delete fails
+            }
+        }
+
+        // Delete the use case (PDFs will be cascade deleted)
+        await prisma.knowledgeBaseCategory.delete({
+            where: { id },
+        });
+
+        return { message: 'Use case deleted successfully' };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: useCaseIdParamsSchema,
+        rateLimit: {
+            limit: 10,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'use-cases:delete',
+        },
     }
-
-    const useCase = await prisma.knowledgeBaseCategory.findFirst({
-      where: {
-        id,
-        userId: user.id,
-      },
-      include: {
-        pdfs: true,
-      },
-    });
-
-    if (!useCase) {
-      return NextResponse.json(
-        { error: "Use case not found" },
-        { status: 404, headers: securityHeaders }
-      );
-    }
-
-    return NextResponse.json({ useCase }, { headers: securityHeaders });
-  } catch (error) {
-    console.error("Error fetching use case:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch use case" },
-      { status: 500, headers: securityHeaders }
-    );
-  }
-}
-
-// PUT - Update a use case
-export async function PUT(request, { params }) {
-  const demoBlock = requireProductionMode(request);
-  if (demoBlock) return demoBlock;
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401, headers: securityHeaders }
-      );
-    }
-
-    // CSRF protection for state-changing operations
-    if (!isSameOrigin(request)) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403, headers: securityHeaders }
-      );
-    }
-
-    // Rate limiting - 20 updates per hour
-    const rl = await rateLimit({
-      key: `use-cases:update:${session.user.id}`,
-      limit: 20,
-      windowMs: 60 * 60 * 1000
-    });
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429, headers: securityHeaders }
-      );
-    }
-
-    const { id } = await params;
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404, headers: securityHeaders }
-      );
-    }
-
-    // Check if the use case belongs to the user
-    const existingUseCase = await prisma.knowledgeBaseCategory.findFirst({
-      where: {
-        id,
-        userId: user.id,
-      },
-    });
-
-    if (!existingUseCase) {
-      return NextResponse.json(
-        { error: "Use case not found" },
-        { status: 404, headers: securityHeaders }
-      );
-    }
-
-    const parsed = await readJsonBody(request);
-    if (!parsed.ok) {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
-    }
-
-    // Validate input with Zod
-    const validationResult = updateUseCaseSchema.safeParse(parsed.body);
-    if (!validationResult.success) {
-      return NextResponse.json(
-        { error: "Validation failed" },
-        { status: 400, headers: securityHeaders }
-      );
-    }
-
-    const { title, content, icon, color, groupId } = validationResult.data;
-
-    const updatedUseCase = await prisma.knowledgeBaseCategory.update({
-      where: { id },
-      data: {
-        ...(title && { title }),
-        ...(content && { content }),
-        ...(icon && { icon }),
-        ...(color && { color }),
-        ...(groupId !== undefined && { groupId: groupId || null }),
-      },
-    });
-
-    return NextResponse.json({ useCase: updatedUseCase }, { headers: securityHeaders });
-  } catch (error) {
-    console.error("Error updating use case:", error);
-    return NextResponse.json(
-      { error: "Failed to update use case" },
-      { status: 500, headers: securityHeaders }
-    );
-  }
-}
-
-// DELETE - Delete a use case and its associated PDFs from S3
-export async function DELETE(request, { params }) {
-  const demoBlock = requireProductionMode(request);
-  if (demoBlock) return demoBlock;
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401, headers: securityHeaders }
-      );
-    }
-
-    // CSRF protection for state-changing operations
-    if (!isSameOrigin(request)) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403, headers: securityHeaders }
-      );
-    }
-
-    // Rate limiting - 10 deletes per hour
-    const rl = await rateLimit({
-      key: `use-cases:delete:${session.user.id}`,
-      limit: 10,
-      windowMs: 60 * 60 * 1000
-    });
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-        { status: 429, headers: securityHeaders }
-      );
-    }
-
-    const { id } = await params;
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404, headers: securityHeaders }
-      );
-    }
-
-    // Check if the use case belongs to the user and get associated PDFs
-    const useCase = await prisma.knowledgeBaseCategory.findFirst({
-      where: {
-        id,
-        userId: user.id,
-      },
-      include: {
-        pdfs: true,
-      },
-    });
-
-    if (!useCase) {
-      return NextResponse.json(
-        { error: "Use case not found" },
-        { status: 404, headers: securityHeaders }
-      );
-    }
-
-    // Delete all PDFs from S3
-    for (const pdf of useCase.pdfs) {
-      try {
-        await deleteFromS3(pdf.s3Key);
-      } catch (s3Error) {
-        console.error(`Failed to delete PDF from S3: ${pdf.s3Key}`, s3Error);
-        // Continue with deletion even if S3 delete fails
-      }
-    }
-
-    // Delete the use case (PDFs will be cascade deleted)
-    await prisma.knowledgeBaseCategory.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ message: "Use case deleted successfully" }, { headers: securityHeaders });
-  } catch (error) {
-    console.error("Error deleting use case:", error);
-    return NextResponse.json(
-      { error: "Failed to delete use case" },
-      { status: 500, headers: securityHeaders }
-    );
-  }
-}
+);

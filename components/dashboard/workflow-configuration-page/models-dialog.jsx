@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import dynamic from "next/dynamic"
 import {
     Drawer,
@@ -9,18 +10,28 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, Folder, File, Search } from "lucide-react"
-// Lazy-load ReactFlow visualization to reduce initial bundle size (~200KB)
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Search, ChevronRight, Folder, File } from "lucide-react"
+import { toast } from "sonner"
+
+// Custom hook
+import { useModelsDialog } from "@/hooks/use-models-dialog"
+
+// Sub-components
+import { AgentCard, KnowledgeBaseCard, PromptCard } from "./_components"
+
+// Lazy-load ReactFlow visualization
 const AIWorkflowVisualization = dynamic(
     () => import("./ai-workflow-visualization").then(mod => mod.AIWorkflowVisualization),
     {
@@ -34,466 +45,38 @@ const AIWorkflowVisualization = dynamic(
             </div>
         )
     }
-);
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useUseCases } from "@/contexts/useCasesContext"
-import { DEMO_DOCUMENTS } from "@/contexts/demoContext"
-import * as LucideIcons from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { usePrompts } from "@/contexts/promptsContext"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
-import { toast } from "sonner"
-import { useSession } from "next-auth/react"
-import { usePathname } from "next/navigation"
+)
 
-// Demo mode mock models
-const DEMO_MODELS = [
-    "Claude 3.5 Sonnet",
-    "Claude 3 Opus",
-    "Claude 3 Haiku",
-    "GPT-4 Turbo",
-    "GPT-4o",
-    "GPT-4o Mini",
-    "Gemini 1.5 Pro",
-    "Gemini 1.5 Flash",
-    "Llama 3.1 70B",
-    "Llama 3.1 8B",
-    "Mistral Large",
-    "Mistral Medium",
-];
+// Agent configuration
+const AGENTS = [
+    { id: 'reviewer', title: 'Reviewer agent', icon: ScanSearch, color: 'text-blue-500', description: 'Analyzes code quality, security, and best practices' },
+    { id: 'implementation', title: 'Implementation agent', icon: Wrench, color: 'text-green-500', description: 'Implements code changes and improvements' },
+    { id: 'tester', title: 'Tester agent', icon: BugPlay, color: 'text-orange-500', description: 'Creates and runs tests for code validation' },
+    { id: 'report', title: 'Report agent', icon: FileText, color: 'text-purple-500', description: 'Generates comprehensive reports and documentation' },
+]
 
+/**
+ * ModelsDialog - Dialog for configuring AI agent workflow.
+ * Refactored to use custom hook and extracted sub-components.
+ */
 export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
-    const { status } = useSession();
-    const pathname = usePathname();
-    const isDemoMode = pathname?.startsWith('/demo');
-    
-    const [reviewerModel, setReviewerModel] = React.useState("");
-    const [implementationModel, setImplementationModel] = React.useState("");
-    const [testerModel, setTesterModel] = React.useState("");
-    const [reportModel, setReportModel] = React.useState("");
-    // Auto-select based on code type
-    const [selectedKnowledgeBases, setSelectedKnowledgeBases] = React.useState([]);
-    const [isRefreshingModels, setIsRefreshingModels] = React.useState(false);
-    const [isRefreshingUseCases, setIsRefreshingUseCases] = React.useState(false);
-    const [viewPrompt, setViewPrompt] = React.useState(null);
-    const [currentPage, setCurrentPage] = React.useState({});
-    const [agentPage, setAgentPage] = React.useState(0);
-    const [kbDocumentCounts, setKbDocumentCounts] = React.useState({});
-    const [isRefreshingKb, setIsRefreshingKb] = React.useState({});
-    const [expandedKb, setExpandedKb] = React.useState(null);
-    const [kbPage, setKbPage] = React.useState(0);
-    const [kbSearchTerm, setKbSearchTerm] = React.useState("");
-    const kbPerPage = 4;
-    
-    // Pagination state for Agents Configuration dropdowns
-    const [modelDropdownPage, setModelDropdownPage] = React.useState({
-        reviewer: 0,
-        implementation: 0,
-        tester: 0,
-        report: 0,
-    });
-    const [promptDropdownPage, setPromptDropdownPage] = React.useState({
-        reviewer: 0,
-        implementation: 0,
-        tester: 0,
-        report: 0,
-    });
-    // Search state for dropdowns
-    const [modelSearchTerm, setModelSearchTerm] = React.useState({
-        reviewer: "",
-        implementation: "",
-        tester: "",
-        report: "",
-    });
-    const [promptSearchTerm, setPromptSearchTerm] = React.useState({
-        reviewer: "",
-        implementation: "",
-        tester: "",
-        report: "",
-    });
-    const MODELS_PER_PAGE = 5;
-    const PROMPTS_PER_PAGE = 5;
+    const dialog = useModelsDialog({ codeType })
+    const [selectedGroupIds, setSelectedGroupIds] = React.useState([]);
 
-    const { useCases, refresh: refreshUseCases } = useUseCases();
-
-    // Initialize document counts for demo mode from DEMO_DOCUMENTS
-    React.useEffect(() => {
-        if (isDemoMode && useCases.length > 0 && Object.keys(kbDocumentCounts).length === 0) {
-            const mockCounts = {};
-            useCases.forEach(kb => {
-                // Use actual DEMO_DOCUMENTS count if available
-                mockCounts[kb.id] = (DEMO_DOCUMENTS[kb.id] || []).length;
-            });
-            setKbDocumentCounts(mockCounts);
-        }
-    }, [isDemoMode, useCases, kbDocumentCounts]);
-
-    const {
-        prompts,
-        selectedPrompts,
-        handlePromptChange,
-    } = usePrompts();
-
-    // Auto-select knowledge base when codeType changes
-    React.useEffect(() => {
-        if (codeType && selectedKnowledgeBases.length === 0) {
-            setSelectedKnowledgeBases([codeType]);
-        }
-    }, [codeType, selectedKnowledgeBases.length]);
-
-    // Models list - will be populated from database/API
-    // TODO: Fetch models from AWS backend
-    const [models, _setModels] = React.useState([]);
-
-    // Helper functions for pagination in Agents Configuration with search
-    const getFilteredModels = (agent) => {
-        const searchTerm = modelSearchTerm[agent] || "";
-        if (!searchTerm) return models;
-        return models.filter(model => model.toLowerCase().includes(searchTerm.toLowerCase()));
-    };
-    
-    const getPaginatedModels = (agent) => {
-        const filtered = getFilteredModels(agent);
-        const page = modelDropdownPage[agent] || 0;
-        return filtered.slice(page * MODELS_PER_PAGE, (page + 1) * MODELS_PER_PAGE);
-    };
-    
-    const getTotalModelPages = (agent) => Math.ceil(getFilteredModels(agent).length / MODELS_PER_PAGE);
-    
-    const getFilteredPrompts = (agent) => {
-        const searchTerm = promptSearchTerm[agent] || "";
-        const agentPrompts = prompts[agent] || [];
-        if (!searchTerm) return agentPrompts;
-        return agentPrompts.filter(p => (p.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
-    };
-    
-    const getPaginatedPrompts = (agent) => {
-        const filtered = getFilteredPrompts(agent);
-        const page = promptDropdownPage[agent] || 0;
-        return filtered.slice(page * PROMPTS_PER_PAGE, (page + 1) * PROMPTS_PER_PAGE);
-    };
-    
-    const getTotalPromptPages = (agent) => Math.ceil(getFilteredPrompts(agent).length / PROMPTS_PER_PAGE);
-
-    const toggleKnowledgeBase = (kbId) => {
-        setSelectedKnowledgeBases(prev => {
-            if (prev.includes(kbId)) {
-                // Prevent deselecting if it's the last one
-                if (prev.length === 1) return prev;
-                return prev.filter(id => id !== kbId);
-            } else {
-                return [...prev, kbId];
-            }
-        });
-    };
-
-    const agentModels = {
-        reviewer: reviewerModel,
-        implementation: implementationModel,
-        tester: testerModel,
-        report: reportModel,
-    };
-
-    const handleModelChange = (agentId, model) => {
-        switch(agentId) {
-            case 'reviewer':
-                setReviewerModel(model);
-                break;
-            case 'implementation':
-                setImplementationModel(model);
-                break;
-            case 'tester':
-                setTesterModel(model);
-                break;
-            case 'report':
-                setReportModel(model);
-                break;
-        }
-    };
-
-    const handleRefreshModels = async () => {
-        setIsRefreshingModels(true);
-        
-        // Demo mode - simulate refresh with animation
-        if (isDemoMode) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            _setModels(DEMO_MODELS);
-            toast.success("Models refreshed successfully!");
-            setIsRefreshingModels(false);
-            return;
-        }
-        
+    const handleSaveConfiguration = () => {
+        // Save selected groups to localStorage
         try {
-            const response = await fetch('/api/bedrock');
-            if (response.ok) {
-                const data = await response.json();
-                _setModels(data.models.map(model => model.name));
-                toast.success("Models refreshed successfully!");
-            } else {
-                const errorData = await response.json();
-                console.error('Error refreshing models:', errorData.error);
-                toast.error(`AWS Bedrock Error: ${errorData.error}`);
-                throw new Error(errorData.error);
-            }
-        } catch (error) {
-            console.error('Error refreshing models:', error);
-            toast.error("Failed to refresh models from AWS Bedrock");
-        } finally {
-            setIsRefreshingModels(false);
+            localStorage.setItem('vulniq_selected_groups', JSON.stringify(selectedGroupIds));
+            toast.success('Workflow configuration saved!');
+        } catch (err) {
+            console.error('Error saving configuration:', err);
+            toast.error('Failed to save configuration');
         }
+        onOpenChange(false);
     };
-
-    const handleRefreshUseCases = async () => {
-        setIsRefreshingUseCases(true);
-        
-        // Demo mode - simulate refresh with animation
-        if (isDemoMode) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            toast.success("Knowledge bases refreshed successfully!");
-            setIsRefreshingUseCases(false);
-            return;
-        }
-        
-        try {
-            await refreshUseCases();
-            toast.success("Knowledge bases refreshed successfully!");
-        } catch (error) {
-            toast.error("Failed to refresh knowledge bases");
-        } finally {
-            setIsRefreshingUseCases(false);
-        }
-    };
-
-    const truncateText = (text, maxLength = 100) => {
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
-    };
-
-    const [isRefreshingAll, setIsRefreshingAll] = React.useState(false);
-    const [isRefreshingPrompts, setIsRefreshingPrompts] = React.useState({});
-    const [isRefreshingAllPrompts, setIsRefreshingAllPrompts] = React.useState(false);
-
-    const handleRefreshAll = async () => {
-        setIsRefreshingAll(true);
-        // Activate all individual refresh animations
-        setIsRefreshingModels(true);
-        setIsRefreshingUseCases(true);
-        const agents = Object.keys(prompts);
-        agents.forEach(agent => {
-            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
-        });
-        // Activate all individual KB refresh animations
-        useCases.forEach(kb => {
-            setIsRefreshingKb(prev => ({ ...prev, [kb.id]: true }));
-        });
-        
-        try {
-            // Refresh all: models, knowledge bases, and prompts
-            await Promise.all([
-                (async () => {
-                    if (isDemoMode) {
-                        await new Promise(resolve => setTimeout(resolve, 800));
-                        _setModels(DEMO_MODELS);
-                    } else {
-                        const response = await fetch('/api/bedrock');
-                        if (response.ok) {
-                            const data = await response.json();
-                            _setModels(data.models.map(model => model.name));
-                        }
-                    }
-                })(),
-                (async () => {
-                    if (isDemoMode) {
-                        await new Promise(resolve => setTimeout(resolve, 800));
-                    } else {
-                        await refreshUseCases();
-                    }
-                })(),
-                new Promise(resolve => setTimeout(resolve, 800)),
-            ]);
-            toast.success("All configurations refreshed successfully!");
-        } catch (error) {
-            toast.error("Failed to refresh some configurations");
-        } finally {
-            setIsRefreshingAll(false);
-            setIsRefreshingModels(false);
-            setIsRefreshingUseCases(false);
-            agents.forEach(agent => {
-                setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
-            });
-            useCases.forEach(kb => {
-                setIsRefreshingKb(prev => ({ ...prev, [kb.id]: false }));
-            });
-        }
-    };
-
-    const handleRefreshAllAgents = async () => {
-        setIsRefreshingModels(true);
-        const agents = Object.keys(prompts);
-        // Activate all individual agent prompt refresh animations
-        agents.forEach(agent => {
-            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
-        });
-        
-        try {
-            // Refresh models
-            if (isDemoMode) {
-                await new Promise(resolve => setTimeout(resolve, 800));
-                _setModels(DEMO_MODELS);
-            } else {
-                const response = await fetch('/api/bedrock');
-                if (response.ok) {
-                    const data = await response.json();
-                    _setModels(data.models.map(model => model.name));
-                }
-            }
-            toast.success("All agent configurations refreshed successfully!");
-        } catch (error) {
-            toast.error("Failed to refresh agent configurations");
-        } finally {
-            setIsRefreshingModels(false);
-            agents.forEach(agent => {
-                setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
-            });
-        }
-    };
-
-    const handleRefreshAllPrompts = async () => {
-        setIsRefreshingAllPrompts(true);
-        const agents = Object.keys(prompts);
-        // Activate all individual prompt refresh animations
-        agents.forEach(agent => {
-            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
-        });
-        
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            toast.success("All prompts refreshed successfully!");
-        } catch (error) {
-            toast.error("Failed to refresh prompts");
-        } finally {
-            setIsRefreshingAllPrompts(false);
-            agents.forEach(agent => {
-                setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
-            });
-        }
-    };
-
-    const handleRefreshAllKnowledgeBases = async () => {
-        setIsRefreshingUseCases(true);
-        // Activate all individual KB refresh animations
-        useCases.forEach(kb => {
-            setIsRefreshingKb(prev => ({ ...prev, [kb.id]: true }));
-        });
-        
-        try {
-            if (isDemoMode) {
-                await new Promise(resolve => setTimeout(resolve, 800));
-            } else {
-                await refreshUseCases();
-            }
-            toast.success("All knowledge bases refreshed successfully!");
-        } catch (error) {
-            toast.error("Failed to refresh knowledge bases");
-        } finally {
-            setIsRefreshingUseCases(false);
-            useCases.forEach(kb => {
-                setIsRefreshingKb(prev => ({ ...prev, [kb.id]: false }));
-            });
-        }
-    };
-
-    const handleRefreshAgentPrompts = async (agent) => {
-        setIsRefreshingPrompts(prev => ({ ...prev, [agent]: true }));
-        try {
-            // Simulate API call to refresh prompts for specific agent
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            toast.success(`${agent.charAt(0).toUpperCase() + agent.slice(1)} prompts refreshed successfully!`);
-        } catch (error) {
-            toast.error(`Failed to refresh ${agent} prompts`);
-        } finally {
-            setIsRefreshingPrompts(prev => ({ ...prev, [agent]: false }));
-        }
-    };
-
-    const handleRefreshKnowledgeBase = async (kbId, kbTitle) => {
-        setIsRefreshingKb(prev => ({ ...prev, [kbId]: true }));
-        try {
-            // Simulate API call to refresh documents in specific knowledge base
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // In demo mode, show the actual document count from DEMO_DOCUMENTS
-            if (isDemoMode) {
-                const docCount = (DEMO_DOCUMENTS[kbId] || []).length;
-                const addedDocs = Math.floor(Math.random() * 3); // Simulate 0-2 new docs found
-                toast.success(`"${kbTitle}" refreshed! ${docCount} documents indexed${addedDocs > 0 ? `, ${addedDocs} new document(s) found.` : '.'}`);
-            } else {
-                toast.success(`"${kbTitle}" documents refreshed successfully!`);
-            }
-        } catch (error) {
-            toast.error(`Failed to refresh "${kbTitle}" documents`);
-        } finally {
-            setIsRefreshingKb(prev => ({ ...prev, [kbId]: false }));
-        }
-    };
-
-    // Fetch models from AWS Bedrock on component mount
-    React.useEffect(() => {
-        if (status === "loading") return;
-
-        // Demo mode - use mock models
-        if (isDemoMode) {
-            _setModels(DEMO_MODELS);
-            return;
-        }
-
-        if (status === "unauthenticated") {
-            _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
-            return;
-        }
-
-        const fetchAgents = async () => {
-            try {
-                const response = await fetch('/api/bedrock/agents');
-                if (response.ok) {
-                    const data = await response.json();
-                    _setModels(data.agents.map(agent => agent.name));
-                } else {
-                    const errorData = await response.json();
-                    console.error('Failed to fetch agents:', errorData.error);
-                    toast.error(`AWS Bedrock Error: ${errorData.error}`);
-                    // Fallback to some default models
-                    _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
-                }
-            } catch (error) {
-                console.error('Error fetching agents:', error);
-                toast.error("Failed to connect to AWS Bedrock. Using fallback models.");
-                // Fallback to some default models
-                _setModels(["GPT-4", "Claude-3", "Gemini-1.5", "Llama-3"]);
-            }
-        };
-
-        fetchAgents();
-    }, [status, isDemoMode]);
-
-    const [selectedSystemPrompts, setSelectedSystemPrompts] = React.useState({
-        reviewer: "",
-        implementation: "",
-        tester: "",
-        report: "",
-    });
 
     return (
-        <Drawer open={isOpen} onOpenChange={onOpenChange}>
+        <Drawer open={isOpen} onOpenChange={onOpenChange} modal={false}>
             <DrawerContent>
                 <div className="mx-auto w-full max-w-7xl">
                     <DrawerHeader>
@@ -523,1134 +106,33 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                 </TabsTrigger>
                             </TabsList>
 
+                            {/* Workflow Tab */}
                             <TabsContent value="workflow" className="mt-0">
-                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
-                                    <div className="space-y-4 pr-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-sm text-muted-foreground">
-                                                Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleRefreshAll}
-                                                disabled={isRefreshingAll}
-                                                className="shrink-0 ml-4 text-foreground"
-                                            >
-                                                {isRefreshingAll ? (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                        Refreshing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                                        Refresh all
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                        <AIWorkflowVisualization
-                                            models={models}
-                                            agentModels={agentModels}
-                                            onModelChange={handleModelChange}
-                                            knowledgeBases={useCases.map(uc => ({
-                                                id: uc.id,
-                                                name: uc.title,
-                                                description: uc.content,
-                                                icon: uc.icon
-                                            }))}
-                                            selectedKnowledgeBases={selectedKnowledgeBases}
-                                            onKnowledgeBaseChange={toggleKnowledgeBase}
-                                            codeType={codeType}
-                                            onCodeTypeChange={onCodeTypeChange}
-                                            useCases={useCases}
-                                            prompts={prompts}
-                                            selectedPrompts={selectedPrompts}
-                                            selectedSystemPrompts={selectedSystemPrompts}
-                                            onPromptChange={handlePromptChange}
-                                            isRefreshingAll={isRefreshingAll}
-                                            onSave={() => {
-                                                // Here you would typically save the configuration
-                                                onOpenChange(false);
-                                            }}
-                                            onCancel={() => onOpenChange(false)}
-                                        />
-                                    </div>
-                                </ScrollArea>
+                                <WorkflowTab
+                                    dialog={dialog}
+                                    codeType={codeType}
+                                    onCodeTypeChange={onCodeTypeChange}
+                                    onOpenChange={handleSaveConfiguration}
+                                />
                             </TabsContent>
 
+                            {/* Agents Tab */}
                             <TabsContent value="models" className="mt-0">
-                                <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
-                                    <div className="pr-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
-                                            <div>
-                                                <h3 className="text-lg font-semibold">Agent configuration</h3>
-                                                <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                title="Refresh all agent configurations"
-                                                onClick={handleRefreshAllAgents}
-                                                disabled={isRefreshingModels}
-                                                className="shrink-0 text-foreground"
-                                            >
-                                                {isRefreshingModels ? (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                        Refreshing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                                        Refresh all
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                        <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Reviewer agent</CardTitle>
-                                            <ScanSearch className="w-6 h-6 text-blue-500" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label htmlFor="reviewer-model" className="text-xs font-medium mb-1 block">Model</Label>
-                                                        <Select id="reviewer-model" value={reviewerModel} onValueChange={setReviewerModel}>
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select model" />
-                                                            </SelectTrigger>
-                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <div className="p-2 border-b">
-                                                                        <Input
-                                                                            placeholder="Search models..."
-                                                                            value={modelSearchTerm.reviewer}
-                                                                            onChange={(e) => {
-                                                                                setModelSearchTerm(p => ({ ...p, reviewer: e.target.value }));
-                                                                                setModelDropdownPage(p => ({ ...p, reviewer: 0 }));
-                                                                            }}
-                                                                            className="h-7 text-xs"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="max-h-[150px] overflow-y-auto">
-                                                                        {getPaginatedModels('reviewer').map((model, idx) => (
-                                                                            <SelectItem key={`reviewer-model-${modelDropdownPage.reviewer}-${idx}`} value={model}>{model}</SelectItem>
-                                                                        ))}
-                                                                        {getPaginatedModels('reviewer').length === 0 && (
-                                                                            <div className="p-2 text-xs text-muted-foreground text-center">No models found</div>
-                                                                        )}
-                                                                    </div>
-                                                                    {getTotalModelPages('reviewer') > 1 && (
-                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, reviewer: Math.max(0, p.reviewer - 1) })); }}
-                                                                                disabled={modelDropdownPage.reviewer === 0}
-                                                                            >
-                                                                                <ChevronLeft className="h-3 w-3" />
-                                                                            </Button>
-                                                                            <span className="text-[10px] text-muted-foreground">
-                                                                                {modelDropdownPage.reviewer + 1} / {getTotalModelPages('reviewer')}
-                                                                            </span>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, reviewer: Math.min(getTotalModelPages('reviewer') - 1, p.reviewer + 1) })); }}
-                                                                                disabled={modelDropdownPage.reviewer >= getTotalModelPages('reviewer') - 1}
-                                                                            >
-                                                                                <ChevronRight className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div>
-                                                        <Label htmlFor="reviewer-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
-                                                        <div className="flex items-center gap-1">
-                                                            <Select
-                                                                id="reviewer-system-prompt"
-                                                                value={selectedSystemPrompts.reviewer}
-                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, reviewer: value }))}
-                                                            >
-                                                                <SelectTrigger className="h-8 flex-1">
-                                                                    <SelectValue placeholder="Select prompt" />
-                                                                </SelectTrigger>
-                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <div className="p-2 border-b">
-                                                                            <Input
-                                                                                placeholder="Search prompts..."
-                                                                                value={promptSearchTerm.reviewer}
-                                                                                onChange={(e) => {
-                                                                                    setPromptSearchTerm(p => ({ ...p, reviewer: e.target.value }));
-                                                                                    setPromptDropdownPage(p => ({ ...p, reviewer: 0 }));
-                                                                                }}
-                                                                                className="h-7 text-xs"
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="max-h-[150px] overflow-y-auto">
-                                                                            <SelectItem value="none">No prompt</SelectItem>
-                                                                            {getPaginatedPrompts('reviewer').map((prompt) => (
-                                                                                <SelectItem key={`reviewer-prompt-${promptDropdownPage.reviewer}-${prompt.id}`} value={prompt.id}>
-                                                                                    {prompt.title || "Untitled"}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                            {getPaginatedPrompts('reviewer').length === 0 && promptSearchTerm.reviewer && (
-                                                                                <div className="p-2 text-xs text-muted-foreground text-center">No prompts found</div>
-                                                                            )}
-                                                                        </div>
-                                                                        {getTotalPromptPages('reviewer') > 1 && (
-                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, reviewer: Math.max(0, p.reviewer - 1) })); }}
-                                                                                    disabled={promptDropdownPage.reviewer === 0}
-                                                                                >
-                                                                                    <ChevronLeft className="h-3 w-3" />
-                                                                                </Button>
-                                                                                <span className="text-[10px] text-muted-foreground">
-                                                                                    {promptDropdownPage.reviewer + 1} / {getTotalPromptPages('reviewer')}
-                                                                                </span>
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, reviewer: Math.min(getTotalPromptPages('reviewer') - 1, p.reviewer + 1) })); }}
-                                                                                    disabled={promptDropdownPage.reviewer >= getTotalPromptPages('reviewer') - 1}
-                                                                                >
-                                                                                    <ChevronRight className="h-3 w-3" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 shrink-0"
-                                                                onClick={() => handleRefreshAgentPrompts('reviewer')}
-                                                                disabled={isRefreshingPrompts.reviewer}
-                                                                title="Refresh prompts"
-                                                            >
-                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.reviewer ? 'animate-spin' : ''}`} />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Analyzes code quality, security, and best practices
-                                                </p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Implementation agent</CardTitle>
-                                            <Wrench className="w-6 h-6 text-green-500" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label htmlFor="implementation-model" className="text-xs font-medium mb-1 block">Model</Label>
-                                                        <Select id="implementation-model" value={implementationModel} onValueChange={setImplementationModel}>
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select model" />
-                                                            </SelectTrigger>
-                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <div className="p-2 border-b">
-                                                                        <Input
-                                                                            placeholder="Search models..."
-                                                                            value={modelSearchTerm.implementation}
-                                                                            onChange={(e) => {
-                                                                                setModelSearchTerm(p => ({ ...p, implementation: e.target.value }));
-                                                                                setModelDropdownPage(p => ({ ...p, implementation: 0 }));
-                                                                            }}
-                                                                            className="h-7 text-xs"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="max-h-[150px] overflow-y-auto">
-                                                                        {getPaginatedModels('implementation').map((model, idx) => (
-                                                                            <SelectItem key={`implementation-model-${modelDropdownPage.implementation}-${idx}`} value={model}>{model}</SelectItem>
-                                                                        ))}
-                                                                        {getPaginatedModels('implementation').length === 0 && (
-                                                                            <div className="p-2 text-xs text-muted-foreground text-center">No models found</div>
-                                                                        )}
-                                                                    </div>
-                                                                    {getTotalModelPages('implementation') > 1 && (
-                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, implementation: Math.max(0, p.implementation - 1) })); }}
-                                                                                disabled={modelDropdownPage.implementation === 0}
-                                                                            >
-                                                                                <ChevronLeft className="h-3 w-3" />
-                                                                            </Button>
-                                                                            <span className="text-[10px] text-muted-foreground">
-                                                                                {modelDropdownPage.implementation + 1} / {getTotalModelPages('implementation')}
-                                                                            </span>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, implementation: Math.min(getTotalModelPages('implementation') - 1, p.implementation + 1) })); }}
-                                                                                disabled={modelDropdownPage.implementation >= getTotalModelPages('implementation') - 1}
-                                                                            >
-                                                                                <ChevronRight className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div>
-                                                        <Label htmlFor="implementation-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
-                                                        <div className="flex items-center gap-1">
-                                                            <Select
-                                                                id="implementation-system-prompt"
-                                                                value={selectedSystemPrompts.implementation}
-                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, implementation: value }))}
-                                                            >
-                                                                <SelectTrigger className="h-8 flex-1">
-                                                                    <SelectValue placeholder="Select prompt" />
-                                                                </SelectTrigger>
-                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <div className="p-2 border-b">
-                                                                            <Input
-                                                                                placeholder="Search prompts..."
-                                                                                value={promptSearchTerm.implementation}
-                                                                                onChange={(e) => {
-                                                                                    setPromptSearchTerm(p => ({ ...p, implementation: e.target.value }));
-                                                                                    setPromptDropdownPage(p => ({ ...p, implementation: 0 }));
-                                                                                }}
-                                                                                className="h-7 text-xs"
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="max-h-[150px] overflow-y-auto">
-                                                                            <SelectItem value="none">No prompt</SelectItem>
-                                                                            {getPaginatedPrompts('implementation').map((prompt) => (
-                                                                                <SelectItem key={`implementation-prompt-${promptDropdownPage.implementation}-${prompt.id}`} value={prompt.id}>
-                                                                                    {prompt.title || "Untitled"}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                            {getPaginatedPrompts('implementation').length === 0 && promptSearchTerm.implementation && (
-                                                                                <div className="p-2 text-xs text-muted-foreground text-center">No prompts found</div>
-                                                                            )}
-                                                                        </div>
-                                                                        {getTotalPromptPages('implementation') > 1 && (
-                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, implementation: Math.max(0, p.implementation - 1) })); }}
-                                                                                    disabled={promptDropdownPage.implementation === 0}
-                                                                                >
-                                                                                    <ChevronLeft className="h-3 w-3" />
-                                                                                </Button>
-                                                                                <span className="text-[10px] text-muted-foreground">
-                                                                                    {promptDropdownPage.implementation + 1} / {getTotalPromptPages('implementation')}
-                                                                                </span>
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, implementation: Math.min(getTotalPromptPages('implementation') - 1, p.implementation + 1) })); }}
-                                                                                    disabled={promptDropdownPage.implementation >= getTotalPromptPages('implementation') - 1}
-                                                                                >
-                                                                                    <ChevronRight className="h-3 w-3" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 shrink-0"
-                                                                onClick={() => handleRefreshAgentPrompts('implementation')}
-                                                                disabled={isRefreshingPrompts.implementation}
-                                                                title="Refresh prompts"
-                                                            >
-                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.implementation ? 'animate-spin' : ''}`} />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Implements code changes and improvements
-                                                </p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Tester agent</CardTitle>
-                                            <BugPlay  className="w-6 h-6 text-orange-500" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label htmlFor="tester-model" className="text-xs font-medium mb-1 block">Model</Label>
-                                                        <Select id="tester-model" value={testerModel} onValueChange={setTesterModel}>
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select model" />
-                                                            </SelectTrigger>
-                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <div className="p-2 border-b">
-                                                                        <Input
-                                                                            placeholder="Search models..."
-                                                                            value={modelSearchTerm.tester}
-                                                                            onChange={(e) => {
-                                                                                setModelSearchTerm(p => ({ ...p, tester: e.target.value }));
-                                                                                setModelDropdownPage(p => ({ ...p, tester: 0 }));
-                                                                            }}
-                                                                            className="h-7 text-xs"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="max-h-[150px] overflow-y-auto">
-                                                                        {getPaginatedModels('tester').map((model, idx) => (
-                                                                            <SelectItem key={`tester-model-${modelDropdownPage.tester}-${idx}`} value={model}>{model}</SelectItem>
-                                                                        ))}
-                                                                        {getPaginatedModels('tester').length === 0 && (
-                                                                            <div className="p-2 text-xs text-muted-foreground text-center">No models found</div>
-                                                                        )}
-                                                                    </div>
-                                                                    {getTotalModelPages('tester') > 1 && (
-                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, tester: Math.max(0, p.tester - 1) })); }}
-                                                                                disabled={modelDropdownPage.tester === 0}
-                                                                            >
-                                                                                <ChevronLeft className="h-3 w-3" />
-                                                                            </Button>
-                                                                            <span className="text-[10px] text-muted-foreground">
-                                                                                {modelDropdownPage.tester + 1} / {getTotalModelPages('tester')}
-                                                                            </span>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, tester: Math.min(getTotalModelPages('tester') - 1, p.tester + 1) })); }}
-                                                                                disabled={modelDropdownPage.tester >= getTotalModelPages('tester') - 1}
-                                                                            >
-                                                                                <ChevronRight className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div>
-                                                        <Label htmlFor="tester-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
-                                                        <div className="flex items-center gap-1">
-                                                            <Select
-                                                                id="tester-system-prompt"
-                                                                value={selectedSystemPrompts.tester}
-                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, tester: value }))}
-                                                            >
-                                                                <SelectTrigger className="h-8 flex-1">
-                                                                    <SelectValue placeholder="Select prompt" />
-                                                                </SelectTrigger>
-                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <div className="p-2 border-b">
-                                                                            <Input
-                                                                                placeholder="Search prompts..."
-                                                                                value={promptSearchTerm.tester}
-                                                                                onChange={(e) => {
-                                                                                    setPromptSearchTerm(p => ({ ...p, tester: e.target.value }));
-                                                                                    setPromptDropdownPage(p => ({ ...p, tester: 0 }));
-                                                                                }}
-                                                                                className="h-7 text-xs"
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="max-h-[150px] overflow-y-auto">
-                                                                            <SelectItem value="none">No prompt</SelectItem>
-                                                                            {getPaginatedPrompts('tester').map((prompt) => (
-                                                                                <SelectItem key={`tester-prompt-${promptDropdownPage.tester}-${prompt.id}`} value={prompt.id}>
-                                                                                    {prompt.title || "Untitled"}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                            {getPaginatedPrompts('tester').length === 0 && promptSearchTerm.tester && (
-                                                                                <div className="p-2 text-xs text-muted-foreground text-center">No prompts found</div>
-                                                                            )}
-                                                                        </div>
-                                                                        {getTotalPromptPages('tester') > 1 && (
-                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, tester: Math.max(0, p.tester - 1) })); }}
-                                                                                    disabled={promptDropdownPage.tester === 0}
-                                                                                >
-                                                                                    <ChevronLeft className="h-3 w-3" />
-                                                                                </Button>
-                                                                                <span className="text-[10px] text-muted-foreground">
-                                                                                    {promptDropdownPage.tester + 1} / {getTotalPromptPages('tester')}
-                                                                                </span>
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, tester: Math.min(getTotalPromptPages('tester') - 1, p.tester + 1) })); }}
-                                                                                    disabled={promptDropdownPage.tester >= getTotalPromptPages('tester') - 1}
-                                                                                >
-                                                                                    <ChevronRight className="h-3 w-3" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 shrink-0"
-                                                                onClick={() => handleRefreshAgentPrompts('tester')}
-                                                                disabled={isRefreshingPrompts.tester}
-                                                                title="Refresh prompts"
-                                                            >
-                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.tester ? 'animate-spin' : ''}`} />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Tests functionality, edge cases, and performance
-                                                </p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-lg font-medium">Report agent</CardTitle>
-                                            <FileText className="w-6 h-6 text-purple-500" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label htmlFor="report-model" className="text-xs font-medium mb-1 block">Model</Label>
-                                                        <Select id="report-model" value={reportModel} onValueChange={setReportModel}>
-                                                            <SelectTrigger className="h-8">
-                                                                <SelectValue placeholder="Select model" />
-                                                            </SelectTrigger>
-                                                            <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                    <div className="p-2 border-b">
-                                                                        <Input
-                                                                            placeholder="Search models..."
-                                                                            className="h-7 text-xs"
-                                                                            value={modelSearchTerm.report}
-                                                                            onChange={(e) => {
-                                                                                setModelSearchTerm(p => ({ ...p, report: e.target.value }));
-                                                                                setModelDropdownPage(p => ({ ...p, report: 0 }));
-                                                                            }}
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            onKeyDown={(e) => e.stopPropagation()}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="max-h-[180px]">
-                                                                        {getPaginatedModels('report').length > 0 ? (
-                                                                            getPaginatedModels('report').map((model, idx) => (
-                                                                                <SelectItem key={`report-model-${modelDropdownPage.report}-${idx}`} value={model}>{model}</SelectItem>
-                                                                            ))
-                                                                        ) : (
-                                                                            <div className="py-2 px-3 text-xs text-muted-foreground text-center">No models found</div>
-                                                                        )}
-                                                                    </div>
-                                                                    {getTotalModelPages('report') > 1 && (
-                                                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, report: Math.max(0, p.report - 1) })); }}
-                                                                                disabled={modelDropdownPage.report === 0}
-                                                                            >
-                                                                                <ChevronLeft className="h-3 w-3" />
-                                                                            </Button>
-                                                                            <span className="text-[10px] text-muted-foreground">
-                                                                                {modelDropdownPage.report + 1} / {getTotalModelPages('report')}
-                                                                            </span>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6"
-                                                                                onClick={(e) => { e.stopPropagation(); setModelDropdownPage(p => ({ ...p, report: Math.min(getTotalModelPages('report') - 1, p.report + 1) })); }}
-                                                                                disabled={modelDropdownPage.report >= getTotalModelPages('report') - 1}
-                                                                            >
-                                                                                <ChevronRight className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div>
-                                                        <Label htmlFor="report-system-prompt" className="text-xs font-medium mb-1 block">System prompt</Label>
-                                                        <div className="flex items-center gap-1">
-                                                            <Select
-                                                                id="report-system-prompt"
-                                                                value={selectedSystemPrompts.report}
-                                                                onValueChange={(value) => setSelectedSystemPrompts(prev => ({ ...prev, report: value }))}
-                                                            >
-                                                                <SelectTrigger className="h-8 flex-1">
-                                                                    <SelectValue placeholder="Select prompt" />
-                                                                </SelectTrigger>
-                                                                <SelectContent onPointerDownOutside={(e) => e.stopPropagation()} onInteractOutside={(e) => e.stopPropagation()}>
-                                                                    <div onWheelCapture={(e) => e.stopPropagation()}>
-                                                                        <div className="p-2 border-b">
-                                                                            <Input
-                                                                                placeholder="Search prompts..."
-                                                                                className="h-7 text-xs"
-                                                                                value={promptSearchTerm.report}
-                                                                                onChange={(e) => {
-                                                                                    setPromptSearchTerm(p => ({ ...p, report: e.target.value }));
-                                                                                    setPromptDropdownPage(p => ({ ...p, report: 0 }));
-                                                                                }}
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                                onKeyDown={(e) => e.stopPropagation()}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="max-h-[180px]">
-                                                                            <SelectItem value="none">No prompt</SelectItem>
-                                                                            {getPaginatedPrompts('report').length > 0 ? (
-                                                                                getPaginatedPrompts('report').map((prompt) => (
-                                                                                    <SelectItem key={`report-prompt-${promptDropdownPage.report}-${prompt.id}`} value={prompt.id}>
-                                                                                        {prompt.title || "Untitled"}
-                                                                                    </SelectItem>
-                                                                                ))
-                                                                            ) : (
-                                                                                <div className="py-2 px-3 text-xs text-muted-foreground text-center">No prompts found</div>
-                                                                            )}
-                                                                        </div>
-                                                                        {getTotalPromptPages('report') > 1 && (
-                                                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, report: Math.max(0, p.report - 1) })); }}
-                                                                                    disabled={promptDropdownPage.report === 0}
-                                                                                >
-                                                                                    <ChevronLeft className="h-3 w-3" />
-                                                                                </Button>
-                                                                                <span className="text-[10px] text-muted-foreground">
-                                                                                    {promptDropdownPage.report + 1} / {getTotalPromptPages('report')}
-                                                                                </span>
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    className="h-6 w-6"
-                                                                                    onClick={(e) => { e.stopPropagation(); setPromptDropdownPage(p => ({ ...p, report: Math.min(getTotalPromptPages('report') - 1, p.report + 1) })); }}
-                                                                                    disabled={promptDropdownPage.report >= getTotalPromptPages('report') - 1}
-                                                                                >
-                                                                                    <ChevronRight className="h-3 w-3" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 shrink-0"
-                                                                onClick={() => handleRefreshAgentPrompts('report')}
-                                                                disabled={isRefreshingPrompts.report}
-                                                                title="Refresh prompts"
-                                                            >
-                                                                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingPrompts.report ? 'animate-spin' : ''}`} />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Generates comprehensive reports and documentation
-                                                </p>
-                                            </div>
-                                            </CardContent>
-                                        </Card>
-                                        </div>
-                                        <div className="flex justify-end gap-2 mt-4">
-                                            <Button onClick={() => {
-                                                // Here you would typically save the configuration
-                                                onOpenChange(false);
-                                            }}>
-                                                Save Configuration
-                                            </Button>
-                                            <Button onClick={() => onOpenChange(false)} variant="outline">
-                                                Cancel
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </ScrollArea>
+                                <AgentsTab dialog={dialog} onOpenChange={handleSaveConfiguration} />
                             </TabsContent>
 
+                            {/* Prompts Tab */}
                             <TabsContent value="prompts" className="mt-0">
-                                <div className="space-y-4 bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-sm text-muted-foreground">
-                                            Configure the prompts used by each AI agent. Select one prompt per agent.
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleRefreshAllPrompts}
-                                            disabled={isRefreshingAllPrompts}
-                                            className="shrink-0 ml-4 text-foreground"
-                                        >
-                                            {isRefreshingAllPrompts ? (
-                                                <>
-                                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                    Refreshing...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <RefreshCw className="h-4 w-4 mr-2" />
-                                                    Refresh all
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-
-                                    {(() => {
-                                        const agentEntries = Object.entries(prompts);
-                                        const agentsPerPage = 2;
-                                        const totalAgentPages = Math.ceil(agentEntries.length / agentsPerPage);
-                                        const visibleAgents = agentEntries.slice(agentPage * agentsPerPage, (agentPage + 1) * agentsPerPage);
-
-                                        return (
-                                            <>
-                                                <div className="grid md:grid-cols-2 gap-4">
-                                                    {visibleAgents.map(([agent, agentPrompts]) => {
-                                                        const agentConfig = {
-                                                            reviewer: { icon: ScanSearch, color: "text-blue-500", bg: "bg-blue-500" },
-                                                            implementation: { icon: Wrench, color: "text-green-500", bg: "bg-green-500" },
-                                                            tester: { icon: BugPlay, color: "text-orange-500", bg: "bg-orange-500" },
-                                                            report: { icon: FileText, color: "text-purple-500", bg: "bg-purple-500" },
-                                                        };
-                                                        const config = agentConfig[agent] || { icon: ScanSearch, color: "text-gray-500", bg: "bg-gray-500" };
-                                                        const AgentIcon = config.icon;
-                                                        const page = currentPage[agent] || 0;
-                                                        const pageSize = 3;
-                                                        const totalPages = Math.ceil((agentPrompts?.length || 0) / pageSize);
-                                                        const visiblePrompts = agentPrompts?.slice(page * pageSize, (page + 1) * pageSize) || [];
-                                                        
-                                                        return (
-                                                            <Card key={agent}>
-                                                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <AgentIcon className={`w-5 h-5 ${config.color}`} />
-                                                                        <CardTitle className="text-lg font-medium capitalize">{agent} agent</CardTitle>
-                                                                    </div>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8"
-                                                                        onClick={() => handleRefreshAgentPrompts(agent)}
-                                                                        title={`Refresh ${agent} prompts`}
-                                                                        disabled={isRefreshingPrompts[agent]}
-                                                                    >
-                                                                        <RefreshCw className={`h-4 w-4 ${isRefreshingPrompts[agent] ? 'animate-spin' : ''}`} />
-                                                                    </Button>
-                                                                </CardHeader>
-                                                                <CardContent>
-                                                                    {(!agentPrompts || agentPrompts.length === 0) ? (
-                                                                        <div className="text-sm text-muted-foreground italic py-2">
-                                                                            No prompts configured.
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="space-y-2">
-                                                                            {visiblePrompts.map((prompt) => {
-                                                                                const isSelected = selectedPrompts[agent]?.includes(prompt.id);
-                                                                                return (
-                                                                                    <div 
-                                                                                        key={prompt.id} 
-                                                                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                                                                                            isSelected 
-                                                                                                ? 'border-primary bg-primary/10' 
-                                                                                                : 'hover:border-muted-foreground/50'
-                                                                                        }`}
-                                                                                        onClick={() => handlePromptChange(agent, prompt.id)}
-                                                                                    >
-                                                                                        <div className="flex items-start justify-between gap-2">
-                                                                                            <div className="flex-1 min-w-0">
-                                                                                                <p className="text-sm font-medium truncate">{prompt.title || "Untitled"}</p>
-                                                                                                <p className="text-xs text-muted-foreground line-clamp-1">{truncateText(prompt.text, 50)}</p>
-                                                                                            </div>
-                                                                                            <Button
-                                                                                                variant="ghost"
-                                                                                                size="sm"
-                                                                                                className="shrink-0 h-7"
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    setViewPrompt(prompt);
-                                                                                                }}
-                                                                                            >
-                                                                                                View
-                                                                                            </Button>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                            {totalPages > 1 && (
-                                                                                <div className="flex items-center justify-between pt-2 border-t mt-2">
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="sm"
-                                                                                        className="h-7 px-2"
-                                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: Math.max(0, (prev[agent] || 0) - 1) }))}
-                                                                                        disabled={page === 0}
-                                                                                    >
-                                                                                        ← Prev
-                                                                                    </Button>
-                                                                                    <span className="text-xs text-muted-foreground">
-                                                                                        {page + 1} / {totalPages}
-                                                                                    </span>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="sm"
-                                                                                        className="h-7 px-2"
-                                                                                        onClick={() => setCurrentPage(prev => ({ ...prev, [agent]: Math.min(totalPages - 1, (prev[agent] || 0) + 1) }))}
-                                                                                        disabled={page >= totalPages - 1}
-                                                                                    >
-                                                                                        Next →
-                                                                                    </Button>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-                                                                </CardContent>
-                                                            </Card>
-                                                        );
-                                                    })}
-                                                </div>
-
-                                                {totalAgentPages > 1 && (
-                                                    <div className="flex items-center justify-center gap-4 pt-4 border-t">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setAgentPage(prev => Math.max(0, prev - 1))}
-                                                            disabled={agentPage === 0}
-                                                        >
-                                                            ← Previous agents page
-                                                        </Button>
-                                                        <span className="text-sm text-muted-foreground">
-                                                            Agents {agentPage * agentsPerPage + 1}-{Math.min((agentPage + 1) * agentsPerPage, agentEntries.length)} of {agentEntries.length}
-                                                        </span>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setAgentPage(prev => Math.min(totalAgentPages - 1, prev + 1))}
-                                                            disabled={agentPage >= totalAgentPages - 1}
-                                                        >
-                                                            Next agents page →
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </>
-                                        );
-                                    })()}
-
-                                    <Dialog open={!!viewPrompt} onOpenChange={() => setViewPrompt(null)}>
-                                        <DialogContent className="max-w-2xl">
-                                            <DialogHeader>
-                                                <DialogTitle>{viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
-                                                <DialogDescription>
-                                                    Complete text of the selected prompt.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            {viewPrompt && (
-                                                <Textarea
-                                                    value={viewPrompt.text}
-                                                    readOnly
-                                                    rows={10}
-                                                    className="resize-none"
-                                                />
-                                            )}
-                                            <DialogFooter>
-                                                <Button onClick={() => setViewPrompt(null)}>Close</Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
+                                <PromptsTab dialog={dialog} />
                             </TabsContent>
 
+                            {/* Knowledge Base Tab */}
                             <TabsContent value="knowledge" className="mt-0">
-                                {!codeType ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <Database className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                                        <h3 className="text-lg font-semibold mb-2">Code type required</h3>
-                                        <p className="text-sm text-muted-foreground max-w-md">
-                                            Please select a code type in the Code Editor first. The knowledge base selection will be automatically matched to your code type.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground">
-                                            <span>Select one or more knowledge bases for RAG to provide context to the AI agents.</span>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleRefreshAllKnowledgeBases}
-                                                title="Refresh all knowledge bases"
-                                                disabled={isRefreshingUseCases}
-                                                className="shrink-0 text-foreground"
-                                            >
-                                                {isRefreshingUseCases ? (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                        Refreshing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                                        Refresh all
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-
-                                        {/* Search input */}
-                                        <div className="relative max-w-xs">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Search knowledge bases..."
-                                                value={kbSearchTerm}
-                                                onChange={(e) => {
-                                                    setKbSearchTerm(e.target.value);
-                                                    setKbPage(0); // Reset to first page on search
-                                                }}
-                                                className="pl-9 h-9"
-                                            />
-                                        </div>
-
-                                        <ScrollArea className="h-[280px] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
-                                            <div className="space-y-2 pr-4">
-                                            {(() => {
-                                                // Filter use cases by search term
-                                                const filteredUseCases = useCases.filter(kb => 
-                                                    kb.title?.toLowerCase().includes(kbSearchTerm.toLowerCase()) ||
-                                                    kb.content?.toLowerCase().includes(kbSearchTerm.toLowerCase())
-                                                );
-                                                const paginatedUseCases = filteredUseCases.slice(kbPage * kbPerPage, (kbPage + 1) * kbPerPage);
-                                                
-                                                if (filteredUseCases.length === 0) {
-                                                    return (
-                                                        <div className="flex flex-col items-center justify-center py-8 text-center">
-                                                            <Search className="h-10 w-10 text-muted-foreground/50 mb-2" />
-                                                            <p className="text-sm text-muted-foreground">No knowledge bases found matching "{kbSearchTerm}"</p>
-                                                        </div>
-                                                    );
-                                                }
-                                                
-                                                return paginatedUseCases.map((kb) => {
-                                                    const IconComponent = LucideIcons[kb.icon];
-                                                    const isSelected = selectedKnowledgeBases.includes(kb.id);
-                                                    const docCount = kbDocumentCounts[kb.id] || 0;
-                                                    const isRefreshing = isRefreshingKb[kb.id] || false;
-                                                    const isExpanded = expandedKb === kb.id;
-                                                    const documents = isDemoMode ? (DEMO_DOCUMENTS[kb.id] || []) : [];
-                                                    
-                                                    // Group documents by folder
-                                                    const folders = {};
-                                                    const rootDocs = [];
-                                                    documents.forEach(doc => {
-                                                        if (doc.folder) {
-                                                            if (!folders[doc.folder]) folders[doc.folder] = [];
-                                                            folders[doc.folder].push(doc);
-                                                        } else {
-                                                            rootDocs.push(doc);
-                                                        }
-                                                    });
-
-                                                        return (
-                                                            <Card
-                                                                key={kb.id}
-                                                                className={`transition-all duration-200 ${
-                                                                    isSelected
-                                                                        ? 'border-cyan-500 dark:border-cyan-400 border-2 bg-cyan-50 dark:bg-cyan-950/30'
-                                                                        : 'hover:border-cyan-300 dark:hover:border-cyan-600'
-                                                                }`}
-                                                            >
-                                                                <CardContent className="p-4 sm:p-5">
-                                                                    <div 
-                                                                        className="flex items-start gap-3 sm:gap-4 cursor-pointer"
-                                                                        onClick={() => toggleKnowledgeBase(kb.id)}
-                                                                    >
-                                                                        <div className={`p-2 sm:p-3 rounded-lg shrink-0 ${
-                                                                            isSelected
-                                                                                ? 'bg-cyan-500 dark:bg-cyan-500'
-                                                                                : 'bg-cyan-100 dark:bg-cyan-900/50'
-                                                                        }`}>
-                                                                            <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                                                                                isSelected
-                                                                                    ? 'text-white'
-                                                                                    : 'text-cyan-600 dark:text-cyan-400'
-                                                                            }`} />
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center justify-between mb-1">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <h3 className="font-semibold text-sm sm:text-base truncate">{kb.title}</h3>
-                                                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                                                                        {docCount} docs
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-1">
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-6 w-6 shrink-0"
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            setExpandedKb(isExpanded ? null : kb.id);
-                                                                                        }}
-                                                                                        title={isExpanded ? "Collapse documents" : "View documents"}
-                                                                                    >
-                                                                                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        variant="outline"
-                                                                                        size="icon"
-                                                                                        className="h-6 w-6 shrink-0"
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleRefreshKnowledgeBase(kb.id, kb.title);
-                                                                                        }}
-                                                                                        title={`Refresh documents in ${kb.title}`}
-                                                                                        disabled={isRefreshing}
-                                                                                    >
-                                                                                        <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </div>
-                                                                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                                                                                {truncateText(kb.content, 100)}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                    
-                                                                    {/* Expandable Documents Section */}
-                                                                    {isExpanded && isDemoMode && (
-                                                                        <div className="mt-4 pt-4 border-t">
-                                                                            <div className="space-y-2">
-                                                                                {/* Root documents */}
-                                                                                {rootDocs.map(doc => (
-                                                                                    <div key={doc.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
-                                                                                        <File className="h-4 w-4 text-red-500 shrink-0" />
-                                                                                        <span className="truncate flex-1">{doc.name}</span>
-                                                                                        <span className="text-xs text-muted-foreground shrink-0">{doc.size}</span>
-                                                                                    </div>
-                                                                                ))}
-                                                                                
-                                                                                {/* Folders with documents */}
-                                                                                {Object.entries(folders).map(([folderName, folderDocs]) => (
-                                                                                    <div key={folderName} className="space-y-1">
-                                                                                        <div className="flex items-center gap-2 text-sm font-medium py-1 px-2">
-                                                                                            <Folder className="h-4 w-4 text-yellow-500 shrink-0" />
-                                                                                            <span>{folderName}</span>
-                                                                                            <span className="text-xs text-muted-foreground">({folderDocs.length})</span>
-                                                                                        </div>
-                                                                                        <div className="ml-6 space-y-1">
-                                                                                            {folderDocs.map(doc => (
-                                                                                                <div key={doc.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
-                                                                                                    <File className="h-4 w-4 text-red-500 shrink-0" />
-                                                                                                    <span className="truncate flex-1">{doc.name}</span>
-                                                                                                    <span className="text-xs text-muted-foreground shrink-0">{doc.size}</span>
-                                                                                                </div>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
-                                                                                
-                                                                                {documents.length === 0 && (
-                                                                                    <p className="text-sm text-muted-foreground italic py-2">No documents in this knowledge base.</p>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </CardContent>
-                                                            </Card>
-                                                        );
-                                                    });
-                                                })()}
-                                            </div>
-                                        </ScrollArea>
-
-                                        {/* Pagination */}
-                                        {(() => {
-                                            const filteredUseCases = useCases.filter(kb => 
-                                                kb.title?.toLowerCase().includes(kbSearchTerm.toLowerCase()) ||
-                                                kb.content?.toLowerCase().includes(kbSearchTerm.toLowerCase())
-                                            );
-                                            const totalPages = Math.ceil(filteredUseCases.length / kbPerPage);
-                                            
-                                            if (filteredUseCases.length <= kbPerPage) return null;
-                                            
-                                            return (
-                                                <div className="flex items-center justify-center gap-4 pt-4 border-t">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => setKbPage(prev => Math.max(0, prev - 1))}
-                                                        disabled={kbPage === 0}
-                                                    >
-                                                        ← Previous
-                                                    </Button>
-                                                    <span className="text-sm font-medium">
-                                                        Page {kbPage + 1} of {totalPages} ({filteredUseCases.length} total)
-                                                    </span>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => setKbPage(prev => Math.min(totalPages - 1, prev + 1))}
-                                                        disabled={kbPage >= totalPages - 1}
-                                                    >
-                                                        Next →
-                                                    </Button>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                )}
+                                <KnowledgeBaseTab 
+                                    dialog={dialog} 
+                                    codeType={codeType} 
+                                    onSaveGroups={setSelectedGroupIds}
+                                />
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -1659,3 +141,621 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         </Drawer>
     )
 }
+
+/**
+ * WorkflowTab - Workflow visualization tab content
+ */
+function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
+    return (
+        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
+            <div className="space-y-4 pr-4">
+                <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                        Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={dialog.handleRefreshAll}
+                        disabled={dialog.isRefreshingAll}
+                        className="shrink-0 ml-4 text-foreground"
+                    >
+                        {dialog.isRefreshingAll ? (
+                            <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Refreshing...
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Refresh all
+                            </>
+                        )}
+                    </Button>
+                </div>
+                <AIWorkflowVisualization
+                    models={dialog.models}
+                    agentModels={dialog.agentModels}
+                    onModelChange={dialog.handleModelChange}
+                    knowledgeBases={dialog.useCases.map(uc => ({
+                        id: uc.id,
+                        name: uc.title,
+                        description: uc.content,
+                        icon: uc.icon
+                    }))}
+                    selectedKnowledgeBases={dialog.selectedKnowledgeBases}
+                    onKnowledgeBaseChange={dialog.toggleKnowledgeBase}
+                    codeType={codeType}
+                    onCodeTypeChange={onCodeTypeChange}
+                    useCases={dialog.useCases}
+                    prompts={dialog.prompts}
+                    selectedPrompts={dialog.selectedPrompts}
+                    selectedSystemPrompts={dialog.selectedSystemPrompts}
+                    onPromptChange={dialog.handlePromptChange}
+                    isRefreshingAll={dialog.isRefreshingAll}
+                    onSave={() => onOpenChange(false)}
+                    onCancel={() => onOpenChange(false)}
+                />
+            </div>
+        </ScrollArea>
+    )
+}
+
+/**
+ * AgentsTab - Agents configuration tab content
+ */
+function AgentsTab({ dialog, onOpenChange }) {
+    const handleSaveConfiguration = () => {
+        // Save agent configurations to localStorage
+        try {
+            const agentConfigurations = {
+                reviewer: {
+                    enabled: true, // Always enabled
+                    modelId: dialog.agentModels['reviewer'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: dialog.selectedSystemPrompts['reviewer'] || '',
+                },
+                implementer: {
+                    enabled: !!dialog.agentModels['implementation'],
+                    modelId: dialog.agentModels['implementation'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: dialog.selectedSystemPrompts['implementation'] || '',
+                },
+                tester: {
+                    enabled: !!dialog.agentModels['tester'],
+                    modelId: dialog.agentModels['tester'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: dialog.selectedSystemPrompts['tester'] || '',
+                },
+                reporter: {
+                    enabled: true, // Always enabled
+                    modelId: dialog.agentModels['report'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: dialog.selectedSystemPrompts['report'] || '',
+                },
+            };
+            
+            localStorage.setItem('vulniq_agent_configurations', JSON.stringify(agentConfigurations));
+            toast.success('Agent configuration saved!');
+            onOpenChange(false);
+        } catch (err) {
+            console.error('Error saving agent configuration:', err);
+            toast.error('Failed to save configuration');
+        }
+    };
+
+    return (
+        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
+            <div className="pr-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                    <div>
+                        <h3 className="text-lg font-semibold">Agent configuration</h3>
+                        <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        title="Refresh all agent configurations"
+                        onClick={dialog.handleRefreshAllAgents}
+                        disabled={dialog.isRefreshingModels}
+                        className="shrink-0 text-foreground"
+                    >
+                        {dialog.isRefreshingModels ? (
+                            <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Refreshing...
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Refresh all
+                            </>
+                        )}
+                    </Button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                    {AGENTS.map(agent => (
+                        <AgentCard
+                            key={agent.id}
+                            agentId={agent.id}
+                            title={agent.title}
+                            description={agent.description}
+                            icon={agent.icon}
+                            iconColor={agent.color}
+                            selectedModel={dialog.agentModels[agent.id]}
+                            onModelChange={(model) => dialog.handleModelChange(agent.id, model)}
+                            models={dialog.getPaginatedModels(agent.id)}
+                            modelSearchTerm={dialog.modelSearchTerm[agent.id]}
+                            onModelSearchChange={(value) => {
+                                dialog.setModelSearchTerm(p => ({ ...p, [agent.id]: value }))
+                                dialog.setModelDropdownPage(p => ({ ...p, [agent.id]: 0 }))
+                            }}
+                            modelPage={dialog.modelDropdownPage[agent.id]}
+                            onModelPageChange={(page) => dialog.setModelDropdownPage(p => ({ ...p, [agent.id]: page }))}
+                            totalModelPages={dialog.getTotalModelPages(agent.id)}
+                            selectedPrompt={dialog.selectedSystemPrompts[agent.id]}
+                            onPromptChange={(value) => dialog.setSelectedSystemPrompts(p => ({ ...p, [agent.id]: value }))}
+                            prompts={dialog.getPaginatedPrompts(agent.id)}
+                            promptSearchTerm={dialog.promptSearchTerm[agent.id]}
+                            onPromptSearchChange={(value) => {
+                                dialog.setPromptSearchTerm(p => ({ ...p, [agent.id]: value }))
+                                dialog.setPromptDropdownPage(p => ({ ...p, [agent.id]: 0 }))
+                            }}
+                            promptPage={dialog.promptDropdownPage[agent.id]}
+                            onPromptPageChange={(page) => dialog.setPromptDropdownPage(p => ({ ...p, [agent.id]: page }))}
+                            totalPromptPages={dialog.getTotalPromptPages(agent.id)}
+                            isRefreshing={dialog.isRefreshingPrompts[agent.id]}
+                            onRefresh={() => dialog.handleRefreshAgentPrompts(agent.id)}
+                        />
+                    ))}
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                    <Button onClick={handleSaveConfiguration}>Save Configuration</Button>
+                    <Button onClick={() => onOpenChange(false)} variant="outline">Cancel</Button>
+                </div>
+            </div>
+        </ScrollArea>
+    )
+}
+
+/**
+ * PromptsTab - Prompts configuration tab content
+ */
+function PromptsTab({ dialog }) {
+    const agentEntries = Object.entries(dialog.prompts)
+    const agentsPerPage = 2
+    const totalAgentPages = Math.ceil(agentEntries.length / agentsPerPage)
+    const visibleAgents = agentEntries.slice(dialog.agentPage * agentsPerPage, (dialog.agentPage + 1) * agentsPerPage)
+
+    return (
+        <div className="space-y-4 bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
+            <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                    Configure the prompts used by each AI agent. Select one prompt per agent.
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={dialog.handleRefreshAllPrompts}
+                    disabled={dialog.isRefreshingAllPrompts}
+                    className="shrink-0 ml-4 text-foreground"
+                >
+                    {dialog.isRefreshingAllPrompts ? (
+                        <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Refreshing...
+                        </>
+                    ) : (
+                        <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Refresh all
+                        </>
+                    )}
+                </Button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+                {visibleAgents.map(([agent, agentPrompts]) => (
+                    <PromptCard
+                        key={agent}
+                        agent={agent}
+                        agentPrompts={agentPrompts}
+                        selectedPrompts={dialog.selectedPrompts}
+                        currentPage={dialog.currentPage[agent] || 0}
+                        isRefreshing={dialog.isRefreshingPrompts[agent]}
+                        onPromptSelect={dialog.handlePromptChange}
+                        onViewPrompt={dialog.setViewPrompt}
+                        onRefresh={() => dialog.handleRefreshAgentPrompts(agent)}
+                        onPageChange={(page) => dialog.setCurrentPage(prev => ({ ...prev, [agent]: page }))}
+                        truncateText={dialog.truncateText}
+                    />
+                ))}
+            </div>
+
+            {totalAgentPages > 1 && (
+                <div className="flex items-center justify-center gap-4 pt-4 border-t">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => dialog.setAgentPage(prev => Math.max(0, prev - 1))}
+                        disabled={dialog.agentPage === 0}
+                    >
+                        ← Previous agents page
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Agents {dialog.agentPage * agentsPerPage + 1}-{Math.min((dialog.agentPage + 1) * agentsPerPage, agentEntries.length)} of {agentEntries.length}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => dialog.setAgentPage(prev => Math.min(totalAgentPages - 1, prev + 1))}
+                        disabled={dialog.agentPage >= totalAgentPages - 1}
+                    >
+                        Next agents page →
+                    </Button>
+                </div>
+            )}
+
+            {/* View Prompt Dialog */}
+            <Dialog open={!!dialog.viewPrompt} onOpenChange={() => dialog.setViewPrompt(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{dialog.viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
+                        <DialogDescription>Complete text of the selected prompt.</DialogDescription>
+                    </DialogHeader>
+                    {dialog.viewPrompt && (
+                        <Textarea value={dialog.viewPrompt.text} readOnly rows={10} className="resize-none" />
+                    )}
+                    <DialogFooter>
+                        <Button onClick={() => dialog.setViewPrompt(null)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    )
+}
+
+/**
+/**
+ * KnowledgeBaseTab - Knowledge base selection tab content with hierarchical group/use case/file selection
+ */
+function KnowledgeBaseTab({ dialog, codeType, onSaveGroups }) {
+    const [expandedGroups, setExpandedGroups] = React.useState(new Set())
+    const [expandedUseCases, setExpandedUseCases] = React.useState(new Set())
+    const [selectedFiles, setSelectedFiles] = React.useState(new Set())
+    const [selectedGroups, setSelectedGroups] = React.useState(new Set()) // Track selected groups
+    const [useCaseGroups, setUseCaseGroups] = React.useState([])
+    const [useCasePdfs, setUseCasePdfs] = React.useState({}) // { useCaseId: [pdfs] }
+    const [loadingPdfs, setLoadingPdfs] = React.useState(new Set())
+
+    // Load saved groups from localStorage on mount
+    React.useEffect(() => {
+        try {
+            const saved = localStorage.getItem('vulniq_selected_groups');
+            if (saved) {
+                const groupIds = JSON.parse(saved);
+                setSelectedGroups(new Set(groupIds));
+            }
+        } catch (err) {
+            console.error('Error loading selected groups:', err);
+        }
+    }, []);
+
+    // Save selected groups whenever they change
+    React.useEffect(() => {
+        if (onSaveGroups) {
+            onSaveGroups(Array.from(selectedGroups));
+        }
+    }, [selectedGroups, onSaveGroups]);
+
+    // Save selected files to localStorage whenever they change
+    React.useEffect(() => {
+        try {
+            localStorage.setItem('vulniq_selected_documents', JSON.stringify(Array.from(selectedFiles)));
+        } catch (err) {
+            console.error('Error saving selected documents:', err);
+        }
+    }, [selectedFiles]);
+
+    // Fetch groups on mount
+    React.useEffect(() => {
+        const fetchGroups = async () => {
+            try {
+                const response = await fetch('/api/use-case-groups')
+                if (response.ok) {
+                    const data = await response.json()
+                    const groups = data.data?.groups || data.groups || []
+                    setUseCaseGroups(groups)
+                }
+            } catch (error) {
+                console.error('Error fetching groups:', error)
+            }
+        }
+        fetchGroups()
+    }, [])
+
+    // Fetch PDFs for a use case
+    const fetchUseCasePdfs = async (useCaseId) => {
+        if (useCasePdfs[useCaseId]) return // Already loaded
+        
+        setLoadingPdfs(prev => new Set(prev).add(useCaseId))
+        try {
+            const response = await fetch(`/api/folders?useCaseId=${useCaseId}`)
+            if (response.ok) {
+                const data = await response.json()
+                const folders = data.data?.folders || data.folders || []
+                
+                // Flatten the folder tree to get all PDFs
+                const extractPdfs = (items) => {
+                    let pdfs = []
+                    items.forEach(item => {
+                        if (item.type === 'pdf') {
+                            pdfs.push(item)
+                        }
+                        if (item.children) {
+                            pdfs = pdfs.concat(extractPdfs(item.children))
+                        }
+                    })
+                    return pdfs
+                }
+                
+                const allPdfs = extractPdfs(folders)
+                setUseCasePdfs(prev => ({ ...prev, [useCaseId]: allPdfs }))
+            }
+        } catch (error) {
+            console.error('Error fetching PDFs:', error)
+        } finally {
+            setLoadingPdfs(prev => {
+                const next = new Set(prev)
+                next.delete(useCaseId)
+                return next
+            })
+        }
+    }
+
+    // Toggle use case expansion and fetch PDFs
+    const toggleUseCase = (useCaseId) => {
+        setExpandedUseCases(prev => {
+            const next = new Set(prev)
+            if (next.has(useCaseId)) {
+                next.delete(useCaseId)
+            } else {
+                next.add(useCaseId)
+                fetchUseCasePdfs(useCaseId)
+            }
+            return next
+        })
+    }
+
+    // Toggle file selection
+    const toggleFile = (fileId) => {
+        setSelectedFiles(prev => {
+            const next = new Set(prev)
+            if (next.has(fileId)) {
+                next.delete(fileId)
+            } else {
+                next.add(fileId)
+            }
+            return next
+        })
+    }
+
+    // Toggle group selection - selects/deselects all PDFs in the group
+    const toggleGroup = (groupId) => {
+        const isCurrentlySelected = selectedGroups.has(groupId)
+        
+        if (isCurrentlySelected) {
+            // Deselect group and all its files
+            setSelectedGroups(prev => {
+                const next = new Set(prev)
+                next.delete(groupId)
+                return next
+            })
+            // Remove all files from this group
+            const group = groupedUseCases[groupId]
+            if (group) {
+                const allFileIds = new Set()
+                group.useCases.forEach(uc => {
+                    const pdfs = useCasePdfs[uc.id] || []
+                    pdfs.forEach(pdf => allFileIds.add(pdf.id))
+                })
+                setSelectedFiles(prev => {
+                    const next = new Set(prev)
+                    allFileIds.forEach(id => next.delete(id))
+                    return next
+                })
+            }
+        } else {
+            // Select group and all its files
+            setSelectedGroups(prev => new Set(prev).add(groupId))
+            // Add all files from this group
+            const group = groupedUseCases[groupId]
+            if (group) {
+                const allFileIds = new Set()
+                group.useCases.forEach(uc => {
+                    const pdfs = useCasePdfs[uc.id] || []
+                    pdfs.forEach(pdf => allFileIds.add(pdf.id))
+                })
+                setSelectedFiles(prev => {
+                    const next = new Set(prev)
+                    allFileIds.forEach(id => next.add(id))
+                    return next
+                })
+            }
+        }
+    }
+
+    // Toggle group expansion
+    const toggleGroupExpansion = (groupId) => {
+        setExpandedGroups(prev => {
+            const next = new Set(prev)
+            if (next.has(groupId)) {
+                next.delete(groupId)
+            } else {
+                next.add(groupId)
+            }
+            return next
+        })
+    }
+
+    // Group use cases by groupId
+    const groupedUseCases = React.useMemo(() => {
+        const grouped = {}
+        useCaseGroups.forEach(group => {
+            grouped[group.id] = {
+                ...group,
+                useCases: dialog.useCases.filter(uc => uc.groupId === group.id)
+            }
+        })
+        // Add ungrouped use cases
+        grouped['ungrouped'] = {
+            id: 'ungrouped',
+            name: 'Ungrouped',
+            useCases: dialog.useCases.filter(uc => !uc.groupId)
+        }
+        return grouped
+    }, [useCaseGroups, dialog.useCases])
+
+    return (
+        <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">Hierarchical Knowledge Base Selection</p>
+                    <p>Select specific PDF files from use cases to provide context to AI agents.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                        {selectedGroups.size} group{selectedGroups.size !== 1 ? 's' : ''}, {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
+                    </span>
+                    {(selectedFiles.size > 0 || selectedGroups.size > 0) && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setSelectedFiles(new Set())
+                                setSelectedGroups(new Set())
+                            }}
+                            className="h-8"
+                        >
+                            Clear
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <ScrollArea className="h-[400px] bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
+                <div className="space-y-2">
+                    {Object.entries(groupedUseCases).map(([groupId, group]) => {
+                        const isExpanded = expandedGroups.has(groupId)
+                        const isGroupSelected = selectedGroups.has(groupId)
+                        
+                        return (
+                            <div key={groupId} className="border rounded-lg bg-background">
+                                {/* Group Header */}
+                                <div className="flex items-center gap-2 p-3 hover:bg-accent/50 transition-colors rounded-t-lg">
+                                    <Checkbox
+                                        checked={isGroupSelected}
+                                        onCheckedChange={() => toggleGroup(groupId)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="h-4 w-4"
+                                        title="Select all files in this group"
+                                    />
+                                    <button
+                                        onClick={() => toggleGroupExpansion(groupId)}
+                                        className="flex items-center gap-2 flex-1"
+                                    >
+                                        <ChevronRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                        <Folder className="h-4 w-4 text-blue-500" />
+                                        <span className="font-medium flex-1 text-left">{group.name}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {group.useCases.length} use case{group.useCases.length !== 1 ? 's' : ''}
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {/* Use Cases */}
+                                {isExpanded && (
+                                    <div className="border-t">
+                                        {group.useCases.length === 0 ? (
+                                            <div className="p-4 text-xs text-muted-foreground text-center">
+                                                No use cases in this group
+                                            </div>
+                                        ) : (
+                                            group.useCases.map(useCase => {
+                                            const isUseCaseExpanded = expandedUseCases.has(useCase.id)
+                                            const pdfs = useCasePdfs[useCase.id] || []
+                                            const isLoadingPdfs = loadingPdfs.has(useCase.id)
+                                            
+                                            return (
+                                                <div key={useCase.id} className="border-b last:border-b-0">
+                                                    {/* Use Case Header */}
+                                                    <button
+                                                        onClick={() => toggleUseCase(useCase.id)}
+                                                        className="w-full flex items-center gap-2 p-2 pl-8 hover:bg-accent/30 transition-colors"
+                                                    >
+                                                        <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isUseCaseExpanded ? 'rotate-90' : ''}`} />
+                                                        <File className="h-3.5 w-3.5 text-orange-500" />
+                                                        <span className="text-sm flex-1 text-left">{useCase.title}</span>
+                                                        {isLoadingPdfs ? (
+                                                            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+                                                        ) : (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {pdfs.length} file{pdfs.length !== 1 ? 's' : ''}
+                                                            </span>
+                                                        )}
+                                                    </button>
+
+                                                    {/* PDF Files */}
+                                                    {isUseCaseExpanded && (
+                                                        <div className="bg-muted/50">
+                                                            {isLoadingPdfs ? (
+                                                                <div className="p-4 pl-16 text-xs text-muted-foreground">
+                                                                    Loading files...
+                                                                </div>
+                                                            ) : pdfs.length === 0 ? (
+                                                                <div className="p-4 pl-16 text-xs text-muted-foreground">
+                                                                    No files uploaded yet
+                                                                </div>
+                                                            ) : (
+                                                                pdfs.map(pdf => (
+                                                                    <label
+                                                                        key={pdf.id}
+                                                                        className="flex items-center gap-2 p-2 pl-16 hover:bg-accent/20 cursor-pointer transition-colors"
+                                                                    >
+                                                                        <Checkbox
+                                                                            checked={selectedFiles.has(pdf.id)}
+                                                                            onCheckedChange={() => toggleFile(pdf.id)}
+                                                                            className="h-3.5 w-3.5"
+                                                                        />
+                                                                        <File className="h-3 w-3 text-red-500" />
+                                                                        <span className="text-xs flex-1">{pdf.name || pdf.title}</span>
+                                                                        {pdf.size && (
+                                                                            <span className="text-[10px] text-muted-foreground">
+                                                                                {typeof pdf.size === 'string' ? pdf.size : `${Math.round(pdf.size / 1024)} KB`}
+                                                                            </span>
+                                                                        )}
+                                                                    </label>
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })}
+
+                    {Object.keys(groupedUseCases).length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <Database className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                            <p className="text-sm text-muted-foreground">No groups found</p>
+                            <p className="text-xs text-muted-foreground mt-1">Create groups in the Knowledge Base page</p>
+                        </div>
+                    )}
+                </div>
+            </ScrollArea>
+        </div>
+    )
+}
+
+export { ModelsDialog }

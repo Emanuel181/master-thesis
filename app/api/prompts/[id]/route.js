@@ -1,66 +1,25 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+/**
+ * Prompt [id] API Routes
+ * =======================
+ * 
+ * PUT    - Update a prompt
+ * DELETE - Delete a prompt
+ */
+
 import prisma from '@/lib/prisma';
 import { uploadTextToS3, deleteFromS3 } from '@/lib/s3';
-import { rateLimit } from '@/lib/rate-limit';
-import { z } from 'zod';
-import { isSameOrigin, readJsonBody, securityHeaders } from '@/lib/api-security';
-import { requireProductionMode } from '@/lib/api-middleware';
+import { createApiHandler, ApiErrors } from '@/lib/api-handler';
+import { updatePromptSchema, promptIdParamsSchema } from '@/lib/validators/prompts.js';
 
-// Input validation schema for updates
-const updatePromptSchema = z.object({
-    title: z.string().max(200, 'Title must be less than 200 characters').optional(),
-    text: z.string()
-        .min(1, 'Text is required')
-        .max(50000, 'Text must be less than 50000 characters'),
-});
-
-export async function PUT(request, { params }) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: securityHeaders });
-        }
-
-        // CSRF protection for state-changing operations
-        if (!isSameOrigin(request)) {
-            return NextResponse.json(
-                { error: 'Forbidden' },
-                { status: 403, headers: securityHeaders }
-            );
-        }
-
-        // Rate limiting - 30 updates per hour
-        const rl = await rateLimit({
-            key: `prompts:update:${session.user.id}`,
-            limit: 30,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
-
+/**
+ * PUT /api/prompts/[id]
+ * Update an existing prompt
+ */
+export const PUT = createApiHandler(
+    async (request, { session, body, params, requestId }) => {
         const userId = session.user.id;
-        const { id } = await params;
-        const parsed = await readJsonBody(request);
-        if (!parsed.ok) {
-            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: securityHeaders });
-        }
-
-        // Validate input with Zod
-        const validationResult = updatePromptSchema.safeParse(parsed.body);
-        if (!validationResult.success) {
-            return NextResponse.json({
-                error: 'Validation failed',
-            }, { status: 400, headers: securityHeaders });
-        }
-
-        const { title, text } = validationResult.data;
+        const { id } = params;
+        const { title, text } = body;
 
         // Get the existing prompt to find the S3 key
         const existingPrompt = await prisma.prompt.findFirst({
@@ -68,7 +27,7 @@ export async function PUT(request, { params }) {
         });
 
         if (!existingPrompt) {
-            return NextResponse.json({ error: 'Prompt not found' }, { status: 404, headers: securityHeaders });
+            return ApiErrors.notFound('Prompt', requestId);
         }
 
         // Upload new text to S3 using the existing key
@@ -76,52 +35,33 @@ export async function PUT(request, { params }) {
 
         // Update the prompt in the database
         const prompt = await prisma.prompt.update({
-            where: {
-                id,
-                userId // Ensure user can only update their own prompts
-            },
-            data: { title: title || "Untitled", text },
+            where: { id, userId },
+            data: { title: title || 'Untitled', text },
         });
 
-        return NextResponse.json({ success: true, prompt }, { headers: securityHeaders });
-    } catch (error) {
-        console.error('Error updating prompt:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: securityHeaders });
-    }
-}
-
-export async function DELETE(request, { params }) {
-    const demoBlock = requireProductionMode(request);
-    if (demoBlock) return demoBlock;
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: securityHeaders });
-        }
-
-        // CSRF protection for state-changing operations
-        if (!isSameOrigin(request)) {
-            return NextResponse.json(
-                { error: 'Forbidden' },
-                { status: 403, headers: securityHeaders }
-            );
-        }
-
-        // Rate limiting - 30 deletes per hour
-        const rl = await rateLimit({
-            key: `prompts:delete:${session.user.id}`,
+        return { success: true, prompt };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        bodySchema: updatePromptSchema,
+        paramsSchema: promptIdParamsSchema,
+        rateLimit: {
             limit: 30,
-            windowMs: 60 * 60 * 1000
-        });
-        if (!rl.allowed) {
-            return NextResponse.json(
-                { error: 'Rate limit exceeded', retryAt: rl.resetAt },
-                { status: 429, headers: securityHeaders }
-            );
-        }
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'prompts:update',
+        },
+    }
+);
 
+/**
+ * DELETE /api/prompts/[id]
+ * Delete a prompt
+ */
+export const DELETE = createApiHandler(
+    async (request, { session, params, requestId }) => {
         const userId = session.user.id;
-        const { id } = await params;
+        const { id } = params;
 
         // Get the prompt to find the associated S3 key
         const prompt = await prisma.prompt.findFirst({
@@ -129,7 +69,7 @@ export async function DELETE(request, { params }) {
         });
 
         if (!prompt) {
-            return NextResponse.json({ error: 'Prompt not found' }, { status: 404, headers: securityHeaders });
+            return ApiErrors.notFound('Prompt', requestId);
         }
 
         // Delete the text file from S3
@@ -140,9 +80,16 @@ export async function DELETE(request, { params }) {
             where: { id, userId },
         });
 
-        return NextResponse.json({ success: true }, { headers: securityHeaders });
-    } catch (error) {
-        console.error('Error deleting prompt:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: securityHeaders });
+        return { success: true };
+    },
+    {
+        requireAuth: true,
+        requireProductionMode: true,
+        paramsSchema: promptIdParamsSchema,
+        rateLimit: {
+            limit: 30,
+            windowMs: 60 * 60 * 1000,
+            keyPrefix: 'prompts:delete',
+        },
     }
-}
+);

@@ -1,10 +1,16 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createReactionNotification } from "@/lib/notifications";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/api-handler";
 
 // GET /api/articles/[id]/reactions - Get reactions for an article
 export async function GET(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const { id } = await params;
 
@@ -30,26 +36,25 @@ export async function GET(request, { params }) {
       return acc;
     }, {});
 
-    return NextResponse.json({
+    return successResponse({
       reactions,
       counts: countByType,
       total: reactions.length,
-    });
+    }, { requestId });
   } catch (error) {
     console.error("Error fetching reactions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch reactions" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to fetch reactions", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 
 // POST /api/articles/[id]/reactions - Add a reaction
 export async function POST(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { id } = await params;
@@ -68,14 +73,11 @@ export async function POST(request, { params }) {
     });
 
     if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return errorResponse("Article not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     if (article.status !== "PUBLISHED") {
-      return NextResponse.json(
-        { error: "Can only react to published articles" },
-        { status: 400 }
-      );
+      return errorResponse("Can only react to published articles", { status: 400, code: "VALIDATION_ERROR", requestId });
     }
 
     // Check if user already reacted
@@ -95,9 +97,9 @@ export async function POST(request, { params }) {
           where: { id: existingReaction.id },
           data: { type },
         });
-        return NextResponse.json({ reaction: updated, updated: true });
+        return successResponse({ reaction: updated, updated: true }, { requestId });
       }
-      return NextResponse.json({ reaction: existingReaction, exists: true });
+      return successResponse({ reaction: existingReaction, exists: true }, { requestId });
     }
 
     // Create new reaction
@@ -125,22 +127,21 @@ export async function POST(request, { params }) {
       }
     }
 
-    return NextResponse.json({ reaction, created: true }, { status: 201 });
+    return successResponse({ reaction, created: true }, { status: 201, requestId });
   } catch (error) {
     console.error("Error adding reaction:", error);
-    return NextResponse.json(
-      { error: "Failed to add reaction" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to add reaction", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 
 // DELETE /api/articles/[id]/reactions - Remove a reaction
 export async function DELETE(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errorResponse("Unauthorized", { status: 401, code: "UNAUTHORIZED", requestId });
     }
 
     const { id } = await params;
@@ -156,23 +157,17 @@ export async function DELETE(request, { params }) {
     });
 
     if (!reaction) {
-      return NextResponse.json(
-        { error: "Reaction not found" },
-        { status: 404 }
-      );
+      return errorResponse("Reaction not found", { status: 404, code: "NOT_FOUND", requestId });
     }
 
     await prisma.articleReaction.delete({
       where: { id: reaction.id },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ deleted: true }, { requestId });
   } catch (error) {
     console.error("Error removing reaction:", error);
-    return NextResponse.json(
-      { error: "Failed to remove reaction" },
-      { status: 500 }
-    );
+    return errorResponse("Failed to remove reaction", { status: 500, code: "INTERNAL_ERROR", requestId });
   }
 }
 
