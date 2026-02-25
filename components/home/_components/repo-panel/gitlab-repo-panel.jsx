@@ -1,11 +1,92 @@
 "use client"
 
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { RefreshCw, Search, ChevronLeft, ChevronRight, Info } from "lucide-react"
 import { GitlabIcon } from "@/components/icons/gitlab"
 import { RepoCard } from "./repo-card"
+
+/**
+ * Hook that periodically tests the GitLab connection health.
+ */
+function useConnectionHealth(isConnected, isDemoMode) {
+    const [health, setHealth] = useState({ status: "unknown", lastChecked: 0 })
+    const intervalRef = useRef(null)
+
+    const checkHealth = useCallback(async () => {
+        if (!isConnected || isDemoMode) return
+        try {
+            const res = await fetch("/api/gitlab/repos?per_page=1", { method: "GET", cache: "no-store" })
+            setHealth({
+                status: res.ok ? "healthy" : "degraded",
+                lastChecked: Date.now(),
+            })
+        } catch {
+            setHealth({ status: "error", lastChecked: Date.now() })
+        }
+    }, [isConnected, isDemoMode])
+
+    useEffect(() => {
+        if (!isConnected || isDemoMode) return
+        // Use microtask to avoid synchronous setState warning
+        const timer = setTimeout(() => checkHealth(), 0)
+        intervalRef.current = setInterval(checkHealth, 60_000)
+        return () => {
+            clearTimeout(timer)
+            clearInterval(intervalRef.current)
+        }
+    }, [isConnected, isDemoMode, checkHealth])
+
+    return health
+}
+
+/**
+ * Small info icon with tooltip showing connection health.
+ */
+function ConnectionHealthIndicator({ health }) {
+    const statusMap = {
+        healthy: { dot: "bg-success", label: "Connection healthy", detail: "API responding normally" },
+        degraded: { dot: "bg-yellow-500", label: "Connection issue", detail: "API returned an error — token may have expired" },
+        error: { dot: "bg-destructive", label: "Connection failed", detail: "Could not reach GitLab API" },
+        unknown: { dot: "bg-muted-foreground", label: "Checking...", detail: "Verifying connection" },
+    }
+    const s = statusMap[health.status] || statusMap.unknown
+
+    const [timeAgoText, setTimeAgoText] = useState("Not checked yet")
+    useEffect(() => {
+        if (!health.lastChecked) return
+        const update = () => {
+            const secs = Math.max(0, Math.round((Date.now() - health.lastChecked) / 1000))
+            setTimeAgoText(secs < 5 ? "Checked just now" : `Checked ${secs}s ago`)
+        }
+        update()
+        const id = setInterval(update, 5_000)
+        return () => clearInterval(id)
+    }, [health.lastChecked])
+
+    return (
+        <TooltipProvider delayDuration={200}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className="inline-flex items-center cursor-help">
+                        <Info className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+                        <span className="font-medium">{s.label}</span>
+                    </div>
+                    <p className="text-muted-foreground">{s.detail}</p>
+                    <p className="text-muted-foreground mt-0.5">{timeAgoText}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+}
 
 /**
  * GitLab repository panel component.
@@ -32,13 +113,16 @@ export function GitLabRepoPanel({
     onImportRepo,
     className,
 }) {
+    const health = useConnectionHealth(isConnected, isDemoMode)
+
     return (
-        <Card className={`flex flex-col overflow-hidden transition-shadow hover:shadow-md min-h-[420px] ${className || ''}`}>
+        <Card className={`flex flex-col overflow-hidden card-hover-lift min-h-[420px] ${className || ''}`}>
             <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                 {isConnected && (
-                    <div className="flex items-center gap-1 mb-1">
-                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-[10px] sm:text-xs text-green-600">Connected</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                        <span className="text-[10px] sm:text-xs text-success">Connected</span>
+                        <ConnectionHealthIndicator health={health} />
                     </div>
                 )}
                 <div className="flex items-center justify-between gap-2">

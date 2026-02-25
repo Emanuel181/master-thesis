@@ -191,7 +191,7 @@ function VerifyRequestContent() {
                                         <Button
                                             key={provider.name}
                                             variant="outline"
-                                            className="h-20 flex flex-col gap-2 items-center justify-center p-2 hover:bg-muted/50 transition-colors"
+                                            className="h-20 flex flex-col gap-2 items-center justify-center p-2 hover:bg-muted/50 hover:border-primary/30 transition-all duration-150"
                                             asChild
                                         >
                                             <Link href={provider.url} target="_blank" rel="noopener noreferrer">

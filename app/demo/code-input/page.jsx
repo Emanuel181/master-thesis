@@ -12,9 +12,8 @@ const DEMO_GITHUB_KEY = 'vulniq_demo_github_connected';
 const DEMO_GITLAB_KEY = 'vulniq_demo_gitlab_connected';
 
 export default function DemoCodeInputPage() {
-    const { isCodeLocked, setIsCodeLocked } = useDemo();
     const { projectStructure, clearProject, currentRepo } = useProject();
-    
+
     const [code, setCode] = useState('');
     const [codeType, setCodeType] = useState("demo-sql-injection"); // Default to SQL injection category
 
@@ -24,14 +23,14 @@ export default function DemoCodeInputPage() {
     useEffect(() => {
         const isGithubConnected = localStorage.getItem(DEMO_GITHUB_KEY) === 'true';
         const isGitlabConnected = localStorage.getItem(DEMO_GITLAB_KEY) === 'true';
-        
+
         let shouldClear = false;
-        
+
         // If there's a project but no repo connection, clear it
         if (projectStructure && !isGithubConnected && !isGitlabConnected) {
             shouldClear = true;
         }
-        
+
         // If there's a project from a provider that's no longer connected, clear it
         if (currentRepo) {
             if (currentRepo.provider === 'github' && !isGithubConnected) {
@@ -40,7 +39,7 @@ export default function DemoCodeInputPage() {
                 shouldClear = true;
             }
         }
-        
+
         if (shouldClear) {
             clearProject();
         }
@@ -50,13 +49,11 @@ export default function DemoCodeInputPage() {
     return (
         <PageErrorBoundary pageName="Code input">
             <PageTransition pageKey="demo-code-input" variant="default">
-                <CodeInput 
-                    code={code} 
-                    setCode={setCode} 
-                    codeType={codeType} 
-                    setCodeType={setCodeType} 
-                    isLocked={isCodeLocked} 
-                    onLockChange={setIsCodeLocked} 
+                <CodeInput
+                    code={code}
+                    setCode={setCode}
+                    codeType={codeType}
+                    setCodeType={setCodeType}
                 />
             </PageTransition>
         </PageErrorBoundary>

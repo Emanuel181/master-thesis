@@ -16,7 +16,7 @@ export function CurrentProjectCard({
     className,
 }) {
     return (
-        <Card className={`flex flex-col transition-shadow hover:shadow-md shrink-0 ${className || ''}`}>
+        <Card className={`flex flex-col card-hover-lift shrink-0 ${className || ''}`}>
             <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
@@ -29,7 +29,7 @@ export function CurrentProjectCard({
             <CardContent className="pt-2 pb-2 px-2.5 sm:px-4">
                 {currentRepo ? (
                     <div className="flex flex-col gap-2">
-                        <div className="p-2.5 border rounded-lg bg-muted/20 transition-colors hover:bg-muted/30">
+                        <div className="p-2.5 border rounded-lg bg-muted/20 transition-colors hover:bg-muted/40">
                             <div className="flex items-center gap-2 mb-1.5">
                                 {currentRepo.provider === 'gitlab' ? (
                                     <GitlabIcon className="h-4 w-4" />
@@ -48,7 +48,7 @@ export function CurrentProjectCard({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="flex-1 h-8 transition-colors"
+                                className="flex-1 h-8 btn-press"
                                 onClick={onOpenInEditor}
                             >
                                 <FolderOpen className="h-3 w-3 mr-2" />
@@ -57,7 +57,7 @@ export function CurrentProjectCard({
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                className="flex-1 h-8"
+                                className="flex-1 h-8 btn-press"
                                 onClick={onUnload}
                             >
                                 <FolderX className="h-3 w-3 mr-2" />

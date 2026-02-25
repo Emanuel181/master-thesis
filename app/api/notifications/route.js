@@ -2,12 +2,13 @@
  * Notifications API Routes
  * =========================
  * 
- * GET /api/notifications - Get user's notifications
- * POST /api/notifications - Mark all notifications as read
+ * GET    /api/notifications - Get user's notifications
+ * POST   /api/notifications - Actions (markAllRead, deleteAll)
+ * DELETE /api/notifications - Delete all notifications for user
  */
 
 import { createApiHandler, ApiErrors } from '@/lib/api-handler';
-import { getUserNotifications, markAllNotificationsAsRead } from '@/lib/notifications';
+import { getUserNotifications, markAllNotificationsAsRead, deleteAllNotifications } from '@/lib/notifications';
 import { z } from 'zod';
 import { paginationSchema } from '@/lib/validators/common';
 
@@ -18,7 +19,7 @@ const notificationsQuerySchema = paginationSchema.extend({
 
 // Body schema for POST /api/notifications
 const notificationsActionSchema = z.object({
-    action: z.enum(['markAllRead']),
+    action: z.enum(['markAllRead', 'deleteAll']),
 }).strict();
 
 /**
@@ -44,7 +45,7 @@ export const GET = createApiHandler(
 );
 
 /**
- * POST /api/notifications - Mark all notifications as read
+ * POST /api/notifications - Bulk actions
  */
 export const POST = createApiHandler(
     async (request, { session, body }) => {
@@ -55,7 +56,11 @@ export const POST = createApiHandler(
             return { count: result.count };
         }
 
-        // This shouldn't happen due to schema validation, but just in case
+        if (action === 'deleteAll') {
+            const result = await deleteAllNotifications(session.user.id);
+            return { count: result.count };
+        }
+
         return ApiErrors.badRequest('Invalid action');
     },
     {

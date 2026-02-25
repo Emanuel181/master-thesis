@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Play, Clipboard, Wand2, RefreshCw, Lock, Unlock, Check, FileCode2, FolderOpen, X } from "lucide-react";
+import { Play, Clipboard, Wand2, RefreshCw, Lock, LockOpen, Check, FileCode2, FolderOpen, X } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { formatCode } from "@/lib/code-formatter";
 import { useSettings, editorThemes, editorFonts, editorFontSizes, syntaxColorPresets } from "@/contexts/settingsContext";
@@ -810,7 +810,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                                         onClick={() => onLockChange(!isLocked)}
                                         className={isLocked ? "bg-red-500 hover:bg-red-600 text-white" : ""}
                                     >
-                                        {isLocked ? <Lock className="h-3.5 w-3.5 mr-2" /> : <Unlock className="h-3.5 w-3.5 mr-2" />}
+                                        {isLocked ? <Lock className="h-3.5 w-3.5 mr-2" /> : <LockOpen className="h-3.5 w-3.5 mr-2" />}
                                         {isLocked ? "Locked" : "Lock Code"}
                                     </Button>
                                 )}

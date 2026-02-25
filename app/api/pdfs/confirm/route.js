@@ -3,6 +3,7 @@
  * =======================
  * 
  * POST - Confirm PDF upload (save to database after successful S3 upload)
+ *        AND trigger vectorization in Bedrock Knowledge Base for RAG
  */
 
 import prisma from '@/lib/prisma';
@@ -12,11 +13,13 @@ import { createApiHandler, ApiErrors, errorResponse } from '@/lib/api-handler';
 import { validateS3Key } from '@/lib/api-security';
 import { isDemoRequest } from '@/lib/demo-mode';
 import { cuidSchema } from '@/lib/validators/common.js';
+import { triggerVectorization } from '@/lib/vectorization';
 
 // Security constants
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
+const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12MB max
 const MAX_FILENAME_LENGTH = 255;
 const MAX_S3_KEY_LENGTH = 1024;
+const MAX_PDFS_PER_USER = 4;
 
 /**
  * Confirm upload schema
@@ -37,6 +40,8 @@ const confirmUploadSchema = z.object({
         .max(MAX_FILE_SIZE, `fileSize must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`),
     useCaseId: cuidSchema,
     folderId: cuidSchema.optional().nullable(),
+    // Result from the pre-scan endpoint (if available)
+    scanVerdict: z.enum(['clean', 'skipped', 'error']).optional().default('clean'),
 });
 
 /**
@@ -54,7 +59,7 @@ export const POST = createApiHandler(
             return ApiErrors.notFound('User', requestId);
         }
 
-        const { s3Key, fileName, fileSize, useCaseId, folderId } = body;
+        const { s3Key, fileName, fileSize, useCaseId, folderId, scanVerdict } = body;
 
         // Environment-aware s3Key validation
         const env = isDemoRequest(request) ? 'demo' : 'prod';
@@ -109,6 +114,17 @@ export const POST = createApiHandler(
             return { pdf: { ...existing, url } };
         }
 
+        // Enforce per-user PDF limit (defense-in-depth — also checked in presigned URL route)
+        const currentPdfCount = await prisma.pdf.count({
+            where: { useCase: { userId: user.id } },
+        });
+        if (currentPdfCount >= MAX_PDFS_PER_USER) {
+            return errorResponse(
+                `You have reached the maximum of ${MAX_PDFS_PER_USER} PDFs. Please delete an existing PDF before uploading a new one.`,
+                { status: 403, code: 'PDF_LIMIT_EXCEEDED', requestId }
+            );
+        }
+
         // Get the max order in the target location
         const maxOrderResult = await prisma.pdf.aggregate({
             where: {
@@ -145,6 +161,29 @@ export const POST = createApiHandler(
                 folderId: folderId || null,
                 order: newOrder,
             },
+        });
+
+        // ── Record scan result and trigger vectorization ─────────────────────
+        // Security scanning happened BEFORE S3 upload (via /api/pdfs/pre-scan).
+        // Just record the verdict and start vectorization.
+        const virusScanStatus = scanVerdict === 'clean' ? 'clean'
+            : scanVerdict === 'skipped' ? 'skipped'
+            : scanVerdict === 'error' ? 'error'
+            : 'clean';
+
+        await prisma.pdf.update({
+            where: { id: pdf.id },
+            data: {
+                virusScanStatus,
+                ...(virusScanStatus === 'clean' || virusScanStatus === 'skipped'
+                    ? { virusScannedAt: new Date() }
+                    : {}),
+            },
+        });
+
+        // Trigger vectorization in background (only for clean/skipped scans)
+        triggerVectorization(pdf.id, user.id, fileName).catch(err => {
+            console.error(`[pdfs/confirm] Background vectorization failed for PDF ${pdf.id}:`, err.message);
         });
 
         // Return fresh URL for immediate use in UI

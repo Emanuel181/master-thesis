@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 
@@ -17,21 +18,34 @@ import { usePanelLayout } from "@/hooks/use-panel-layout"
 
 // Components
 import { GitHubRepoPanel, GitLabRepoPanel } from "./_components/repo-panel"
-import { PromptPanel, ViewPromptDialog, EditPromptDialog, DeleteConfirmDialog } from "./_components/prompt-panel"
-import { SwapButton, CurrentProjectCard, ImportProgressDialog } from "./_components/panel-layout"
+import { PromptPanel, ViewPromptDialog, EditPromptDialog, DeleteConfirmDialog, ResetConfirmDialog } from "./_components/prompt-panel"
+import { CurrentProjectCard, ImportProgressDialog, LayoutCustomizer } from "./_components/panel-layout"
+import {
+    WelcomeBanner,
+    SecurityStatsCards,
+    RecentScansCard,
+    TopVulnerabilitiesCard,
+    useDashboardOverview,
+    MAX_SCANS,
+} from "./_components/dashboard-overview"
+import { NewScanDialog } from "./_components/new-scan-dialog"
 
 // Utils
 import { fetchRepoTree } from "@/lib/github-api"
 
 /**
  * HomePage component - Main dashboard for repository and prompt management.
- * Refactored to use custom hooks and extracted sub-components.
+ * Sections are rendered in user-customizable order via the layout hook.
  */
-export function HomePage() {
+export function HomePage({ onNavigate }) {
     const router = useRouter()
     const pathname = usePathname()
     const isDemoMode = pathname?.startsWith('/demo')
-    
+    const { data: session } = useSession()
+
+    // Dashboard overview data
+    const overview = useDashboardOverview()
+
     // Project context
     const { 
         setProjectStructure, 
@@ -51,6 +65,42 @@ export function HomePage() {
 
     // Import state
     const [importingRepo, setImportingRepo] = useState(null)
+
+    // New scan dialog
+    const [newScanOpen, setNewScanOpen] = useState(false)
+
+    const handleOpenNewScan = () => {
+        // Enforce 3-scan limit
+        if (overview.recentRuns.length >= MAX_SCANS) {
+            toast.error(`You can have a maximum of ${MAX_SCANS} scans. Delete an existing scan first.`)
+            return
+        }
+        setNewScanOpen(true)
+    }
+
+    const handleStartScan = async (scanConfig) => {
+        if (scanConfig.type === "repository") {
+            // Import repo then navigate to code input
+            await handleImportRepo({
+                ...scanConfig.repo,
+                scanName: scanConfig.name,
+                scanBranch: scanConfig.branch,
+            })
+        } else if (scanConfig.type === "upload") {
+            // For ZIP upload - store the file info and navigate to code input
+            toast.success(`Project "${scanConfig.name}" ready for scanning`)
+            onNavigate({ title: "Code input" })
+        } else if (scanConfig.type === "oss") {
+            // URL already validated & sanitized by the dialog (SSRF-safe)
+            await handleImportRepo({
+                full_name: `${scanConfig.owner}/${scanConfig.repo}`,
+                name: scanConfig.repo,
+                provider: scanConfig.provider,
+                id: `oss-${Date.now()}`,
+                scanName: scanConfig.name,
+            })
+        }
+    }
 
     // Import repository handler
     const handleImportRepo = async (repo) => {
@@ -117,121 +167,198 @@ export function HomePage() {
         router.push(isDemoMode ? "/demo/code-input" : "/dashboard?active=Code%20input")
     }
 
-    return (
-        <ScrollArea className="flex-1 h-full">
-            <div className="flex flex-col gap-2 p-2 sm:p-3 pt-0 pb-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 auto-rows-min relative">
-                    {/* Swap button between columns */}
-                    <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                        <SwapButton 
-                            onClick={layout.handleSwapColumns} 
-                            title="Swap left and right columns"
-                            rotate
-                        />
-                    </div>
+    // ── Section renderers ───────────────────────────────────────────────────
 
-                    {/* Left Column - GitHub & GitLab */}
-                    <div className={`flex flex-col gap-2 sm:gap-3 min-h-0 relative ${layout.columnsSwapped ? 'order-2 lg:order-2' : 'order-2 lg:order-1'}`}>
-                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                            <SwapButton 
-                                onClick={layout.handleSwapRepoPanels} 
-                                title="Swap GitHub and GitLab positions"
-                            />
-                        </div>
+    const renderWelcome = () => {
+        if (!onNavigate) return null
+        return (
+            <WelcomeBanner
+                key="welcome"
+                userName={session?.user?.name}
+                onNavigate={onNavigate}
+                onNewScan={handleOpenNewScan}
+            />
+        )
+    }
 
-                        <GitHubRepoPanel
-                            repos={github.repos}
-                            isLoading={github.isLoading}
-                            isConnected={github.isConnected}
-                            isRefreshing={github.isRefreshing}
-                            searchTerm={github.searchTerm}
-                            setSearchTerm={github.setSearchTerm}
-                            currentPage={github.currentPage}
-                            setCurrentPage={github.setCurrentPage}
-                            paginatedRepos={github.paginatedRepos}
-                            totalPages={github.totalPages}
-                            totalCount={github.totalCount}
-                            status={github.status}
-                            isDemoMode={github.isDemoMode}
-                            connect={github.connect}
-                            disconnect={github.disconnect}
-                            refresh={github.refresh}
-                            importingRepo={importingRepo}
-                            onImportRepo={handleImportRepo}
-                            className={layout.repoSwapped ? 'order-2' : 'order-1'}
-                        />
+    const renderStats = () => (
+        <SecurityStatsCards key="stats" stats={overview.stats} isLoading={overview.isLoading} />
+    )
 
-                        <GitLabRepoPanel
-                            repos={gitlab.repos}
-                            isLoading={gitlab.isLoading}
-                            isConnected={gitlab.isConnected}
-                            isRefreshing={gitlab.isRefreshing}
-                            searchTerm={gitlab.searchTerm}
-                            setSearchTerm={gitlab.setSearchTerm}
-                            currentPage={gitlab.currentPage}
-                            setCurrentPage={gitlab.setCurrentPage}
-                            paginatedRepos={gitlab.paginatedRepos}
-                            totalPages={gitlab.totalPages}
-                            totalCount={gitlab.totalCount}
-                            status={gitlab.status}
-                            isDemoMode={gitlab.isDemoMode}
-                            connect={gitlab.connect}
-                            disconnect={gitlab.disconnect}
-                            refresh={gitlab.refresh}
-                            importingRepo={importingRepo}
-                            onImportRepo={handleImportRepo}
-                            className={layout.repoSwapped ? 'order-1' : 'order-2'}
-                        />
-                    </div>
+    const renderActivity = () => {
+        if (!onNavigate) return null
+        return (
+            <div key="activity" className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3">
+                <RecentScansCard
+                    runs={overview.recentRuns}
+                    isLoading={overview.isLoading}
+                    onNavigate={onNavigate}
+                    onRefresh={overview.refresh}
+                />
+                <TopVulnerabilitiesCard
+                    vulnerabilities={overview.topVulnerabilities}
+                    isLoading={overview.isLoading}
+                    onNavigate={onNavigate}
+                />
+            </div>
+        )
+    }
 
-                    {/* Right Column - Prompts & Current Project */}
-                    <div className={`flex flex-col gap-2 sm:gap-3 min-h-0 relative ${layout.columnsSwapped ? 'order-1 lg:order-1' : 'order-1 lg:order-2'}`}>
-                        <PromptPanel
-                            prompts={prompts.prompts}
-                            currentAgent={prompts.currentAgent}
-                            setCurrentAgent={prompts.setCurrentAgent}
-                            isRefreshing={prompts.isRefreshing}
-                            onRefresh={prompts.handleRefresh}
-                            isDialogOpen={prompts.isDialogOpen}
-                            setIsDialogOpen={prompts.setIsDialogOpen}
-                            newTitle={prompts.newTitle}
-                            setNewTitle={prompts.setNewTitle}
-                            newPrompt={prompts.newPrompt}
-                            setNewPrompt={prompts.setNewPrompt}
-                            onAddPrompt={prompts.handleAddPrompt}
-                            selectedPrompts={prompts.selectedPrompts}
-                            setSelectedPrompts={prompts.setSelectedPrompts}
-                            setDeleteDialog={prompts.setDeleteDialog}
-                            getPaginatedPrompts={prompts.getPaginatedPrompts}
-                            setAgentPage={prompts.setAgentPage}
-                            activeId={prompts.activeId}
-                            activeDragAgent={prompts.activeDragAgent}
-                            onDragStart={prompts.handleDragStart}
-                            onDragEnd={prompts.handleDragEnd}
-                            truncateText={prompts.truncateText}
-                            setViewFullTextPrompt={prompts.setViewFullTextPrompt}
-                            openEditDialog={prompts.openEditDialog}
-                            onMoveUp={prompts.handleMoveUp}
-                            onMoveDown={prompts.handleMoveDown}
-                            className={layout.rightSwapped ? 'order-2' : 'order-1'}
-                        />
+    const renderGitHubPanel = () => (
+        <GitHubRepoPanel
+            repos={github.repos}
+            isLoading={github.isLoading}
+            isConnected={github.isConnected}
+            isRefreshing={github.isRefreshing}
+            searchTerm={github.searchTerm}
+            setSearchTerm={github.setSearchTerm}
+            currentPage={github.currentPage}
+            setCurrentPage={github.setCurrentPage}
+            paginatedRepos={github.paginatedRepos}
+            totalPages={github.totalPages}
+            totalCount={github.totalCount}
+            status={github.status}
+            isDemoMode={github.isDemoMode}
+            connect={github.connect}
+            disconnect={github.disconnect}
+            refresh={github.refresh}
+            importingRepo={importingRepo}
+            onImportRepo={handleImportRepo}
+        />
+    )
 
-                        <div className="relative h-0 flex items-center justify-center z-10">
-                            <SwapButton 
-                                onClick={layout.handleSwapRightPanels} 
-                                title="Swap Prompts and Current Project positions"
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                            />
-                        </div>
+    const renderGitLabPanel = () => (
+        <GitLabRepoPanel
+            repos={gitlab.repos}
+            isLoading={gitlab.isLoading}
+            isConnected={gitlab.isConnected}
+            isRefreshing={gitlab.isRefreshing}
+            searchTerm={gitlab.searchTerm}
+            setSearchTerm={gitlab.setSearchTerm}
+            currentPage={gitlab.currentPage}
+            setCurrentPage={gitlab.setCurrentPage}
+            paginatedRepos={gitlab.paginatedRepos}
+            totalPages={gitlab.totalPages}
+            totalCount={gitlab.totalCount}
+            status={gitlab.status}
+            isDemoMode={gitlab.isDemoMode}
+            connect={gitlab.connect}
+            disconnect={gitlab.disconnect}
+            refresh={gitlab.refresh}
+            importingRepo={importingRepo}
+            onImportRepo={handleImportRepo}
+        />
+    )
 
+    const renderPromptPanel = () => (
+        <PromptPanel
+            prompts={prompts.prompts}
+            currentAgent={prompts.currentAgent}
+            setCurrentAgent={prompts.setCurrentAgent}
+            isRefreshing={prompts.isRefreshing}
+            onRefresh={prompts.handleRefresh}
+            isResetting={prompts.isResetting}
+            onResetToDefaults={prompts.handleResetToDefaults}
+            isDialogOpen={prompts.isDialogOpen}
+            setIsDialogOpen={prompts.setIsDialogOpen}
+            newTitle={prompts.newTitle}
+            setNewTitle={prompts.setNewTitle}
+            newPrompt={prompts.newPrompt}
+            setNewPrompt={prompts.setNewPrompt}
+            onAddPrompt={prompts.handleAddPrompt}
+            selectedPrompts={prompts.selectedPrompts}
+            setSelectedPrompts={prompts.setSelectedPrompts}
+            setDeleteDialog={prompts.setDeleteDialog}
+            getPaginatedPrompts={prompts.getPaginatedPrompts}
+            setAgentPage={prompts.setAgentPage}
+            activeId={prompts.activeId}
+            activeDragAgent={prompts.activeDragAgent}
+            onDragStart={prompts.handleDragStart}
+            onDragEnd={prompts.handleDragEnd}
+            truncateText={prompts.truncateText}
+            setViewFullTextPrompt={prompts.setViewFullTextPrompt}
+            openEditDialog={prompts.openEditDialog}
+            onMoveUp={prompts.handleMoveUp}
+            onMoveDown={prompts.handleMoveDown}
+        />
+    )
+
+    const renderRepos = () => (
+        <div key="repos" className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 auto-rows-min">
+            {/* Left Column - GitHub & GitLab */}
+            <div className={`flex flex-col gap-2 sm:gap-3 min-h-0 ${layout.columnsSwapped ? 'order-2 lg:order-2' : 'order-2 lg:order-1'}`}>
+                {layout.repoSwapped ? (
+                    <>
+                        {renderGitLabPanel()}
+                        {renderGitHubPanel()}
+                    </>
+                ) : (
+                    <>
+                        {renderGitHubPanel()}
+                        {renderGitLabPanel()}
+                    </>
+                )}
+            </div>
+
+            {/* Right Column - Prompts & Current Project */}
+            <div className={`flex flex-col gap-2 sm:gap-3 min-h-0 ${layout.columnsSwapped ? 'order-1 lg:order-1' : 'order-1 lg:order-2'}`}>
+                {layout.rightSwapped ? (
+                    <>
                         <CurrentProjectCard
                             currentRepo={currentRepo}
                             onOpenInEditor={handleOpenInEditor}
                             onUnload={handleUnloadProject}
-                            className={layout.rightSwapped ? 'order-1' : 'order-3'}
+                        />
+                        {renderPromptPanel()}
+                    </>
+                ) : (
+                    <>
+                        {renderPromptPanel()}
+                        <CurrentProjectCard
+                            currentRepo={currentRepo}
+                            onOpenInEditor={handleOpenInEditor}
+                            onUnload={handleUnloadProject}
+                        />
+                    </>
+                )}
+            </div>
+        </div>
+    )
+
+    // Map section ids to renderers
+    const sectionRenderers = {
+        welcome: renderWelcome,
+        stats: renderStats,
+        activity: renderActivity,
+        repos: renderRepos,
+    }
+
+    return (
+        <ScrollArea className="flex-1 h-full">
+            <div className="flex flex-col gap-2 p-2 sm:p-3 pt-0 pb-6">
+                {/* Layout customizer — top right */}
+                {onNavigate && (
+                    <div className="flex justify-end -mb-1">
+                        <LayoutCustomizer
+                            sectionOrder={layout.sectionOrder}
+                            onMoveUp={layout.moveSectionUp}
+                            onMoveDown={layout.moveSectionDown}
+                            onReset={layout.resetLayout}
+                            repoSwapped={layout.repoSwapped}
+                            rightSwapped={layout.rightSwapped}
+                            columnsSwapped={layout.columnsSwapped}
+                            onSwapRepos={layout.handleSwapRepoPanels}
+                            onSwapRight={layout.handleSwapRightPanels}
+                            onSwapColumns={layout.handleSwapColumns}
                         />
                     </div>
-                </div>
+                )}
+
+                {/* Render sections in user-defined order */}
+                {layout.sectionOrder.map(id => {
+                    const renderer = sectionRenderers[id]
+                    return renderer ? renderer() : null
+                })}
             </div>
 
             {/* Dialogs */}
@@ -257,7 +384,23 @@ export function HomePage() {
                 selectedCount={prompts.selectedPrompts.size}
             />
 
+            <ResetConfirmDialog
+                isOpen={prompts.resetConfirmOpen}
+                onClose={() => prompts.setResetConfirmOpen(false)}
+                onConfirm={prompts.confirmResetToDefaults}
+            />
+
             <ImportProgressDialog importingRepo={importingRepo} />
+
+            <NewScanDialog
+                open={newScanOpen}
+                onOpenChange={setNewScanOpen}
+                githubRepos={github.repos}
+                gitlabRepos={gitlab.repos}
+                isGithubConnected={github.isConnected}
+                isGitlabConnected={gitlab.isConnected}
+                onStartScan={handleStartScan}
+            />
         </ScrollArea>
     )
 }

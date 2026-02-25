@@ -18,12 +18,12 @@ import { FullscreenEditor } from "./fullscreen-editor"
 // Status configuration with icons
 const STATUS_CONFIG = {
     DRAFT: { label: "Draft", icon: FileText, color: "bg-secondary text-secondary-foreground" },
-    PENDING_REVIEW: { label: "Pending", icon: Clock, color: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400" },
-    IN_REVIEW: { label: "In review", icon: Eye, color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-    PUBLISHED: { label: "Published", icon: CheckCircle, color: "bg-green-500/15 text-green-600 dark:text-green-400" },
-    APPROVED: { label: "Published", icon: CheckCircle, color: "bg-green-500/15 text-green-600 dark:text-green-400" },
-    REJECTED: { label: "Rejected", icon: XCircle, color: "bg-red-500/15 text-red-600 dark:text-red-400" },
-    SCHEDULED_FOR_DELETION: { label: "Pending deletion", icon: Trash2, color: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
+    PENDING_REVIEW: { label: "Pending", icon: Clock, color: "bg-severity-medium/15 text-severity-medium" },
+    IN_REVIEW: { label: "In review", icon: Eye, color: "bg-primary/15 text-primary" },
+    PUBLISHED: { label: "Published", icon: CheckCircle, color: "bg-success/15 text-success" },
+    APPROVED: { label: "Published", icon: CheckCircle, color: "bg-success/15 text-success" },
+    REJECTED: { label: "Rejected", icon: XCircle, color: "bg-destructive/15 text-destructive" },
+    SCHEDULED_FOR_DELETION: { label: "Pending deletion", icon: Trash2, color: "bg-severity-high/15 text-severity-high" },
 }
 
 /**
@@ -51,6 +51,10 @@ export function ArticleEditor() {
     const handleCreateArticle = async () => {
         const newArticle = await articles.createArticle()
         if (newArticle) {
+            // Switch to 'all' or 'draft' tab to show the new article
+            if (articles.activeTab !== 'all' && articles.activeTab !== 'draft') {
+                articles.setActiveTab('draft')
+            }
             articles.setSelectedArticle(newArticle)
             form.initializeForm(newArticle)
         }

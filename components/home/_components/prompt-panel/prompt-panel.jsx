@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RefreshCw, Trash2, MessageSquare } from "lucide-react"
+import { RefreshCw, Trash2, MessageSquare, RotateCcw } from "lucide-react"
 import { PromptList } from "./prompt-list"
 import { AddPromptDialog } from "./prompt-dialogs"
 
@@ -19,6 +19,9 @@ export function PromptPanel({
     setCurrentAgent,
     isRefreshing,
     onRefresh,
+    // Reset props
+    isResetting,
+    onResetToDefaults,
     // Add dialog props
     isDialogOpen,
     setIsDialogOpen,
@@ -56,6 +59,16 @@ export function PromptPanel({
                         <span className="truncate">Agent prompts</span>
                     </CardTitle>
                     <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                            onClick={onResetToDefaults}
+                            disabled={isResetting || isRefreshing}
+                            title="Reset to default prompts"
+                        >
+                            <RotateCcw className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`} />
+                        </Button>
                         <Button
                             variant="outline"
                             size="sm"

@@ -91,7 +91,7 @@ export function ThemeToggleButton({
     <button
       onClick={handleClick}
       disabled={isAnimating}
-      className={`relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background hover:bg-accent transition-colors disabled:opacity-50 ${className}`}
+      className={`relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background hover:bg-accent hover:border-primary/30 transition-all duration-150 disabled:opacity-50 ${className}`}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
       {isDark ? (

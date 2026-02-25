@@ -2,9 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Briefcase, FileText, MapPin, Mail, Phone, Building2, Lock } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 // Demo profile data
 const DEMO_PROFILE = {
@@ -87,19 +91,22 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                 throw new Error('Failed to fetch profile');
             }
 
-            const data = await response.json();
+            const responseData = await response.json();
+            // Handle wrapped response: { success: true, data: { user: {...} } }
+            const data = responseData.data || responseData;
+            const user = data.user || data;
 
             // Double-check mount status before state update
             if (isMountedRef.current && fetchId === fetchIdRef.current) {
                 setProfile({
-                    firstName: data.user.firstName || '',
-                    lastName: data.user.lastName || '',
-                    email: data.user.email || '',
-                    phone: data.user.phone || '',
-                    jobTitle: data.user.jobTitle || '',
-                    company: data.user.company || '',
-                    bio: data.user.bio || '',
-                    location: data.user.location || '',
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                    email: user.email || '',
+                    phone: user.phone || '',
+                    jobTitle: user.jobTitle || '',
+                    company: user.company || '',
+                    bio: user.bio || '',
+                    location: user.location || '',
                 });
             }
         } catch (error) {
@@ -244,119 +251,200 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
     return (
         <Card className="transition-shadow hover:shadow-md">
             <CardHeader className="px-4 sm:px-6">
-                <div className="space-y-1">
-                    <CardTitle className="text-lg sm:text-xl">Personal Information</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Update your personal details and profile information.</CardDescription>
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                            <User className="h-5 w-5 text-primary" />
+                            Personal Information
+                        </CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Update your personal details and profile information.</CardDescription>
+                    </div>
+                    {isEditing && (
+                        <Badge variant="outline" className="text-[10px] h-5 gap-1 text-primary border-primary/30 hidden sm:inline-flex">
+                            Editing mode
+                        </Badge>
+                    )}
                 </div>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6 pt-4 sm:pt-6 px-4 sm:px-6">
-                {/* ID matches the Button form attribute in ProfileHeader */}
-                <form id="profile-form" onSubmit={handleSave} className="space-y-4 sm:space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="firstName">First name</Label>
-                            <Input
-                                id="firstName"
-                                value={profile.firstName}
-                                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                placeholder="First name"
-                                maxLength={100}
-                                readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                            />
+            <CardContent className="space-y-4 sm:space-y-6 pt-2 sm:pt-4 px-4 sm:px-6">
+                <form id="profile-form" onSubmit={handleSave} className="space-y-6">
+                    {/* Identity Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <User className="h-3.5 w-3.5" />
+                            <span>Identity</span>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="lastName">Last name</Label>
-                            <Input
-                                id="lastName"
-                                value={profile.lastName}
-                                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                placeholder="Last name"
-                                maxLength={100}
-                                readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={profile.email}
-                                // ALWAYS READ ONLY
-                                readOnly={true}
-                                placeholder="Email address"
-                                className="bg-muted text-muted-foreground opacity-100"
-                            />
-                            <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
-                            <Input
-                                id="phone"
-                                value={profile.phone}
-                                onChange={(e) => handleInputChange('phone', e.target.value)}
-                                placeholder="Phone number"
-                                maxLength={20}
-                                readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="jobTitle">Job title</Label>
-                            <Input
-                                id="jobTitle"
-                                value={profile.jobTitle}
-                                onChange={(e) => handleInputChange('jobTitle', e.target.value)}
-                                placeholder="Job title"
-                                maxLength={100}
-                                readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="company">Company</Label>
-                            <Input
-                                id="company"
-                                value={profile.company}
-                                onChange={(e) => handleInputChange('company', e.target.value)}
-                                placeholder="Company name"
-                                maxLength={100}
-                                readOnly={!isEditing}
-                                className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                            />
+                        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="firstName" className="text-xs">First name</Label>
+                                <Input
+                                    id="firstName"
+                                    value={profile.firstName}
+                                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                    placeholder="First name"
+                                    maxLength={100}
+                                    readOnly={!isEditing}
+                                    className={cn(
+                                        "transition-all",
+                                        !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                    )}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="lastName" className="text-xs">Last name</Label>
+                                <Input
+                                    id="lastName"
+                                    value={profile.lastName}
+                                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                                    placeholder="Last name"
+                                    maxLength={100}
+                                    readOnly={!isEditing}
+                                    className={cn(
+                                        "transition-all",
+                                        !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                    )}
+                                />
+                            </div>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="bio">Bio</Label>
-                        <Textarea
-                            id="bio"
-                            placeholder="Tell us about yourself..."
-                            value={profile.bio}
-                            onChange={(e) => handleInputChange('bio', e.target.value)}
-                            rows={4}
-                            maxLength={1000}
-                            readOnly={!isEditing}
-                            className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            {profile.bio.length}/1000 characters
-                        </p>
+
+                    <Separator />
+
+                    {/* Contact Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Mail className="h-3.5 w-3.5" />
+                            <span>Contact</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-xs flex items-center gap-1.5">
+                                    Email
+                                    <Lock className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={profile.email}
+                                    readOnly={true}
+                                    placeholder="Email address"
+                                    className="bg-muted/50 text-foreground border-transparent"
+                                />
+                                <p className="text-[10px] text-muted-foreground">Email cannot be changed</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone" className="text-xs">Phone</Label>
+                                <Input
+                                    id="phone"
+                                    value={profile.phone}
+                                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                                    placeholder="Phone number"
+                                    maxLength={20}
+                                    readOnly={!isEditing}
+                                    className={cn(
+                                        "transition-all",
+                                        !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                    )}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                            id="location"
-                            value={profile.location}
-                            onChange={(e) => handleInputChange('location', e.target.value)}
-                            placeholder="Location"
-                            maxLength={100}
-                            readOnly={!isEditing}
-                            className={!isEditing ? "bg-muted text-muted-foreground opacity-100" : ""}
-                        />
+
+                    <Separator />
+
+                    {/* Professional Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Briefcase className="h-3.5 w-3.5" />
+                            <span>Professional</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="jobTitle" className="text-xs">Job title</Label>
+                                <Input
+                                    id="jobTitle"
+                                    value={profile.jobTitle}
+                                    onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                                    placeholder="Job title"
+                                    maxLength={100}
+                                    readOnly={!isEditing}
+                                    className={cn(
+                                        "transition-all",
+                                        !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                    )}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="company" className="text-xs">Company</Label>
+                                <Input
+                                    id="company"
+                                    value={profile.company}
+                                    onChange={(e) => handleInputChange('company', e.target.value)}
+                                    placeholder="Company name"
+                                    maxLength={100}
+                                    readOnly={!isEditing}
+                                    className={cn(
+                                        "transition-all",
+                                        !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* About Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <FileText className="h-3.5 w-3.5" />
+                            <span>About</span>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="bio" className="text-xs">Bio</Label>
+                                <span className={cn(
+                                    "text-[10px] tabular-nums",
+                                    profile.bio.length > 900 ? "text-amber-500" : "text-muted-foreground",
+                                    profile.bio.length >= 1000 && "text-destructive"
+                                )}>
+                                    {profile.bio.length}/1000
+                                </span>
+                            </div>
+                            <Textarea
+                                id="bio"
+                                placeholder="Tell us about yourself..."
+                                value={profile.bio}
+                                onChange={(e) => handleInputChange('bio', e.target.value)}
+                                rows={4}
+                                maxLength={1000}
+                                readOnly={!isEditing}
+                                className={cn(
+                                    "transition-all resize-none",
+                                    !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                )}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="location" className="text-xs flex items-center gap-1.5">
+                                <MapPin className="h-3 w-3" />
+                                Location
+                            </Label>
+                            <Input
+                                id="location"
+                                value={profile.location}
+                                onChange={(e) => handleInputChange('location', e.target.value)}
+                                placeholder="Location"
+                                maxLength={100}
+                                readOnly={!isEditing}
+                                className={cn(
+                                    "transition-all",
+                                    !isEditing ? "bg-muted/50 text-foreground border-transparent" : "border-input"
+                                )}
+                            />
+                        </div>
                     </div>
                 </form>
-                {/* Removed the duplicate buttons here; Header handles them */}
             </CardContent>
         </Card>
     );

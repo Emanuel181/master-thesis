@@ -37,22 +37,26 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { QuickFileSwitcherProvider } from "@/components/ui/quick-file-switcher";
 import { SharedDndProvider } from "@/components/ui/dnd-provider";
 import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog";
-import { Keyboard, PersonStanding, Sparkles, Home } from "lucide-react";
+import { PersonStanding, Sparkles, Home, Search } from "lucide-react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 
-// Command palette trigger button component
+// Command palette search bar trigger component
 function CommandPaletteTrigger() {
     const { setOpen } = useCommandPalette()
 
     return (
-        <Button
-            variant="outline"
-            size="icon"
+        <button
             onClick={() => setOpen(true)}
             title="Command palette (Ctrl+K)"
+            aria-label="Open command palette"
+            className="inline-flex items-center gap-2 h-8 sm:h-9 px-2.5 sm:px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer w-40 sm:w-52 md:w-64"
         >
-            <Keyboard className="h-5 w-5" />
-        </Button>
+            <Search className="h-3.5 w-3.5 shrink-0" />
+            <span className="flex-1 text-left text-xs truncate">Search actions...</span>
+            <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                ⌘K
+            </kbd>
+        </button>
     )
 }
 
@@ -89,17 +93,16 @@ function DemoLayoutContent({ settings, mounted, children }) {
     const { enableDemoMode } = useDemo();
     const router = useRouter();
     const pathname = usePathname();
-    
+
     // Determine active component from pathname
     const currentSegment = pathname.split('/').pop() || 'home';
     const activeComponent = routeToComponent[currentSegment] || 'Home';
-    
+
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/demo/home" }])
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
     const [codeType, setCodeType] = useState("JavaScript");
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    // Use shared isCodeLocked state from DemoContext
-    const { isCodeLocked } = useDemo();
+
 
     // Enable demo mode on mount
     // NOTE: Project structure is NOT auto-loaded - user must import a repo from GitHub/GitLab
@@ -139,16 +142,13 @@ function DemoLayoutContent({ settings, mounted, children }) {
     // Update sidebar state when sidebarMode setting changes
     useEffect(() => {
         if (mounted) {
-            setSidebarOpen(settings.sidebarMode !== 'icon')
+            const nextOpen = settings.sidebarMode !== 'icon';
+            setSidebarOpen(prev => prev === nextOpen ? prev : nextOpen);
         }
     }, [settings.sidebarMode, mounted])
 
     const handleNavigation = useCallback((item) => {
         if (item.title === "Workflow configuration") {
-            if (!isCodeLocked) {
-                // Don't open workflow config if code is not locked
-                return;
-            }
             setIsModelsDialogOpen(true)
             return
         }
@@ -171,7 +171,7 @@ function DemoLayoutContent({ settings, mounted, children }) {
         if (route) {
             router.push(route);
         }
-    }, [router, setIsModelsDialogOpen, setIsFeedbackOpen, isCodeLocked]);
+    }, [router, setIsModelsDialogOpen, setIsFeedbackOpen]);
 
     const handleExitDemo = () => {
         router.push('/');
@@ -184,7 +184,6 @@ function DemoLayoutContent({ settings, mounted, children }) {
                     <OnboardingProvider>
                         <CommandPaletteProvider
                             onNavigate={handleNavigation}
-                            isCodeLocked={isCodeLocked}
                             activeComponent={activeComponent}
                         >
                             <QuickFileSwitcherProvider
@@ -201,7 +200,7 @@ function DemoLayoutContent({ settings, mounted, children }) {
                                     open={sidebarOpen}
                                     onOpenChange={setSidebarOpen}
                                 >
-                                    <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked} activeComponent={activeComponent}/>
+                                    <AppSidebar onNavigate={handleNavigation} activeComponent={activeComponent} />
                                     <SidebarInset className="flex flex-col overflow-hidden">
                                         <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
                                             <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>
@@ -260,11 +259,10 @@ function DemoLayoutContent({ settings, mounted, children }) {
                                                 </div>
                                             </div>
                                         </header>
-                                        <div id="main-content" className={`flex-1 flex flex-col overflow-hidden w-full ${
-                                            settings.contentLayout === 'centered' && activeComponent !== 'Home' 
-                                                ? 'mx-auto max-w-full sm:max-w-5xl px-2 sm:px-3 md:px-4' 
-                                                : 'px-2 sm:px-3 md:px-4'
-                                        } pb-safe`}>
+                                        <div id="main-content" className={`flex-1 flex flex-col overflow-hidden w-full ${settings.contentLayout === 'centered' && activeComponent !== 'Home'
+                                            ? 'mx-auto max-w-full sm:max-w-5xl px-2 sm:px-3 md:px-4'
+                                            : 'px-2 sm:px-3 md:px-4'
+                                            } pb-safe`}>
                                             {children}
                                         </div>
                                     </SidebarInset>

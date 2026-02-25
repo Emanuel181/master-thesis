@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { usePathname } from "next/navigation"
 import { useUseCases } from "@/contexts/useCasesContext"
@@ -8,9 +8,12 @@ import { usePrompts } from "@/contexts/promptsContext"
 import { DEMO_DOCUMENTS } from "@/contexts/demoContext"
 import { toast } from "sonner"
 
-// Available AWS Bedrock models (matching Terraform configuration)
+// Available AWS Bedrock models with human-friendly names
 const DEMO_MODELS = [
-    "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    { id: "anthropic.claude-3-5-sonnet-20241022-v2:0", name: "Claude 3.5 Sonnet v2", provider: "Anthropic", description: "State-of-the-art for software engineering and agentic tasks" },
+    { id: "anthropic.claude-3-5-haiku-20241022-v1:0", name: "Claude 3.5 Haiku", provider: "Anthropic", description: "Fastest and most cost-effective model" },
+    { id: "anthropic.claude-3-sonnet-20240229-v1:0", name: "Claude 3 Sonnet", provider: "Anthropic", description: "Balanced intelligence and speed for enterprise workloads" },
+    { id: "anthropic.claude-3-haiku-20240307-v1:0", name: "Claude 3 Haiku", provider: "Anthropic", description: "Fast, compact model for near-instant responses" },
 ]
 
 const MODELS_PER_PAGE = 5
@@ -25,14 +28,63 @@ export function useModelsDialog({ codeType }) {
     const pathname = usePathname()
     const isDemoMode = pathname?.startsWith('/demo')
 
-    // Agent model selections
-    const [reviewerModel, setReviewerModel] = useState("")
-    const [implementationModel, setImplementationModel] = useState("")
-    const [testerModel, setTesterModel] = useState("")
-    const [reportModel, setReportModel] = useState("")
+    // Agent model selections - initialize from localStorage if available
+    const [reviewerModel, setReviewerModel] = useState(() => {
+        if (typeof window === 'undefined') return ""
+        try {
+            const saved = localStorage.getItem('vulniq_agent_configurations')
+            if (saved) {
+                const config = JSON.parse(saved)
+                return config.reviewer?.modelId || ""
+            }
+        } catch {}
+        return ""
+    })
+    const [implementationModel, setImplementationModel] = useState(() => {
+        if (typeof window === 'undefined') return ""
+        try {
+            const saved = localStorage.getItem('vulniq_agent_configurations')
+            if (saved) {
+                const config = JSON.parse(saved)
+                return config.implementer?.modelId || ""
+            }
+        } catch {}
+        return ""
+    })
+    const [testerModel, setTesterModel] = useState(() => {
+        if (typeof window === 'undefined') return ""
+        try {
+            const saved = localStorage.getItem('vulniq_agent_configurations')
+            if (saved) {
+                const config = JSON.parse(saved)
+                return config.tester?.modelId || ""
+            }
+        } catch {}
+        return ""
+    })
+    const [reportModel, setReportModel] = useState(() => {
+        if (typeof window === 'undefined') return ""
+        try {
+            const saved = localStorage.getItem('vulniq_agent_configurations')
+            if (saved) {
+                const config = JSON.parse(saved)
+                return config.reporter?.modelId || ""
+            }
+        } catch {}
+        return ""
+    })
 
-    // Knowledge base state
-    const [selectedKnowledgeBases, setSelectedKnowledgeBases] = useState([])
+    // Knowledge base state - initialize from localStorage if available
+    const [selectedKnowledgeBases, setSelectedKnowledgeBases] = useState(() => {
+        if (typeof window === 'undefined') return []
+        try {
+            const saved = localStorage.getItem('vulniq_selected_groups')
+            if (saved) {
+                return JSON.parse(saved)
+            }
+        } catch {}
+        return []
+    })
     const [kbDocumentCounts, setKbDocumentCounts] = useState({})
     const [expandedKb, setExpandedKb] = useState(null)
     const [kbPage, setKbPage] = useState(0)
@@ -92,7 +144,7 @@ export function useModelsDialog({ codeType }) {
 
     // Context hooks
     const { useCases, refresh: refreshUseCases } = useUseCases()
-    const { prompts, selectedPrompts, handlePromptChange } = usePrompts()
+    const { prompts, selectedPrompts, handlePromptChange, setPromptForAgent } = usePrompts()
 
     // Initialize document counts for demo mode
     useEffect(() => {
@@ -104,6 +156,119 @@ export function useModelsDialog({ codeType }) {
             setKbDocumentCounts(mockCounts)
         }
     }, [isDemoMode, useCases, kbDocumentCounts])
+
+    // Auto-persist selectedPrompts to localStorage for cross-tab sync
+    useEffect(() => {
+        if (selectedPrompts && Object.keys(selectedPrompts).length > 0) {
+            try {
+                localStorage.setItem('vulniq_selected_prompts', JSON.stringify(selectedPrompts))
+            } catch (err) {
+                console.error('Error auto-saving selected prompts:', err)
+            }
+        }
+    }, [selectedPrompts])
+
+    // Ref to track if we're syncing to prevent infinite loops
+    const isSyncingRef = useRef(false)
+    const initialSyncDoneRef = useRef(false)
+
+    // On mount: Sync selectedPrompts (context) -> selectedSystemPrompts (local)
+    // This ensures that if workflow tab already has selections, agents tab shows them
+    useEffect(() => {
+        if (initialSyncDoneRef.current) return
+
+        const agents = ['reviewer', 'implementation', 'tester', 'report']
+        const newSystemPrompts = { reviewer: '', implementation: '', tester: '', report: '' }
+        let hasSelections = false
+
+        agents.forEach(agent => {
+            const contextPromptIds = selectedPrompts[agent] || []
+            if (contextPromptIds.length > 0) {
+                newSystemPrompts[agent] = contextPromptIds[0]
+                hasSelections = true
+            }
+        })
+
+        if (hasSelections) {
+            setSelectedSystemPrompts(newSystemPrompts)
+        }
+        initialSyncDoneRef.current = true
+    }, [selectedPrompts])
+
+    // Create a wrapped setter for selectedSystemPrompts that also syncs to context
+    const setSelectedSystemPromptsWithSync = useCallback((newValueOrUpdater) => {
+        setSelectedSystemPrompts(prev => {
+            const newValue = typeof newValueOrUpdater === 'function'
+                ? newValueOrUpdater(prev)
+                : newValueOrUpdater
+
+            // Sync changes to context using setPromptForAgent (no toggle behavior)
+            if (!isSyncingRef.current) {
+                isSyncingRef.current = true
+                const agents = ['reviewer', 'implementation', 'tester', 'report']
+                agents.forEach(agent => {
+                    const newPromptId = newValue[agent]
+                    const oldPromptId = prev[agent]
+                    const contextPromptIds = selectedPrompts[agent] || []
+                    const contextFirstPrompt = contextPromptIds[0] || ''
+
+                    // Only update if there's an actual change and context doesn't match
+                    if (newPromptId !== oldPromptId && newPromptId !== contextFirstPrompt) {
+                        // Use setPromptForAgent for direct setting without toggle
+                        setPromptForAgent(agent, newPromptId || '')
+                    }
+                })
+                // Reset sync flag after a short delay to allow state to settle
+                setTimeout(() => { isSyncingRef.current = false }, 100)
+            }
+
+            return newValue
+        })
+    }, [selectedPrompts, setPromptForAgent])
+
+    // Continuous sync: selectedPrompts (context) -> selectedSystemPrompts (local)
+    // This ensures changes from Workflow visualization are reflected in Agents tab
+    useEffect(() => {
+        if (isSyncingRef.current) return // Don't sync while we're already syncing
+
+        const agents = ['reviewer', 'implementation', 'tester', 'report']
+        let needsUpdate = false
+        const newSystemPrompts = { ...selectedSystemPrompts }
+
+        agents.forEach(agent => {
+            const contextPromptIds = selectedPrompts[agent] || []
+            const currentSystemPrompt = selectedSystemPrompts[agent]
+
+            // If context has a selection
+            if (contextPromptIds.length > 0) {
+                const contextFirstPrompt = contextPromptIds[0]
+                // Update if local doesn't match context
+                if (currentSystemPrompt !== contextFirstPrompt) {
+                    newSystemPrompts[agent] = contextFirstPrompt
+                    needsUpdate = true
+                }
+            } else if (currentSystemPrompt && currentSystemPrompt !== 'none' && currentSystemPrompt !== '') {
+                // Context is empty but local has a value - clear local
+                newSystemPrompts[agent] = ''
+                needsUpdate = true
+            }
+        })
+
+        if (needsUpdate) {
+            setSelectedSystemPrompts(newSystemPrompts)
+        }
+    }, [selectedPrompts]) // Only depend on selectedPrompts to avoid loops
+
+    // Auto-persist selectedKnowledgeBases to localStorage for cross-tab sync
+    useEffect(() => {
+        if (selectedKnowledgeBases && selectedKnowledgeBases.length > 0) {
+            try {
+                localStorage.setItem('vulniq_selected_groups', JSON.stringify(selectedKnowledgeBases))
+            } catch (err) {
+                console.error('Error auto-saving selected knowledge bases:', err)
+            }
+        }
+    }, [selectedKnowledgeBases])
 
     // Auto-select knowledge base when codeType changes
     useEffect(() => {
@@ -124,7 +289,11 @@ export function useModelsDialog({ codeType }) {
     const getFilteredModels = useCallback((agent) => {
         const searchTerm = modelSearchTerm[agent] || ""
         if (!searchTerm) return models
-        return models.filter(model => model.toLowerCase().includes(searchTerm.toLowerCase()))
+        return models.filter(model =>
+            model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            model.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (model.provider || "").toLowerCase().includes(searchTerm.toLowerCase())
+        )
     }, [models, modelSearchTerm])
 
     const getPaginatedModels = useCallback((agent) => {
@@ -163,6 +332,20 @@ export function useModelsDialog({ codeType }) {
         report: reportModel,
     }
 
+    // Configuration readiness status
+    const configStatus = {
+        agents: {
+            reviewer: { hasModel: !!reviewerModel, hasPrompt: !!selectedSystemPrompts.reviewer },
+            implementation: { hasModel: !!implementationModel, hasPrompt: !!selectedSystemPrompts.implementation },
+            tester: { hasModel: !!testerModel, hasPrompt: !!selectedSystemPrompts.tester },
+            report: { hasModel: !!reportModel, hasPrompt: !!selectedSystemPrompts.report },
+        },
+        configuredAgents: [reviewerModel, implementationModel, testerModel, reportModel].filter(Boolean).length,
+        promptedAgents: [selectedSystemPrompts.reviewer, selectedSystemPrompts.implementation, selectedSystemPrompts.tester, selectedSystemPrompts.report].filter(Boolean).length,
+        totalAgents: 4,
+        selectedKbCount: selectedKnowledgeBases.length,
+    }
+
     // Handlers
     const handleModelChange = useCallback((agentId, model) => {
         switch(agentId) {
@@ -180,6 +363,49 @@ export function useModelsDialog({ codeType }) {
                 break
         }
     }, [])
+
+    // Helper to get prompt text by ID
+    const getPromptTextById = useCallback((agentId, promptId) => {
+        if (!promptId) return '';
+        const agentPrompts = prompts[agentId] || [];
+        const prompt = agentPrompts.find(p => p.id === promptId);
+        return prompt?.text || '';
+    }, [prompts]);
+
+    // Auto-persist agent models + prompts whenever they change (single source of truth)
+    useEffect(() => {
+        try {
+            const agentConfigurations = {
+                reviewer: {
+                    enabled: true,
+                    modelId: reviewerModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: getPromptTextById('reviewer', selectedSystemPrompts.reviewer),
+                    promptId: selectedSystemPrompts.reviewer || '',
+                },
+                implementer: {
+                    enabled: !!implementationModel,
+                    modelId: implementationModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: getPromptTextById('implementation', selectedSystemPrompts.implementation),
+                    promptId: selectedSystemPrompts.implementation || '',
+                },
+                tester: {
+                    enabled: !!testerModel,
+                    modelId: testerModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: getPromptTextById('tester', selectedSystemPrompts.tester),
+                    promptId: selectedSystemPrompts.tester || '',
+                },
+                reporter: {
+                    enabled: true,
+                    modelId: reportModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    customPrompt: getPromptTextById('report', selectedSystemPrompts.report),
+                    promptId: selectedSystemPrompts.report || '',
+                },
+            }
+            localStorage.setItem('vulniq_agent_configurations', JSON.stringify(agentConfigurations))
+        } catch (err) {
+            console.error('Error auto-saving agent models:', err)
+        }
+    }, [reviewerModel, implementationModel, testerModel, reportModel, selectedSystemPrompts, getPromptTextById])
 
     const toggleKnowledgeBase = useCallback((kbId) => {
         setSelectedKnowledgeBases(prev => {
@@ -370,6 +596,7 @@ export function useModelsDialog({ codeType }) {
         isDemoMode,
         models,
         agentModels,
+        configStatus,
         selectedKnowledgeBases,
         kbDocumentCounts,
         expandedKb,
@@ -408,7 +635,7 @@ export function useModelsDialog({ codeType }) {
         setPromptDropdownPage,
         setModelSearchTerm,
         setPromptSearchTerm,
-        setSelectedSystemPrompts,
+        setSelectedSystemPrompts: setSelectedSystemPromptsWithSync,
 
         // Pagination helpers
         getPaginatedModels,

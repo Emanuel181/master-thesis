@@ -14,11 +14,22 @@ export function PromptsProvider({ children }) {
     const { data: session, status } = useSession();
     const pathname = usePathname();
     const [prompts, setPrompts] = useState({});
-    const [selectedPrompts, setSelectedPrompts] = useState({
-        reviewer: [],
-        implementation: [],
-        tester: [],
-        report: [],
+    const [selectedPrompts, setSelectedPrompts] = useState(() => {
+        // Try to load from localStorage first
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('vulniq_selected_prompts');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+            } catch {}
+        }
+        return {
+            reviewer: [],
+            implementation: [],
+            tester: [],
+            report: [],
+        };
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -110,6 +121,17 @@ export function PromptsProvider({ children }) {
         };
     }, [session, pathname, status]);
 
+    // Auto-persist selectedPrompts to localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined' && selectedPrompts) {
+            try {
+                localStorage.setItem('vulniq_selected_prompts', JSON.stringify(selectedPrompts));
+            } catch (err) {
+                console.error('[Prompts] Error saving selected prompts to localStorage:', err);
+            }
+        }
+    }, [selectedPrompts]);
+
     const handlePromptChange = useCallback((agent, promptId) => {
         setSelectedPrompts(prev => {
             const current = prev[agent] || [];
@@ -126,6 +148,18 @@ export function PromptsProvider({ children }) {
                     [agent]: [promptId]
                 };
             }
+        });
+    }, []);
+
+    // Direct setter that doesn't toggle - used for cross-tab synchronization
+    const setPromptForAgent = useCallback((agent, promptId) => {
+        setSelectedPrompts(prev => {
+            if (!promptId || promptId === 'none') {
+                // Clear selection
+                return { ...prev, [agent]: [] };
+            }
+            // Set to specific prompt (no toggle)
+            return { ...prev, [agent]: [promptId] };
         });
     }, []);
 
@@ -390,6 +424,47 @@ export function PromptsProvider({ children }) {
         }
     }, [isDemoMode]);
 
+    const resetToDefaultPrompts = useCallback(async () => {
+        // In demo mode, reset to demo prompts
+        if (isDemoMode) {
+            setPrompts(DEMO_PROMPTS);
+            return { success: true, message: 'Reset to demo prompts', promptsReset: 0 };
+        }
+
+        try {
+            setLoading(true);
+            const response = await fetch('/api/prompts/reset-defaults', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                console.error('[Prompts] Failed to reset prompts:', data);
+                return { success: false, error: data.error || 'Failed to reset prompts' };
+            }
+
+            // Update local state with the updated prompts
+            if (data.prompts) {
+                setPrompts(data.prompts);
+                // Don't clear selections - user's custom prompts are still there
+            }
+
+            console.log(`[Prompts] Reset complete: ${data.promptsReset} prompts restored to defaults`);
+            return {
+                success: true,
+                message: data.message,
+                promptsReset: data.promptsReset,
+            };
+        } catch (err) {
+            console.error('[Prompts] Error resetting prompts:', err);
+            return { success: false, error: 'Error resetting prompts' };
+        } finally {
+            setLoading(false);
+        }
+    }, [isDemoMode]);
+
     // Memoize context value to prevent unnecessary re-renders
     const value = React.useMemo(() => ({
         prompts,
@@ -397,6 +472,7 @@ export function PromptsProvider({ children }) {
         loading,
         error,
         handlePromptChange,
+        setPromptForAgent,
         handlePromptTextChange,
         addPrompt,
         savePrompts,
@@ -404,6 +480,7 @@ export function PromptsProvider({ children }) {
         bulkDeletePrompts,
         editPrompt,
         reorderPrompts,
+        resetToDefaultPrompts,
         setSelectedPrompts,
         refresh: fetchPrompts,
     }), [
@@ -412,6 +489,7 @@ export function PromptsProvider({ children }) {
         loading,
         error,
         handlePromptChange,
+        setPromptForAgent,
         handlePromptTextChange,
         addPrompt,
         savePrompts,
@@ -419,6 +497,7 @@ export function PromptsProvider({ children }) {
         bulkDeletePrompts,
         editPrompt,
         reorderPrompts,
+        resetToDefaultPrompts,
         fetchPrompts,
     ]);
 

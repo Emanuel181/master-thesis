@@ -10,7 +10,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,12 +17,8 @@ import {
     Play,
     Clipboard,
     Wand2,
-    RefreshCw,
-    Lock,
-    Unlock,
     Check,
     MoreVertical,
-    Settings2,
     ChevronDown,
     FolderPlus,
     FolderX,
@@ -31,7 +26,6 @@ import {
     GitBranch,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
 import { ImportDialog } from './import-dialog';
 
 /**
@@ -40,30 +34,20 @@ import { ImportDialog } from './import-dialog';
 export function EditorHeader({
     isPlaceholder,
     hasContent,
-    isLocked,
-    onLockChange,
     isViewOnly,
     codeType,
-    setCodeType,
-    codeTypes,
-    isRefreshing,
-    refreshUseCases,
-    setIsRefreshing,
     isFormatting,
     handleFormat,
     isFormattable,
     isCopied,
     handleCopy,
     hasCode,
-    isReviewable,
     onStart,
     activeTab,
     code,
     // Tab group props
     onCreateGroup,
     hasOpenTabs = false,
-    // Demo mode
-    isDemoMode = false,
     // Project controls (consolidated from top toolbar)
     hasImportedProject = false,
     currentRepo = null,
@@ -153,83 +137,12 @@ export function EditorHeader({
                         </div>
                     )}
 
-                    {/* Lock Button */}
-                    {!isPlaceholder && hasContent && !isViewOnly && (
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant={isLocked ? "default" : "ghost"}
-                                        size="sm"
-                                        onClick={() => onLockChange(!isLocked)}
-                                        className={`h-7 w-7 p-0 ${isLocked ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "hover:bg-muted"}`}
-                                    >
-                                        {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    {isLocked ? "Code locked for review - click to edit" : "Lock code to start review"}
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    )}
                     {!isPlaceholder && hasContent && isViewOnly && (
                         <span className="text-[10px] text-muted-foreground bg-muted/80 px-2 py-1 rounded-md font-medium">
                             View Only
                         </span>
                     )}
                 </div>
-
-                {/* Center Section: Group Only */}
-                {!isPlaceholder && hasContent && !isViewOnly && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg">
-                        {/* Group */}
-                        <div className="flex items-center gap-1.5">
-                            <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <Select value={codeType} onValueChange={setCodeType} disabled={isLocked}>
-                                <SelectTrigger className="w-[130px] h-7 text-xs border-0 bg-transparent hover:bg-background/80 focus:ring-0 focus:ring-offset-0">
-                                    <SelectValue placeholder="Group..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {codeTypes.map((type) => (
-                                        <SelectItem key={type.value} value={type.value} className="text-xs">
-                                            {type.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 hover:bg-background/80"
-                                            onClick={async () => {
-                                                setIsRefreshing(true);
-                                                try {
-                                                    if (isDemoMode) {
-                                                        await new Promise(resolve => setTimeout(resolve, 800));
-                                                    }
-                                                    await refreshUseCases();
-                                                    toast.success("Groups refreshed successfully!");
-                                                } catch (err) {
-                                                    toast.error("Failed to refresh groups");
-                                                } finally {
-                                                    setIsRefreshing(false);
-                                                }
-                                            }}
-                                            disabled={isRefreshing || isLocked}
-                                        >
-                                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Refresh groups</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                    </div>
-                )}
 
                 {/* Right Section: Actions */}
                 {!isPlaceholder && hasContent && (
@@ -262,7 +175,7 @@ export function EditorHeader({
                                         size="sm"
                                         className="h-7 px-2.5 gap-1.5"
                                         onClick={handleFormat}
-                                        disabled={isFormatting || (!isViewOnly && isLocked) || !isFormattable}
+                                        disabled={isFormatting || !isFormattable}
                                     >
                                         <Wand2 className="h-3.5 w-3.5" />
                                         <span className="text-xs font-medium">Format</span>
@@ -285,7 +198,7 @@ export function EditorHeader({
                                         disabled={isCopied}
                                     >
                                         {isCopied ? (
-                                            <Check className="h-3.5 w-3.5 text-green-500" />
+                                            <Check className="h-3.5 w-3.5 text-success" />
                                         ) : (
                                             <Clipboard className="h-3.5 w-3.5" />
                                         )}
@@ -299,9 +212,9 @@ export function EditorHeader({
                         {!isViewOnly && (
                             <Button
                                 size="sm"
-                                className={`h-7 px-3 ml-1 gap-1.5 ${(!isLocked || !isReviewable) ? "opacity-60" : ""}`}
+                                className="h-7 px-3 ml-1 gap-1.5"
                                 onClick={() => onStart(activeTab ? activeTab.content : code, codeType)}
-                                disabled={!hasCode || !isLocked || !isReviewable}
+                                disabled={!hasCode}
                             >
                                 <Play className="h-3.5 w-3.5" />
                                 <span className="text-xs font-medium">Review</span>
@@ -369,25 +282,13 @@ export function EditorHeader({
                 {/* Right: Actions */}
                 {!isPlaceholder && hasContent && (
                     <div className="flex items-center gap-1">
-                        {/* Lock Button */}
-                        {!isViewOnly && (
-                            <Button
-                                variant={isLocked ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => onLockChange(!isLocked)}
-                                className={`h-7 px-2 text-xs ${isLocked ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}`}
-                            >
-                                {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                            </Button>
-                        )}
-
                         {/* Start Review button */}
                         {!isViewOnly && (
                             <Button
                                 size="sm"
-                                className={`h-7 px-2 ${(!isLocked || !isReviewable) ? "opacity-70" : ""}`}
+                                className="h-7 px-2"
                                 onClick={() => onStart(activeTab ? activeTab.content : code, codeType)}
-                                disabled={!hasCode || !isLocked || !isReviewable}
+                                disabled={!hasCode}
                             >
                                 <Play className="h-3.5 w-3.5" />
                             </Button>
@@ -401,33 +302,10 @@ export function EditorHeader({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
-                                {/* Group Section */}
-                                {!isViewOnly && (
-                                    <>
-                                        <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                                            <Settings2 className="h-3.5 w-3.5" />
-                                            Group
-                                        </DropdownMenuLabel>
-                                        <div className="px-2 py-1.5">
-                                            <Select value={codeType} onValueChange={setCodeType} disabled={isLocked}>
-                                                <SelectTrigger className="w-full h-8 text-xs">
-                                                    <SelectValue placeholder="Select group..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {codeTypes.map((type) => (
-                                                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <DropdownMenuSeparator />
-                                    </>
-                                )}
-
                                 {/* Actions */}
                                 <DropdownMenuItem
                                     onClick={handleFormat}
-                                    disabled={isFormatting || (!isViewOnly && isLocked) || !isFormattable}
+                                    disabled={isFormatting || !isFormattable}
                                     className="text-xs"
                                 >
                                     <Wand2 className="h-3.5 w-3.5 mr-2" />
@@ -441,33 +319,11 @@ export function EditorHeader({
                                     className="text-xs"
                                 >
                                     {isCopied ? (
-                                        <Check className="h-3.5 w-3.5 mr-2 text-green-500" />
+                                        <Check className="h-3.5 w-3.5 mr-2 text-success" />
                                     ) : (
                                         <Clipboard className="h-3.5 w-3.5 mr-2" />
                                     )}
                                     {isCopied ? "Copied!" : "Copy Code"}
-                                </DropdownMenuItem>
-
-                                <DropdownMenuItem
-                                    onClick={async () => {
-                                        setIsRefreshing(true);
-                                        try {
-                                            if (isDemoMode) {
-                                                await new Promise(resolve => setTimeout(resolve, 800));
-                                            }
-                                            await refreshUseCases();
-                                            toast.success("Groups refreshed successfully!");
-                                        } catch (err) {
-                                            toast.error("Failed to refresh groups");
-                                        } finally {
-                                            setIsRefreshing(false);
-                                        }
-                                    }}
-                                    disabled={isRefreshing || isLocked}
-                                    className="text-xs"
-                                >
-                                    <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                    Refresh groups
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

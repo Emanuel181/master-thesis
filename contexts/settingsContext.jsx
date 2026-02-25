@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 
 // Import configuration from extracted modules
 import {
@@ -97,16 +97,20 @@ export function SettingsProvider({ children }) {
     }
   }, [settings, mounted]);
 
-  const updateSettings = (newSettings) => {
+  const updateSettings = useCallback((newSettings) => {
     setSettings(newSettings);
-  };
+  }, []);
 
-  const resetSettings = () => {
+  const resetSettings = useCallback(() => {
     setSettings(defaultSettings);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    settings, updateSettings, resetSettings, mounted
+  }), [settings, updateSettings, resetSettings, mounted]);
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings, mounted }}>
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );

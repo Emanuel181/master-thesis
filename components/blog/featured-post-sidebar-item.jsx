@@ -9,7 +9,7 @@ export function FeaturedPostSidebarItem({
   icon,
 }) {
   return (
-    <a href={href} className="group flex items-center gap-4 p-2 -m-2 rounded-lg hover:bg-muted/50 transition-colors">
+    <a href={href} className="group flex items-center gap-4 p-2 -m-2 rounded-lg hover:bg-muted/50 transition-all duration-150 select-none">
       {imageSrc ? (
         <img
           src={imageSrc}

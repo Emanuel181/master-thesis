@@ -7,6 +7,7 @@ import { PromptsProvider } from "@/contexts/promptsContext"
 import { AccessibilityProvider } from "@/contexts/accessibilityContext"
 import { AccessibilityWidget } from "@/components/accessibility-widget"
 import { DemoProvider } from "@/contexts/demoContext"
+import { KbSelectionProvider } from "@/contexts/kbSelectionContext"
 
 export function Providers({ children }) {
     return (
@@ -15,10 +16,12 @@ export function Providers({ children }) {
                     <SettingsProvider>
                         <UseCasesProvider>
                             <PromptsProvider>
-                                <AccessibilityProvider>
-                                    {children}
-                                    <AccessibilityWidget />
-                                </AccessibilityProvider>
+                                <KbSelectionProvider>
+                                    <AccessibilityProvider>
+                                        {children}
+                                        <AccessibilityWidget />
+                                    </AccessibilityProvider>
+                                </KbSelectionProvider>
                             </PromptsProvider>
                         </UseCasesProvider>
                     </SettingsProvider>

@@ -260,3 +260,31 @@ export function DeleteConfirmDialog({
         </AlertDialog>
     )
 }
+
+/**
+ * Reset to defaults confirmation dialog component
+ */
+export function ResetConfirmDialog({
+    isOpen,
+    onClose,
+    onConfirm,
+}) {
+    return (
+        <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Reset Default Prompts?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will restore any edited default prompts back to their original content.
+                        Your custom prompts will not be affected.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onConfirm}>Reset Defaults</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+}
+

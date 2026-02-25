@@ -16,6 +16,12 @@ import {
   AlertTriangle,
   Clock,
   Heart,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  BarChart3,
+  XCircle,
+  CheckCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -34,21 +40,37 @@ function NotificationItem({ notification, onMarkAsRead, onNavigate }) {
   const getIcon = () => {
     switch (notification.type) {
       case "ARTICLE_PUBLISHED":
-        return <Check className="w-4 h-4 text-green-500" />;
+        return <Check className="w-4 h-4 text-success" />;
       case "ARTICLE_REJECTED":
-        return <X className="w-4 h-4 text-red-500" />;
+        return <X className="w-4 h-4 text-destructive" />;
       case "ARTICLE_IN_REVIEW":
-        return <Eye className="w-4 h-4 text-blue-500" />;
+        return <Eye className="w-4 h-4 text-primary" />;
       case "ARTICLE_SCHEDULED_FOR_DELETION":
-        return <AlertTriangle className="w-4 h-4 text-orange-500" />;
+        return <AlertTriangle className="w-4 h-4 text-severity-high" />;
       case "ARTICLE_DELETED":
-        return <Trash2 className="w-4 h-4 text-red-500" />;
+        return <Trash2 className="w-4 h-4 text-destructive" />;
       case "ARTICLE_STATUS_CHANGED":
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+        return <Clock className="w-4 h-4 text-severity-medium" />;
       case "ARTICLE_REACTION":
         return <Heart className="w-4 h-4 text-pink-500" />;
       case "WARNING":
-        return <AlertTriangle className="w-4 h-4 text-amber-500" />;
+        return <AlertTriangle className="w-4 h-4 text-severity-medium" />;
+      // Security scanning
+      case "SCAN_STARTED":
+        return <Search className="w-4 h-4 text-amber-500" />;
+      case "SCAN_CLEAN":
+        return <ShieldCheck className="w-4 h-4 text-emerald-500" />;
+      case "SCAN_MALWARE":
+        return <ShieldAlert className="w-4 h-4 text-destructive" />;
+      case "SCAN_ERROR":
+        return <AlertTriangle className="w-4 h-4 text-severity-medium" />;
+      // Vectorization
+      case "VECTORIZATION_STARTED":
+        return <BarChart3 className="w-4 h-4 text-blue-500" />;
+      case "VECTORIZATION_COMPLETED":
+        return <BarChart3 className="w-4 h-4 text-emerald-500" />;
+      case "VECTORIZATION_FAILED":
+        return <XCircle className="w-4 h-4 text-destructive" />;
       default:
         return <FileText className="w-4 h-4 text-primary" />;
     }
@@ -113,9 +135,10 @@ export function NotificationBell() {
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch("/api/notifications");
+      const response = await fetch("/api/notifications?limit=20");
       if (response.ok) {
-        const data = await response.json();
+        const json = await response.json();
+        const data = json.data || json;
         setNotifications(data.notifications || []);
         setUnreadCount(data.unreadCount || 0);
       }
@@ -131,9 +154,9 @@ export function NotificationBell() {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Poll for new notifications every 30 seconds
+  // Poll for new notifications every 15 seconds
   useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(fetchNotifications, 15000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
@@ -184,7 +207,10 @@ export function NotificationBell() {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (isOpen) fetchNotifications(); // Refresh on open
+    }}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="icon" className="relative">
           {unreadCount > 0 ? (
@@ -213,11 +239,12 @@ export function NotificationBell() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto py-1 px-2 text-xs"
+              className="h-auto py-1 px-2 text-xs gap-1"
               onClick={handleMarkAllAsRead}
               title="Mark all as read"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <CheckCheck className="w-3.5 h-3.5" />
+              Read all
             </Button>
           )}
         </div>

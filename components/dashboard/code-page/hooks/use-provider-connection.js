@@ -78,31 +78,32 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
     const [gitlabRepos, setGitlabRepos] = useState(() => 
         isDemoMode && getInitialDemoState(DEMO_GITLAB_KEY) ? DEMO_GITLAB_REPOS : []
     );
-    const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+    // Separate loading states per provider to avoid race conditions
+    const [isLoadingGithubRepos, setIsLoadingGithubRepos] = useState(false);
+    const [isLoadingGitlabRepos, setIsLoadingGitlabRepos] = useState(false);
+    // Combined loading state for backward compatibility (used by UI components)
+    const isLoadingRepos = isLoadingGithubRepos || isLoadingGitlabRepos;
 
     // Load GitHub repos
     const loadRepos = useCallback(async () => {
         if (isDemoMode) {
-            // Simulate loading delay for demo
-            setIsLoadingRepos(true);
+            setIsLoadingGithubRepos(true);
             await new Promise(resolve => setTimeout(resolve, 500));
             setRepos(DEMO_GITHUB_REPOS);
-            setIsLoadingRepos(false);
+            setIsLoadingGithubRepos(false);
             return;
         }
         console.log('[GitHub] Loading repositories...');
-        setIsLoadingRepos(true);
+        setIsLoadingGithubRepos(true);
         try {
             const response = await fetch('/api/github/repos');
             console.log('[GitHub] API response status:', response.status);
             if (response.ok) {
                 const jsonResponse = await response.json();
-                console.log('[GitHub] Raw response:', jsonResponse);
-                
+
                 // Handle wrapped response from createApiHandler
                 const reposData = jsonResponse.data || jsonResponse;
-                console.log('[GitHub] Extracted repos data:', reposData);
-                
+
                 if (!Array.isArray(reposData)) {
                     console.error('[GitHub] Repos data is not an array:', reposData);
                     toast.error('Invalid response format from GitHub API');
@@ -111,7 +112,6 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
                 
                 console.log('[GitHub] Loaded', reposData.length, 'repositories');
                 setRepos(reposData);
-                toast.success(`Loaded ${reposData.length} repositories`);
             } else {
                 const error = await response.json().catch(() => ({ error: 'Failed to load repositories' }));
                 console.error('[GitHub] Failed to load repos:', error);
@@ -121,23 +121,24 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             console.error('[GitHub] Error loading repos:', error);
             toast.error('Failed to connect to GitHub API');
         } finally {
-            setIsLoadingRepos(false);
+            setIsLoadingGithubRepos(false);
         }
     }, [isDemoMode]);
 
     // Load GitLab repos
     const loadGitlabRepos = useCallback(async () => {
         if (isDemoMode) {
-            // Simulate loading delay for demo
-            setIsLoadingRepos(true);
+            setIsLoadingGitlabRepos(true);
             await new Promise(resolve => setTimeout(resolve, 500));
             setGitlabRepos(DEMO_GITLAB_REPOS);
-            setIsLoadingRepos(false);
+            setIsLoadingGitlabRepos(false);
             return;
         }
-        setIsLoadingRepos(true);
+        console.log('[GitLab] Loading repositories...');
+        setIsLoadingGitlabRepos(true);
         try {
             const response = await fetch('/api/gitlab/repos');
+            console.log('[GitLab] API response status:', response.status);
             if (response.ok) {
                 const jsonResponse = await response.json();
                 
@@ -150,24 +151,31 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
                     return;
                 }
                 
+                console.log('[GitLab] Loaded', reposData.length, 'repositories');
                 setGitlabRepos(reposData);
             } else {
                 const error = await response.json().catch(() => ({ error: 'Failed to load repositories' }));
-                console.error('Failed to load GitLab repos:', error);
+                console.error('[GitLab] Failed to load repos:', error);
                 toast.error(error.error || 'Failed to load GitLab repositories');
             }
         } catch (error) {
-            console.error('Error loading GitLab repos:', error);
+            console.error('[GitLab] Error loading repos:', error);
             toast.error('Failed to connect to GitLab API');
         } finally {
-            setIsLoadingRepos(false);
+            setIsLoadingGitlabRepos(false);
         }
     }, [isDemoMode]);
 
-    // Refresh linked providers from API (skip in demo mode)
+    // Use a ref for session to avoid recreating refreshLinkedProviders on every session object change
+    const sessionRef = useRef(session);
+    useEffect(() => { sessionRef.current = session; }, [session]);
+
+    // Refresh linked providers from API and update connection state only
+    // Repo loading is handled separately by dedicated effects below
     const refreshLinkedProviders = useCallback(async () => {
-        if (isDemoMode) return; // Demo mode manages its own state
-        if (!session) return;
+        if (isDemoMode) return;
+        if (!sessionRef.current) return;
+
         console.log('[Providers] Refreshing linked providers...');
         try {
             const res = await fetch('/api/providers/linked', { 
@@ -179,29 +187,23 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             });
             
             if (!res.ok) {
-                console.log('[Providers] Response not OK');
+                console.log('[Providers] Response not OK:', res.status);
                 return;
             }
             
             const response = await res.json();
-            console.log('[Providers] Full response object:', JSON.stringify(response, null, 2));
-            
+
             // Handle wrapped response from createApiHandler
-            // The response could be: { success: true, data: { providers: [...] } }
-            // Or just: { providers: [...] }
-            let providers = []
-            
+            let providers = [];
+
             if (response.success && response.data && Array.isArray(response.data.providers)) {
-                providers = response.data.providers
-                console.log('[Providers] Extracted providers from response.data.providers:', providers)
+                providers = response.data.providers;
             } else if (Array.isArray(response.providers)) {
-                providers = response.providers
-                console.log('[Providers] Extracted providers from response.providers:', providers)
+                providers = response.providers;
             } else if (response.data && Array.isArray(response.data)) {
-                providers = response.data
-                console.log('[Providers] Extracted providers from response.data (array):', providers)
+                providers = response.data;
             } else {
-                console.error('[Providers] Could not find providers array in response:', response)
+                console.error('[Providers] Could not find providers array in response:', response);
             }
             
             const linked = new Set(providers);
@@ -209,39 +211,56 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             const gitlabLinked = linked.has('gitlab');
             
             console.log('[Providers] GitHub linked:', githubLinked, 'GitLab linked:', gitlabLinked);
-            
-            // Update GitHub connection state and load repos if newly connected
-            setIsGithubConnected(prev => {
-                if (!prev && githubLinked) {
-                    console.log('[Providers] GitHub newly connected, loading repos...');
-                    // Use setTimeout to ensure state is updated before loading
-                    setTimeout(() => loadRepos(), 0);
-                }
-                return githubLinked;
-            });
-            
-            // Update GitLab connection state and load repos if newly connected
-            setIsGitlabConnected(prev => {
-                if (!prev && gitlabLinked) {
-                    console.log('[Providers] GitLab newly connected, loading repos...');
-                    // Use setTimeout to ensure state is updated before loading
-                    setTimeout(() => loadGitlabRepos(), 0);
-                }
-                return gitlabLinked;
-            });
+
+            // Update connection state (repo loading is triggered reactively by effects below)
+            setIsGithubConnected(githubLinked);
+            setIsGitlabConnected(gitlabLinked);
 
             if (!githubLinked) setRepos([]);
             if (!gitlabLinked) setGitlabRepos([]);
         } catch (err) {
             console.error('[Providers] Error refreshing linked providers:', err);
         }
-    }, [isDemoMode, session, loadRepos, loadGitlabRepos]);
+    }, [isDemoMode]);
+
+    // Reactive repo loading: whenever a provider is connected and repos are empty, load them.
+    // This is the ONLY place repos get loaded (single responsibility), eliminating all race conditions.
+    // Uses refs to prevent duplicate concurrent loads.
+    const githubLoadingRef = useRef(false);
+    const gitlabLoadingRef = useRef(false);
+
+    useEffect(() => {
+        if (isDemoMode) return;
+        if (status !== 'authenticated') return;
+        if (!isGithubConnected) return;
+        if (repos.length > 0) return;
+        if (githubLoadingRef.current) return;
+
+        console.log('[Providers] GitHub connected with no repos — loading...');
+        githubLoadingRef.current = true;
+        loadRepos().finally(() => { githubLoadingRef.current = false; });
+    }, [isDemoMode, status, isGithubConnected, repos.length, loadRepos]);
+
+    useEffect(() => {
+        if (isDemoMode) return;
+        if (status !== 'authenticated') return;
+        if (!isGitlabConnected) return;
+        if (gitlabRepos.length > 0) return;
+        if (gitlabLoadingRef.current) return;
+
+        console.log('[Providers] GitLab connected with no repos — loading...');
+        gitlabLoadingRef.current = true;
+        loadGitlabRepos().finally(() => { gitlabLoadingRef.current = false; });
+    }, [isDemoMode, status, isGitlabConnected, gitlabRepos.length, loadGitlabRepos]);
 
     // Initial load of provider status
     useEffect(() => {
-        if (isDemoMode) return; // Demo mode uses localStorage state
+        if (isDemoMode) return;
         if (status !== 'authenticated') return;
         refreshLinkedProviders();
+        // Also refresh after a short delay to catch post-OAuth redirects
+        const timeout = setTimeout(refreshLinkedProviders, 1500);
+        return () => clearTimeout(timeout);
     }, [isDemoMode, status, refreshLinkedProviders]);
 
     // Periodic refresh of provider status (with visibility awareness) - skip in demo mode
@@ -250,7 +269,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         if (status !== 'authenticated') return;
 
         let interval;
-        const POLL_INTERVAL = 120000; // 2 minutes (reduced from 30s)
+        const POLL_INTERVAL = 120000; // 2 minutes
 
         const startPolling = () => {
             interval = setInterval(refreshLinkedProviders, POLL_INTERVAL);
@@ -263,20 +282,22 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             }
         };
 
-        // Only poll when tab is visible to reduce server load
         const handleVisibilityChange = () => {
             if (document.hidden) {
                 stopPolling();
             } else {
-                // Refresh immediately when user returns, then resume polling
                 refreshLinkedProviders();
                 startPolling();
             }
         };
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        const handleFocus = () => {
+            refreshLinkedProviders();
+        };
 
-        // Start initial polling if visible
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+
         if (!document.hidden) {
             startPolling();
         }
@@ -284,6 +305,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         return () => {
             stopPolling();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
         };
     }, [isDemoMode, status, refreshLinkedProviders]);
 

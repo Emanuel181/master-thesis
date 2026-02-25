@@ -65,7 +65,9 @@ export function useArticles() {
             setIsLoading(true)
             const response = await fetch("/api/articles")
             if (!response.ok) throw new Error("Failed to fetch articles")
-            const data = await response.json()
+            const responseData = await response.json()
+            // Handle wrapped response: { success: true, data: { articles, ... } }
+            const data = responseData.data || responseData
             setArticles(data.articles || [])
         } catch (error) {
             console.error("Error fetching articles:", error)
@@ -93,14 +95,33 @@ export function useArticles() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title: "Untitled Article", category: "General" }),
             })
-            if (!response.ok) throw new Error("Failed to create article")
-            const data = await response.json()
-            setArticles((prev) => [data.article, ...prev])
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || "Failed to create article")
+            }
+            const responseData = await response.json()
+
+            // Handle wrapped response: { success: true, data: { article } }
+            const data = responseData.data || responseData
+
+            // Validate that we received an article object
+            if (!data.article || !data.article.id) {
+                console.error("Invalid article response:", responseData)
+                throw new Error("Invalid article data received from server")
+            }
+
+            // Ensure the article has a status (default to DRAFT if missing)
+            const newArticle = {
+                ...data.article,
+                status: data.article.status || "DRAFT",
+            }
+
+            setArticles((prev) => [newArticle, ...prev.filter(a => a != null)])
             toast.success("Draft article created.")
-            return data.article
+            return newArticle
         } catch (error) {
             console.error("Error creating article:", error)
-            toast.error("Failed to create article")
+            toast.error(error.message || "Failed to create article")
             return null
         } finally {
             setIsCreating(false)
@@ -138,17 +159,20 @@ export function useArticles() {
         try {
             setSubmittingId(article.id)
             const response = await fetch(`/api/articles/${article.id}/submit`, { method: "POST" })
-            const data = await response.json()
-            if (!response.ok) throw new Error(data.error || "Failed to submit article")
+            const responseData = await response.json()
+            // Handle wrapped response or direct error
+            const data = responseData.data || responseData
+            if (!response.ok) throw new Error(responseData.error || data.error || "Failed to submit article")
             setArticles((prev) =>
-                prev.map((a) =>
-                    a.id === article.id ? { ...a, status: "PENDING_REVIEW", submittedAt: new Date().toISOString() } : a
-                )
+                prev.map((a) => {
+                    if (a == null) return a
+                    return a.id === article.id ? { ...a, status: "PENDING_REVIEW", submittedAt: new Date().toISOString() } : a
+                })
             )
             if (selectedArticle?.id === article.id) {
                 setSelectedArticle((prev) => ({ ...prev, status: "PENDING_REVIEW" }))
             }
-            toast.success(data.message || "Article submitted for review")
+            toast.success(data.message || responseData.message || "Article submitted for review")
         } catch (error) {
             console.error("Error submitting article:", error)
             toast.error(error.message || "Failed to submit article")
@@ -164,17 +188,20 @@ export function useArticles() {
         try {
             setSubmittingId(article.id)
             const response = await fetch(`/api/articles/${article.id}/import-to-drafts`, { method: "POST" })
-            const data = await response.json()
-            if (!response.ok) throw new Error(data.error || "Failed to import article")
+            const responseData = await response.json()
+            // Handle wrapped response or direct error
+            const data = responseData.data || responseData
+            if (!response.ok) throw new Error(responseData.error || data.error || "Failed to import article")
             setArticles((prev) =>
-                prev.map((a) =>
-                    a.id === article.id ? { ...a, status: "DRAFT", scheduledForDeletionAt: null, rejectedAt: null } : a
-                )
+                prev.map((a) => {
+                    if (a == null) return a
+                    return a.id === article.id ? { ...a, status: "DRAFT", scheduledForDeletionAt: null, rejectedAt: null } : a
+                })
             )
             if (selectedArticle?.id === article.id) {
                 setSelectedArticle((prev) => ({ ...prev, status: "DRAFT", scheduledForDeletionAt: null, rejectedAt: null }))
             }
-            toast.success(data.message || "Article imported to drafts")
+            toast.success(data.message || responseData.message || "Article imported to drafts")
         } catch (error) {
             console.error("Error importing article:", error)
             toast.error(error.message || "Failed to import article")
@@ -208,7 +235,10 @@ export function useArticles() {
      * Handle article update from fullscreen editor
      */
     const handleArticleUpdate = useCallback((updates) => {
-        setArticles((prev) => prev.map((a) => (a.id === updates.id ? { ...a, ...updates } : a)))
+        setArticles((prev) => prev.map((a) => {
+            if (a == null) return a;
+            return a.id === updates.id ? { ...a, ...updates } : a;
+        }))
         if (selectedArticle?.id === updates.id) {
             setSelectedArticle((prev) => ({ ...prev, ...updates }))
         }
@@ -219,7 +249,8 @@ export function useArticles() {
      */
     const getFilteredArticles = useCallback((tabId) => {
         const tab = TABS.find((t) => t.id === tabId)
-        let filtered = articles
+        // Filter out any undefined/null entries first
+        let filtered = articles.filter((a) => a != null)
 
         // Filter by status
         if (tab && tab.status) {
@@ -261,15 +292,19 @@ export function useArticles() {
     /**
      * Get counts for all tabs
      */
-    const getCounts = useCallback(() => ({
-        all: articles.length,
-        draft: articles.filter((a) => a.status === "DRAFT").length,
-        pending: articles.filter((a) => a.status === "PENDING_REVIEW").length,
-        in_review: articles.filter((a) => a.status === "IN_REVIEW").length,
-        published: articles.filter((a) => a.status === "PUBLISHED" || a.status === "APPROVED").length,
-        rejected: articles.filter((a) => a.status === "REJECTED").length,
-        pending_deletion: articles.filter((a) => a.status === "SCHEDULED_FOR_DELETION").length,
-    }), [articles])
+    const getCounts = useCallback(() => {
+        // Filter out any undefined/null entries
+        const validArticles = articles.filter((a) => a != null);
+        return {
+            all: validArticles.length,
+            draft: validArticles.filter((a) => a.status === "DRAFT").length,
+            pending: validArticles.filter((a) => a.status === "PENDING_REVIEW").length,
+            in_review: validArticles.filter((a) => a.status === "IN_REVIEW").length,
+            published: validArticles.filter((a) => a.status === "PUBLISHED" || a.status === "APPROVED").length,
+            rejected: validArticles.filter((a) => a.status === "REJECTED").length,
+            pending_deletion: validArticles.filter((a) => a.status === "SCHEDULED_FOR_DELETION").length,
+        };
+    }, [articles])
 
     /**
      * Set page for a specific tab

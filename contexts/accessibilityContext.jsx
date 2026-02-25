@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 // Default settings
 const defaultSettings = {
@@ -172,26 +172,26 @@ export function AccessibilityProvider({ children }) {
     localStorage.setItem(POSITION_KEY, JSON.stringify(newPos));
   }, []);
 
+  const value = useMemo(() => ({
+    mounted,
+    isOpen,
+    setIsOpen,
+    settings,
+    updateSetting,
+    resetSettings,
+    openPanel,
+    closePanel,
+    position,
+    setPosition,
+    savePosition,
+    toggleFloatingButton,
+    defaultSettings,
+    forceHideFloating,
+    setForceHideFloating,
+  }), [mounted, isOpen, settings, updateSetting, resetSettings, openPanel, closePanel, position, savePosition, toggleFloatingButton, forceHideFloating]);
+
   return (
-    <AccessibilityContext.Provider
-      value={{
-        mounted,
-        isOpen,
-        setIsOpen,
-        settings,
-        updateSetting,
-        resetSettings,
-        openPanel,
-        closePanel,
-        position,
-        setPosition,
-        savePosition,
-        toggleFloatingButton,
-        defaultSettings,
-        forceHideFloating,
-        setForceHideFloating,
-      }}
-    >
+    <AccessibilityContext.Provider value={value}>
       {children}
     </AccessibilityContext.Provider>
   );

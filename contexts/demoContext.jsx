@@ -1332,21 +1332,20 @@ const DEMO_PROMPTS = {
 // =============================================
 export function DemoProvider({ children }) {
     const pathname = usePathname();
-    
+
     // SECURITY: Derive demo mode from pathname, not state
     // This ensures demo mode cannot be manipulated via React devtools
     const isDemoMode = isDemoPath(pathname);
-    
+
     const [currentDemoProject, setCurrentDemoProject] = useState("demo-org/vulnerable-express-app");
-    
-    // Shared code locked state - used to enable/disable workflow configuration
-    const [isCodeLocked, setIsCodeLocked] = useState(false);
+
+
 
     // Clean up demo storage when exiting demo mode
     useEffect(() => {
         // Track previous demo mode state
         const wasInDemoMode = sessionStorage.getItem('vulniq_was_demo_mode') === 'true';
-        
+
         if (isDemoMode) {
             sessionStorage.setItem('vulniq_was_demo_mode', 'true');
         } else if (wasInDemoMode && !isDemoMode) {
@@ -1377,9 +1376,9 @@ export function DemoProvider({ children }) {
     }, []);
 
     const getDemoCode = useCallback(() => DEMO_CODE, []);
-    const getDemoProjectStructure = useCallback(() => 
-        DEMO_PROJECTS[currentDemoProject] || DEMO_PROJECT_STRUCTURE, 
-    [currentDemoProject]);
+    const getDemoProjectStructure = useCallback(() =>
+        DEMO_PROJECTS[currentDemoProject] || DEMO_PROJECT_STRUCTURE,
+        [currentDemoProject]);
     const getDemoUseCases = useCallback(() => DEMO_USE_CASES, []);
     const getDemoDocuments = useCallback(() => DEMO_DOCUMENTS, []);
     const getDemoPrompts = useCallback(() => DEMO_PROMPTS, []);
@@ -1395,8 +1394,6 @@ export function DemoProvider({ children }) {
                 disableDemoMode,
                 currentDemoProject,
                 switchDemoProject,
-                isCodeLocked,
-                setIsCodeLocked,
                 getDemoCode,
                 getDemoProjectStructure,
                 getDemoUseCases,

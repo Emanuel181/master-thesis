@@ -54,7 +54,7 @@ const ThreeDHoverGallery = ({
   gap = 1.2,
   perspective = 50,
   hoverScale = 15,
-  transitionDuration = 1.25,
+  transitionDuration = 0.6,
   backgroundColor,
   grayscaleStrength = 1,
   brightnessLevel = 0.5,
@@ -167,7 +167,7 @@ const ThreeDHoverGallery = ({
       transform: isActive
         ? `translateZ(calc(${hoverScale}vw + ${hoverScale}vh))`
         : "none",
-      transition: `transform ${transitionDuration}s cubic-bezier(.1, .7, 0, 1), filter 3s cubic-bezier(.1, .7, 0, 1), width ${transitionDuration}s cubic-bezier(.1, .7, 0, 1)`,
+      transition: `transform ${transitionDuration}s cubic-bezier(.1, .7, 0, 1), filter 0.8s cubic-bezier(.1, .7, 0, 1), width ${transitionDuration}s cubic-bezier(.1, .7, 0, 1)`,
       willChange: "transform, filter, width",
       zIndex: isActive ? 100 : "auto",
       margin: isActive ? "0 0.45vw" : "0",
@@ -216,13 +216,13 @@ const ThreeDHoverGallery = ({
                 className={cn(
                   "absolute inset-0 flex flex-col justify-end p-4 sm:p-6",
                   "bg-gradient-to-t from-black/80 via-black/40 to-transparent",
-                  "transition-opacity duration-700 ease-out",
+                  "transition-opacity duration-350 ease-out",
                   isActive ? "opacity-100" : "opacity-0"
                 )}
               >
                 <div
                   className={cn(
-                    "transition-all duration-700 ease-out",
+                    "transition-all duration-350 ease-out",
                     isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                   )}
                   style={{ transitionDelay: isActive ? "150ms" : "0ms" }}
@@ -233,7 +233,7 @@ const ThreeDHoverGallery = ({
                 </div>
                 <div
                   className={cn(
-                    "transition-all duration-700 ease-out",
+                    "transition-all duration-350 ease-out",
                     isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                   )}
                   style={{ transitionDelay: isActive ? "250ms" : "0ms" }}

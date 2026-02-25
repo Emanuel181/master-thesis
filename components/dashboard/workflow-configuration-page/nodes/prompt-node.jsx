@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { MessageSquare, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, X } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const PROMPTS_PER_PAGE = 4;
@@ -29,6 +29,7 @@ export function PromptNode({ data }) {
     const borderColor = borderColorMap[data.iconBg] || "border-indigo-500 dark:border-indigo-400";
 
     const selectedCount = data.selectedPrompts?.length || 0;
+    const isConfigured = selectedCount > 0;
     const selectedTexts = data.prompts
         .filter(p => data.selectedPrompts?.includes(p.id))
         .map(p => (p.title || p.text).length > 30 ? (p.title || p.text).substring(0, 30) + "..." : (p.title || p.text))
@@ -74,15 +75,26 @@ export function PromptNode({ data }) {
                 <Handle type="target" position={Position.Left} className="!bg-cyan-500 !w-3 !h-3" />
             )}
 
-            <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 ${borderColor}`}>
+            <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 transition-all duration-300 ${borderColor} ${
+                isConfigured ? 'ring-2 ring-indigo-500/20 shadow-md' : 'opacity-90'
+            }`}>
                 <CardContent className="p-2 sm:p-4">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg}`}>
+                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <MessageSquare className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
+                            {isConfigured && (
+                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-indigo-500 border-2 border-background">
+                                    <Check className="h-2 w-2 text-white" strokeWidth={3} />
+                                </span>
+                            )}
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="font-semibold text-xs sm:text-base truncate">{data.label}</div>
-                            <div className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                            <div className={`text-[10px] sm:text-xs font-medium ${
+                                isConfigured
+                                    ? 'text-indigo-600 dark:text-indigo-400'
+                                    : 'text-muted-foreground'
+                            }`}>
                                 {selectedCount} selected
                             </div>
                         </div>
@@ -216,6 +228,16 @@ export function PromptNode({ data }) {
                             </div>
                         </PopoverContent>
                     </Popover>
+                    {isConfigured ? (
+                        <div className="mt-1.5 flex items-center gap-1 text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400">
+                            <Check className="h-2.5 w-2.5" />
+                            <span className="truncate">{selectedTexts}</span>
+                        </div>
+                    ) : (
+                        <div className="mt-1.5 text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 animate-pulse">
+                            Select prompts to configure
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

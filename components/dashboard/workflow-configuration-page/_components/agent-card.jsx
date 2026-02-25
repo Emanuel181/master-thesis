@@ -23,10 +23,12 @@ export function AgentCard({
     description,
     icon: Icon,
     iconColor,
+    status, // "complete" | "partial" | "empty"
     // Model props
     selectedModel,
     onModelChange,
     models,
+    allModels, // Full list of models for displaying friendly name
     modelSearchTerm,
     onModelSearchChange,
     modelPage,
@@ -45,10 +47,52 @@ export function AgentCard({
     isRefreshing,
     onRefresh,
 }) {
+    // Get friendly name for selected model
+    const getModelDisplayName = (modelId) => {
+        if (!modelId) return null
+        const modelList = allModels || models
+        const model = modelList.find(m => (typeof m === 'string' ? m : m.id) === modelId)
+        if (!model) return modelId
+        return typeof model === 'string' ? model : model.name
+    }
+
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-medium">{title}</CardTitle>
+        <Card className={`transition-all duration-200 hover:shadow-md ${
+            status === "complete" ? 'border-emerald-500/30' : status === "partial" ? 'border-yellow-500/20' : ''
+        }`}>
+            <CardHeader className={`flex flex-row items-center justify-between pb-2 rounded-t-lg transition-colors duration-300 ${
+                status === "complete" ? 'bg-gradient-to-r from-emerald-500/5 to-transparent' : ''
+            }`}>
+                <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg font-medium">{title}</CardTitle>
+                    <div className="flex items-center gap-1.5">
+                        <span
+                            className={`h-2.5 w-2.5 rounded-full shrink-0 transition-colors duration-300 ${
+                                status === "complete"
+                                    ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
+                                    : status === "partial"
+                                    ? "bg-yellow-500 shadow-sm shadow-yellow-500/50"
+                                    : "bg-muted-foreground/30"
+                            }`}
+                            title={
+                                status === "complete"
+                                    ? "Fully configured"
+                                    : status === "partial"
+                                    ? "Partially configured"
+                                    : "Not configured"
+                            }
+                        />
+                        <span className={`text-[10px] font-medium ${
+                            status === "complete"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : status === "partial"
+                                ? "text-yellow-600 dark:text-yellow-400"
+                                : "text-muted-foreground"
+                        }`}>
+                            {status === "complete" ? "Ready" : status === "partial" ? "Partial" : "Setup needed"}
+                        </span>
+                    </div>
+                </div>
                 <Icon className={`w-6 h-6 ${iconColor}`} />
             </CardHeader>
             <CardContent>
@@ -65,7 +109,9 @@ export function AgentCard({
                                 onValueChange={onModelChange}
                             >
                                 <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Select model" />
+                                    <SelectValue placeholder="Select model">
+                                        {selectedModel && getModelDisplayName(selectedModel)}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent 
                                     className="z-[9999]"
@@ -83,14 +129,24 @@ export function AgentCard({
                                             />
                                         </div>
                                         <div className="max-h-[150px] overflow-y-auto">
-                                            {models.map((model, idx) => (
-                                                <SelectItem 
-                                                    key={`${agentId}-model-${modelPage}-${idx}`} 
-                                                    value={model}
-                                                >
-                                                    {model}
-                                                </SelectItem>
-                                            ))}
+                                            {models.map((model, idx) => {
+                                                const modelId = typeof model === 'string' ? model : model.id
+                                                const modelName = typeof model === 'string' ? model : model.name
+                                                const modelDesc = typeof model === 'object' ? model.description : null
+                                                return (
+                                                    <SelectItem
+                                                        key={`${agentId}-model-${modelPage}-${idx}`}
+                                                        value={modelId}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span>{modelName}</span>
+                                                            {modelDesc && (
+                                                                <span className="text-[10px] text-muted-foreground">{modelDesc}</span>
+                                                            )}
+                                                        </div>
+                                                    </SelectItem>
+                                                )
+                                            })}
                                             {models.length === 0 && (
                                                 <div className="p-2 text-xs text-muted-foreground text-center">
                                                     No models found

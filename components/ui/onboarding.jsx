@@ -148,8 +148,8 @@ const defaultSteps = [
         icon: Check,
         content: (
             <div className="text-center py-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
-                    <Check className="h-8 w-8 text-green-500" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
+                    <Check className="h-8 w-8 text-success" />
                 </div>
                 <p className="text-muted-foreground">
                     You're ready to start! Import a repository and run your first analysis.

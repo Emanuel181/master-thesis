@@ -56,6 +56,9 @@ import {
     ImportDialog,
     EditorTabs,
     EditorHeader,
+    EditorStatusBar,
+    EditorBreadcrumb,
+    EditorEmptyState,
 } from './components';
 
 const LANGUAGE_STORAGE_KEY = 'vulniq_editor_language';
@@ -79,7 +82,7 @@ const loadSavedLanguage = () => {
     return DEFAULT_LANGUAGE;
 };
 
-export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLocked, onLockChange }) {
+export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     // --- Configuration State ---
     // Initialize with default to avoid hydration mismatch
     const [language, setLanguageState] = useState(DEFAULT_LANGUAGE);
@@ -95,6 +98,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     // --- Go to Line & Zoom State ---
     const [goToLineOpen, setGoToLineOpen] = useState(false);
     const [editorFontSize, setEditorFontSize] = useState(null); // null = use settings default
+    const [cursorPosition, setCursorPosition] = useState({ lineNumber: 1, column: 1 });
     const { settings, updateSettings } = useSettings();
 
     // --- Tab Group Dialog State ---
@@ -213,7 +217,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
         .filter(group => group.id !== 'ungrouped') // Exclude ungrouped
         .map(group => ({ value: group.id, label: group.name }));
 
-    const hasCode = code && code.trim().length > 0;
+    const hasCode = (code && code.trim().length > 0) || (projectStructure && Object.keys(projectStructure).length > 0);
     const [isPlaceholder, setIsPlaceholder] = useState(!hasCode);
     const placeholderText = `${commentPrefixFor('javascript')}${BASE_PLACEHOLDER}`;
 
@@ -488,6 +492,28 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
     const isFormattable = formattableLanguages.includes(currentLanguage);
     const hasContent = activeTab || (selectedFile && selectedFile.content) || hasCode;
     const hasImportedProject = Boolean(currentRepo);
+    const showEmptyState = isPlaceholder && !activeTab && !selectedFile?.content && !hasImportedProject;
+
+    // --- Empty State Handlers ---
+    const handleEmptyPasteClick = useCallback(() => {
+        setIsPlaceholder(false);
+        // Focus the editor after a tick so Monaco is ready
+        setTimeout(() => editorRef.current?.focus(), 100);
+    }, []);
+
+    const handleFileDrop = useCallback((content, fileName) => {
+        if (fileName) {
+            // Detect language from file extension
+            const ext = fileName.split('.').pop()?.toLowerCase();
+            const langMatch = supportedLanguages.find(l => {
+                const map = { js: 'javascript', jsx: 'javascript', py: 'python', java: 'java', cs: 'csharp', c: 'c', cpp: 'cpp', php: 'php', go: 'go', json: 'json' };
+                return l.prism === map[ext];
+            });
+            if (langMatch) setLanguage(langMatch);
+        }
+        setCode(content);
+        setIsPlaceholder(false);
+    }, [setCode, setLanguage]);
 
     return (
         <div className="flex flex-col h-full w-full gap-1.5 sm:gap-2">
@@ -497,30 +523,20 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                     <EditorHeader
                         isPlaceholder={isPlaceholder}
                         hasContent={hasContent}
-                        isLocked={isLocked}
-                        onLockChange={onLockChange}
                         isViewOnly={isViewOnly}
                         codeType={codeType}
-                        setCodeType={setCodeType}
-                        codeTypes={codeTypes}
-                        isRefreshing={isRefreshing}
-                        refreshUseCases={refreshGroups}
-                        setIsRefreshing={setIsRefreshing}
                         isFormatting={isFormatting}
                         handleFormat={handleFormat}
                         isFormattable={isFormattable}
                         isCopied={isCopied}
                         handleCopy={handleCopy}
                         hasCode={hasCode}
-                        isReviewable={isReviewable}
                         onStart={() => onStart(code, codeType)}
                         activeTab={activeTab}
                         code={code}
                         // Tab group props
                         onCreateGroup={() => setNewGroupDialogOpen(true)}
                         hasOpenTabs={openTabs.length > 0}
-                        // Demo mode
-                        isDemoMode={isDemoMode}
                         // Project controls (moved from top toolbar)
                         hasImportedProject={hasImportedProject}
                         currentRepo={currentRepo}
@@ -610,90 +626,127 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart, isLoc
                             </div>
                         </div>
 
-                        <div className="flex flex-1 overflow-hidden">
-                            {/* Desktop: Project Tree sidebar */}
-                            <div className="hidden sm:block">
-                                {viewMode === 'project' && projectStructure && (
-                                    <ProjectTree
-                                        structure={projectStructure}
-                                        onFileClick={onFileClick}
-                                        width={treeWidth}
-                                        onWidthChange={setTreeWidth}
-                                        collapsed={treeCollapsed}
-                                        setCollapsed={setTreeCollapsed}
-                                        onDragStateChange={setIsTreeResizing}
-                                        minWidth={140}
-                                        maxWidth={700}
-                                        additionalButtons={openTabs.length > 0 ? (
-                                            <button
-                                                onClick={closeAllTabs}
-                                                className="p-1 hover:bg-accent rounded-md"
-                                                title="Close All Tabs"
-                                            >
-                                                <X className="h-3.5 w-3.5" />
-                                            </button>
-                                        ) : null}
-                                    />
-                                )}
-                            </div>
+                        {/* File path breadcrumb */}
+                        <EditorBreadcrumb
+                            filePath={activeTab?.path || selectedFile?.path}
+                            repoName={currentRepo?.repo}
+                        />
 
-                            <div className={`flex-1 min-w-0 h-full relative bg-background ${isTreeResizing ? 'pointer-events-none select-none' : ''}`}>
-                                <Editor
-                                    key={`${language.prism}-${themeKey}`}
-                                    language={language.prism}
-                                    value={editorValue}
-                                    onChange={(val) => {
-                                        if (activeTab) {
-                                            updateTabContent(activeTab.id, val);
-                                        } else if (!isPlaceholder && val !== undefined) {
-                                            setCode(val);
-                                        }
-                                    }}
-                                    theme={`custom-${themeKey}`}
-                                    options={{
-                                        fontFamily: font.family,
-                                        fontSize: editorFontSize || fontSize,
-                                        fontLigatures: ligatures && font.ligatures,
-                                        lineHeight: Math.round((editorFontSize || fontSize) * 1.6),
-                                        wordWrap: settings?.editorWordWrap !== false ? 'on' : 'off',
-                                        minimap: { enabled: minimap },
-                                        scrollbar: { vertical: 'auto', horizontal: 'auto' },
-                                        smoothScrolling: true,
-                                        automaticLayout: true,
-                                        readOnly: isLocked,
-                                        padding: { top: 16, bottom: 16 },
-                                        formatOnPaste: false,
-                                        formatOnType: false,
-                                        bracketPairColorization: { enabled: true },
-                                        matchBrackets: 'always',
-                                    }}
-                                    onMount={(editor, monaco) => {
-                                        monacoRef.current = monaco;
-                                        editorRef.current = editor;
-                                        const monacoTheme = buildMonacoTheme(theme);
-                                        monaco.editor.defineTheme(`custom-${themeKey}`, monacoTheme);
-                                        monaco.editor.setTheme(`custom-${themeKey}`);
-                                        editor.onDidChangeModelContent(() => {
-                                            const current = editor.getValue();
-                                            const placeholders = [
-                                                `// ${BASE_PLACEHOLDER}`,
-                                                `# ${BASE_PLACEHOLDER}`,
-                                                BASE_PLACEHOLDER,
-                                                ''
-                                            ];
-                                            const isCurrentPlaceholder = placeholders.includes(current.trim()) || current.trim() === '';
+                        {/* Editor area or empty state */}
+                        {showEmptyState ? (
+                            <EditorEmptyState
+                                onImport={() => setIsImportDialogOpen(true)}
+                                onPasteClick={handleEmptyPasteClick}
+                                displayLanguages={displayLanguages}
+                                language={language}
+                                setLanguage={setLanguage}
+                                onFileDrop={handleFileDrop}
+                            />
+                        ) : (
+                            <div className="flex flex-1 overflow-hidden">
+                                {/* Desktop: Project Tree sidebar */}
+                                <div className="hidden sm:block">
+                                    {viewMode === 'project' && projectStructure && (
+                                        <ProjectTree
+                                            structure={projectStructure}
+                                            onFileClick={onFileClick}
+                                            width={treeWidth}
+                                            onWidthChange={setTreeWidth}
+                                            collapsed={treeCollapsed}
+                                            setCollapsed={setTreeCollapsed}
+                                            onDragStateChange={setIsTreeResizing}
+                                            minWidth={140}
+                                            maxWidth={700}
+                                            additionalButtons={openTabs.length > 0 ? (
+                                                <button
+                                                    onClick={closeAllTabs}
+                                                    className="p-1 hover:bg-accent rounded-md"
+                                                    title="Close All Tabs"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            ) : null}
+                                        />
+                                    )}
+                                </div>
 
-                                            if (isCurrentPlaceholder) {
-                                                setIsPlaceholder(true);
-                                            } else {
-                                                setIsPlaceholder(false);
-                                                setCode(current);
+                                <div className={`flex-1 min-w-0 h-full relative bg-background ${isTreeResizing ? 'pointer-events-none select-none' : ''}`}>
+                                    <Editor
+                                        key={`${language.prism}-${themeKey}`}
+                                        language={language.prism}
+                                        value={editorValue}
+                                        onChange={(val) => {
+                                            if (activeTab) {
+                                                updateTabContent(activeTab.id, val);
+                                            } else if (!isPlaceholder && val !== undefined) {
+                                                setCode(val);
                                             }
-                                        });
-                                    }}
-                                />
+                                        }}
+                                        theme={`custom-${themeKey}`}
+                                        options={{
+                                            fontFamily: font.family,
+                                            fontSize: editorFontSize || fontSize,
+                                            fontLigatures: ligatures && font.ligatures,
+                                            lineHeight: Math.round((editorFontSize || fontSize) * 1.6),
+                                            wordWrap: settings?.editorWordWrap !== false ? 'on' : 'off',
+                                            minimap: { enabled: minimap },
+                                            scrollbar: { vertical: 'auto', horizontal: 'auto' },
+                                            smoothScrolling: true,
+                                            automaticLayout: true,
+                                            readOnly: isViewOnly,
+                                            padding: { top: 16, bottom: 16 },
+                                            formatOnPaste: false,
+                                            formatOnType: false,
+                                            bracketPairColorization: { enabled: true },
+                                            matchBrackets: 'always',
+                                        }}
+                                        onMount={(editor, monaco) => {
+                                            monacoRef.current = monaco;
+                                            editorRef.current = editor;
+                                            const monacoTheme = buildMonacoTheme(theme);
+                                            monaco.editor.defineTheme(`custom-${themeKey}`, monacoTheme);
+                                            monaco.editor.setTheme(`custom-${themeKey}`);
+
+                                            // Track cursor position for status bar
+                                            editor.onDidChangeCursorPosition((e) => {
+                                                setCursorPosition({ lineNumber: e.position.lineNumber, column: e.position.column });
+                                            });
+
+                                            editor.onDidChangeModelContent(() => {
+                                                const current = editor.getValue();
+                                                const placeholders = [
+                                                    `// ${BASE_PLACEHOLDER}`,
+                                                    `# ${BASE_PLACEHOLDER}`,
+                                                    BASE_PLACEHOLDER,
+                                                    ''
+                                                ];
+                                                const isCurrentPlaceholder = placeholders.includes(current.trim()) || current.trim() === '';
+
+                                                if (isCurrentPlaceholder) {
+                                                    setIsPlaceholder(true);
+                                                } else {
+                                                    setIsPlaceholder(false);
+                                                    setCode(current);
+                                                }
+                                            });
+                                        }}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Status bar */}
+                        {!showEmptyState && (
+                            <EditorStatusBar
+                                cursorPosition={cursorPosition}
+                                language={language}
+                                setLanguage={setLanguage}
+                                displayLanguages={displayLanguages}
+                                lineCount={getLineCount()}
+                                tabSize={4}
+                                isViewOnly={isViewOnly}
+                            />
+                        )}
                     </CardContent>
                 </Card>
             </div>

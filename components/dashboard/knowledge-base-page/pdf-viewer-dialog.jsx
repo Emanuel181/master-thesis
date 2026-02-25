@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
     Dialog,
     DialogContent,
@@ -10,335 +9,296 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, FileText, Lock } from "lucide-react";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
+import { Download, FileText, Lock, Maximize2, Minimize2 } from "lucide-react";
 
-// Configure PDF.js worker - use unpkg with the exact version from react-pdf's pdfjs
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// ── A4 constants ────────────────────────────────────────────────────
+const A4_ASPECT = 842 / 595;
+
+// Minimum dialog dimensions
+const MIN_W = 400;
+const MIN_H = 300;
 
 export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName, isDemo = false }) {
-    const [numPages, setNumPages] = useState(null);
-    const [pageNumber, setPageNumber] = useState(1);
-    const [scale, setScale] = useState(1.0);
-    const viewerRef = React.useRef(null);
-    const scrollAreaRef = React.useRef(null);
+    const containerRef = useRef(null);
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+    const [blobUrl, setBlobUrl] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // Drag/pan state
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 });
+    // ── Resizable state ─────────────────────────────────────────────
+    const [isMaximized, setIsMaximized] = useState(false);
+    const [size, setSize] = useState({ w: 0, h: 0 }); // 0 = use responsive defaults
+    const [isResizing, setIsResizing] = useState(false);
+    const resizing = useRef(null); // { edge, startX, startY, startW, startH }
 
-    function onDocumentLoadSuccess({ numPages }) {
-        setNumPages(numPages);
-        setPageNumber(1);
-    }
+    // Responsive default size (used when size.w/h is 0 or reset)
+    const getDefaultSize = useCallback(() => {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        if (vw < 640) return { w: vw * 0.95, h: vh * 0.9 };
+        if (vw < 1024) return { w: vw * 0.85, h: vh * 0.85 };
+        return { w: vw * 0.75, h: vh * 0.8 };
+    }, []);
 
-    function onDocumentLoadError(error) {
-        console.error("Error loading PDF:", error);
-    }
+    // Current effective size
+    const getEffectiveSize = useCallback(() => {
+        if (isMaximized) return { w: window.innerWidth * 0.98, h: window.innerHeight * 0.96 };
+        if (size.w > 0 && size.h > 0) return size;
+        return getDefaultSize();
+    }, [isMaximized, size, getDefaultSize]);
 
-    // Reset state when dialog opens/closes
+    // Reset size on dialog open
     useEffect(() => {
-        if (open && viewerRef.current) {
-            viewerRef.current.focus();
-        }
-        if (!open) {
-            setScale(1.0);
-            setPageNumber(1);
+        if (open) {
+            setSize({ w: 0, h: 0 });
+            setIsMaximized(false);
         }
     }, [open]);
 
-    const goToPreviousPage = () => {
-        setPageNumber((prev) => Math.max(prev - 1, 1));
-    };
-
-    const goToNextPage = () => {
-        setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
-    };
-
-    const zoomIn = useCallback(() => {
-        setScale((prev) => Math.min(prev + 0.2, 3.0));
-    }, []);
-
-    const zoomOut = useCallback(() => {
-        setScale((prev) => Math.max(prev - 0.2, 0.1));
-    }, []);
-
-    // Drag/pan handlers
-    const handleMouseDown = (e) => {
-        // Only start drag with left mouse button
-        if (e.button !== 0) return;
-
-        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-        if (!scrollArea) return;
-
-        setIsDragging(true);
-        setDragStart({ x: e.clientX, y: e.clientY });
-        setScrollStart({ x: scrollArea.scrollLeft, y: scrollArea.scrollTop });
+    // ── Resize drag handlers ────────────────────────────────────────
+    const handleResizeStart = useCallback((edge, e) => {
         e.preventDefault();
-    };
+        e.stopPropagation();
+        const s = getEffectiveSize();
+        resizing.current = { edge, startX: e.clientX, startY: e.clientY, startW: s.w, startH: s.h };
+        setIsResizing(true);
 
-    const handleMouseMove = (e) => {
-        if (!isDragging) return;
+        const onMove = (ev) => {
+            if (!resizing.current) return;
+            const { edge: ed, startX, startY, startW, startH } = resizing.current;
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+            let newW = startW;
+            let newH = startH;
 
-        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-        if (!scrollArea) return;
+            if (ed.includes("e")) newW = startW + dx * 2;   // *2 because dialog is centered
+            if (ed.includes("w")) newW = startW - dx * 2;
+            if (ed.includes("s")) newH = startH + dy * 2;
+            if (ed.includes("n")) newH = startH - dy * 2;
 
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
+            newW = Math.max(MIN_W, Math.min(newW, window.innerWidth * 0.98));
+            newH = Math.max(MIN_H, Math.min(newH, window.innerHeight * 0.96));
 
-        scrollArea.scrollLeft = scrollStart.x - deltaX;
-        scrollArea.scrollTop = scrollStart.y - deltaY;
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseLeave = () => {
-        setIsDragging(false);
-    };
-
-    // Handle wheel/touchpad zoom - must capture at document level with non-passive listener
-    useEffect(() => {
-        if (!open) return;
-
-        const handleWheel = (e) => {
-            // Check if Ctrl key is pressed (or Cmd on Mac) - this is how touchpad pinch zoom works
-            if (e.ctrlKey || e.metaKey) {
-                // Check if the event target is within our viewer
-                const viewer = viewerRef.current;
-                if (viewer && (viewer.contains(e.target) || viewer === e.target)) {
-                    // Prevent browser zoom
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Determine zoom direction based on wheel delta
-                    const delta = e.deltaY;
-                    const zoomAmount = 0.05; // Smaller amount for smoother touchpad zoom
-
-                    setScale((prev) => {
-                        if (delta < 0) {
-                            // Scrolling up / pinch out - zoom in
-                            return Math.min(prev + zoomAmount, 3.0);
-                        } else {
-                            // Scrolling down / pinch in - zoom out
-                            return Math.max(prev - zoomAmount, 0.1);
-                        }
-                    });
-                }
-            }
+            setSize({ w: newW, h: newH });
+            setIsMaximized(false);
         };
 
-        // Add non-passive event listener at document level to capture before browser zoom
-        document.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+        const onUp = () => {
+            resizing.current = null;
+            setIsResizing(false);
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+    }, [getEffectiveSize]);
+
+    // ── Blob fetch ──────────────────────────────────────────────────
+    useEffect(() => {
+        if (!open || !pdfUrl || isDemo) return;
+
+        let revoked = false;
+        setLoading(true);
+        setError(null);
+
+        fetch(pdfUrl)
+            .then((res) => {
+                if (!res.ok) throw new Error(`Failed to fetch PDF (${res.status})`);
+                return res.blob();
+            })
+            .then((blob) => {
+                if (revoked) return;
+                setBlobUrl(URL.createObjectURL(blob));
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (revoked) return;
+                console.error("Error fetching PDF blob:", err);
+                setError(err.message);
+                setLoading(false);
+            });
 
         return () => {
-            document.removeEventListener('wheel', handleWheel, { capture: true });
+            revoked = true;
+            setBlobUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
+            setLoading(false);
+            setError(null);
         };
-    }, [open]);
+    }, [open, pdfUrl, isDemo]);
 
-    // Prevent browser zoom shortcuts when dialog is open
+    // Measure container
     useEffect(() => {
         if (!open) return;
-
-        const handleKeyDown = (e) => {
-            // Prevent Ctrl/Cmd + Plus/Minus/0 (browser zoom shortcuts)
-            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
-                const viewer = viewerRef.current;
-                if (viewer && (viewer.contains(document.activeElement) || viewer === document.activeElement)) {
-                    e.preventDefault();
-                    if (e.key === '+' || e.key === '=') {
-                        setScale((prev) => Math.min(prev + 0.2, 3.0));
-                    } else if (e.key === '-') {
-                        setScale((prev) => Math.max(prev - 0.2, 0.1));
-                    } else if (e.key === '0') {
-                        setScale(1.0); // Reset to 100%
-                    }
-                }
-            }
+        const measure = () => {
+            const el = containerRef.current;
+            if (el) setContainerSize({ width: el.clientWidth, height: el.clientHeight });
         };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
+        const raf = requestAnimationFrame(measure);
+        window.addEventListener("resize", measure);
+        return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", measure); };
     }, [open]);
 
-    // Calculate PDF width based on container and scale
-    const getPdfWidth = () => {
-        // Use a larger percentage of viewport width for wider display
-        const baseWidth = Math.min(window.innerWidth * 0.92, 1600);
-        return baseWidth * scale;
-    };
+    const demoWidth = Math.min(containerSize.width ? containerSize.width - 48 : 500, 595);
+    const demoHeight = demoWidth * A4_ASPECT;
 
     const handleDownload = () => {
-        if (pdfUrl) {
-            const link = document.createElement("a");
-            link.href = pdfUrl;
-            link.download = fileName || "document.pdf";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        if (!blobUrl) return;
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName || "document.pdf";
+        link.click();
     };
+
+    const toggleMaximize = () => setIsMaximized((prev) => !prev);
+
+    const effectiveSize = getEffectiveSize();
+
+    // Shared resize handle style
+    const handleCls = "absolute z-50 opacity-0 hover:opacity-100 transition-opacity";
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-[98vw] w-[98vw] h-[98vh] flex flex-col p-0"
+                className="flex flex-col p-0 gap-0 overflow-visible"
+                style={{
+                    width: effectiveSize.w,
+                    height: effectiveSize.h,
+                    maxWidth: "98vw",
+                    maxHeight: "96vh",
+                    transition: isResizing ? "none" : "width 0.2s ease, height 0.2s ease",
+                }}
             >
-                <DialogHeader className="px-6 py-4 border-b">
-                    <DialogTitle className="text-lg font-semibold">
+                {/* ── Resize handles ──────────────────────────────── */}
+                {/* Right */}
+                <div className={`${handleCls} top-0 -right-1 w-2 h-full cursor-e-resize`}
+                     onMouseDown={(e) => handleResizeStart("e", e)} />
+                {/* Left */}
+                <div className={`${handleCls} top-0 -left-1 w-2 h-full cursor-w-resize`}
+                     onMouseDown={(e) => handleResizeStart("w", e)} />
+                {/* Bottom */}
+                <div className={`${handleCls} -bottom-1 left-0 h-2 w-full cursor-s-resize`}
+                     onMouseDown={(e) => handleResizeStart("s", e)} />
+                {/* Top */}
+                <div className={`${handleCls} -top-1 left-0 h-2 w-full cursor-n-resize`}
+                     onMouseDown={(e) => handleResizeStart("n", e)} />
+                {/* Corners */}
+                <div className={`${handleCls} -top-1 -right-1 w-3 h-3 cursor-ne-resize`}
+                     onMouseDown={(e) => handleResizeStart("ne", e)} />
+                <div className={`${handleCls} -top-1 -left-1 w-3 h-3 cursor-nw-resize`}
+                     onMouseDown={(e) => handleResizeStart("nw", e)} />
+                <div className={`${handleCls} -bottom-1 -right-1 w-3 h-3 cursor-se-resize`}
+                     onMouseDown={(e) => handleResizeStart("se", e)} />
+                <div className={`${handleCls} -bottom-1 -left-1 w-3 h-3 cursor-sw-resize`}
+                     onMouseDown={(e) => handleResizeStart("sw", e)} />
+
+                {/* ── Header ─────────────────────────────────────── */}
+                <DialogHeader className="px-4 py-2.5 border-b shrink-0" onDoubleClick={toggleMaximize}>
+                    <DialogTitle className="text-base font-semibold pr-8">
                         {fileName || "PDF Document"}
                     </DialogTitle>
-                    <DialogDescription className="text-sm text-muted-foreground">
-                        {isDemo 
-                            ? "Demo Mode • This is a preview placeholder" 
-                            : (numPages ? `Page ${pageNumber} of ${numPages} • Use Ctrl+Scroll to zoom` : "Loading...")}
+                    <DialogDescription className="text-xs text-muted-foreground">
+                        {isDemo
+                            ? "Demo Mode • This is a preview placeholder"
+                            : loading
+                              ? "Loading PDF…"
+                              : error
+                                ? "Error loading PDF"
+                                : "Drag edges to resize • Double-click header to maximize"}
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Controls */}
-                <div className="px-6 py-3 border-b bg-muted/30 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
+                {/* ── Controls ────────────────────────────────────── */}
+                <div className="px-4 py-1.5 border-b bg-muted/30 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-1">
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
-                            onClick={goToPreviousPage}
-                            disabled={isDemo || pageNumber <= 1}
+                            onClick={toggleMaximize}
+                            className="h-7 w-7 p-0"
+                            title={isMaximized ? "Restore size" : "Maximize"}
                         >
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <div className="text-sm font-medium min-w-[100px] text-center">
-                            {isDemo ? "1 / 1" : `${pageNumber} / ${numPages || "..."}`}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={goToNextPage}
-                            disabled={isDemo || pageNumber >= (numPages || 1)}
-                        >
-                            <ChevronRight className="h-4 w-4" />
+                            {isMaximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
                         </Button>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={zoomOut} disabled={isDemo}>
-                            <ZoomOut className="h-4 w-4" />
-                        </Button>
-                        <div className="text-sm font-medium min-w-[60px] text-center">
-                            {Math.round(scale * 100)}%
-                        </div>
-                        <Button variant="outline" size="sm" onClick={zoomIn} disabled={isDemo}>
-                            <ZoomIn className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={handleDownload} disabled={isDemo}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleDownload} disabled={isDemo || !blobUrl}>
+                        <Download className="h-3.5 w-3.5 mr-1.5" />
+                        Download
+                    </Button>
                 </div>
 
-                {/* PDF Viewer */}
-                <div
-                    ref={viewerRef}
-                    className={`flex-1 relative overflow-hidden outline-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseLeave}
-                    tabIndex={0}
-                >
-                    <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
-                        <div className="p-6 bg-muted/20 min-h-full">
-                            {isDemo ? (
-                                /* Demo mode placeholder */
-                                <div className="flex flex-col items-center justify-center py-10 space-y-6">
-                                    <div className="relative w-[500px] max-w-full h-[650px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border flex flex-col overflow-hidden">
-                                        {/* Mock PDF Header */}
-                                        <div className="p-6 border-b shrink-0">
-                                            <div className="flex items-center gap-3">
-                                                <FileText className="h-8 w-8 text-red-500" />
-                                                <div>
-                                                    <h3 className="font-semibold text-lg text-foreground">{fileName || "Document.pdf"}</h3>
-                                                    <p className="text-sm text-muted-foreground">Security Documentation</p>
-                                                </div>
+                {/* ── PDF Viewer ──────────────────────────────────── */}
+                <div ref={containerRef} className="flex-1 relative overflow-hidden min-h-0 bg-muted/20">
+                    {/* Overlay to prevent iframe from capturing mouse during resize */}
+                    {isResizing && <div className="absolute inset-0 z-10" />}
+                    {isDemo ? (
+                        <div className="flex justify-center items-start p-4 h-full overflow-auto">
+                            <div className="flex flex-col items-center justify-center py-6">
+                                <div
+                                    className="relative bg-background rounded-lg shadow-xl border flex flex-col overflow-hidden"
+                                    style={{ width: demoWidth, height: demoHeight }}
+                                >
+                                    <div className="p-6 border-b shrink-0">
+                                        <div className="flex items-center gap-3">
+                                            <FileText className="h-8 w-8 text-red-500" />
+                                            <div>
+                                                <h3 className="font-semibold text-lg text-foreground">{fileName || "Document.pdf"}</h3>
+                                                <p className="text-sm text-muted-foreground">Security Documentation</p>
                                             </div>
-                                        </div>
-                                        
-                                        {/* Mock PDF Content */}
-                                        <div className="flex-1 p-6 space-y-4 overflow-hidden">
-                                            <div className="space-y-2">
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-                                            </div>
-                                            <div className="space-y-2 pt-4">
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                                            </div>
-                                            <div className="space-y-2 pt-4">
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                                            </div>
-                                            <div className="space-y-2 pt-4">
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Demo Overlay */}
-                                        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center z-10">
-                                            <Lock className="h-16 w-16 text-gray-400 dark:text-gray-500 mb-4" />
-                                            <h3 className="text-2xl font-semibold mb-2 text-foreground">Demo Mode Preview</h3>
-                                            <p className="text-muted-foreground text-center max-w-sm px-4">
-                                                Full PDF viewing is available with a VulnIQ account. Sign up to access your security documentation.
-                                            </p>
                                         </div>
                                     </div>
-                                </div>
-                            ) : pdfUrl ? (
-                                <div className="inline-block min-w-full">
-                                    <Document
-                                        file={pdfUrl}
-                                        onLoadSuccess={onDocumentLoadSuccess}
-                                        onLoadError={onDocumentLoadError}
-                                        loading={
-                                            <div className="flex items-center justify-center py-20">
-                                                <div className="text-muted-foreground">Loading PDF...</div>
+                                    <div className="flex-1 p-6 space-y-4 overflow-hidden">
+                                        {[...Array(5)].map((_, g) => (
+                                            <div key={g} className="space-y-2 pt-2">
+                                                <div className="h-3 bg-muted rounded" style={{ width: `${70 + ((g * 13) % 30)}%` }} />
+                                                <div className="h-3 bg-muted rounded w-full" />
+                                                <div className="h-3 bg-muted rounded" style={{ width: `${60 + ((g * 17) % 35)}%` }} />
                                             </div>
-                                        }
-                                        error={
-                                            <div className="flex items-center justify-center py-20">
-                                                <div className="text-destructive">
-                                                    Failed to load PDF. Please try again.
-                                                </div>
-                                            </div>
-                                        }
-                                    >
-                                        <div className="flex justify-center">
-                                            <Page
-                                                pageNumber={pageNumber}
-                                                width={getPdfWidth()}
-                                                renderTextLayer={false}
-                                                renderAnnotationLayer={true}
-                                                className="shadow-lg"
-                                            />
-                                        </div>
-                                    </Document>
+                                        ))}
+                                    </div>
+                                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center z-10">
+                                        <Lock className="h-16 w-16 text-muted-foreground mb-4" />
+                                        <h3 className="text-2xl font-semibold mb-2 text-foreground">Demo Mode Preview</h3>
+                                        <p className="text-muted-foreground text-center max-w-sm px-4">
+                                            Full PDF viewing is available with a VulnIQ account. Sign up to access your security documentation.
+                                        </p>
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="flex items-center justify-center py-20">
-                                    <div className="text-muted-foreground">No PDF selected</div>
-                                </div>
-                            )}
+                            </div>
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
+                    ) : loading ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-3">
+                            <div className="h-8 w-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+                            <div className="text-muted-foreground">Loading PDF…</div>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-3">
+                            <div className="text-destructive font-medium">Failed to load PDF</div>
+                            <div className="text-sm text-muted-foreground">{error}</div>
+                        </div>
+                    ) : blobUrl ? (
+                        <iframe
+                            src={`${blobUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+                            title={fileName || "PDF Document"}
+                            className="w-full h-full"
+                            style={{ border: "none" }}
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center h-full">
+                            <div className="text-muted-foreground">No PDF selected</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Bottom-right resize grip indicator */}
+                <div
+                    className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-50 flex items-end justify-end pr-0.5 pb-0.5 opacity-40 hover:opacity-80 transition-opacity"
+                    onMouseDown={(e) => handleResizeStart("se", e)}
+                >
+                    <svg width="10" height="10" viewBox="0 0 10 10" className="text-muted-foreground">
+                        <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" strokeWidth="1.5" />
+                        <line x1="9" y1="5" x2="5" y2="9" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
                 </div>
             </DialogContent>
         </Dialog>

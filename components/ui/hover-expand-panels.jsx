@@ -101,51 +101,27 @@ export function HoverExpandPanels({
     }
   }, [])
 
-  // Entry animation: starts as one big rectangle, then splits and cycles through panels
+  // Entry animation: expand the first panel, then enable hover interaction
   React.useEffect(() => {
     if (reduceMotion || items.length === 0) return
 
     const container = containerRef.current
     if (!container) return
 
-    const clearTimeouts = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
-      }
-    }
-
     const runAnimation = () => {
       setIsAnimating(true)
-      setActive(0) // Start with first panel expanded (appears as one rectangle)
+      setActive(0) // Expand first panel
 
-      // Animation sequence: cycle through each panel left to right
-      let step = 0
-      const totalSteps = items.length
-
-      const runStep = () => {
-        step++
-        if (step < totalSteps) {
-          setActive(step)
-          timeoutRef.current = setTimeout(runStep, entryAnimationDelay)
-        } else {
-          // Animation complete - stay on last panel, enable hover
-          setTimeout(() => setIsAnimating(false), 50) // Small delay to ensure state updates
-        }
-      }
-
-      // Start cycling after initial delay
-      timeoutRef.current = setTimeout(runStep, entryAnimationDelay)
+      // Short delay then enable hover
+      timeoutRef.current = setTimeout(() => setIsAnimating(false), 400)
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries
         if (entry.isIntersecting) {
-          // Entering view - start animation
           runAnimation()
         }
-        // Don't reset on leaving view - keep current state
       },
       { threshold: 0.2 }
     )
@@ -154,9 +130,9 @@ export function HoverExpandPanels({
 
     return () => {
       observer.disconnect()
-      clearTimeouts()
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
-  }, [reduceMotion, items.length, entryAnimationDelay])
+  }, [reduceMotion, items.length])
 
   // Animate the GRID track sizes with spring physics
   // On mobile, use rows instead of columns
@@ -207,7 +183,7 @@ export function HoverExpandPanels({
         aria-label="Hover-expand gradient panels"
         style={isMobile ? undefined : {
           gridTemplateColumns,
-          transition: reduceMotion ? undefined : "grid-template-columns 600ms cubic-bezier(0.25, 0.1, 0.25, 1)",
+          transition: reduceMotion ? undefined : "grid-template-columns 200ms cubic-bezier(0.33, 1, 0.68, 1)",
         }}
       >
         {items.map((item, i) => {
@@ -226,21 +202,22 @@ export function HoverExpandPanels({
               onClick={() => isMobile && setActive(i)}
               className={cn(
                 "relative min-w-0 overflow-hidden rounded-2xl sm:rounded-3xl",
-                "bg-white/5 backdrop-blur-sm",
+                "bg-white/10 backdrop-blur-md",
+                "border border-white/20",
                 "outline-none",
                 "cursor-pointer",
                 isMobile ? "h-[180px] sm:h-[220px]" : "h-full",
               )}
               initial={false}
               animate={{
-                y: !isAnimating && isActive && !isMobile ? -6 : 0,
-                scale: !isAnimating && isActive && !isMobile ? 1.01 : 1,
+                y: 0,
+                scale: 1,
               }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.15, ease: [0.33, 1, 0.68, 1] }}
               style={{
                 boxShadow: !isAnimating && isActive && !isMobile 
-                  ? "0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.1)" 
-                  : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  ? "0 16px 40px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.1)"
+                  : "0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
             >
               {/* Gradient background */}
@@ -257,7 +234,7 @@ export function HoverExpandPanels({
               />
 
               {/* Animated content like features cards */}
-              <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 z-0 opacity-40 sm:opacity-50 md:opacity-100">
+              <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 z-0 opacity-50 sm:opacity-60 md:opacity-100">
                 {getPanelAnimation(i)}
               </div>
 
@@ -269,7 +246,7 @@ export function HoverExpandPanels({
                 animate={{ 
                   opacity: isActive ? 1 : 0,
                 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.1 }}
                 style={{
                   background: "radial-gradient(800px circle at 25% 15%, rgba(255,255,255,0.25), transparent 55%)",
                 }}
@@ -277,25 +254,28 @@ export function HoverExpandPanels({
 
               {/* Scan line effect on active */}
               <motion.div
-                className="absolute inset-x-0 h-[2px] pointer-events-none"
+                className="absolute inset-x-0 h-[1px] pointer-events-none"
                 style={{
-                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)",
+                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
                 }}
                 initial={{ top: 0, opacity: 0 }}
                 animate={{
                   top: isActive ? ["0%", "100%"] : "0%",
-                  opacity: isActive ? [0, 0.6, 0.6, 0] : 0,
+                  opacity: isActive ? [0, 0.5, 0.5, 0] : 0,
                 }}
                 transition={{
-                  duration: 2.5,
+                  duration: 0.9,
                   repeat: isActive ? Infinity : 0,
                   ease: "linear",
-                  repeatDelay: 1,
+                  repeatDelay: 0.2,
                 }}
               />
 
               {/* Readability overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 z-10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15 z-10" />
+
+              {/* Inner border highlight for rectangle feel */}
+              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl border border-white/10 z-10 pointer-events-none" />
 
               {/* Labels */}
               <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 lg:p-8 z-20">
@@ -304,9 +284,9 @@ export function HoverExpandPanels({
                   initial={false}
                   animate={{
                     opacity: isMobile || isActive ? 1 : 0,
-                    y: isMobile || isActive ? 0 : 10,
+                    y: isMobile || isActive ? 0 : 6,
                   }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  transition={{ duration: 0.12, ease: "easeOut" }}
                 >
                   <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold leading-tight tracking-tight">{item.title}</div>
                   {item.description && (
@@ -319,14 +299,14 @@ export function HoverExpandPanels({
               <motion.div
                 className="absolute top-4 right-4 sm:top-5 sm:right-5 md:top-6 md:right-6 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white"
                 animate={{
-                  scale: isActive ? [1, 1.3, 1] : 1,
+                  scale: isActive ? [1, 1.2, 1] : 1,
                   opacity: isActive ? 1 : 0.3,
                   boxShadow: isActive 
-                    ? "0 0 12px 4px rgba(255,255,255,0.5)" 
+                    ? "0 0 8px 3px rgba(255,255,255,0.4)"
                     : "0 0 0px 0px transparent",
                 }}
                 transition={{
-                  duration: 1.5,
+                  duration: 0.6,
                   repeat: isActive ? Infinity : 0,
                   ease: "easeInOut",
                 }}
@@ -366,7 +346,7 @@ const PanelAgenticRAG = () => {
                             scale: [1, 1.15, 1],
                             opacity: [0.5, 0.8, 0.5],
                         }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     />
                     
                     {/* Central brain/controller */}
@@ -379,7 +359,7 @@ const PanelAgenticRAG = () => {
                             scale: [1, 1.08, 1],
                         }}
                         transition={{
-                            duration: 3,
+                            duration: 1.8,
                             repeat: Infinity,
                             ease: "easeInOut",
                         }}
@@ -412,9 +392,9 @@ const PanelAgenticRAG = () => {
                                 scale: [1, 1.1, 1],
                             }}
                             transition={{
-                                x: { duration: 12, repeat: Infinity, ease: "linear" },
-                                y: { duration: 12, repeat: Infinity, ease: "linear" },
-                                scale: { duration: 2, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 },
+                                x: { duration: 7, repeat: Infinity, ease: "linear" },
+                                y: { duration: 7, repeat: Infinity, ease: "linear" },
+                                scale: { duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 },
                             }}
                         >
                             <Icon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 text-white/80" />
@@ -437,7 +417,7 @@ const PanelAgenticRAG = () => {
                                     rotate: [0, 360],
                                 }}
                                 transition={{
-                                    duration: 20,
+                                    duration: 10,
                                     repeat: Infinity,
                                     ease: "linear",
                                 }}
@@ -467,7 +447,7 @@ const PanelZeroHallucinations = () => {
                             opacity: [0.6, 1, 0.6],
                             scale: [0.95, 1.05, 0.95],
                         }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                     >
                         <XCircle className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 lg:h-12 lg:w-12 text-red-400" />
                     </motion.div>
@@ -478,14 +458,14 @@ const PanelZeroHallucinations = () => {
                             <motion.div
                                 className="h-full w-1/3 bg-gradient-to-r from-red-400/60 via-yellow-400/60 to-green-400/60 rounded-full"
                                 animate={{ x: ["-100%", "400%"] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                             />
                         </div>
                         {/* Arrow head */}
                         <motion.div
                             className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-l-[8px] sm:border-l-[10px] md:border-l-[12px] border-l-green-400/60 border-y-[5px] sm:border-y-[6px] md:border-y-[8px] border-y-transparent"
                             animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
+                            transition={{ duration: 0.8, repeat: Infinity }}
                         />
                     </div>
                     
@@ -499,7 +479,7 @@ const PanelZeroHallucinations = () => {
                             opacity: [0.6, 1, 0.6],
                             scale: [0.95, 1.05, 0.95],
                         }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
                     >
                         <CheckCircle2 className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 lg:h-12 lg:w-12 text-green-400" />
                     </motion.div>
@@ -516,7 +496,7 @@ const PanelZeroHallucinations = () => {
                             "0 0 0 0 rgba(255,255,255,0)",
                         ],
                     }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                 >
                     <Lock className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-400" />
                 </motion.div>
@@ -546,8 +526,8 @@ const PanelSecurityKnowledge = () => {
                                 scale: [1 - layer * 0.05, 1.02 - layer * 0.05, 1 - layer * 0.05],
                             }}
                             transition={{
-                                duration: 3.5,
-                                delay: layer * 0.5,
+                                duration: 2,
+                                delay: layer * 0.3,
                                 repeat: Infinity,
                                 ease: "easeInOut",
                             }}
@@ -558,8 +538,8 @@ const PanelSecurityKnowledge = () => {
                                     rotate: [0, 5, -5, 0],
                                 }}
                                 transition={{
-                                    duration: 4,
-                                    delay: layer * 0.3,
+                                    duration: 2.5,
+                                    delay: layer * 0.2,
                                     repeat: Infinity,
                                     ease: "easeInOut",
                                 }}
@@ -584,8 +564,8 @@ const PanelSecurityKnowledge = () => {
                                 scale: [0.8, 1.2, 0.8],
                             }}
                             transition={{
-                                duration: 2.5 + i * 0.3,
-                                delay: i * 0.4,
+                                duration: 1.5 + i * 0.2,
+                                delay: i * 0.2,
                                 repeat: Infinity,
                                 ease: "easeInOut",
                             }}
@@ -613,7 +593,7 @@ const PanelContextAware = () => {
                             scale: [1, 1.1, 1],
                         }}
                         transition={{
-                            duration: 3,
+                            duration: 1.8,
                             repeat: Infinity,
                             ease: "easeInOut",
                         }}
@@ -628,7 +608,7 @@ const PanelContextAware = () => {
                             <motion.div
                                 className="w-full h-1/3 bg-gradient-to-b from-cyan-400/60 via-white/40 to-violet-400/60 rounded-full"
                                 animate={{ y: ["-100%", "400%"] }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                             />
                         </div>
                         
@@ -646,8 +626,8 @@ const PanelContextAware = () => {
                                     opacity: [0.3, 0.7, 0.3],
                                 }}
                                 transition={{
-                                    duration: 2,
-                                    delay: dir === 1 ? 0.5 : 0,
+                                    duration: 1.2,
+                                    delay: dir === 1 ? 0.3 : 0,
                                     repeat: Infinity,
                                     ease: "easeInOut",
                                 }}
@@ -668,8 +648,8 @@ const PanelContextAware = () => {
                                     scale: [0.5, 1, 0.5],
                                 }}
                                 transition={{
-                                    duration: 1.5,
-                                    delay: i * 0.3,
+                                    duration: 0.9,
+                                    delay: i * 0.2,
                                     repeat: Infinity,
                                     ease: "easeInOut",
                                 }}
@@ -687,10 +667,10 @@ const PanelContextAware = () => {
                             scale: [1, 1.1, 1],
                         }}
                         transition={{
-                            duration: 3,
+                            duration: 1.8,
                             repeat: Infinity,
                             ease: "easeInOut",
-                            delay: 1.5,
+                            delay: 0.8,
                         }}
                     >
                         <Sparkles className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 lg:h-12 lg:w-12 text-violet-300" />

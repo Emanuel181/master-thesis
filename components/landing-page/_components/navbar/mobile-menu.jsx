@@ -106,7 +106,7 @@ function ResourcesSection({ onClose }) {
                         href={item.href}
                         onClick={onClose}
                         whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all duration-150 group select-none"
                     >
                         <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
                             <item.icon className="w-4 h-4 text-[var(--brand-accent)]" />
@@ -127,7 +127,7 @@ function ResourcesSection({ onClose }) {
                         rel="noopener noreferrer"
                         onClick={onClose}
                         whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors group"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all duration-150 group select-none"
                     >
                         <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
                             <item.icon className="w-4 h-4 text-[var(--brand-accent)]" />

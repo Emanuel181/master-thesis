@@ -30,12 +30,17 @@ export const GET = createApiHandler(
             return ApiErrors.unauthorized(requestId);
         }
 
-        // Temporarily bypass circuit breaker due to database error
-        const octokit = new Octokit({ auth: githubAccount.access_token });
-        const { data } = await octokit.repos.listForAuthenticatedUser({
-            sort: 'updated',
-            per_page: 100,
-        });
+        // Fetch repos with circuit breaker protection (paginated)
+        const fetchRepos = async () => {
+            const octokit = new Octokit({ auth: githubAccount.access_token });
+            const data = await octokit.paginate(octokit.repos.listForAuthenticatedUser, {
+                sort: 'updated',
+                per_page: 100,
+            });
+            return data;
+        };
+
+        const data = await withCircuitBreaker('github-api', fetchRepos);
 
         const transformedRepos = data.map(repo => ({
             ...repo,

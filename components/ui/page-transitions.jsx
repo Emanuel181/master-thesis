@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
+
+// Consistent duration constants
+const ENTER_DURATION = 0.2
+const EXIT_DURATION = 0.15
 
 // Page transition variants
 const pageVariants = {
@@ -13,7 +17,7 @@ const pageVariants = {
         opacity: 1,
         y: 0,
         transition: {
-            duration: 0.2,
+            duration: ENTER_DURATION,
             ease: "easeOut",
         },
     },
@@ -21,7 +25,7 @@ const pageVariants = {
         opacity: 0,
         y: -10,
         transition: {
-            duration: 0.15,
+            duration: EXIT_DURATION,
             ease: "easeIn",
         },
     },
@@ -31,11 +35,11 @@ const fadeVariants = {
     initial: { opacity: 0 },
     enter: {
         opacity: 1,
-        transition: { duration: 0.2 },
+        transition: { duration: ENTER_DURATION },
     },
     exit: {
         opacity: 0,
-        transition: { duration: 0.15 },
+        transition: { duration: EXIT_DURATION },
     },
 }
 
@@ -48,7 +52,7 @@ const slideVariants = {
         opacity: 1,
         x: 0,
         transition: {
-            duration: 0.25,
+            duration: ENTER_DURATION,
             ease: "easeOut",
         },
     },
@@ -56,7 +60,7 @@ const slideVariants = {
         opacity: 0,
         x: -20,
         transition: {
-            duration: 0.2,
+            duration: EXIT_DURATION,
             ease: "easeIn",
         },
     },
@@ -71,7 +75,7 @@ const scaleVariants = {
         opacity: 1,
         scale: 1,
         transition: {
-            duration: 0.2,
+            duration: ENTER_DURATION,
             ease: "easeOut",
         },
     },
@@ -79,10 +83,17 @@ const scaleVariants = {
         opacity: 0,
         scale: 0.95,
         transition: {
-            duration: 0.15,
+            duration: EXIT_DURATION,
             ease: "easeIn",
         },
     },
+}
+
+// Instant (no-motion) variant for prefers-reduced-motion
+const noMotionVariants = {
+    initial: { opacity: 1 },
+    enter: { opacity: 1 },
+    exit: { opacity: 1 },
 }
 
 /**
@@ -99,6 +110,8 @@ export function PageTransition({
     variant = "default",
     className = "",
 }) {
+    const shouldReduceMotion = useReducedMotion()
+
     const variants = {
         default: pageVariants,
         fade: fadeVariants,
@@ -106,7 +119,9 @@ export function PageTransition({
         scale: scaleVariants,
     }
 
-    const selectedVariants = variants[variant] || pageVariants
+    const selectedVariants = shouldReduceMotion
+        ? noMotionVariants
+        : (variants[variant] || pageVariants)
 
     return (
         <AnimatePresence mode="wait">

@@ -884,7 +884,7 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
           {/* Header - always visible, clickable to toggle */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer"
+            className="w-full p-4 flex items-center justify-between hover:bg-white/50 dark:hover:bg-zinc-800/30 transition-all duration-150 cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-[rgba(var(--brand-accent-rgb),0.1)] dark:bg-[rgba(var(--brand-accent-rgb),0.15)]">

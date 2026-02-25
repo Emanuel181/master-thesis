@@ -19,21 +19,11 @@ export const GET = createApiHandler(
     async (request, { session }) => {
         const userId = session.user.id;
 
-        // Try to order by 'order' field if it exists, fallback to createdAt only
-        let prompts;
-        try {
-            prompts = await prisma.prompt.findMany({
-                where: { userId },
-                orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-            });
-        } catch (orderError) {
-            // Fallback if 'order' field doesn't exist yet (migration not run)
-            console.warn('Order field not available, falling back to createdAt ordering');
-            prompts = await prisma.prompt.findMany({
-                where: { userId },
-                orderBy: { createdAt: 'asc' },
-            });
-        }
+        // Get all prompts for the user
+        const prompts = await prisma.prompt.findMany({
+            where: { userId },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        });
 
         // Group by agent
         const grouped = {};
@@ -46,6 +36,8 @@ export const GET = createApiHandler(
                     title: prompt.title,
                     text: prompt.text,
                     order: prompt.order ?? 0,
+                    isDefault: prompt.isDefault ?? false,
+                    defaultKey: prompt.defaultKey ?? null,
                 });
             }
         });

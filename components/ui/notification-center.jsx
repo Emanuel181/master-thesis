@@ -34,6 +34,10 @@ import {
     RefreshCw,
     ChevronLeft,
     ChevronRight,
+    Search,
+    ShieldCheck,
+    ShieldAlert,
+    BarChart3,
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 
@@ -65,20 +69,38 @@ const notificationIcons = {
     ARTICLE_PUBLISHED: CheckCircle,
     ARTICLE_REJECTED: XCircle,
     ARTICLE_REACTION: Heart,
+    // Security scanning
+    SCAN_STARTED: Search,
+    SCAN_CLEAN: ShieldCheck,
+    SCAN_MALWARE: ShieldAlert,
+    SCAN_ERROR: AlertTriangle,
+    // Vectorization
+    VECTORIZATION_STARTED: BarChart3,
+    VECTORIZATION_COMPLETED: BarChart3,
+    VECTORIZATION_FAILED: XCircle,
 }
 
 const notificationColors = {
-    info: "text-blue-500",
-    success: "text-green-500",
-    warning: "text-yellow-500",
-    error: "text-red-500",
+    info: "text-primary",
+    success: "text-success",
+    warning: "text-severity-medium",
+    error: "text-destructive",
     loading: "text-primary",
     // Article notification types
-    ARTICLE_SUBMITTED: "text-blue-500",
-    ARTICLE_IN_REVIEW: "text-blue-500",
-    ARTICLE_PUBLISHED: "text-green-500",
-    ARTICLE_REJECTED: "text-red-500",
+    ARTICLE_SUBMITTED: "text-primary",
+    ARTICLE_IN_REVIEW: "text-primary",
+    ARTICLE_PUBLISHED: "text-success",
+    ARTICLE_REJECTED: "text-destructive",
     ARTICLE_REACTION: "text-pink-500",
+    // Security scanning
+    SCAN_STARTED: "text-amber-500",
+    SCAN_CLEAN: "text-emerald-500",
+    SCAN_MALWARE: "text-destructive",
+    SCAN_ERROR: "text-severity-medium",
+    // Vectorization
+    VECTORIZATION_STARTED: "text-blue-500",
+    VECTORIZATION_COMPLETED: "text-emerald-500",
+    VECTORIZATION_FAILED: "text-destructive",
 }
 
 // Simple notification sound (base64 encoded short beep)
@@ -137,6 +159,10 @@ export function NotificationProvider({ children }) {
     const [desktopEnabled, setDesktopEnabled] = React.useState(false)
     const { data: session } = useSession()
 
+    // Track known notification IDs so we can detect genuinely new ones for sound/desktop
+    const knownIdsRef = React.useRef(new Set())
+    const firstFetchDoneRef = React.useRef(false)
+
     // Listen for open-notifications event (from command palette shortcut)
     React.useEffect(() => {
         const handleOpenNotifications = () => {
@@ -161,49 +187,73 @@ export function NotificationProvider({ children }) {
         }
     }, [])
 
-    // Fetch persistent notifications from API
-    const fetchPersistentNotifications = React.useCallback(async () => {
+    // Fetch all notifications from API (both read and unread)
+    const fetchNotifications = React.useCallback(async () => {
         if (!session?.user?.id) return
 
         try {
-            const response = await fetch(`/api/notifications?limit=20`)
+            const response = await fetch(`/api/notifications?limit=10`)
             if (!response.ok) return
 
-            const data = await response.json()
+            const json = await response.json()
+            const payload = json.data || json
 
-            // Transform API notifications to match the UI format
-            const persistentNotifications = (data.notifications || []).map(n => ({
-                id: n.id,
-                type: n.type, // ARTICLE_SUBMITTED, ARTICLE_IN_REVIEW, etc.
-                title: n.title,
-                description: n.message,
-                read: n.read,
-                timestamp: new Date(n.createdAt),
-                source: 'articles',
-                link: n.link,
-                persistent: true, // Mark as persistent for special handling
-            }))
+            const dbNotifications = (payload.notifications || []).map(n => {
+                let source = 'system'
+                if (n.type?.startsWith('ARTICLE_')) source = 'articles'
+                else if (n.type?.startsWith('SCAN_')) source = 'security'
+                else if (n.type?.startsWith('VECTORIZATION_')) source = 'vectorization'
+                else if (n.type === 'WARNING') source = 'admin'
 
-            // Merge with existing local notifications, avoiding duplicates
-            setNotifications(prev => {
-                const localNotifs = prev.filter(n => !n.persistent)
-                return [...persistentNotifications, ...localNotifs].slice(0, 50)
+                return {
+                    id: n.id,
+                    type: n.type,
+                    title: n.title,
+                    description: n.message,
+                    read: n.read,
+                    timestamp: new Date(n.createdAt),
+                    source,
+                    link: n.link,
+                    persistent: true,
+                }
             })
+
+            // Detect genuinely new notifications (not seen before)
+            const newNotifs = dbNotifications.filter(n => !knownIdsRef.current.has(n.id) && !n.read)
+
+            // Update known IDs
+            knownIdsRef.current = new Set(dbNotifications.map(n => n.id))
+
+            // Fire sound & desktop only for new arrivals AFTER the initial load
+            if (firstFetchDoneRef.current && newNotifs.length > 0) {
+                if (soundEnabled && !doNotDisturb) {
+                    playNotificationSound()
+                }
+                if (desktopEnabled && !doNotDisturb && document.hidden) {
+                    const latest = newNotifs[0]
+                    showDesktopNotification(latest.title, {
+                        body: latest.description,
+                        tag: latest.id,
+                    })
+                }
+            }
+            firstFetchDoneRef.current = true
+
+            setNotifications(dbNotifications)
         } catch (error) {
             console.error('Error fetching notifications:', error)
         }
-    }, [session?.user?.id])
+    }, [session?.user?.id, soundEnabled, doNotDisturb, desktopEnabled])
 
-    // Initial fetch and poll for new notifications
+    // Initial fetch and poll
     React.useEffect(() => {
         if (!session?.user?.id) return
 
-        fetchPersistentNotifications()
+        fetchNotifications()
 
-        // Poll every 60 seconds for new notifications
-        const interval = setInterval(fetchPersistentNotifications, 60000)
+        const interval = setInterval(fetchNotifications, 15000)
         return () => clearInterval(interval)
-    }, [session?.user?.id, fetchPersistentNotifications])
+    }, [session?.user?.id, fetchNotifications])
 
     // Toggle DND mode
     const toggleDoNotDisturb = React.useCallback(() => {
@@ -245,36 +295,37 @@ export function NotificationProvider({ children }) {
         }
     }, [desktopEnabled])
 
-    // Remove a notification
-    const removeNotification = React.useCallback((id) => {
+    // Remove a notification — deletes from DB
+    const removeNotification = React.useCallback(async (id) => {
         setNotifications(prev => prev.filter(n => n.id !== id))
+        knownIdsRef.current.delete(id)
+
+        try {
+            await fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+        } catch (error) {
+            console.error('Error deleting notification:', error)
+        }
     }, [])
 
-    // Add a new notification
+    // Add a local notification (e.g. from client-side events)
+    // Persistent server-side notifications come from polling instead.
     const addNotification = React.useCallback((notification) => {
-        // Skip if DND is enabled (unless it's an error)
-        if (doNotDisturb && notification.type !== 'error') {
-            return null
-        }
+        if (doNotDisturb && notification.type !== 'error') return null
 
-        const id = notification.id || `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        const id = notification.id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
         const newNotification = {
             id,
             type: "info",
             read: false,
             timestamp: new Date(),
             source: notification.source || 'system',
+            persistent: false,
             ...notification,
         }
 
-        setNotifications(prev => [newNotification, ...prev].slice(0, 50))
+        setNotifications(prev => [newNotification, ...prev].slice(0, 10))
 
-        // Play sound if enabled
-        if (soundEnabled && !doNotDisturb) {
-            playNotificationSound()
-        }
-
-        // Show desktop notification if enabled
+        if (soundEnabled && !doNotDisturb) playNotificationSound()
         if (desktopEnabled && !doNotDisturb && document.hidden) {
             showDesktopNotification(notification.title, {
                 body: notification.description,
@@ -282,7 +333,6 @@ export function NotificationProvider({ children }) {
             })
         }
 
-        // Auto-dismiss
         if (notification.autoDismiss) {
             setTimeout(() => {
                 setNotifications(prev => prev.filter(n => n.id !== id))
@@ -299,49 +349,48 @@ export function NotificationProvider({ children }) {
         )
     }, [])
 
-    // Mark notification as read
+    // Mark notification as read (keeps it in the list)
     const markAsRead = React.useCallback(async (id) => {
-        // Update local state immediately
         setNotifications(prev =>
             prev.map(n => n.id === id ? { ...n, read: true } : n)
         )
 
-        // If it's a persistent notification, also update on server
-        const notification = notifications.find(n => n.id === id)
-        if (notification?.persistent) {
-            try {
-                await fetch(`/api/notifications/${id}`, {
-                    method: 'PATCH',
-                })
-            } catch (error) {
-                console.error('Error marking notification as read:', error)
-            }
+        try {
+            await fetch(`/api/notifications/${id}`, { method: 'PATCH' })
+        } catch (error) {
+            console.error('Error marking notification as read:', error)
         }
-    }, [notifications])
+    }, [])
 
-    // Mark all as read
+    // Mark all as read (keeps them in the list)
     const markAllAsRead = React.useCallback(async () => {
-        // Update local state immediately
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
 
-        // Also update persistent notifications on server
-        const hasPersistent = notifications.some(n => n.persistent && !n.read)
-        if (hasPersistent) {
-            try {
-                await fetch('/api/notifications', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'markAllRead' }),
-                })
-            } catch (error) {
-                console.error('Error marking all as read:', error)
-            }
+        try {
+            await fetch('/api/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'markAllRead' }),
+            })
+        } catch (error) {
+            console.error('Error marking all as read:', error)
         }
-    }, [notifications])
+    }, [])
 
-    // Clear all notifications
-    const clearAll = React.useCallback(() => {
+    // Clear all — deletes ALL from DB
+    const clearAll = React.useCallback(async () => {
         setNotifications([])
+        knownIdsRef.current = new Set()
+
+        try {
+            await fetch('/api/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'deleteAll' }),
+            })
+        } catch (error) {
+            console.error('Error deleting all notifications:', error)
+        }
     }, [])
 
     // Clear by type
@@ -401,7 +450,7 @@ export function NotificationProvider({ children }) {
         toggleSound,
         desktopEnabled,
         toggleDesktopNotifications,
-        refreshNotifications: fetchPersistentNotifications,
+        refreshNotifications: fetchNotifications,
     }), [
         notifications,
         groupedNotifications,
@@ -422,7 +471,7 @@ export function NotificationProvider({ children }) {
         toggleSound,
         desktopEnabled,
         toggleDesktopNotifications,
-        fetchPersistentNotifications,
+        fetchNotifications,
     ])
 
     return (
@@ -491,7 +540,10 @@ export function NotificationCenter() {
     }
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen)
+            if (isOpen) refreshNotifications?.()
+        }}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
@@ -633,7 +685,7 @@ export function NotificationCenter() {
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
                                         className={cn(
-                                            "group flex items-start gap-3 p-3 border-b hover:bg-accent/50 transition-colors cursor-pointer",
+                                            "group flex items-start gap-3 p-3 border-b hover:bg-accent/50 transition-all duration-150 cursor-pointer select-none",
                                             !notification.read && "bg-accent/30"
                                         )}
                                         onClick={() => {

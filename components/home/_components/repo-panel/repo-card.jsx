@@ -10,10 +10,10 @@ import { Loader2 } from "lucide-react"
 export function RepoCard({ repo, isImporting, importProgress, onImport, disabled }) {
     return (
         <div
-            className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg transition-all duration-200 ${
+            className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg card-hover-lift ${
                 isImporting 
                     ? 'bg-primary/5 border-primary/30 shadow-sm' 
-                    : 'hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm'
+                    : 'hover:border-primary/30'
             }`}
         >
             <div className="flex-1 min-w-0 overflow-hidden">
@@ -27,7 +27,7 @@ export function RepoCard({ repo, isImporting, importProgress, onImport, disabled
 
             <Button
                 size="sm"
-                className="h-7 px-3 text-xs flex-shrink-0 ml-1 min-w-[70px]"
+                className="h-7 px-3 text-xs flex-shrink-0 ml-1 min-w-[70px] btn-press"
                 onClick={() => onImport(repo)}
                 disabled={disabled}
             >

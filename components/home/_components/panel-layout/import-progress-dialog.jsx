@@ -31,7 +31,7 @@ export function ImportProgressDialog({ importingRepo }) {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                         {progress === 100 ? (
-                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
                         ) : (
                             <GitBranch className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                         )}
@@ -66,7 +66,7 @@ export function ImportProgressDialog({ importingRepo }) {
                                     key={step.label}
                                     className={`flex items-center gap-2 text-xs transition-all duration-200 ${
                                         isComplete 
-                                            ? 'text-green-600' 
+                                            ? 'text-success' 
                                             : isActive 
                                                 ? 'text-primary font-medium' 
                                                 : 'text-muted-foreground/50'
@@ -74,7 +74,7 @@ export function ImportProgressDialog({ importingRepo }) {
                                 >
                                     <div className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
                                         isComplete 
-                                            ? 'bg-green-500' 
+                                            ? 'bg-success' 
                                             : isActive 
                                                 ? 'bg-primary animate-pulse' 
                                                 : 'bg-muted-foreground/30'

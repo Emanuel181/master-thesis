@@ -9,7 +9,6 @@ import {
     FileText,
     MessageSquare,
     Home,
-    Keyboard,
     PenLine,
     ShieldCheck,
     FileEdit,
@@ -32,16 +31,16 @@ import {
     SidebarGroupLabel,
     SidebarGroupContent,
 } from "@/components/ui/sidebar"
-import {NavUser} from "./nav-user";
-import {useSession} from "next-auth/react";
+import { NavUser } from "./nav-user";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 const data = {
     team: {
-            name: "VulnIQ",
-            logo: "/web-app-manifest-512x512.png",
-            plan: "Agentic",
-        },
+        name: "VulnIQ",
+        logo: "/web-app-manifest-512x512.png",
+        plan: "Agentic",
+    },
 }
 
 // Demo user for demo mode
@@ -52,7 +51,7 @@ const DEMO_USER = {
     image: null,
 };
 
-export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent = "Home", ...props }) {
+export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
     const pathname = usePathname()
     const isDemo = pathname?.startsWith('/demo')
     const { data: session, status } = useSession()
@@ -60,6 +59,8 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
 
     // Check if user is admin
     React.useEffect(() => {
+        const controller = new AbortController();
+
         const checkAdminStatus = async () => {
             if (!session?.user?.email || isDemo) {
                 setIsAdmin(false);
@@ -67,18 +68,23 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
             }
 
             try {
-                const response = await fetch('/api/auth/admin-check');
+                const response = await fetch('/api/auth/admin-check', {
+                    signal: controller.signal,
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setIsAdmin(data.isAdmin);
                 }
             } catch (error) {
-                console.error('Error checking admin status:', error);
-                setIsAdmin(false);
+                if (error.name !== 'AbortError') {
+                    console.error('Error checking admin status:', error);
+                    setIsAdmin(false);
+                }
             }
         };
 
         checkAdminStatus();
+        return () => controller.abort();
     }, [session, isDemo]);
 
     // Save user name to localStorage when session is loaded
@@ -128,7 +134,7 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
                 <TeamSwitcher team={data.team} />
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={navMain} onNavigate={onNavigate} isCodeLocked={isCodeLocked} activeComponent={activeComponent} />
+                <NavMain items={navMain} onNavigate={onNavigate} activeComponent={activeComponent} />
 
                 {/* Admin Section - Only visible to admin users */}
                 {isAdmin && (
@@ -181,21 +187,6 @@ export function AppSidebar({ onNavigate, isCodeLocked = false, activeComponent =
                                 >
                                     <MessageSquare />
                                     <span>Feedback</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
-                                    tooltip="Keyboard Shortcuts (⌘K)"
-                                    className="justify-between"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Keyboard className="size-4" />
-                                        <span>Shortcuts</span>
-                                    </div>
-                                    <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium text-muted-foreground sm:inline-flex group-data-[collapsible=icon]:hidden">
-                                        ⌘K
-                                    </kbd>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>

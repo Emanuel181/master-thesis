@@ -44,6 +44,7 @@ export default function ProjectTree({
     const sidebarLeftRef = useRef(0);
     const containerRef = useRef(null);
     const animationFrameRef = useRef(null); // Ref for throttling drag updates
+    const pendingWidthRef = useRef(null); // Stores width during drag to avoid React re-renders
 
     const controlsRef = useRef(null); // Ref for TreeView controls (openAll/closeAll)
 
@@ -71,7 +72,17 @@ export default function ProjectTree({
         return node.children ? node.children.map(n => mapNode(n)) : [];
     }, []);
 
-    useEffect(() => { setTreeData(mapStructure(structure)); }, [structure, mapStructure]);
+    // Map structure to tree data format with all nodes expanded by default
+    const mappedAndExpanded = useMemo(() => {
+        const mapped = mapStructure(structure);
+        // Expand all nodes by default for full view
+        return setExpansionState(mapped, true);
+    }, [structure, mapStructure]);
+
+    // Update tree data when mapped structure changes
+    useEffect(() => {
+        setTreeData(mappedAndExpanded);
+    }, [mappedAndExpanded]);
 
     // Filter tree based on search term
     const filterTree = useCallback((nodes, term) => {
@@ -144,12 +155,17 @@ export default function ProjectTree({
                 if (collapsed) {
                     if (rawWidth > minWidth / 2) {
                         setCollapsed(false);
-                        onWidthChange(Math.max(minWidth, rawWidth));
+                        pendingWidthRef.current = Math.max(minWidth, rawWidth);
+                        onWidthChange(pendingWidthRef.current);
                     }
                 } else {
                     if (rawWidth < 80) { setCollapsed(true); return; }
                     const w = Math.max(minWidth, Math.min(maxWidth, rawWidth));
-                    onWidthChange(w);
+                    // Update DOM directly — skip React re-render during drag
+                    pendingWidthRef.current = w;
+                    if (containerRef.current) {
+                        containerRef.current.style.width = `${w}px`;
+                    }
                 }
             });
         };
@@ -157,6 +173,11 @@ export default function ProjectTree({
         const onUp = () => {
             setIsDragging(false);
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            // Commit the final width to React state on mouse-up
+            if (pendingWidthRef.current !== null) {
+                onWidthChange(pendingWidthRef.current);
+                pendingWidthRef.current = null;
+            }
         };
 
         if (isDragging) {
@@ -290,15 +311,15 @@ export default function ProjectTree({
             </div>
 
             {/* Tree Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden" style={{ display: 'flex', flexDirection: 'column' }}>
                 {!collapsed ? (
-                    <div className="h-full w-full p-2">
+                    <div className="h-full w-full flex flex-col flex-1 min-h-0">
                         {filteredTreeData.length === 0 && searchTerm ? (
                             <div className="text-center py-8 text-xs text-muted-foreground">
                                 No files match &ldquo;{searchTerm}&rdquo;
                             </div>
                         ) : (
-                            <TreeView ref={controlsRef} data={filteredTreeData} onItemClick={(i) => !i.children && onFileClick({ ...i._orig, path: i.id, name: i.name })} />
+                            <TreeView ref={controlsRef} data={filteredTreeData} onItemClick={handleFileClick} className="flex-1 min-h-0" />
                         )}
                     </div>
                 ) : (
@@ -312,11 +333,14 @@ export default function ProjectTree({
             <div
                 onMouseDown={startResize}
                 className={cn(
-                    "absolute -right-1 top-0 h-full w-4 cursor-col-resize z-50 flex justify-center hover:after:bg-primary/50",
-                    isDragging && "after:bg-primary"
+                    "absolute -right-[7px] top-0 h-full w-[14px] cursor-col-resize z-50 flex items-center justify-center group/handle hover:bg-primary/5 transition-colors",
+                    isDragging && "bg-primary/10"
                 )}
             >
-                <div className="w-[1px] h-full after:content-[''] after:block after:w-1 after:h-full transition-colors" />
+                <div className={cn(
+                    "w-1 h-16 rounded-full bg-border group-hover/handle:bg-primary/50 transition-colors",
+                    isDragging && "bg-primary"
+                )} />
             </div>
         </div>
     );

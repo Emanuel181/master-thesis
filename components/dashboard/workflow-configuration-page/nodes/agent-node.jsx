@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, X, Check } from "lucide-react";
 
 const MODELS_PER_PAGE = 5;
 
@@ -21,14 +21,21 @@ const MODELS_PER_PAGE = 5;
  */
 export function AgentNode({ data }) {
     const Icon = data.icon;
+    const isConfigured = !!data.model;
     const borderColorMap = {
-        "bg-blue-500": "border-blue-500 dark:border-blue-400",
-        "bg-green-500": "border-green-500 dark:border-green-400",
-        "bg-orange-500": "border-orange-500 dark:border-orange-400",
-        "bg-purple-500": "border-purple-500 dark:border-purple-400",
+        "bg-agent-reviewer": "border-agent-reviewer/30",
+        "bg-agent-implementation": "border-agent-implementation/30",
+        "bg-agent-tester": "border-agent-tester/30",
+        "bg-agent-report": "border-agent-report/30",
+    };
+    const configuredRingMap = {
+        "bg-agent-reviewer": "ring-agent-reviewer/25",
+        "bg-agent-implementation": "ring-agent-implementation/25",
+        "bg-agent-tester": "ring-agent-tester/25",
+        "bg-agent-report": "ring-agent-report/25",
     };
     const borderColor =
-        borderColorMap[data.iconBg] || "border-gray-300 dark:border-gray-600";
+        borderColorMap[data.iconBg] || "border-border";
 
     const [isRefreshing, setIsRefreshing] = React.useState(false);
     const [modelPage, setModelPage] = React.useState(0);
@@ -38,14 +45,36 @@ export function AgentNode({ data }) {
     const showRefreshAnimation = data.isRefreshingAll || isRefreshing;
 
     // Filter and paginate models
-    const filteredModels = (data.models || []).filter(model =>
-        model.toLowerCase().includes(modelSearchTerm.toLowerCase())
-    );
+    const filteredModels = (data.models || []).filter(model => {
+        if (model === null || model === undefined) return false;
+        const searchLower = (modelSearchTerm || '').toLowerCase();
+        if (!searchLower) return true; // No search term, include all
+        if (typeof model === 'string') {
+            return model.toLowerCase().includes(searchLower);
+        }
+        if (typeof model === 'object' && model !== null) {
+            const name = typeof model.name === 'string' ? model.name : '';
+            const id = typeof model.id === 'string' ? model.id : '';
+            const provider = typeof model.provider === 'string' ? model.provider : '';
+            return name.toLowerCase().includes(searchLower) ||
+                   id.toLowerCase().includes(searchLower) ||
+                   provider.toLowerCase().includes(searchLower);
+        }
+        return false;
+    });
     const totalModelPages = Math.ceil(filteredModels.length / MODELS_PER_PAGE);
     const paginatedModels = filteredModels.slice(
         modelPage * MODELS_PER_PAGE,
         (modelPage + 1) * MODELS_PER_PAGE
     );
+
+    // Helper to get model display name
+    const getModelDisplayName = (modelId) => {
+        if (!modelId) return null;
+        const model = (data.models || []).find(m => (typeof m === 'string' ? m : m.id) === modelId);
+        if (!model) return modelId;
+        return typeof model === 'string' ? model : model.name;
+    };
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -96,11 +125,18 @@ export function AgentNode({ data }) {
                 title="Prompt Instructions"
             />
 
-            <Card className={`w-full max-w-[200px] sm:max-w-[240px] shadow-lg border-2 ${borderColor}`}>
+            <Card className={`w-full max-w-[200px] sm:max-w-[240px] shadow-lg border-2 transition-all duration-300 ${borderColor} ${
+                isConfigured ? `ring-2 ${configuredRingMap[data.iconBg] || 'ring-emerald-500/20'} shadow-md` : 'opacity-90'
+            }`}>
                 <CardContent className="p-2 sm:p-4">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg}`}>
+                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
+                            {isConfigured && (
+                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 border-2 border-background">
+                                    <Check className="h-2 w-2 text-white" strokeWidth={3} />
+                                </span>
+                            )}
                         </div>
                         <div className="flex-1 font-semibold text-xs sm:text-base truncate">{data.label}</div>
                         <Button
@@ -125,7 +161,9 @@ export function AgentNode({ data }) {
                         onValueChange={(value) => data.onModelChange(data.id, value)}
                     >
                         <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs" onClick={(e) => e.stopPropagation()}>
-                            <SelectValue placeholder="Select model" />
+                            <SelectValue placeholder="Select model">
+                                {data.model && getModelDisplayName(data.model)}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent
                             className="z-[9999]"
@@ -154,11 +192,21 @@ export function AgentNode({ data }) {
                                 </div>
                                 <div className="max-h-[180px]">
                                     {paginatedModels.length > 0 ? (
-                                        paginatedModels.map((model, idx) => (
-                                            <SelectItem key={`${data.id}-model-${modelPage}-${idx}`} value={model} className="text-xs">
-                                                {model}
-                                            </SelectItem>
-                                        ))
+                                        paginatedModels.map((model, idx) => {
+                                            const modelId = typeof model === 'string' ? model : model.id;
+                                            const modelName = typeof model === 'string' ? model : model.name;
+                                            const modelDesc = typeof model === 'object' ? model.description : null;
+                                            return (
+                                                <SelectItem key={`${data.id}-model-${modelPage}-${idx}`} value={modelId} className="text-xs">
+                                                    <div className="flex flex-col">
+                                                        <span>{modelName}</span>
+                                                        {modelDesc && (
+                                                            <span className="text-[9px] text-muted-foreground truncate max-w-[180px]">{modelDesc}</span>
+                                                        )}
+                                                    </div>
+                                                </SelectItem>
+                                            );
+                                        })
                                     ) : (
                                         <div className="py-2 px-3 text-xs text-muted-foreground text-center">No models found</div>
                                     )}
@@ -191,6 +239,16 @@ export function AgentNode({ data }) {
                             </div>
                         </SelectContent>
                     </Select>
+                    {isConfigured ? (
+                        <div className="mt-1.5 flex items-center gap-1 text-[9px] sm:text-[10px] text-emerald-600 dark:text-emerald-400">
+                            <Check className="h-2.5 w-2.5" />
+                            <span className="truncate">Model configured</span>
+                        </div>
+                    ) : (
+                        <div className="mt-1.5 text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 animate-pulse">
+                            Select a model to configure
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

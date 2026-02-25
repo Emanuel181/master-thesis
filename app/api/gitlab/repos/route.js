@@ -63,6 +63,30 @@ export const GET = createApiHandler(
 
         let currentToken = gitlabAccount.access_token;
 
+        // Proactively refresh token if it expires within 5 minutes
+        const REFRESH_BUFFER_SECONDS = 300;
+        if (gitlabAccount.expires_at && gitlabAccount.refresh_token) {
+            const expiresAt = gitlabAccount.expires_at;
+            const now = Math.floor(Date.now() / 1000);
+            if (expiresAt - now < REFRESH_BUFFER_SECONDS) {
+                if (isDev) console.log('[gitlab/repos] Token expiring soon, proactively refreshing...');
+                const newTokens = await refreshGitLabToken(gitlabAccount.refresh_token);
+                if (newTokens?.access_token) {
+                    await prisma.account.update({
+                        where: { id: gitlabAccount.id },
+                        data: {
+                            access_token: newTokens.access_token,
+                            refresh_token: newTokens.refresh_token || gitlabAccount.refresh_token,
+                            expires_at: Math.floor(Date.now() / 1000) + newTokens.expires_in,
+                            token_type: newTokens.token_type
+                        }
+                    });
+                    currentToken = newTokens.access_token;
+                    if (isDev) console.log('[gitlab/repos] Token proactively refreshed');
+                }
+            }
+        }
+
         const fetchProjects = async () => {
             const baseUrl = process.env.GITLAB_BASE_URL || 'https://gitlab.com';
             const perPage = 100;
@@ -82,7 +106,7 @@ export const GET = createApiHandler(
                 if (response.status === 401 && gitlabAccount?.refresh_token) {
                     console.log('[gitlab/repos] 401 received, attempting token refresh...');
                     const newTokens = await refreshGitLabToken(gitlabAccount.refresh_token);
-                    
+
                     if (newTokens?.access_token) {
                         // Update database with new tokens
                         await prisma.account.update({
@@ -94,9 +118,9 @@ export const GET = createApiHandler(
                                 token_type: newTokens.token_type
                             }
                         });
-                        
+
                         console.log('[gitlab/repos] token refreshed successfully');
-                        
+
                         // Update current token and retry request
                         currentToken = newTokens.access_token;
                         response = await fetch(apiUrl, {
@@ -145,6 +169,7 @@ export const GET = createApiHandler(
                 fork: Boolean(project.forked_from_project),
                 updated_at: project.last_activity_at,
                 language: project.language || null,
+                default_branch: project.default_branch || 'main',
                 owner: {
                     login: project.namespace?.path,
                     id: project.namespace?.id,
@@ -161,8 +186,8 @@ export const GET = createApiHandler(
             if (isDev) {
                 console.error('[gitlab/repos] error:', err?.message || err);
             }
-            return errorResponse('Failed to fetch repositories', { 
-                status: 502, 
+            return errorResponse('Failed to fetch repositories', {
+                status: 502,
                 requestId,
                 details: err?.message || 'Unknown error'
             });

@@ -9,6 +9,85 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
+   SEMANTIC COLOR TOKENS (Tailwind v4 @theme)
+   ============================================ */
+
+@theme inline {
+  /* Severity colours */
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-high: var(--severity-high);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-low: var(--severity-low);
+
+  /* Agent accent colours */
+  --color-agent-reviewer: var(--agent-reviewer);
+  --color-agent-implementation: var(--agent-implementation);
+  --color-agent-tester: var(--agent-tester);
+  --color-agent-report: var(--agent-report);
+
+  /* Semantic status */
+  --color-success: var(--success);
+}
+
+/* Light mode token values */
+:root {
+  --severity-critical: #ef4444;
+  --severity-high: #f97316;
+  --severity-medium: #eab308;
+  --severity-low: #3b82f6;
+
+  --agent-reviewer: #3b82f6;
+  --agent-implementation: #22c55e;
+  --agent-tester: #f97316;
+  --agent-report: #a855f7;
+
+  --success: #22c55e;
+}
+
+/* Dark mode token values */
+.dark {
+  --severity-critical: #f87171;
+  --severity-high: #fb923c;
+  --severity-medium: #facc15;
+  --severity-low: #60a5fa;
+
+  --agent-reviewer: #60a5fa;
+  --agent-implementation: #4ade80;
+  --agent-tester: #fb923c;
+  --agent-report: #c084fc;
+
+  --success: #4ade80;
+}
+
+/* ============================================
+   MICRO-INTERACTION UTILITIES
+   ============================================ */
+
+/* Card hover lift — subtle shadow on hover */
+.card-hover-lift {
+  transition: box-shadow 0.2s ease;
+}
+.card-hover-lift:hover {
+  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.06);
+}
+
+/* Button press — micro scale on active */
+.btn-press {
+  transition: transform 0.1s ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Row interactive — highlight on hover */
+.row-interactive {
+  transition: background-color 0.15s ease;
+}
+.row-interactive:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* ============================================
    LIGHT MODE EDITOR STYLES
    ============================================ */
 
@@ -147,6 +226,7 @@ body::-webkit-scrollbar-thumb:hover {
   animation-fill-mode: both;
   will-change: opacity, transform;
 }
+
 
 /* ============================================
    RESPONSIVE UTILITIES
@@ -510,6 +590,21 @@ html {
   --highlight: oklch(0.852 0.199 91.936);
   --brand: oklch(0.623 0.214 259.815);
   --brand-foreground: var(--brand-accent);
+
+  /* Semantic Agent Colors */
+  --agent-reviewer: oklch(0.588 0.199 262);
+  --agent-implementation: oklch(0.596 0.172 162);
+  --agent-tester: oklch(0.646 0.222 41);
+  --agent-report: oklch(0.586 0.22 293);
+
+  /* Semantic Severity Colors */
+  --severity-critical: oklch(0.577 0.245 27.325);
+  --severity-high: oklch(0.646 0.222 41.116);
+  --severity-medium: oklch(0.795 0.184 86.047);
+  --severity-low: oklch(0.627 0.194 149.214);
+
+  /* Success / Connected */
+  --success: oklch(0.627 0.194 149.214);
 }
 
 .dark {
@@ -562,6 +657,21 @@ html {
   --highlight: oklch(0.852 0.199 91.936);
   --brand: oklch(0.707 0.165 254.624);
   --brand-foreground: var(--brand-accent);
+
+  /* Semantic Agent Colors (dark mode) */
+  --agent-reviewer: oklch(0.65 0.18 262);
+  --agent-implementation: oklch(0.66 0.16 162);
+  --agent-tester: oklch(0.7 0.19 41);
+  --agent-report: oklch(0.65 0.2 293);
+
+  /* Semantic Severity Colors (dark mode) */
+  --severity-critical: oklch(0.637 0.237 25);
+  --severity-high: oklch(0.7 0.19 41);
+  --severity-medium: oklch(0.82 0.17 86);
+  --severity-low: oklch(0.69 0.17 149);
+
+  /* Success / Connected (dark mode) */
+  --success: oklch(0.69 0.17 149);
 }
 
 @layer base {
@@ -570,6 +680,101 @@ html {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ============================================
+   SEMANTIC COLOR UTILITIES
+   ============================================ */
+@layer utilities {
+  /* Agent colors */
+  .text-agent-reviewer { color: var(--agent-reviewer); }
+  .text-agent-implementation { color: var(--agent-implementation); }
+  .text-agent-tester { color: var(--agent-tester); }
+  .text-agent-report { color: var(--agent-report); }
+  .bg-agent-reviewer { background-color: var(--agent-reviewer); }
+  .bg-agent-implementation { background-color: var(--agent-implementation); }
+  .bg-agent-tester { background-color: var(--agent-tester); }
+  .bg-agent-report { background-color: var(--agent-report); }
+  .bg-agent-reviewer\/10 { background-color: color-mix(in oklch, var(--agent-reviewer) 10%, transparent); }
+  .bg-agent-implementation\/10 { background-color: color-mix(in oklch, var(--agent-implementation) 10%, transparent); }
+  .bg-agent-tester\/10 { background-color: color-mix(in oklch, var(--agent-tester) 10%, transparent); }
+  .bg-agent-report\/10 { background-color: color-mix(in oklch, var(--agent-report) 10%, transparent); }
+  .border-agent-reviewer\/30 { border-color: color-mix(in oklch, var(--agent-reviewer) 30%, transparent); }
+  .border-agent-implementation\/30 { border-color: color-mix(in oklch, var(--agent-implementation) 30%, transparent); }
+  .border-agent-tester\/30 { border-color: color-mix(in oklch, var(--agent-tester) 30%, transparent); }
+  .border-agent-report\/30 { border-color: color-mix(in oklch, var(--agent-report) 30%, transparent); }
+
+  /* Severity colors */
+  .text-severity-critical { color: var(--severity-critical); }
+  .text-severity-high { color: var(--severity-high); }
+  .text-severity-medium { color: var(--severity-medium); }
+  .text-severity-low { color: var(--severity-low); }
+  .bg-severity-critical { background-color: var(--severity-critical); }
+  .bg-severity-high { background-color: var(--severity-high); }
+  .bg-severity-medium { background-color: var(--severity-medium); }
+  .bg-severity-low { background-color: var(--severity-low); }
+  .bg-severity-critical\/10 { background-color: color-mix(in oklch, var(--severity-critical) 10%, transparent); }
+  .bg-severity-high\/10 { background-color: color-mix(in oklch, var(--severity-high) 10%, transparent); }
+  .bg-severity-medium\/10 { background-color: color-mix(in oklch, var(--severity-medium) 10%, transparent); }
+  .bg-severity-low\/10 { background-color: color-mix(in oklch, var(--severity-low) 10%, transparent); }
+  .border-severity-critical\/30 { border-color: color-mix(in oklch, var(--severity-critical) 30%, transparent); }
+  .border-severity-high\/30 { border-color: color-mix(in oklch, var(--severity-high) 30%, transparent); }
+  .border-severity-medium\/30 { border-color: color-mix(in oklch, var(--severity-medium) 30%, transparent); }
+  .border-severity-low\/30 { border-color: color-mix(in oklch, var(--severity-low) 30%, transparent); }
+
+  /* Success / Connected */
+  .text-success { color: var(--success); }
+  .bg-success { background-color: var(--success); }
+  .bg-success\/10 { background-color: color-mix(in oklch, var(--success) 10%, transparent); }
+  .border-success\/30 { border-color: color-mix(in oklch, var(--success) 30%, transparent); }
+}
+
+/* ============================================
+   PREMIUM MICRO-INTERACTIONS
+   ============================================ */
+@layer utilities {
+  /* Card hover lift - subtle elevation on hover */
+  .card-hover-lift {
+    transition: box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover-lift:hover {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08),
+                0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  }
+  .dark .card-hover-lift:hover {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3),
+                0 2px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Button press - micro scale on click */
+  .btn-press {
+    transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-press:active {
+    transform: scale(0.97);
+  }
+
+  /* Smooth focus ring transition */
+  .focus-ring-smooth {
+    transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Interactive row - subtle bg change on hover */
+  .row-interactive {
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Skeleton shimmer animation */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer-slide 1.5s ease-in-out infinite;
   }
 }
 
@@ -647,6 +852,37 @@ html {
   animation: fadeIn 300ms ease-out forwards;
 }
 
+/* Collapsible animations */
+@keyframes collapsible-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.animate-collapsible-down {
+  animation: collapsible-down 200ms ease-out;
+}
+
+.animate-collapsible-up {
+  animation: collapsible-up 200ms ease-out;
+}
+
 /* Slide in from right */
 @keyframes slideInRight {
   from {
@@ -679,6 +915,7 @@ html {
   animation: scaleIn 200ms ease-out forwards;
 }
 
+
 /* Pulse animation for loading states */
 @keyframes subtlePulse {
   0%, 100% {
@@ -695,11 +932,10 @@ html {
 
 /* Smooth hover transitions for cards and buttons */
 .hover-lift {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition: box-shadow 200ms ease;
 }
 
 .hover-lift:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -713,11 +949,226 @@ html {
 }
 
 .btn-interactive:hover {
-  transform: translateY(-1px);
+  opacity: 0.85;
 }
 
 .btn-interactive:active {
-  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ============================================
+   MICROINTERACTIONS & ANIMATIONS
+   ============================================ */
+
+/* Button press effect */
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.btn-press:active {
+  animation: buttonPress 150ms ease-out;
+}
+
+/* Ripple effect for buttons */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, hsl(var(--primary) / 0.3) 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.4s, opacity 0.8s;
+}
+
+.btn-ripple:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
+}
+
+/* Icon bounce on hover */
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.icon-bounce:hover svg {
+  animation: iconBounce 0.4s ease-in-out;
+}
+
+/* Icon spin on hover */
+.icon-spin:hover svg {
+  animation: spin 0.5s ease-in-out;
+}
+
+/* Checkbox/Switch tick animation */
+@keyframes checkTick {
+  0% { transform: scale(0) rotate(-45deg); }
+  50% { transform: scale(1.2) rotate(-45deg); }
+  100% { transform: scale(1) rotate(-45deg); }
+}
+
+.check-tick {
+  animation: checkTick 0.2s ease-out forwards;
+}
+
+/* Card hover glow effect */
+.card-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.15), 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-glow:hover {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.25), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Input focus glow */
+.input-glow:focus-within {
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  transition: box-shadow 0.2s ease;
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.1) 50%,
+    hsl(var(--muted)) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Success checkmark animation */
+@keyframes successPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.success-pop {
+  animation: successPop 0.3s ease-out forwards;
+}
+
+/* Error shake animation */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.error-shake {
+  animation: errorShake 0.4s ease-out;
+}
+
+/* Tooltip fade in */
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tooltip-fade-in {
+  animation: tooltipFadeIn 0.15s ease-out forwards;
+}
+
+/* Dropdown slide down */
+@keyframes dropdownSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-slide {
+  animation: dropdownSlide 0.2s ease-out forwards;
+}
+
+/* Tab indicator slide */
+.tab-indicator {
+  transition: left 0.2s ease, width 0.2s ease;
+}
+
+/* Progress bar fill animation */
+@keyframes progressFill {
+  from { width: 0; }
+}
+
+.progress-fill {
+  animation: progressFill 0.5s ease-out forwards;
+}
+
+/* Badge pulse for notifications */
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.badge-pulse {
+  animation: badgePulse 1s ease-in-out infinite;
+}
+
+/* Floating action button hover */
+.fab-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fab-hover:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* List item stagger animation */
+@keyframes listItemSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.list-item-stagger > * {
+  animation: listItemSlide 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+.list-item-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.list-item-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.list-item-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.list-item-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.list-item-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.list-item-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.list-item-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.list-item-stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* Smooth number counter animation */
+@property --num {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+.counter-animate {
+  transition: --num 1s ease-out;
+  counter-reset: num var(--num);
+}
+
+.counter-animate::after {
+  content: counter(num);
 }
 
 /* ============================================

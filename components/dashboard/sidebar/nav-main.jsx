@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, Info } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 import {
     Collapsible,
@@ -47,7 +47,7 @@ function ActiveIndicator({ isActive, isCollapsed }) {
     )
 }
 
-export function NavMain({ items, onNavigate, isCodeLocked = false, activeComponent = "Home" }) {
+export function NavMain({ items, onNavigate, activeComponent = "Home" }) {
     const renderIcon = (icon) => {
         if (!icon) return null
         const IconComponent = icon
@@ -105,7 +105,6 @@ export function NavMain({ items, onNavigate, isCodeLocked = false, activeCompone
                                 <SidebarMenuButton
                                     tooltip={item.title}
                                     onClick={() => onNavigate(item)}
-                                    disabled={item.title === "Workflow configuration" && !isCodeLocked ? true : undefined}
                                     data-active={isItemActive(item.title)}
                                     className={cn(
                                         isItemActive(item.title) && "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -115,18 +114,6 @@ export function NavMain({ items, onNavigate, isCodeLocked = false, activeCompone
                                     <span className="flex-1">{item.title}</span>
                                     <ActiveIndicator isActive={isItemActive(item.title)} isCollapsed={isCollapsed} />
                                 </SidebarMenuButton>
-                                {item.title === "Workflow configuration" && !isCodeLocked && (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <button className={`absolute ${isCollapsed ? "-right-1 top-0" : "right-2 top-1/2 -translate-y-1/2"} p-1 rounded-md hover:bg-sidebar-accent opacity-70 hover:opacity-100 transition-opacity`}>
-                                                <Info className="h-3 w-3" />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side={isCollapsed ? "top" : "right"} align="center">
-                                            <p>Workflow configuration is only available after locking your code</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )}
                             </SidebarMenuItem>
                         )
                     )}

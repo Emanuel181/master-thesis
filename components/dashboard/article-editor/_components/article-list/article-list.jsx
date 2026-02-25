@@ -1,11 +1,12 @@
 "use client"
 
-import { FileText, Loader2, Plus, RefreshCw, PanelLeftClose } from "lucide-react"
+import { FileText, Loader2, Plus, RefreshCw, PanelLeftClose, PenLine } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 import { ArticleCard } from "./article-card"
@@ -133,32 +134,59 @@ export function ArticleList({
                                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                     </div>
                                 ) : items.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                                        <div className="rounded-full bg-muted p-3 mb-3">
-                                            <FileText className="h-6 w-6 text-muted-foreground" />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex flex-col items-center justify-center py-12 text-center px-4"
+                                    >
+                                        <div className="rounded-full bg-primary/10 p-4 mb-3 ring-4 ring-primary/5">
+                                            <PenLine className="h-7 w-7 text-primary" />
                                         </div>
-                                        <p className="text-sm font-medium">No articles</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {activeTab === "all"
-                                                ? "Create your first article"
-                                                : `No ${tabs.find((t) => t.id === activeTab)?.label.toLowerCase() || ""} articles`}
+                                        <p className="text-sm font-semibold">
+                                            {activeTab === "all" ? "Start writing" : "No articles here"}
                                         </p>
-                                    </div>
+                                        <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                                            {activeTab === "all"
+                                                ? "Create your first article and share your thoughts with the community."
+                                                : `No ${tabs.find((t) => t.id === activeTab)?.label.toLowerCase() || ""} articles yet.`}
+                                        </p>
+                                        {activeTab === "all" && (
+                                            <Button
+                                                size="sm"
+                                                onClick={onCreateArticle}
+                                                disabled={isCreating}
+                                                className="mt-4 gap-1.5"
+                                            >
+                                                <Plus className="h-3.5 w-3.5" />
+                                                New article
+                                            </Button>
+                                        )}
+                                    </motion.div>
                                 ) : (
-                                    items.map((article) => (
-                                        <ArticleCard
-                                            key={article.id}
-                                            article={article}
-                                            isSelected={selectedArticle?.id === article.id}
-                                            statusConfig={statusConfig[article.status] || statusConfig.DRAFT}
-                                            onSelect={onSelectArticle}
-                                            onSubmitForReview={onSubmitForReview}
-                                            onImportToDrafts={onImportToDrafts}
-                                            onDelete={onDelete}
-                                            submittingId={submittingId}
-                                            deletingId={deletingId}
-                                        />
-                                    ))
+                                    <AnimatePresence mode="popLayout">
+                                        {items.map((article, index) => (
+                                            <motion.div
+                                                key={article.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -8 }}
+                                                transition={{ duration: 0.15, delay: index * 0.02 }}
+                                                layout
+                                            >
+                                                <ArticleCard
+                                                    article={article}
+                                                    isSelected={selectedArticle?.id === article.id}
+                                                    statusConfig={statusConfig[article.status] || statusConfig.DRAFT}
+                                                    onSelect={onSelectArticle}
+                                                    onSubmitForReview={onSubmitForReview}
+                                                    onImportToDrafts={onImportToDrafts}
+                                                    onDelete={onDelete}
+                                                    submittingId={submittingId}
+                                                    deletingId={deletingId}
+                                                />
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
                                 )}
                             </div>
                         </ScrollArea>
@@ -168,22 +196,6 @@ export function ArticleList({
                             totalPages={totalPages}
                             onPageChange={(page) => setPage(activeTab, page)}
                         />
-
-                        {/* New article button at bottom */}
-                        <div className="p-3 border-t mt-auto">
-                            <Button
-                                onClick={onCreateArticle}
-                                disabled={isCreating}
-                                className="w-full"
-                            >
-                                {isCreating ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                    <Plus className="h-4 w-4 mr-2" />
-                                )}
-                                New article
-                            </Button>
-                        </div>
                     </CardContent>
                 </>
             )}

@@ -48,11 +48,20 @@ import {
     X,
     FileText,
     PanelLeftClose,
+    GripVertical,
+    Download,
 } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
 import { categoryColors } from "./add-category-dialog"
+
+// Extracted outside parent component to avoid re-creation on every render
+const GroupIcon = ({ iconName, className }) => {
+    const Icon = LucideIcons[iconName] || Folder
+    return <Icon className={className} />
+}
 
 export function UseCaseGroupsPanel({
     groups,
@@ -64,16 +73,13 @@ export function UseCaseGroupsPanel({
     onMoveUseCases,
     onSelectUseCase,
     onCollapse,
+    onDownloadGroup,
+    onBulkDownloadGroups,
+    isDownloading = false,
 }) {
     const pathname = usePathname()
     const isDemoMode = pathname?.startsWith('/demo')
 
-    // Debug logging
-    useEffect(() => {
-        console.log('[UseCaseGroupsPanel] Received groups:', groups);
-        console.log('[UseCaseGroupsPanel] Groups length:', groups?.length);
-        console.log('[UseCaseGroupsPanel] Received useCases:', useCases);
-    }, [groups, useCases]);
 
     const [isLoading, setIsLoading] = useState(false)
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -89,8 +95,25 @@ export function UseCaseGroupsPanel({
     // View mode state: "tree" or "grid"
     const [viewMode, setViewMode] = useState("tree")
 
-    // Drag-drop state
+    // Drag-drop state (for dropping use cases onto groups)
     const [dragOverGroupId, setDragOverGroupId] = useState(null)
+
+    // Drag-reorder state (for reordering the groups themselves)
+    const [draggingGroupId, setDraggingGroupId] = useState(null)
+    const [dropTargetGroupId, setDropTargetGroupId] = useState(null)
+    const [dropPosition, setDropPosition] = useState(null) // "above" | "below"
+
+    // Multi-select groups for bulk actions
+    const [selectedGroups, setSelectedGroups] = useState(new Set())
+
+    const toggleGroupSelection = (groupId) => {
+        setSelectedGroups(prev => {
+            const next = new Set(prev)
+            if (next.has(groupId)) next.delete(groupId)
+            else next.add(groupId)
+            return next
+        })
+    }
 
     // Form state
     const [newGroupName, setNewGroupName] = useState("")
@@ -281,21 +304,15 @@ export function UseCaseGroupsPanel({
     // Filter groups and use cases based on search term
     const filteredData = useMemo(() => {
         // Ensure groups is always an array and filter out any undefined/null values
-        const validGroups = Array.isArray(groups) ? groups.filter(g => g && g.id) : []
-        const validUseCases = Array.isArray(useCases) ? useCases.filter(uc => uc && uc.id) : []
-        
-        console.log('[UseCaseGroupsPanel] filteredData - validGroups:', validGroups);
-        console.log('[UseCaseGroupsPanel] filteredData - validUseCases:', validUseCases);
-        console.log('[UseCaseGroupsPanel] filteredData - searchTerm:', searchTerm);
-        
+        const validGroups = Array.isArray(groups) ? groups.filter(g => g?.id) : []
+        const validUseCases = Array.isArray(useCases) ? useCases.filter(uc => uc?.id) : []
+
         if (!searchTerm.trim()) {
-            const result = {
+            return {
                 groups: validGroups,
                 ungroupedUseCases: getUngroupedUseCases(),
                 matchedUseCaseIds: new Set(),
             };
-            console.log('[UseCaseGroupsPanel] filteredData result (no search):', result);
-            return result;
         }
 
         const search = searchTerm.toLowerCase()
@@ -374,10 +391,96 @@ export function UseCaseGroupsPanel({
         }
     }
 
-    const GroupIcon = ({ iconName, className }) => {
-        const Icon = LucideIcons[iconName] || Folder
-        return <Icon className={className} />
+    // ── Group drag-reorder handlers ───────────────────────────────────
+    const handleGroupDragStart = (e, groupId) => {
+        e.stopPropagation()
+        setDraggingGroupId(groupId)
+        e.dataTransfer.setData("application/group-reorder", groupId)
+        e.dataTransfer.effectAllowed = "move"
     }
+
+    const handleGroupDragEnd = () => {
+        setDraggingGroupId(null)
+        setDropTargetGroupId(null)
+        setDropPosition(null)
+    }
+
+    const handleGroupDragOver = (e, groupId) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        // Only handle group reorder transfers
+        if (!e.dataTransfer.types.includes("application/group-reorder")) return
+
+        const rect = e.currentTarget.getBoundingClientRect()
+        const midY = rect.top + rect.height / 2
+        const pos = e.clientY < midY ? "above" : "below"
+
+        setDropTargetGroupId(groupId)
+        setDropPosition(pos)
+        e.dataTransfer.dropEffect = "move"
+    }
+
+    const handleGroupDrop = async (e, targetGroupId) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        const sourceGroupId = e.dataTransfer.getData("application/group-reorder")
+        setDraggingGroupId(null)
+        setDropTargetGroupId(null)
+        setDropPosition(null)
+
+        if (!sourceGroupId || sourceGroupId === targetGroupId) return
+
+        // Compute new order
+        const currentOrder = filteredData.groups.map(g => g.id)
+        const sourceIdx = currentOrder.indexOf(sourceGroupId)
+        let targetIdx = currentOrder.indexOf(targetGroupId)
+
+        if (sourceIdx === -1 || targetIdx === -1) return
+
+        // Remove source from its current position
+        const newOrder = currentOrder.filter(id => id !== sourceGroupId)
+
+        // Recalculate targetIdx after removal
+        targetIdx = newOrder.indexOf(targetGroupId)
+        const insertIdx = dropPosition === "below" ? targetIdx + 1 : targetIdx
+        newOrder.splice(insertIdx, 0, sourceGroupId)
+
+        // Optimistic update
+        const reorderedGroups = newOrder.map((id, i) => {
+            const g = groups.find(gr => gr.id === id)
+            return g ? { ...g, order: i } : null
+        }).filter(Boolean)
+
+        onGroupsChange?.(reorderedGroups)
+
+        // Persist
+        if (!isDemoMode) {
+            try {
+                const res = await fetch("/api/use-case-groups/reorder", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ orderedIds: newOrder }),
+                })
+                if (!res.ok) throw new Error("Failed to reorder groups")
+            } catch (err) {
+                console.error("Error reordering groups:", err)
+                toast.error("Failed to save group order")
+                // Revert to original
+                onGroupsChange?.(groups)
+            }
+        } else {
+            toast.success("Groups reordered (demo)")
+        }
+    }
+
+
+    // Compute total document count across all use cases
+    const totalDocCount = useMemo(() => {
+        return (useCases || []).reduce((sum, uc) => sum + (uc.count || 0), 0)
+    }, [useCases])
 
     return (
         <div className="flex flex-col h-full min-h-0">
@@ -389,6 +492,11 @@ export function UseCaseGroupsPanel({
                         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
                             {groups.length}
                         </span>
+                        {totalDocCount > 0 && (
+                            <span className="text-[10px] text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-md font-medium">
+                                {totalDocCount} doc{totalDocCount !== 1 ? 's' : ''}
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center gap-1">
                         {/* Collapse panel button */}
@@ -513,6 +621,99 @@ export function UseCaseGroupsPanel({
                 )}
             </div>
 
+            {/* Bulk action bar for selected groups */}
+            {selectedGroups.size > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 border-b bg-primary/5">
+                    <span className="text-xs font-medium text-primary">
+                        {selectedGroups.size} selected
+                    </span>
+                    <div className="flex-1" />
+                    {onBulkDownloadGroups && (
+                        <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => onBulkDownloadGroups(Array.from(selectedGroups))}
+                                        disabled={isDownloading}
+                                    >
+                                        {isDownloading ? (
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                            <Download className="h-3.5 w-3.5" />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="text-xs">
+                                    Download selected groups
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                    <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-destructive hover:text-destructive"
+                                    onClick={() => {
+                                        // Delete all selected groups one by one
+                                        const ids = Array.from(selectedGroups)
+                                        if (ids.length === 1) {
+                                            const g = groups.find(gr => gr.id === ids[0])
+                                            if (g) {
+                                                setGroupToDelete(g)
+                                                setDeleteDialogOpen(true)
+                                            }
+                                        } else {
+                                            // Bulk delete — confirm then proceed
+                                            if (confirm(`Delete ${ids.length} groups? Use cases will be moved to Ungrouped.`)) {
+                                                (async () => {
+                                                    setIsLoading(true)
+                                                    try {
+                                                        for (const id of ids) {
+                                                            if (!isDemoMode) {
+                                                                await fetch(`/api/use-case-groups/${id}`, { method: "DELETE", credentials: "include" })
+                                                            }
+                                                        }
+                                                        const remaining = groups.filter(g => !selectedGroups.has(g.id))
+                                                        onGroupsChange?.(remaining)
+                                                        setSelectedGroups(new Set())
+                                                        toast.success(`${ids.length} groups deleted`)
+                                                        if (selectedGroups.has(selectedGroupId)) onSelectGroup(null)
+                                                    } catch (err) {
+                                                        console.error("Bulk delete groups error:", err)
+                                                        toast.error("Failed to delete some groups")
+                                                    } finally {
+                                                        setIsLoading(false)
+                                                    }
+                                                })()
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                                Delete selected groups
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] px-2"
+                        onClick={() => setSelectedGroups(new Set())}
+                    >
+                        Clear
+                    </Button>
+                </div>
+            )}
+
             {/* Groups List - Tree View */}
             {viewMode === "tree" && (
             <ScrollArea className="flex-1 h-0">
@@ -523,7 +724,7 @@ export function UseCaseGroupsPanel({
                         className={cn(
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
                             selectedGroupId === null
-                                ? "bg-primary/10 text-primary"
+                                ? "bg-primary/10 text-primary border-l-2 border-l-primary font-medium"
                                 : "hover:bg-accent"
                         )}
                     >
@@ -552,7 +753,7 @@ export function UseCaseGroupsPanel({
                             className={cn(
                                 "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
                                 selectedGroupId === "ungrouped"
-                                    ? "bg-primary/10 text-primary"
+                                    ? "bg-primary/10 text-primary border-l-2 border-l-primary font-medium"
                                     : "hover:bg-accent",
                                 dragOverGroupId === "ungrouped" && "bg-primary/15 text-primary font-medium"
                             )}
@@ -577,8 +778,12 @@ export function UseCaseGroupsPanel({
 
                     {/* No results message */}
                     {searchTerm && filteredData.groups.length === 0 && filteredData.ungroupedUseCases.length === 0 && (
-                        <div className="text-center py-4 text-xs text-muted-foreground">
-                            No groups or use cases found
+                        <div className="flex flex-col items-center text-center py-6">
+                            <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center mb-2">
+                                <Search className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <p className="text-xs font-medium text-muted-foreground">No results found</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Try a different search term</p>
                         </div>
                     )}
 
@@ -589,6 +794,9 @@ export function UseCaseGroupsPanel({
                         const isSelected = selectedGroupId === group.id
                         const colorClass = categoryColors.find(c => c.name === group.color)?.class || ""
                         const isDragOver = dragOverGroupId === group.id
+                        const isBeingDragged = draggingGroupId === group.id
+                        const isDropTarget = dropTargetGroupId === group.id
+                        const isChecked = selectedGroups.has(group.id)
 
                         return (
                             <Collapsible
@@ -596,16 +804,55 @@ export function UseCaseGroupsPanel({
                                 open={isExpanded}
                                 onOpenChange={() => toggleGroup(group.id)}
                             >
+                                {/* Drop indicator line - above */}
+                                {isDropTarget && dropPosition === "above" && !isBeingDragged && (
+                                    <div className="h-0.5 bg-primary rounded-full mx-1 -mb-0.5 transition-all" />
+                                )}
+
                                 <div
-                                    onDragOver={(e) => handleDragOver(e, group.id)}
+                                    draggable
+                                    onDragStart={(e) => handleGroupDragStart(e, group.id)}
+                                    onDragEnd={handleGroupDragEnd}
+                                    onDragOver={(e) => {
+                                        handleDragOver(e, group.id)
+                                        handleGroupDragOver(e, group.id)
+                                    }}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, group.id)}
+                                    onDrop={(e) => {
+                                        // Handle both use-case drops and group reorder drops
+                                        if (e.dataTransfer.types.includes("application/group-reorder")) {
+                                            handleGroupDrop(e, group.id)
+                                        } else {
+                                            handleDrop(e, group.id)
+                                        }
+                                    }}
                                     className={cn(
                                         "flex items-center gap-1 rounded-md transition-all duration-200 group",
-                                        isSelected ? "bg-primary/10" : "hover:bg-accent",
-                                        isDragOver && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/10 scale-[1.02]"
+                                        isSelected ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-accent",
+                                        isDragOver && !isBeingDragged && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/10 scale-[1.02]",
+                                        isBeingDragged && "opacity-40 scale-[0.97]",
+                                        isChecked && "ring-1 ring-primary/50 bg-primary/5"
                                     )}
                                 >
+                                    {/* Checkbox for multi-select */}
+                                    <div className={cn(
+                                        "shrink-0 pl-1",
+                                        isChecked ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                                        "transition-opacity"
+                                    )}>
+                                        <Checkbox
+                                            checked={isChecked}
+                                            onCheckedChange={() => toggleGroupSelection(group.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-3.5 w-3.5"
+                                        />
+                                    </div>
+
+                                    {/* Drag grip handle */}
+                                    <div className="opacity-0 group-hover:opacity-60 cursor-grab active:cursor-grabbing shrink-0 self-center">
+                                        <GripVertical className="h-3 w-3 text-muted-foreground" />
+                                    </div>
+
                                     <CollapsibleTrigger asChild>
                                         <button className="p-1.5 hover:bg-accent/50 rounded-md">
                                             {isExpanded ? (
@@ -631,12 +878,14 @@ export function UseCaseGroupsPanel({
                                                     )}
                                                 >
                                                     <GroupIcon
-                                                        iconName={isDragOver ? "FolderOpen" : (isExpanded ? "FolderOpen" : group.icon)}
+                                                        iconName={(isDragOver || isExpanded) ? "FolderOpen" : group.icon}
                                                         className={cn(
                                                             "h-4 w-4 shrink-0 transition-transform",
                                                             isDragOver
                                                                 ? "text-primary scale-110"
-                                                                : colorClass ? colorClass.replace('bg-', 'text-') : "text-muted-foreground"
+                                                                : colorClass
+                                                                    ? colorClass.replace('bg-', 'text-')
+                                                                    : "text-muted-foreground"
                                                         )}
                                                     />
                                                     <span className="truncate max-w-[140px]">
@@ -668,6 +917,15 @@ export function UseCaseGroupsPanel({
                                                 <Pencil className="h-4 w-4 mr-2" />
                                                 Edit
                                             </DropdownMenuItem>
+                                            {onDownloadGroup && (
+                                                <DropdownMenuItem
+                                                    onClick={() => onDownloadGroup(group.id)}
+                                                    disabled={isDownloading}
+                                                >
+                                                    <Download className="h-4 w-4 mr-2" />
+                                                    {isDownloading ? "Downloading…" : "Download All"}
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem
                                                 onClick={() => {
@@ -683,12 +941,20 @@ export function UseCaseGroupsPanel({
                                     </DropdownMenu>
                                 </div>
 
+                                {/* Drop indicator line - below */}
+                                {isDropTarget && dropPosition === "below" && !isBeingDragged && (
+                                    <div className="h-0.5 bg-primary rounded-full mx-1 -mt-0.5 transition-all" />
+                                )}
+
                                 <CollapsibleContent>
                                     <div className="ml-6 pl-2 border-l space-y-0.5 py-1 max-w-full overflow-hidden">
                                         {groupUseCases.length === 0 ? (
-                                            <p className="text-xs text-muted-foreground py-1 px-2">
-                                                No use cases
-                                            </p>
+                                            <div className="flex items-center gap-2 py-2 px-2 rounded-md border border-dashed border-border/60">
+                                                <FileText className="h-3 w-3 text-muted-foreground/50" />
+                                                <p className="text-[10px] text-muted-foreground/70 italic">
+                                                    No use cases — drag items here
+                                                </p>
+                                            </div>
                                         ) : (
                                             groupUseCases.map((uc) => {
                                                 const UseCaseIcon = LucideIcons[uc.icon] || LucideIcons.File
@@ -793,8 +1059,12 @@ export function UseCaseGroupsPanel({
 
                     {/* No results message */}
                     {searchTerm && filteredData.groups.length === 0 && filteredData.ungroupedUseCases.length === 0 && (
-                        <div className="text-center py-4 text-xs text-muted-foreground">
-                            No groups or use cases found
+                        <div className="flex flex-col items-center text-center py-6 col-span-full">
+                            <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center mb-2">
+                                <Search className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <p className="text-xs font-medium text-muted-foreground">No results found</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Try a different search term</p>
                         </div>
                     )}
 
@@ -803,28 +1073,71 @@ export function UseCaseGroupsPanel({
                         const groupUseCases = getUseCasesInGroup(group.id)
                         const colorClass = categoryColors.find(c => c.name === group.color)?.class || ""
                         const isDragOver = dragOverGroupId === group.id
+                        const isBeingDragged = draggingGroupId === group.id
+                        const isDropTarget = dropTargetGroupId === group.id
+                        const isChecked = selectedGroups.has(group.id)
 
                         return (
-                            <div
-                                key={group.id}
-                                onDragOver={(e) => handleDragOver(e, group.id)}
-                                onDragLeave={handleDragLeave}
-                                onDrop={(e) => handleDrop(e, group.id)}
-                                className={cn(
-                                    "rounded-lg transition-all duration-200",
-                                    isDragOver && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]"
+                            <div key={group.id}>
+                                {/* Drop indicator - above */}
+                                {isDropTarget && dropPosition === "above" && !isBeingDragged && (
+                                    <div className="h-0.5 bg-primary rounded-full mx-1 mb-1 transition-all" />
                                 )}
-                            >
-                                <button
-                                    onClick={() => onSelectGroup(group.id)}
+                                <div
+                                    draggable
+                                    onDragStart={(e) => handleGroupDragStart(e, group.id)}
+                                    onDragEnd={handleGroupDragEnd}
+                                    onDragOver={(e) => {
+                                        handleDragOver(e, group.id)
+                                        handleGroupDragOver(e, group.id)
+                                    }}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => {
+                                        if (e.dataTransfer.types.includes("application/group-reorder")) {
+                                            handleGroupDrop(e, group.id)
+                                        } else {
+                                            handleDrop(e, group.id)
+                                        }
+                                    }}
                                     className={cn(
-                                        "w-full flex items-center gap-3 p-3 rounded-lg border transition-all group",
-                                        selectedGroupId === group.id
-                                            ? "bg-primary/10 border-primary text-primary"
-                                            : "hover:bg-accent border-transparent hover:border-border",
-                                        isDragOver && "bg-primary/10 border-primary"
+                                        "rounded-lg transition-all duration-200",
+                                        isDragOver && !isBeingDragged && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]",
+                                        isBeingDragged && "opacity-40 scale-[0.97]"
                                     )}
                                 >
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => onSelectGroup(group.id)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectGroup(group.id); } }}
+                                    className={cn(
+                                        "w-full flex items-center gap-3 p-3 rounded-lg border transition-all group cursor-pointer",
+                                        selectedGroupId === group.id
+                                            ? "bg-primary/10 border-primary text-primary border-l-[3px]"
+                                            : "hover:bg-accent border-transparent hover:border-border",
+                                        isDragOver && "bg-primary/10 border-primary",
+                                        isChecked && "ring-1 ring-primary/50 bg-primary/5"
+                                    )}
+                                >
+                                    {/* Checkbox for multi-select */}
+                                    <div className={cn(
+                                        "shrink-0 -ml-1",
+                                        isChecked ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                                        "transition-opacity"
+                                    )}>
+                                        <Checkbox
+                                            checked={isChecked}
+                                            onCheckedChange={() => toggleGroupSelection(group.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-4 w-4"
+                                        />
+                                    </div>
+
+                                    {/* Drag grip */}
+                                    <div className="opacity-0 group-hover:opacity-60 cursor-grab active:cursor-grabbing shrink-0 -ml-1">
+                                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+
                                     <div className={cn(
                                         "p-2 rounded-md",
                                         colorClass || "bg-muted"
@@ -833,16 +1146,28 @@ export function UseCaseGroupsPanel({
                                             iconName={isDragOver ? "FolderOpen" : group.icon}
                                             className={cn(
                                                 "h-5 w-5",
-                                                isDragOver ? "text-primary" : colorClass ? "text-white" : "text-muted-foreground"
+                                                isDragOver
+                                                    ? "text-primary"
+                                                    : colorClass
+                                                        ? "text-white"
+                                                        : "text-muted-foreground"
                                             )}
                                         />
                                     </div>
                                     <div className="flex-1 text-left min-w-0">
-                                        <p className="text-sm font-medium truncate">
-                                            {isDragOver ? "Drop here" : group.name}
-                                        </p>
+                                        <div className="flex items-center gap-1.5">
+                                            {colorClass && (
+                                                <div className={cn(
+                                                    "h-2 w-2 rounded-full shrink-0",
+                                                    colorClass
+                                                )} />
+                                            )}
+                                            <p className="text-sm font-medium truncate">
+                                                {isDragOver ? "Drop here" : group.name}
+                                            </p>
+                                        </div>
                                         <p className="text-xs text-muted-foreground">
-                                            {groupUseCases.length} items
+                                            {groupUseCases.length} item{groupUseCases.length !== 1 ? 's' : ''}
                                         </p>
                                     </div>
                                     <DropdownMenu>
@@ -860,6 +1185,15 @@ export function UseCaseGroupsPanel({
                                                 <Pencil className="h-4 w-4 mr-2" />
                                                 Edit
                                             </DropdownMenuItem>
+                                            {onDownloadGroup && (
+                                                <DropdownMenuItem
+                                                    onClick={() => onDownloadGroup(group.id)}
+                                                    disabled={isDownloading}
+                                                >
+                                                    <Download className="h-4 w-4 mr-2" />
+                                                    {isDownloading ? "Downloading…" : "Download All"}
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem
                                                 onClick={() => {
@@ -873,7 +1207,12 @@ export function UseCaseGroupsPanel({
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </button>
+                                </div>
+                            </div>
+                                {/* Drop indicator - below */}
+                                {isDropTarget && dropPosition === "below" && !isBeingDragged && (
+                                    <div className="h-0.5 bg-primary rounded-full mx-1 mt-1 transition-all" />
+                                )}
                             </div>
                         )
                     })}

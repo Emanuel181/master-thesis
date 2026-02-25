@@ -168,27 +168,36 @@ export function UserArticlesSection() {
     }, [session, currentPage, isDemo])
 
     return (
-        <Card className="border-border/50">
+        <Card className="border-border/50 transition-shadow hover:shadow-md">
             <CardHeader className="pb-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
-                        <CardTitle className="text-base sm:text-lg">Your articles</CardTitle>
+                        <div className="p-1.5 rounded-md bg-primary/10">
+                            <FileText className="h-4 w-4 text-primary shrink-0" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-base sm:text-lg">Your articles</CardTitle>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 gap-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    {stats.published} published
+                                </Badge>
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 gap-0.5">
+                                    {stats.drafts} drafts
+                                </Badge>
+                                {useMockData && <span className="text-[9px] text-muted-foreground/60">(demo)</span>}
+                            </div>
+                        </div>
                     </div>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => router.push('/dashboard?tab=write')}
-                        className="gap-1 w-full sm:w-auto"
+                        className="gap-1.5 w-full sm:w-auto"
                     >
                         <PenLine className="h-3.5 w-3.5" />
                         Write article
                     </Button>
                 </div>
-                <CardDescription className="text-xs sm:text-sm">
-                    {stats.published} published • {stats.drafts} drafts
-                    {useMockData && <span className="text-muted-foreground/60"> (demo)</span>}
-                </CardDescription>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
                 {isLoading ? (
@@ -196,19 +205,20 @@ export function UserArticlesSection() {
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : articles.length === 0 && currentPage === 1 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <FileText className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">No articles yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Start writing to share your knowledge
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <div className="rounded-full bg-primary/10 p-4 mb-3 ring-4 ring-primary/5">
+                            <PenLine className="h-8 w-8 text-primary" />
+                        </div>
+                        <p className="text-sm font-semibold">No articles yet</p>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[250px]">
+                            Start writing to share your security knowledge and insights with the community.
                         </p>
                         <Button
-                            variant="outline"
                             size="sm"
-                            className="mt-4"
+                            className="mt-4 gap-1.5"
                             onClick={() => router.push('/dashboard?tab=write')}
                         >
-                            <PenLine className="h-3.5 w-3.5 mr-1" />
+                            <PenLine className="h-3.5 w-3.5" />
                             Create your first article
                         </Button>
                     </div>
@@ -219,7 +229,7 @@ export function UserArticlesSection() {
                                 {articles.map((article) => (
                                     <div
                                         key={article.id}
-                                        className="group flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                                        className="group flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-muted/30 hover:border-primary/20 transition-all duration-150 cursor-pointer select-none"
                                         onClick={() => {
                                             if (article.status === 'PUBLISHED') {
                                                 router.push(`/blog/${article.slug}`)

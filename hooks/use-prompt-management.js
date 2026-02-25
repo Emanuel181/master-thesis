@@ -25,6 +25,7 @@ export function usePromptManagement() {
         deletePrompt: deletePromptContext,
         bulkDeletePrompts,
         reorderPrompts,
+        resetToDefaultPrompts,
         refresh: refreshPrompts,
     } = usePrompts()
 
@@ -33,6 +34,8 @@ export function usePromptManagement() {
     const [currentAgent, setCurrentAgent] = useState("reviewer")
     const [viewFullTextPrompt, setViewFullTextPrompt] = useState(null)
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const [isResetting, setIsResetting] = useState(false)
+    const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
 
     // New prompt form state
     const [newTitle, setNewTitle] = useState("")
@@ -215,6 +218,37 @@ export function usePromptManagement() {
     }, [isDemoMode, refreshPrompts])
 
     /**
+     * Reset prompts to defaults
+     */
+    const handleResetToDefaults = useCallback(async () => {
+        setResetConfirmOpen(true)
+    }, [])
+
+    /**
+     * Confirm reset to defaults
+     */
+    const confirmResetToDefaults = useCallback(async () => {
+        setIsResetting(true)
+        setResetConfirmOpen(false)
+
+        try {
+            const result = await resetToDefaultPrompts()
+
+            if (result.success) {
+                // Don't clear selections - only default prompts are reset, custom prompts remain
+                toast.success(result.message || "Default prompts restored!")
+            } else {
+                toast.error(result.error || "Failed to reset prompts")
+            }
+        } catch (error) {
+            console.error("Error resetting prompts:", error)
+            toast.error("Failed to reset prompts")
+        } finally {
+            setIsResetting(false)
+        }
+    }, [resetToDefaultPrompts])
+
+    /**
      * Handle drag start
      */
     const handleDragStart = useCallback((event, agent) => {
@@ -328,7 +362,10 @@ export function usePromptManagement() {
         viewFullTextPrompt,
         setViewFullTextPrompt,
         isRefreshing,
-        
+        isResetting,
+        resetConfirmOpen,
+        setResetConfirmOpen,
+
         // New prompt form
         newTitle,
         setNewTitle,
@@ -369,6 +406,8 @@ export function usePromptManagement() {
         handleDeleteAllFromCategory,
         confirmDelete,
         handleRefresh,
+        handleResetToDefaults,
+        confirmResetToDefaults,
         handleDragStart,
         handleDragEnd,
         handleMoveUp,

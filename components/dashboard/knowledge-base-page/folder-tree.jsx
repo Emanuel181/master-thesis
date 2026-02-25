@@ -65,6 +65,8 @@ import {
     ArrowDown,
     Check,
     Home,
+    Download,
+    Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -181,12 +183,18 @@ function TreeNode({ node, style, dragHandle }) {
                                 <DropdownMenuSeparator />
                             </>
                         )}
-                        <DropdownMenuItem onClick={() => node.data.onRename?.(node.data)}>
+                        <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            node.data.onRename?.(node.data);
+                        }}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => node.data.onDelete?.(node.data)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                node.data.onDelete?.(node.data);
+                            }}
                             className="text-destructive focus:text-destructive"
                         >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -203,6 +211,10 @@ const FolderTree = forwardRef(function FolderTree({
     useCaseId,
     onFileSelect,
     onRefresh,
+    onBulkDownload,
+    onBiometricAuth,
+    isDownloading,
+    isBioAuthenticating,
 }, ref) {
     const pathname = usePathname();
     const isDemoMode = pathname?.startsWith('/demo');
@@ -243,6 +255,9 @@ const FolderTree = forwardRef(function FolderTree({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
+    // Ref to suppress onSelect after a menu action (delete/rename) fires
+    const suppressSelectRef = useRef(false);
+
     // Bulk delete dialog
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
@@ -270,6 +285,8 @@ const FolderTree = forwardRef(function FolderTree({
 
     // Rename handlers
     const handleOpenRename = useCallback((item) => {
+        suppressSelectRef.current = true;
+        setTimeout(() => { suppressSelectRef.current = false; }, 300);
         setItemToRename(item);
         setNewName(item.name || item.title || "");
         setRenameDialogOpen(true);
@@ -277,6 +294,8 @@ const FolderTree = forwardRef(function FolderTree({
 
     // Delete handlers
     const handleOpenDelete = useCallback((item) => {
+        suppressSelectRef.current = true;
+        setTimeout(() => { suppressSelectRef.current = false; }, 300);
         setItemToDelete(item);
         setDeleteDialogOpen(true);
     }, []);
@@ -761,6 +780,7 @@ const FolderTree = forwardRef(function FolderTree({
 
     // Handle node selection (for PDFs)
     const handleSelect = (nodes) => {
+        if (suppressSelectRef.current) return;
         const selected = nodes[0];
         if (selected && selected.data.type === "pdf") {
             onFileSelect?.(selected.data);
@@ -790,9 +810,19 @@ const FolderTree = forwardRef(function FolderTree({
     // Get selected PDF count
     const selectedCount = selectedItems.size;
 
-    // Bulk delete handler (handles both folders and PDFs)
+    // Bulk delete handler (handles both folders and PDFs) - with biometric auth
     const handleBulkDelete = async () => {
         if (selectedItems.size === 0) return;
+
+        // Require biometric authentication for non-demo mode
+        if (!isDemoMode && onBiometricAuth) {
+            try {
+                await onBiometricAuth();
+            } catch {
+                setBulkDeleteDialogOpen(false);
+                return;
+            }
+        }
 
         // Demo mode - mock bulk delete locally
         if (isDemoMode) {
@@ -847,6 +877,43 @@ const FolderTree = forwardRef(function FolderTree({
             toast.error("Failed to delete some items");
         }
     };
+
+    // Bulk download selected PDFs from folder tree
+    const handleBulkDownloadSelected = useCallback(() => {
+        if (selectedItems.size === 0 || !onBulkDownload) return;
+
+        // Collect only PDF IDs (not folder IDs) from selected items
+        const collectPdfIds = (items, ids) => {
+            for (const item of items) {
+                if (selectedItems.has(item.id)) {
+                    if (item.type === "pdf") {
+                        ids.push(item.id);
+                    } else if (item.children) {
+                        // If a folder is selected, collect all PDFs inside recursively
+                        const collectAllPdfs = (nodes) => {
+                            for (const node of nodes) {
+                                if (node.type === "pdf") ids.push(node.id);
+                                if (node.children) collectAllPdfs(node.children);
+                            }
+                        };
+                        collectAllPdfs(item.children);
+                    }
+                }
+                if (item.children) collectPdfIds(item.children, ids);
+            }
+        };
+
+        const pdfIds = [];
+        collectPdfIds(treeData, pdfIds);
+        const uniqueIds = [...new Set(pdfIds)];
+
+        if (uniqueIds.length === 0) {
+            toast.info("No PDFs found in selection");
+            return;
+        }
+
+        onBulkDownload(uniqueIds);
+    }, [selectedItems, treeData, onBulkDownload]);
 
     // Navigate into a folder (for grid/list view)
     const navigateToFolder = useCallback((folder) => {
@@ -1086,11 +1153,24 @@ const FolderTree = forwardRef(function FolderTree({
                             >
                                 Clear
                             </Button>
+                            {onBulkDownload && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-2 text-xs"
+                                    onClick={handleBulkDownloadSelected}
+                                    disabled={isDownloading || isBioAuthenticating}
+                                >
+                                    {isDownloading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                                    Download
+                                </Button>
+                            )}
                             <Button
                                 variant="destructive"
                                 size="sm"
                                 className="h-8 px-2 text-xs"
                                 onClick={() => setBulkDeleteDialogOpen(true)}
+                                disabled={isBioAuthenticating}
                             >
                                 <Trash2 className="h-3.5 w-3.5 mr-1" />
                                 Delete
@@ -1195,6 +1275,19 @@ const FolderTree = forwardRef(function FolderTree({
                             {flatItems.map(item => (
                                 <div
                                     key={item.id}
+                                    draggable={item.type === "pdf"}
+                                    onDragStart={(e) => {
+                                        if (item.type !== "pdf") return;
+                                        // Collect selected PDF IDs if item is selected, otherwise just this item
+                                        const pdfIds = selectedItems.has(item.id) && selectedItems.size > 0
+                                            ? Array.from(selectedItems).filter(id => {
+                                                  const found = flatItems.find(fi => fi.id === id);
+                                                  return found?.type === "pdf";
+                                              })
+                                            : [item.id];
+                                        e.dataTransfer.setData("application/pdf-move", JSON.stringify({ pdfIds }));
+                                        e.dataTransfer.effectAllowed = "move";
+                                    }}
                                     className={`relative flex items-center gap-1.5 py-1.5 px-2 rounded-md hover:bg-accent/50 cursor-pointer group ${
                                         selectedItems.has(item.id) ? "bg-accent/30" : ""
                                     }`}
@@ -1246,6 +1339,18 @@ const FolderTree = forwardRef(function FolderTree({
                             {flatItems.map(item => (
                                 <div
                                     key={item.id}
+                                    draggable={item.type === "pdf"}
+                                    onDragStart={(e) => {
+                                        if (item.type !== "pdf") return;
+                                        const pdfIds = selectedItems.has(item.id) && selectedItems.size > 0
+                                            ? Array.from(selectedItems).filter(id => {
+                                                  const found = flatItems.find(fi => fi.id === id);
+                                                  return found?.type === "pdf";
+                                              })
+                                            : [item.id];
+                                        e.dataTransfer.setData("application/pdf-move", JSON.stringify({ pdfIds }));
+                                        e.dataTransfer.effectAllowed = "move";
+                                    }}
                                     className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-accent/50 cursor-pointer group transition-colors ${
                                         selectedItems.has(item.id) ? "bg-accent/30 border-primary" : "border-transparent"
                                     }`}
@@ -1307,6 +1412,18 @@ const FolderTree = forwardRef(function FolderTree({
                             {flatItems.map(item => (
                                 <div
                                     key={item.id}
+                                    draggable={item.type === "pdf"}
+                                    onDragStart={(e) => {
+                                        if (item.type !== "pdf") return;
+                                        const pdfIds = selectedItems.has(item.id) && selectedItems.size > 0
+                                            ? Array.from(selectedItems).filter(id => {
+                                                  const found = flatItems.find(fi => fi.id === id);
+                                                  return found?.type === "pdf";
+                                              })
+                                            : [item.id];
+                                        e.dataTransfer.setData("application/pdf-move", JSON.stringify({ pdfIds }));
+                                        e.dataTransfer.effectAllowed = "move";
+                                    }}
                                     className={`relative flex items-center gap-1.5 py-1 px-2 border-b hover:bg-accent/50 cursor-pointer group ${
                                         selectedItems.has(item.id) ? "bg-accent/30" : ""
                                     }`}

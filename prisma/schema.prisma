@@ -37,6 +37,11 @@ model User {
   auditLogs           AuditLog[]
   warnings            UserWarning[]
   savedArticles       SavedArticle[]
+  apiKeys             ApiKey[]
+  // Per-user Bedrock data source for vector isolation
+  bedrockDataSourceId String? // Each user gets their own Bedrock data source within the shared KB
+  mfaConfig           MfaConfig?
+  passkeys            UserPasskey[]
 }
 
 model Account {
@@ -188,43 +193,51 @@ model Folder {
 }
 
 model Pdf {
-  id                String                @id @default(cuid())
-  url               String
-  title             String
-  size              Int
-  s3Key             String
-  order             Int                   @default(0)
-  useCaseId         String
-  folderId          String?
-  createdAt         DateTime              @default(now())
+  id                  String                @id @default(cuid())
+  url                 String
+  title               String
+  size                Int
+  s3Key               String
+  order               Int                   @default(0)
+  useCaseId           String
+  folderId            String?
+  createdAt           DateTime              @default(now())
   // RAG-specific fields
-  vectorized        Boolean               @default(false) // Whether document has been vectorized
-  vectorizedAt      DateTime? // When vectorization completed
+  vectorized          Boolean               @default(false) // Whether document has been vectorized
+  vectorizedAt        DateTime? // When vectorization completed
   bedrockDataSourceId String? // Bedrock data source ID
-  embeddingStatus   String                @default("pending") // pending, processing, completed, failed
-  chunkCount        Int                   @default(0) // Number of chunks created
-  folder            Folder?               @relation(fields: [folderId], references: [id])
-  useCase           KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
+  embeddingStatus     String                @default("pending") // pending, processing, completed, failed
+  chunkCount          Int                   @default(0) // Number of chunks created
+  // Virus scanning fields
+  virusScanStatus     String                @default("pending") // pending, scanning, clean, malicious, error, skipped
+  virusScannedAt      DateTime? // When the virus scan completed
+  virusScanId         String? // VirusTotal analysis ID for polling
+  folder              Folder?               @relation(fields: [folderId], references: [id])
+  useCase             KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
 
   @@index([useCaseId])
   @@index([folderId])
   @@index([vectorized])
   @@index([embeddingStatus])
+  @@index([virusScanStatus])
 }
 
 model Prompt {
-  id        String   @id @default(cuid())
-  agent     String
-  title     String   @default("Untitled")
-  text      String
-  s3Key     String
-  order     Int      @default(0)
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  agent      String
+  title      String   @default("Untitled")
+  text       String
+  s3Key      String
+  order      Int      @default(0)
+  isDefault  Boolean  @default(false) // Whether this is a default prompt
+  defaultKey String? // Unique key to identify which default prompt this is (e.g., "reviewer-0")
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt]) // For user's prompts sorted by date
+  @@index([userId, isDefault]) // For querying default prompts
 }
 
 // Distributed Circuit Breaker state (shared across ECS Fargate tasks)
@@ -381,7 +394,7 @@ model Notification {
 model AdminAccount {
   id                  String    @id @default(cuid())
   email               String    @unique
-  passwordHash        String?   // bcrypt hashed password (null until email verified)
+  passwordHash        String? // bcrypt hashed password (null until email verified)
   emailVerified       Boolean   @default(false)
   verificationToken   String?   @unique // Token for email verification
   verificationExpires DateTime? // Token expiry
@@ -396,20 +409,20 @@ model AdminAccount {
 
 // Admin Passkey - WebAuthn credentials for admin authentication
 model AdminPasskey {
-  id              String   @id @default(cuid())
-  email           String // Admin email this passkey belongs to
-  credentialId    String   @unique // Base64URL encoded credential ID
-  publicKey       Bytes // COSE public key bytes
-  webauthnUserId  String // Base64URL encoded user handle for WebAuthn
-  counter         BigInt   @default(0) // Signature counter for replay attack prevention
-  deviceType      String // 'singleDevice' or 'multiDevice'
-  backedUp        Boolean  @default(false) // Whether passkey is backed up
-  transports      String? // Comma-separated list of transports (usb, ble, nfc, internal, etc.)
-  aaguid          String? // Authenticator Attestation GUID
-  deviceName      String? // Optional user-friendly device name
-  lastUsedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(cuid())
+  email          String // Admin email this passkey belongs to
+  credentialId   String    @unique // Base64URL encoded credential ID
+  publicKey      Bytes // COSE public key bytes
+  webauthnUserId String // Base64URL encoded user handle for WebAuthn
+  counter        BigInt    @default(0) // Signature counter for replay attack prevention
+  deviceType     String // 'singleDevice' or 'multiDevice'
+  backedUp       Boolean   @default(false) // Whether passkey is backed up
+  transports     String? // Comma-separated list of transports (usb, ble, nfc, internal, etc.)
+  aaguid         String? // Authenticator Attestation GUID
+  deviceName     String? // Optional user-friendly device name
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([email])
   @@index([credentialId])
@@ -430,16 +443,18 @@ model AdminPasskeyChallenge {
 
 // Workflow Run - Tracks execution of agentic workflows
 model WorkflowRun {
-  id                String              @id @default(cuid())
+  id                String               @id @default(cuid())
   userId            String
-  status            String              @default("pending") // pending, running, completed, failed
-  startedAt         DateTime            @default(now())
+  status            String               @default("pending") // pending, running, completed, failed
+  sfnExecutionArn   String? // AWS Step Functions execution ARN
+  startedAt         DateTime             @default(now())
   completedAt       DateTime?
-  totalUseCases     Int                 @default(0)
-  completedUseCases Int                 @default(0)
-  metadata          Json?               // Stores code, codeType, and other workflow metadata
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  totalUseCases     Int                  @default(0)
+  completedUseCases Int                  @default(0)
+  metadata          Json? // Stores code, codeType, and other workflow metadata
+  pdfPassword       String? // Encrypted PDF password (regenerated on each download)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
   vulnerabilities   Vulnerability[]
   useCaseRuns       WorkflowUseCaseRun[]
 
@@ -450,20 +465,20 @@ model WorkflowRun {
 
 // Workflow Use Case Run - Tracks individual use case execution within a workflow
 model WorkflowUseCaseRun {
-  id                  String       @id @default(cuid())
-  workflowRunId       String
-  useCaseId           String
-  useCaseTitle        String
-  status              String       @default("pending") // pending, running, completed, failed
-  reviewerCompleted   Boolean      @default(false)
+  id                   String      @id @default(cuid())
+  workflowRunId        String
+  useCaseId            String
+  useCaseTitle         String
+  status               String      @default("pending") // pending, running, completed, failed
+  reviewerCompleted    Boolean     @default(false)
   implementerCompleted Boolean     @default(false)
-  testerCompleted     Boolean      @default(false)
-  reporterCompleted   Boolean      @default(false)
-  startedAt           DateTime?
-  completedAt         DateTime?
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  workflowRun         WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  testerCompleted      Boolean     @default(false)
+  reporterCompleted    Boolean     @default(false)
+  startedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  workflowRun          WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
 
   @@index([workflowRunId])
   @@index([useCaseId])
@@ -472,33 +487,39 @@ model WorkflowUseCaseRun {
 
 // Vulnerability - Stores detected vulnerabilities from code analysis
 model Vulnerability {
-  id                String       @id @default(cuid())
-  workflowRunId     String
-  useCaseId         String
-  severity          String // Critical, High, Medium, Low
-  title             String
-  type              String // Security, Performance, Best Practice
-  details           String       @db.Text
-  fileName          String
+  id                 String      @id @default(cuid())
+  workflowRunId      String
+  useCaseId          String
+  severity           String // Critical, High, Medium, Low
+  title              String
+  type               String // Security, Performance, Best Practice
+  details            String      @db.Text
+  fileName           String
   // Detailed analysis fields
-  vulnerableCode    String?      @db.Text
-  explanation       String?      @db.Text
-  bestPractices     String?      @db.Text
-  exploitExamples   String?      @db.Text
-  attackPath        String?      @db.Text
-  cweId             String? // CWE identifier
+  vulnerableCode     String?     @db.Text
+  explanation        String?     @db.Text
+  bestPractices      String?     @db.Text
+  exploitExamples    String?     @db.Text
+  attackPath         String?     @db.Text
+  cweId              String? // CWE identifier
+  // Document references from knowledge base (JSON array)
+  documentReferences Json? // Array of {documentId, documentTitle, relevantExcerpt}
+  // Structured analysis fields
+  dataFlow           Json? // Array of {type: source|intermediate|sink, function, file, line, description}
+  cvssAnalysis       Json? // Object of {metricKey: analysisText} for dynamic CVSS explanations
+  debateLog          Json? // Summary debate result: {verdict, confidence, rounds}
   // Metadata
-  lineNumber        Int?
-  columnNumber      Int?
-  confidence        Float        @default(1.0) // 0.0 to 1.0
-  falsePositive     Boolean      @default(false)
-  resolved          Boolean      @default(false)
-  resolvedAt        DateTime?
-  resolvedBy        String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  workflowRun       WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
-  fixes             CodeFix[]
+  lineNumber         Int?
+  columnNumber       Int?
+  confidence         Float       @default(1.0) // 0.0 to 1.0
+  falsePositive      Boolean     @default(false)
+  resolved           Boolean     @default(false)
+  resolvedAt         DateTime?
+  resolvedBy         String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  workflowRun        WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  fixes              CodeFix[]
 
   @@index([workflowRunId])
   @@index([useCaseId])
@@ -507,41 +528,59 @@ model Vulnerability {
   @@index([createdAt])
 }
 
+// Debate Round - Tracks multi-agent debate rounds for vulnerability validation
+model DebateRound {
+  id              String   @id @default(cuid())
+  workflowRunId   String
+  vulnerabilityId String?
+  round           Int      @default(1)
+  agentRole       String // advocate, skeptic, judge
+  modelId         String?
+  argument        String   @db.Text
+  verdict         String? // confirmed, rejected, needs-review
+  confidence      Float?
+  citations       Json? // Array of {source, excerpt}
+  createdAt       DateTime @default(now())
+
+  @@index([workflowRunId])
+  @@index([vulnerabilityId])
+}
+
 // Code Fix - Stores automated fixes for vulnerabilities
 model CodeFix {
-  id                String        @id @default(cuid())
-  vulnerabilityId   String
-  vulnerability     Vulnerability @relation(fields: [vulnerabilityId], references: [id], onDelete: Cascade)
-  
+  id              String        @id @default(cuid())
+  vulnerabilityId String
+  vulnerability   Vulnerability @relation(fields: [vulnerabilityId], references: [id], onDelete: Cascade)
+
   // Original code
-  fileName          String
-  originalCode      String        @db.Text
-  startLine         Int?
-  endLine           Int?
-  language          String?
-  
+  fileName     String
+  originalCode String  @db.Text
+  startLine    Int?
+  endLine      Int?
+  language     String?
+
   // Fixed code
-  fixedCode         String        @db.Text
-  changes           Json          // Detailed line-by-line changes
-  
+  fixedCode String @db.Text
+  changes   Json // Detailed line-by-line changes
+
   // Fix metadata
-  explanation       String        @db.Text
-  confidence        Float         @default(1.0)
-  
+  explanation String @db.Text
+  confidence  Float  @default(1.0)
+
   // Status
-  status            FixStatus     @default(PENDING)
-  reviewedAt        DateTime?
-  reviewedBy        String?
-  
+  status     FixStatus @default(PENDING)
+  reviewedAt DateTime?
+  reviewedBy String?
+
   // PR info
-  prUrl             String?
-  prNumber          Int?
-  branchName        String?
-  commitSha         String?
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  
+  prUrl      String?
+  prNumber   Int?
+  branchName String?
+  commitSha  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([vulnerabilityId])
   @@index([status])
   @@index([fileName])
@@ -557,16 +596,92 @@ enum FixStatus {
 
 // Agent Configuration - Stores custom prompts and settings for each agent
 model AgentConfiguration {
-  id              String   @id @default(cuid())
-  userId          String
-  agentType       String // reviewer, implementer, tester, reporter
-  modelId         String? // Bedrock model ID
-  customPrompt    String?  @db.Text
-  enabled         Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  agentType    String // reviewer, implementer, tester, reporter
+  modelId      String? // Bedrock model ID
+  customPrompt String?  @db.Text
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, agentType])
   @@index([userId])
   @@index([agentType])
+}
+
+// API Key - For programmatic API access
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String // Friendly name for the key
+  keyHash    String    @unique // SHA-256 hash of the API key
+  keyPrefix  String // First 12 chars for identification (e.g., "vulniq_abc...")
+  scopes     String // Comma-separated scopes (read,write,admin,workflow,export)
+  expiresAt  DateTime? // Optional expiration
+  revokedAt  DateTime? // When key was revoked (soft delete)
+  lastUsedAt DateTime?
+  usageCount Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([keyHash])
+  @@index([keyPrefix])
+}
+
+// MFA Configuration - Multi-factor authentication settings per user
+model MfaConfig {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled        Boolean   @default(false)
+  method         String    @default("totp") // totp, sms, email
+  totpSecret     String? // Encrypted TOTP secret
+  backupCodes    String? // Encrypted JSON array of backup codes
+  phoneNumber    String? // For SMS-based MFA
+  verifiedAt     DateTime? // When MFA was verified/enabled
+  lastUsedAt     DateTime?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// User Passkey - WebAuthn credentials for biometric unlock (PDF password etc.)
+model UserPasskey {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId   String    @unique // Base64URL encoded credential ID
+  publicKey      Bytes // COSE public key bytes
+  webauthnUserId String // Base64URL encoded user handle
+  counter        BigInt    @default(0)
+  deviceType     String // 'singleDevice' or 'multiDevice'
+  backedUp       Boolean   @default(false)
+  transports     String? // Comma-separated transports
+  aaguid         String?
+  deviceName     String?
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+// User Passkey Challenge - Temporary storage for WebAuthn challenges
+model UserPasskeyChallenge {
+  id        String   @id @default(cuid())
+  userId    String
+  challenge String
+  type      String // 'registration' or 'authentication'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

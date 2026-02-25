@@ -170,18 +170,22 @@ export function SavedArticlesSection() {
     }
 
     return (
-        <Card className="border-border/50">
+        <Card className="border-border/50 transition-shadow hover:shadow-md">
             <CardHeader className="pb-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <Bookmark className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
-                        <CardTitle className="text-base sm:text-lg">Saved articles</CardTitle>
+                        <div className="p-1.5 rounded-md bg-amber-500/10">
+                            <Bookmark className="h-4 w-4 text-amber-500 shrink-0" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-base sm:text-lg">Saved articles</CardTitle>
+                            <CardDescription className="text-xs mt-0.5">
+                                {totalCount} saved article{totalCount !== 1 ? 's' : ''}
+                                {useMockData && <span className="text-muted-foreground/60"> (demo)</span>}
+                            </CardDescription>
+                        </div>
                     </div>
                 </div>
-                <CardDescription className="text-xs sm:text-sm">
-                    {totalCount} saved article{totalCount !== 1 ? 's' : ''}
-                    {useMockData && <span className="text-muted-foreground/60"> (demo)</span>}
-                </CardDescription>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
                 {isLoading ? (
@@ -189,16 +193,18 @@ export function SavedArticlesSection() {
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : articles.length === 0 && currentPage === 1 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Bookmark className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">No saved articles</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Save articles while reading to find them here
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <div className="rounded-full bg-amber-500/10 p-4 mb-3 ring-4 ring-amber-500/5">
+                            <Bookmark className="h-8 w-8 text-amber-500" />
+                        </div>
+                        <p className="text-sm font-semibold">No saved articles</p>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[250px]">
+                            Bookmark articles while reading to find them here later.
                         </p>
                         <Button
                             variant="outline"
                             size="sm"
-                            className="mt-4"
+                            className="mt-4 gap-1.5"
                             onClick={() => router.push('/blog')}
                         >
                             Explore blog
@@ -211,7 +217,7 @@ export function SavedArticlesSection() {
                                 {articles.map((article) => (
                                     <div
                                         key={article.id}
-                                        className="group flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                                        className="group flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-muted/30 hover:border-primary/20 transition-all duration-150 cursor-pointer select-none"
                                         onClick={() => router.push(`/blog/${article.slug}`)}
                                     >
                                         {/* Thumbnail - hidden on very small screens */}

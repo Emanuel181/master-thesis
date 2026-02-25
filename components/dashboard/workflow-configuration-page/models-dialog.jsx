@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -22,11 +23,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Search, ChevronRight, Folder, File } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Search, ChevronRight, Folder, File, Check, CircleCheck, CircleDashed, ArrowRight } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { toast } from "sonner"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Custom hook
 import { useModelsDialog } from "@/hooks/use-models-dialog"
+import { useKbSelection } from "@/contexts/kbSelectionContext"
 
 // Sub-components
 import { AgentCard, KnowledgeBaseCard, PromptCard } from "./_components"
@@ -49,10 +55,10 @@ const AIWorkflowVisualization = dynamic(
 
 // Agent configuration
 const AGENTS = [
-    { id: 'reviewer', title: 'Reviewer agent', icon: ScanSearch, color: 'text-blue-500', description: 'Analyzes code quality, security, and best practices' },
-    { id: 'implementation', title: 'Implementation agent', icon: Wrench, color: 'text-green-500', description: 'Implements code changes and improvements' },
-    { id: 'tester', title: 'Tester agent', icon: BugPlay, color: 'text-orange-500', description: 'Creates and runs tests for code validation' },
-    { id: 'report', title: 'Report agent', icon: FileText, color: 'text-purple-500', description: 'Generates comprehensive reports and documentation' },
+    { id: 'reviewer', title: 'Reviewer agent', icon: ScanSearch, color: 'text-agent-reviewer', description: 'Analyzes code quality, security, and best practices' },
+    { id: 'implementation', title: 'Implementation agent', icon: Wrench, color: 'text-agent-implementation', description: 'Implements code changes and improvements' },
+    { id: 'tester', title: 'Tester agent', icon: BugPlay, color: 'text-agent-tester', description: 'Creates and runs tests for code validation' },
+    { id: 'report', title: 'Report agent', icon: FileText, color: 'text-agent-report', description: 'Generates comprehensive reports and documentation' },
 ]
 
 /**
@@ -60,13 +66,22 @@ const AGENTS = [
  * Refactored to use custom hook and extracted sub-components.
  */
 export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
+    return (
+        <ModelsDialogInner isOpen={isOpen} onOpenChange={onOpenChange} codeType={codeType} onCodeTypeChange={onCodeTypeChange} />
+    )
+}
+
+function ModelsDialogInner({ isOpen, onOpenChange, codeType, onCodeTypeChange }) {
     const dialog = useModelsDialog({ codeType })
-    const [selectedGroupIds, setSelectedGroupIds] = React.useState([]);
+    const { selectedFiles: sharedSelectedFiles, selectedGroups: sharedSelectedGroups } = useKbSelection();
+
+    // Derive counts from shared context
+    const kbFileCount = sharedSelectedFiles.size;
+    const selectedGroupIds = Array.from(sharedSelectedGroups);
 
     const handleSaveConfiguration = () => {
-        // Save selected groups to localStorage
+        // localStorage is already persisted by KbSelectionProvider
         try {
-            localStorage.setItem('vulniq_selected_groups', JSON.stringify(selectedGroupIds));
             toast.success('Workflow configuration saved!');
         } catch (err) {
             console.error('Error saving configuration:', err);
@@ -75,34 +90,193 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
         onOpenChange(false);
     };
 
+    const { configStatus } = dialog;
+    const allAgentsConfigured = configStatus.configuredAgents === configStatus.totalAgents;
+    const allPromptsConfigured = configStatus.promptedAgents === configStatus.totalAgents;
+    const hasKbFiles = kbFileCount > 0;
+
+    // Calculate overall configuration completeness percentage
+    const completenessSteps = [
+        configStatus.configuredAgents >= 1, // At least reviewer model
+        configStatus.promptedAgents >= 1,   // At least reviewer prompt
+        hasKbFiles,                          // Knowledge base selected
+        allAgentsConfigured,                 // All agent models
+        allPromptsConfigured,                // All agent prompts
+    ];
+    const completenessPercent = Math.round((completenessSteps.filter(Boolean).length / completenessSteps.length) * 100);
+
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange} modal={false}>
             <DrawerContent>
                 <div className="mx-auto w-full max-w-7xl">
-                    <DrawerHeader>
-                        <DrawerTitle>Configure AI agent workflow</DrawerTitle>
-                        <DrawerDescription>
-                            Visualize your code workflow and select AI models for each agent.
-                        </DrawerDescription>
+                    <DrawerHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <DrawerTitle>Configure AI agent workflow</DrawerTitle>
+                                <DrawerDescription>
+                                    Visualize your code workflow and select AI models for each agent.
+                                </DrawerDescription>
+                            </div>
+                            <div className="hidden sm:flex items-center gap-3">
+                                <div className="text-right">
+                                    <div className="text-xs font-medium text-muted-foreground">
+                                        Configuration
+                                    </div>
+                                    <motion.div
+                                        key={completenessPercent}
+                                        initial={{ opacity: 0, y: 4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`text-sm font-semibold ${completenessPercent === 100 ? 'text-emerald-500' : 'text-foreground'}`}
+                                    >
+                                        {completenessPercent}% ready
+                                    </motion.div>
+                                </div>
+                                <div className="w-24">
+                                    <Progress value={completenessPercent} className="h-2" />
+                                </div>
+                            </div>
+                        </div>
                     </DrawerHeader>
-                    <div className="p-4">
+
+                    {/* Configuration summary bar - pipeline visualization */}
+                    <div className="px-4 pb-3">
+                        <TooltipProvider delayDuration={200}>
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-0 rounded-lg bg-muted/40 border p-2 sm:p-2.5">
+                                {/* Pipeline flow: Agent pills connected by arrows */}
+                                {AGENTS.map((agent, idx) => {
+                                    const status = configStatus.agents[agent.id]
+                                    const isComplete = status?.hasModel && status?.hasPrompt
+                                    const isPartial = status?.hasModel || status?.hasPrompt
+                                    const Icon = agent.icon
+                                    const statusLabel = isComplete ? 'Configured' : isPartial ? 'Partially configured' : 'Not configured'
+                                    const statusDetail = `Model: ${status?.hasModel ? '✓' : '✗'} | Prompt: ${status?.hasPrompt ? '✓' : '✗'}`
+                                    return (
+                                        <React.Fragment key={agent.id}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div
+                                                        className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-all duration-200 cursor-default ${
+                                                            isComplete
+                                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                                                                : isPartial
+                                                                ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400'
+                                                                : 'bg-background border-border text-muted-foreground'
+                                                        }`}
+                                                    >
+                                                        <div className="relative">
+                                                            <Icon className="h-3.5 w-3.5" />
+                                                            {isComplete && (
+                                                                <motion.span
+                                                                    initial={{ scale: 0 }}
+                                                                    animate={{ scale: 1 }}
+                                                                    className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-emerald-500 border border-background"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <span className="hidden sm:inline font-medium">
+                                                            {agent.title.replace(' agent', '')}
+                                                        </span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="bottom" className="text-xs">
+                                                    <p className="font-medium">{agent.title}: {statusLabel}</p>
+                                                    <p className="text-muted-foreground">{statusDetail}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            {idx < AGENTS.length - 1 && (
+                                                <ArrowRight className="h-3 w-3 text-muted-foreground/40 hidden sm:block shrink-0" />
+                                            )}
+                                        </React.Fragment>
+                                    )
+                                })}
+
+                                <div className="hidden sm:block h-5 w-px bg-border mx-1" />
+
+                                {/* KB count pill */}
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-all duration-200 cursor-default ${
+                                            hasKbFiles
+                                                ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-400'
+                                                : 'bg-background border-border text-muted-foreground'
+                                        }`}>
+                                            <Database className="h-3.5 w-3.5" />
+                                            <span className="font-medium">{kbFileCount}</span>
+                                            <span className="hidden sm:inline">file{kbFileCount !== 1 ? 's' : ''}</span>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="text-xs">
+                                        Knowledge base documents selected for RAG context
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                {/* Save CTA */}
+                                <div className="ml-auto">
+                                    <Button
+                                        size="sm"
+                                        className={`h-7 text-xs gap-1 transition-all duration-200 ${
+                                            completenessPercent === 100
+                                                ? 'bg-emerald-600 hover:bg-emerald-700'
+                                                : ''
+                                        }`}
+                                        onClick={handleSaveConfiguration}
+                                    >
+                                        {completenessPercent === 100 ? (
+                                            <CircleCheck className="h-3 w-3" />
+                                        ) : (
+                                            <Check className="h-3 w-3" />
+                                        )}
+                                        Save
+                                    </Button>
+                                </div>
+                            </div>
+                        </TooltipProvider>
+                    </div>
+
+                    <div className="p-4 pt-0">
                         <Tabs defaultValue="workflow" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
-                                <TabsTrigger value="workflow" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Workflow visualization</span>
-                                    <span className="sm:hidden">Workflow</span>
+                                <TabsTrigger value="workflow" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
+                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold shrink-0">1</span>
+                                    <span>Workflow</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="models" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Agents configuration</span>
+                                <TabsTrigger value="models" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
+                                    <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 ${
+                                        allAgentsConfigured ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                                    }`}>{allAgentsConfigured ? '✓' : '2'}</span>
+                                    <span className="hidden sm:inline">Agents</span>
                                     <span className="sm:hidden">Agents</span>
+                                    <Badge
+                                        variant={allAgentsConfigured ? "default" : "secondary"}
+                                        className={`h-4 px-1 text-[9px] leading-none ${allAgentsConfigured ? 'bg-emerald-500' : ''}`}
+                                    >
+                                        {configStatus.configuredAgents}/{configStatus.totalAgents}
+                                    </Badge>
                                 </TabsTrigger>
-                                <TabsTrigger value="prompts" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Prompts configuration</span>
+                                <TabsTrigger value="prompts" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
+                                    <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 ${
+                                        allPromptsConfigured ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                                    }`}>{allPromptsConfigured ? '✓' : '3'}</span>
+                                    <span className="hidden sm:inline">Prompts</span>
                                     <span className="sm:hidden">Prompts</span>
+                                    <Badge
+                                        variant={allPromptsConfigured ? "default" : "secondary"}
+                                        className={`h-4 px-1 text-[9px] leading-none ${allPromptsConfigured ? 'bg-emerald-500' : ''}`}
+                                    >
+                                        {configStatus.promptedAgents}/{configStatus.totalAgents}
+                                    </Badge>
                                 </TabsTrigger>
-                                <TabsTrigger value="knowledge" className="text-xs sm:text-sm px-2 py-2">
-                                    <span className="hidden sm:inline">Knowledge base</span>
-                                    <span className="sm:hidden">Knowledge</span>
+                                <TabsTrigger value="knowledge" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
+                                    <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 ${
+                                        hasKbFiles ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                                    }`}>{hasKbFiles ? '✓' : '4'}</span>
+                                    <span className="hidden sm:inline">Knowledge</span>
+                                    <span className="sm:hidden">KB</span>
+                                    {(kbFileCount > 0 || sharedSelectedGroups.size > 0) && (
+                                        <Badge variant="default" className="h-4 px-1 text-[9px] leading-none bg-cyan-500">
+                                            {kbFileCount}
+                                        </Badge>
+                                    )}
                                 </TabsTrigger>
                             </TabsList>
 
@@ -118,7 +292,7 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
 
                             {/* Agents Tab */}
                             <TabsContent value="models" className="mt-0">
-                                <AgentsTab dialog={dialog} onOpenChange={handleSaveConfiguration} />
+                                <AgentsTab dialog={dialog} />
                             </TabsContent>
 
                             {/* Prompts Tab */}
@@ -131,7 +305,6 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
                                 <KnowledgeBaseTab 
                                     dialog={dialog} 
                                     codeType={codeType} 
-                                    onSaveGroups={setSelectedGroupIds}
                                 />
                             </TabsContent>
                         </Tabs>
@@ -146,6 +319,18 @@ export function ModelsDialog({ isOpen, onOpenChange, codeType, onCodeTypeChange 
  * WorkflowTab - Workflow visualization tab content
  */
 function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
+    // Wrap prompt change to sync both context and local selectedSystemPrompts
+    const handlePromptChangeWithSync = React.useCallback((agent, promptId) => {
+        // Update context (for workflow visualization)
+        dialog.handlePromptChange(agent, promptId)
+
+        // Also update local selectedSystemPrompts (for agents tab sync)
+        dialog.setSelectedSystemPrompts(prev => ({
+            ...prev,
+            [agent]: promptId
+        }))
+    }, [dialog])
+
     return (
         <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
             <div className="space-y-4 pr-4">
@@ -187,11 +372,10 @@ function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
                     onKnowledgeBaseChange={dialog.toggleKnowledgeBase}
                     codeType={codeType}
                     onCodeTypeChange={onCodeTypeChange}
-                    useCases={dialog.useCases}
                     prompts={dialog.prompts}
                     selectedPrompts={dialog.selectedPrompts}
                     selectedSystemPrompts={dialog.selectedSystemPrompts}
-                    onPromptChange={dialog.handlePromptChange}
+                    onPromptChange={handlePromptChangeWithSync}
                     isRefreshingAll={dialog.isRefreshingAll}
                     onSave={() => onOpenChange(false)}
                     onCancel={() => onOpenChange(false)}
@@ -203,42 +387,9 @@ function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
 
 /**
  * AgentsTab - Agents configuration tab content
+ * Note: Changes are auto-persisted by the useModelsDialog hook.
  */
-function AgentsTab({ dialog, onOpenChange }) {
-    const handleSaveConfiguration = () => {
-        // Save agent configurations to localStorage
-        try {
-            const agentConfigurations = {
-                reviewer: {
-                    enabled: true, // Always enabled
-                    modelId: dialog.agentModels['reviewer'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
-                    customPrompt: dialog.selectedSystemPrompts['reviewer'] || '',
-                },
-                implementer: {
-                    enabled: !!dialog.agentModels['implementation'],
-                    modelId: dialog.agentModels['implementation'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
-                    customPrompt: dialog.selectedSystemPrompts['implementation'] || '',
-                },
-                tester: {
-                    enabled: !!dialog.agentModels['tester'],
-                    modelId: dialog.agentModels['tester'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
-                    customPrompt: dialog.selectedSystemPrompts['tester'] || '',
-                },
-                reporter: {
-                    enabled: true, // Always enabled
-                    modelId: dialog.agentModels['report'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
-                    customPrompt: dialog.selectedSystemPrompts['report'] || '',
-                },
-            };
-            
-            localStorage.setItem('vulniq_agent_configurations', JSON.stringify(agentConfigurations));
-            toast.success('Agent configuration saved!');
-            onOpenChange(false);
-        } catch (err) {
-            console.error('Error saving agent configuration:', err);
-            toast.error('Failed to save configuration');
-        }
-    };
+function AgentsTab({ dialog }) {
 
     return (
         <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
@@ -246,7 +397,7 @@ function AgentsTab({ dialog, onOpenChange }) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                     <div>
                         <h3 className="text-lg font-semibold">Agent configuration</h3>
-                        <p className="text-sm text-muted-foreground">Select AI models for each agent in the workflow</p>
+                        <p className="text-sm text-muted-foreground">Select AI models for each agent. Changes are auto-saved.</p>
                     </div>
                     <Button
                         variant="outline"
@@ -281,6 +432,7 @@ function AgentsTab({ dialog, onOpenChange }) {
                             selectedModel={dialog.agentModels[agent.id]}
                             onModelChange={(model) => dialog.handleModelChange(agent.id, model)}
                             models={dialog.getPaginatedModels(agent.id)}
+                            allModels={dialog.models}
                             modelSearchTerm={dialog.modelSearchTerm[agent.id]}
                             onModelSearchChange={(value) => {
                                 dialog.setModelSearchTerm(p => ({ ...p, [agent.id]: value }))
@@ -305,10 +457,6 @@ function AgentsTab({ dialog, onOpenChange }) {
                         />
                     ))}
                 </div>
-                <div className="flex justify-end gap-2 mt-4">
-                    <Button onClick={handleSaveConfiguration}>Save Configuration</Button>
-                    <Button onClick={() => onOpenChange(false)} variant="outline">Cancel</Button>
-                </div>
             </div>
         </ScrollArea>
     )
@@ -322,6 +470,21 @@ function PromptsTab({ dialog }) {
     const agentsPerPage = 2
     const totalAgentPages = Math.ceil(agentEntries.length / agentsPerPage)
     const visibleAgents = agentEntries.slice(dialog.agentPage * agentsPerPage, (dialog.agentPage + 1) * agentsPerPage)
+
+    // Wrap prompt change to sync both context and local selectedSystemPrompts
+    const handlePromptSelectWithSync = React.useCallback((agent, promptId) => {
+        // Update context
+        dialog.handlePromptChange(agent, promptId)
+
+        // Also update local selectedSystemPrompts (for agents tab sync)
+        const currentSelected = dialog.selectedPrompts[agent] || []
+        const isCurrentlySelected = currentSelected.includes(promptId)
+
+        dialog.setSelectedSystemPrompts(prev => ({
+            ...prev,
+            [agent]: isCurrentlySelected ? '' : promptId
+        }))
+    }, [dialog])
 
     return (
         <div className="space-y-4 bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
@@ -359,7 +522,7 @@ function PromptsTab({ dialog }) {
                         selectedPrompts={dialog.selectedPrompts}
                         currentPage={dialog.currentPage[agent] || 0}
                         isRefreshing={dialog.isRefreshingPrompts[agent]}
-                        onPromptSelect={dialog.handlePromptChange}
+                        onPromptSelect={handlePromptSelectWithSync}
                         onViewPrompt={dialog.setViewPrompt}
                         onRefresh={() => dialog.handleRefreshAgentPrompts(agent)}
                         onPageChange={(page) => dialog.setCurrentPage(prev => ({ ...prev, [agent]: page }))}
@@ -415,43 +578,15 @@ function PromptsTab({ dialog }) {
 /**
  * KnowledgeBaseTab - Knowledge base selection tab content with hierarchical group/use case/file selection
  */
-function KnowledgeBaseTab({ dialog, codeType, onSaveGroups }) {
+function KnowledgeBaseTab({ dialog, codeType }) {
     const [expandedGroups, setExpandedGroups] = React.useState(new Set())
     const [expandedUseCases, setExpandedUseCases] = React.useState(new Set())
-    const [selectedFiles, setSelectedFiles] = React.useState(new Set())
-    const [selectedGroups, setSelectedGroups] = React.useState(new Set()) // Track selected groups
     const [useCaseGroups, setUseCaseGroups] = React.useState([])
     const [useCasePdfs, setUseCasePdfs] = React.useState({}) // { useCaseId: [pdfs] }
     const [loadingPdfs, setLoadingPdfs] = React.useState(new Set())
 
-    // Load saved groups from localStorage on mount
-    React.useEffect(() => {
-        try {
-            const saved = localStorage.getItem('vulniq_selected_groups');
-            if (saved) {
-                const groupIds = JSON.parse(saved);
-                setSelectedGroups(new Set(groupIds));
-            }
-        } catch (err) {
-            console.error('Error loading selected groups:', err);
-        }
-    }, []);
-
-    // Save selected groups whenever they change
-    React.useEffect(() => {
-        if (onSaveGroups) {
-            onSaveGroups(Array.from(selectedGroups));
-        }
-    }, [selectedGroups, onSaveGroups]);
-
-    // Save selected files to localStorage whenever they change
-    React.useEffect(() => {
-        try {
-            localStorage.setItem('vulniq_selected_documents', JSON.stringify(Array.from(selectedFiles)));
-        } catch (err) {
-            console.error('Error saving selected documents:', err);
-        }
-    }, [selectedFiles]);
+    // Use shared state from context (single source of truth)
+    const { selectedFiles, selectedGroups, setSelectedFiles, setSelectedGroups } = useKbSelection();
 
     // Fetch groups on mount
     React.useEffect(() => {
@@ -470,76 +605,75 @@ function KnowledgeBaseTab({ dialog, codeType, onSaveGroups }) {
         fetchGroups()
     }, [])
 
-    // Fetch PDFs for a use case
-    const fetchUseCasePdfs = async (useCaseId) => {
-        if (useCasePdfs[useCaseId]) return // Already loaded
-        
+    // Helper: ensure PDFs are fetched (returns PDFs)
+    const ensurePdfsFetched = async (useCaseId) => {
+        if (useCasePdfs[useCaseId]) return useCasePdfs[useCaseId]
         setLoadingPdfs(prev => new Set(prev).add(useCaseId))
         try {
             const response = await fetch(`/api/folders?useCaseId=${useCaseId}`)
             if (response.ok) {
                 const data = await response.json()
                 const folders = data.data?.folders || data.folders || []
-                
-                // Flatten the folder tree to get all PDFs
                 const extractPdfs = (items) => {
                     let pdfs = []
                     items.forEach(item => {
-                        if (item.type === 'pdf') {
-                            pdfs.push(item)
-                        }
-                        if (item.children) {
-                            pdfs = pdfs.concat(extractPdfs(item.children))
-                        }
+                        if (item.type === 'pdf') pdfs.push(item)
+                        if (item.children) pdfs = pdfs.concat(extractPdfs(item.children))
                     })
                     return pdfs
                 }
-                
                 const allPdfs = extractPdfs(folders)
                 setUseCasePdfs(prev => ({ ...prev, [useCaseId]: allPdfs }))
+                return allPdfs
             }
         } catch (error) {
             console.error('Error fetching PDFs:', error)
         } finally {
-            setLoadingPdfs(prev => {
-                const next = new Set(prev)
-                next.delete(useCaseId)
-                return next
-            })
+            setLoadingPdfs(prev => { const next = new Set(prev); next.delete(useCaseId); return next })
         }
+        return []
     }
 
-    // Toggle use case expansion and fetch PDFs
+    const fetchUseCasePdfs = async (useCaseId, force = false) => {
+        if (force) setUseCasePdfs(prev => { const n = { ...prev }; delete n[useCaseId]; return n })
+        if (!force && useCasePdfs[useCaseId]) return
+        await ensurePdfsFetched(useCaseId)
+    }
+
     const toggleUseCase = (useCaseId) => {
         setExpandedUseCases(prev => {
             const next = new Set(prev)
-            if (next.has(useCaseId)) {
-                next.delete(useCaseId)
-            } else {
-                next.add(useCaseId)
-                fetchUseCasePdfs(useCaseId)
-            }
+            if (next.has(useCaseId)) next.delete(useCaseId)
+            else { next.add(useCaseId); ensurePdfsFetched(useCaseId) }
             return next
         })
     }
 
-    // Toggle file selection
     const toggleFile = (fileId) => {
         setSelectedFiles(prev => {
             const next = new Set(prev)
-            if (next.has(fileId)) {
-                next.delete(fileId)
-            } else {
-                next.add(fileId)
-            }
+            if (next.has(fileId)) next.delete(fileId)
+            else next.add(fileId)
             return next
         })
     }
 
-    // Toggle group selection - selects/deselects all PDFs in the group
-    const toggleGroup = (groupId) => {
+    // Toggle use case selection - selects/deselects all PDFs
+    const toggleUseCaseSelection = async (useCaseId) => {
+        const pdfs = await ensurePdfsFetched(useCaseId)
+        const pdfIds = pdfs.map(pdf => pdf.id)
+        const allSelected = pdfIds.length > 0 && pdfIds.every(id => selectedFiles.has(id))
+        setSelectedFiles(prev => {
+            const next = new Set(prev)
+            pdfIds.forEach(id => allSelected ? next.delete(id) : next.add(id))
+            return next
+        })
+    }
+
+    // Toggle group selection - async, fetches all PDFs first
+    const toggleGroup = async (groupId) => {
         const isCurrentlySelected = selectedGroups.has(groupId)
-        
+
         if (isCurrentlySelected) {
             // Deselect group and all its files
             setSelectedGroups(prev => {
@@ -678,66 +812,63 @@ function KnowledgeBaseTab({ dialog, codeType, onSaveGroups }) {
                                             </div>
                                         ) : (
                                             group.useCases.map(useCase => {
-                                            const isUseCaseExpanded = expandedUseCases.has(useCase.id)
-                                            const pdfs = useCasePdfs[useCase.id] || []
-                                            const isLoadingPdfs = loadingPdfs.has(useCase.id)
-                                            
-                                            return (
-                                                <div key={useCase.id} className="border-b last:border-b-0">
-                                                    {/* Use Case Header */}
-                                                    <button
-                                                        onClick={() => toggleUseCase(useCase.id)}
-                                                        className="w-full flex items-center gap-2 p-2 pl-8 hover:bg-accent/30 transition-colors"
-                                                    >
-                                                        <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isUseCaseExpanded ? 'rotate-90' : ''}`} />
-                                                        <File className="h-3.5 w-3.5 text-orange-500" />
-                                                        <span className="text-sm flex-1 text-left">{useCase.title}</span>
-                                                        {isLoadingPdfs ? (
-                                                            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
-                                                        ) : (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {pdfs.length} file{pdfs.length !== 1 ? 's' : ''}
-                                                            </span>
-                                                        )}
-                                                    </button>
+                                                const isUseCaseExpanded = expandedUseCases.has(useCase.id)
+                                                const pdfs = useCasePdfs[useCase.id] || []
+                                                const isLoadingPdfs = loadingPdfs.has(useCase.id)
 
-                                                    {/* PDF Files */}
-                                                    {isUseCaseExpanded && (
-                                                        <div className="bg-muted/50">
+                                                return (
+                                                    <div key={useCase.id} className="border-b last:border-b-0">
+                                                        <button
+                                                            onClick={() => toggleUseCase(useCase.id)}
+                                                            className="w-full flex items-center gap-2 p-2 pl-8 hover:bg-accent/30 transition-colors"
+                                                        >
+                                                            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isUseCaseExpanded ? 'rotate-90' : ''}`} />
+                                                            <File className="h-3.5 w-3.5 text-severity-high" />
+                                                            <span className="text-sm flex-1 text-left">{useCase.title}</span>
                                                             {isLoadingPdfs ? (
-                                                                <div className="p-4 pl-16 text-xs text-muted-foreground">
-                                                                    Loading files...
-                                                                </div>
-                                                            ) : pdfs.length === 0 ? (
-                                                                <div className="p-4 pl-16 text-xs text-muted-foreground">
-                                                                    No files uploaded yet
-                                                                </div>
+                                                                <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
                                                             ) : (
-                                                                pdfs.map(pdf => (
-                                                                    <label
-                                                                        key={pdf.id}
-                                                                        className="flex items-center gap-2 p-2 pl-16 hover:bg-accent/20 cursor-pointer transition-colors"
-                                                                    >
-                                                                        <Checkbox
-                                                                            checked={selectedFiles.has(pdf.id)}
-                                                                            onCheckedChange={() => toggleFile(pdf.id)}
-                                                                            className="h-3.5 w-3.5"
-                                                                        />
-                                                                        <File className="h-3 w-3 text-red-500" />
-                                                                        <span className="text-xs flex-1">{pdf.name || pdf.title}</span>
-                                                                        {pdf.size && (
-                                                                            <span className="text-[10px] text-muted-foreground">
-                                                                                {typeof pdf.size === 'string' ? pdf.size : `${Math.round(pdf.size / 1024)} KB`}
-                                                                            </span>
-                                                                        )}
-                                                                    </label>
-                                                                ))
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {pdfs.length} file{pdfs.length !== 1 ? 's' : ''}
+                                                                </span>
                                                             )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )
-                                        })
+                                                        </button>
+                                                        {isUseCaseExpanded && (
+                                                            <div className="bg-muted/50">
+                                                                {isLoadingPdfs ? (
+                                                                    <div className="p-4 pl-16 text-xs text-muted-foreground">
+                                                                        Loading files...
+                                                                    </div>
+                                                                ) : pdfs.length === 0 ? (
+                                                                    <div className="p-4 pl-16 text-xs text-muted-foreground">
+                                                                        No files uploaded yet
+                                                                    </div>
+                                                                ) : (
+                                                                    pdfs.map(pdf => (
+                                                                        <label
+                                                                            key={pdf.id}
+                                                                            className="flex items-center gap-2 p-2 pl-16 hover:bg-accent/20 cursor-pointer transition-colors"
+                                                                        >
+                                                                            <Checkbox
+                                                                                checked={selectedFiles.has(pdf.id)}
+                                                                                onCheckedChange={() => toggleFile(pdf.id)}
+                                                                                className="h-3.5 w-3.5"
+                                                                            />
+                                                                            <File className="h-3 w-3 text-destructive" />
+                                                                            <span className="text-xs flex-1">{pdf.name || pdf.title}</span>
+                                                                            {pdf.size && (
+                                                                                <span className="text-[10px] text-muted-foreground">
+                                                                                    {typeof pdf.size === 'string' ? pdf.size : `${Math.round(pdf.size / 1024)} KB`}
+                                                                                </span>
+                                                                            )}
+                                                                        </label>
+                                                                    ))
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })
                                         )}
                                     </div>
                                 )}
@@ -758,4 +889,3 @@ function KnowledgeBaseTab({ dialog, codeType, onSaveGroups }) {
     )
 }
 
-export { ModelsDialog }

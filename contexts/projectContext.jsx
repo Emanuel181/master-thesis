@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { isDemoPath, getStorageKey, DEMO_STORAGE_PREFIX } from "@/lib/demo-mode";
 
@@ -101,25 +101,25 @@ export function ProjectProvider({ children }) {
     }, [projectStructure, currentRepo, viewMode, projectUnloaded, isHydrated, STORAGE_KEY]);
 
     // Wrapper functions to update state
-    const setProjectStructure = (structure) => {
+    const setProjectStructure = useCallback((structure) => {
         setProjectStructureState(structure);
         // When a project is loaded, reset the unloaded flag
         if (structure) {
             setProjectUnloaded(false);
         }
-    };
+    }, []);
 
-    const setCurrentRepo = (repo) => {
+    const setCurrentRepo = useCallback((repo) => {
         setCurrentRepoState(repo);
-    };
+    }, []);
 
     // SECURITY: Get mode-specific storage keys for clearing
-    const getCodeStateKey = () => isDemoMode ? 'vulniq_demo_code_state' : 'vulniq_code_state';
-    const getEditorTabsKey = () => isDemoMode ? 'vulniq_demo_editor_tabs' : 'vulniq_editor_tabs';
-    const getEditorLanguageKey = () => isDemoMode ? 'vulniq_demo_editor_language' : 'vulniq_editor_language';
+    const getCodeStateKey = useCallback(() => isDemoMode ? 'vulniq_demo_code_state' : 'vulniq_code_state', [isDemoMode]);
+    const getEditorTabsKey = useCallback(() => isDemoMode ? 'vulniq_demo_editor_tabs' : 'vulniq_editor_tabs', [isDemoMode]);
+    const getEditorLanguageKey = useCallback(() => isDemoMode ? 'vulniq_demo_editor_language' : 'vulniq_editor_language', [isDemoMode]);
 
     // Clear project and reset state
-    const clearProject = () => {
+    const clearProject = useCallback(() => {
         setProjectStructureState(null);
         setCurrentRepoState(null);
         setSelectedFile(null);
@@ -137,10 +137,10 @@ export function ProjectProvider({ children }) {
         } catch (err) {
             console.error("Error clearing project state from localStorage:", err);
         }
-    };
+    }, [STORAGE_KEY, getCodeStateKey, getEditorTabsKey, getEditorLanguageKey]);
 
     // Clear code state only (used when importing a new project)
-    const clearCodeState = () => {
+    const clearCodeState = useCallback(() => {
         setSelectedFile(null);
         setProjectClearCounter(prev => prev + 1); // Notify listeners to clear code state
         try {
@@ -152,26 +152,26 @@ export function ProjectProvider({ children }) {
         } catch (err) {
             console.error("Error clearing code state from localStorage:", err);
         }
-    };
+    }, [getCodeStateKey, getEditorTabsKey, getEditorLanguageKey]);
+
+    const value = useMemo(() => ({
+        projectStructure,
+        setProjectStructure,
+        selectedFile,
+        setSelectedFile,
+        viewMode,
+        setViewMode,
+        currentRepo,
+        setCurrentRepo,
+        clearProject,
+        clearCodeState,
+        projectClearCounter,
+        projectUnloaded,
+        setProjectUnloaded,
+    }), [projectStructure, setProjectStructure, selectedFile, viewMode, currentRepo, setCurrentRepo, clearProject, clearCodeState, projectClearCounter, projectUnloaded]);
 
     return (
-        <ProjectContext.Provider
-            value={{
-                projectStructure,
-                setProjectStructure,
-                selectedFile,
-                setSelectedFile,
-                viewMode,
-                setViewMode,
-                currentRepo,
-                setCurrentRepo,
-                clearProject,
-                clearCodeState,
-                projectClearCounter,
-                projectUnloaded,
-                setProjectUnloaded,
-            }}
-        >
+        <ProjectContext.Provider value={value}>
             {children}
         </ProjectContext.Provider>
     );

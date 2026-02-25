@@ -59,6 +59,16 @@ const FlipWordsDemo = dynamic(
   { loading: () => <div className="min-h-[100px]" /> }
 );
 
+const SocialProofBar = dynamic(
+  () => import('@/components/landing-page/social-proof-bar'),
+  { loading: () => <div className="min-h-[120px]" /> }
+);
+
+const ComparisonSection = dynamic(
+  () => import('@/components/landing-page/comparison-section'),
+  { loading: () => <div className="min-h-[400px]" /> }
+);
+
 const CardDemo = dynamic(
   () => import('@/components/ui/cards-demo-3'),
   { loading: () => <div className="min-h-[400px]" /> }
@@ -220,6 +230,9 @@ export function ClientLandingWrapper({ children }) {
           {/* Portal overlay for code demo - renders inside ServerHero's placeholder */}
           {isHydrated && <HeroCodeDemoOverlay />}
 
+          {/* Social proof stats bar */}
+          <SocialProofBar />
+
           {/* Server-rendered features section (second child) */}
           {React.Children.toArray(children)[1]}
 
@@ -249,6 +262,10 @@ export function ClientLandingWrapper({ children }) {
           <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8 w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
             <FlipWordsDemo />
           </div>
+
+
+          {/* Comparison — VulnIQ vs traditional scanners */}
+          <ComparisonSection />
 
           <div id="use-cases" className="w-full">
             <UseCasesScrollReveal />

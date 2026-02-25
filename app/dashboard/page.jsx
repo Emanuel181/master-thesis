@@ -25,8 +25,7 @@ import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
 import { ProjectProvider, useProject } from "@/contexts/projectContext";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { startSecurityAnalysis, getSelectedGroups } from "@/lib/start-analysis";
+import { startSecurityAnalysis, getSelectedGroups, getSelectedDocuments } from "@/lib/start-analysis";
 import { toast } from "sonner";
 
 import { Results } from "@/components/dashboard/results-page/results";
@@ -49,17 +48,21 @@ import { Button } from "@/components/ui/button";
 import { Search, PersonStanding } from "lucide-react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
 
-// Quick actions trigger button component
+// Quick actions search bar trigger component
 function QuickActionsTrigger() {
     return (
-        <Button
-            variant="outline"
-            size="icon"
+        <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
-            title="Quick actions"
+            title="Quick actions (⌘K)"
+            aria-label="Open quick actions"
+            className="inline-flex items-center gap-2 h-8 sm:h-9 px-2.5 sm:px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer w-40 sm:w-52 md:w-64"
         >
-            <Search className="h-5 w-5" />
-        </Button>
+            <Search className="h-3.5 w-3.5 shrink-0" />
+            <span className="flex-1 text-left text-xs truncate">Search actions...</span>
+            <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                ⌘K
+            </kbd>
+        </button>
     )
 }
 
@@ -73,6 +76,7 @@ function AccessibilityTrigger() {
             size="icon"
             onClick={openPanel}
             title="Accessibility options"
+            aria-label="Open accessibility options"
         >
             <PersonStanding className="h-5 w-5" />
         </Button>
@@ -81,6 +85,7 @@ function AccessibilityTrigger() {
 
 // Helper to load saved code state - only call on client
 const loadSavedCodeState = () => {
+    if (typeof window === 'undefined') return { code: '', codeType: '' };
     try {
         const saved = localStorage.getItem('vulniq_code_state');
         if (saved) {
@@ -88,17 +93,17 @@ const loadSavedCodeState = () => {
             return {
                 code: parsed.code || '',
                 codeType: parsed.codeType || '',
-                isLocked: parsed.isLocked || false
             };
         }
     } catch (err) {
         console.error("Error loading code state:", err);
     }
-    return { code: '', codeType: '', isLocked: false };
+    return { code: '', codeType: '' };
 };
 
 // Helper to load saved active page from localStorage - only call on client
 const loadSavedActivePage = () => {
+    if (typeof window === 'undefined') return 'Home';
     try {
         const saved = localStorage.getItem('vulniq_active_page');
         if (saved) {
@@ -115,7 +120,6 @@ function DashboardContent({ settings, mounted }) {
     const { projectClearCounter, projectStructure, setSelectedFile, currentRepo } = useProject();
     const { setForceHideFloating } = useAccessibility();
     const { data: session } = useSession();
-    const router = useRouter();
     const searchParams = useSearchParams()
     const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
     // Initialize with defaults to avoid hydration mismatch, load from localStorage after mount
@@ -124,8 +128,9 @@ function DashboardContent({ settings, mounted }) {
     const [initialCode, setInitialCode] = useState('');
     const [codeType, setCodeType] = useState('');
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-    const [isCodeLocked, setIsCodeLocked] = useState(false);
-    const [isStartingReview, setIsStartingReview] = useState(false);
+    const [, setIsStartingReview] = useState(false);
+    const [currentRunId, setCurrentRunId] = useState(null);
+
 
     // Load saved state from localStorage after mount to avoid hydration mismatch
     useEffect(() => {
@@ -134,16 +139,23 @@ function DashboardContent({ settings, mounted }) {
         setActiveComponent(savedPage);
         setInitialCode(savedCodeState.code);
         setCodeType(savedCodeState.codeType);
-        setIsCodeLocked(savedCodeState.isLocked);
+        // Load persisted run ID for the Results page
+        try {
+            const savedRunId = localStorage.getItem('vulniq_current_run_id');
+            if (savedRunId) setCurrentRunId(savedRunId);
+        } catch { /* ignore */ }
     }, []);
 
-    // Auto-save selected group to localStorage when codeType changes
+    // Auto-save selected group to localStorage when codeType changes (only if none saved)
     useEffect(() => {
         if (codeType) {
             try {
-                // Save the selected group as an array (the system expects an array of group IDs)
-                localStorage.setItem('vulniq_selected_groups', JSON.stringify([codeType]));
-                console.log('[Dashboard] Auto-saved selected group:', codeType);
+                const existing = localStorage.getItem('vulniq_selected_groups');
+                const existingGroups = existing ? JSON.parse(existing) : [];
+                // Only set default if no groups are currently saved
+                if (!existingGroups || existingGroups.length === 0) {
+                    localStorage.setItem('vulniq_selected_groups', JSON.stringify([codeType]));
+                }
             } catch (err) {
                 console.error('[Dashboard] Error auto-saving selected group:', err);
             }
@@ -165,15 +177,12 @@ function DashboardContent({ settings, mounted }) {
 
     // Clear code state when project is cleared
     // This intentionally responds to projectClearCounter changes from context
-    /* eslint-disable react-hooks/set-state-in-effect -- intentional: responding to external clear signal */
     useEffect(() => {
         if (projectClearCounter > 0) {
             setInitialCode('');
             setCodeType('');
-            setIsCodeLocked(false);
         }
     }, [projectClearCounter]);
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Save code to localStorage when it changes
     useEffect(() => {
@@ -182,28 +191,25 @@ function DashboardContent({ settings, mounted }) {
             const state = {
                 code: initialCode,
                 codeType: codeType,
-                isLocked: isCodeLocked,
             };
             localStorage.setItem('vulniq_code_state', JSON.stringify(state));
         } catch (err) {
             console.error("Error saving code state to localStorage:", err);
         }
-    }, [initialCode, codeType, isCodeLocked]);
+    }, [initialCode, codeType]);
 
     // Sidebar state based on sidebarMode setting
     const [sidebarOpen, setSidebarOpen] = useState(settings.sidebarMode !== 'icon')
 
     // Update sidebar state when sidebarMode setting changes
-    /* eslint-disable react-hooks/set-state-in-effect -- intentional: sync sidebar state with settings */
     useEffect(() => {
         if (mounted) {
-            setSidebarOpen(settings.sidebarMode !== 'icon')
+            const nextOpen = settings.sidebarMode !== 'icon';
+            setSidebarOpen(prev => prev === nextOpen ? prev : nextOpen);
         }
     }, [settings.sidebarMode, mounted])
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Handle navigation from URL params
-    /* eslint-disable react-hooks/set-state-in-effect -- intentional: sync state with URL params */
     useEffect(() => {
         const active = searchParams.get('active')
         const workflow = searchParams.get('workflow')
@@ -223,7 +229,6 @@ function DashboardContent({ settings, mounted }) {
             setIsModelsDialogOpen(true)
         }
     }, [searchParams])
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Save active page to localStorage whenever it changes
     useEffect(() => {
@@ -236,7 +241,7 @@ function DashboardContent({ settings, mounted }) {
     }, [activeComponent]);
 
     // Initialize breadcrumbs based on active component on mount
-    /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- intentional: only run on mount to restore state */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only run on mount to restore state
     useEffect(() => {
         if (activeComponent && activeComponent !== "Home") {
             setBreadcrumbs([
@@ -245,14 +250,9 @@ function DashboardContent({ settings, mounted }) {
             ]);
         }
     }, []);
-    /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
     const handleNavigation = useCallback((item) => {
         if (item.title === "Workflow configuration") {
-            if (!isCodeLocked) {
-                // Don't allow workflow configuration if code is not locked
-                return;
-            }
             setIsModelsDialogOpen(true)
             return
         }
@@ -276,7 +276,7 @@ function DashboardContent({ settings, mounted }) {
             setBreadcrumbs(newBreadcrumbs)
         }
         setActiveComponent(item.title)
-    }, [isCodeLocked, setIsModelsDialogOpen, setIsFeedbackOpen, setBreadcrumbs, setActiveComponent]);
+    }, [setIsModelsDialogOpen, setIsFeedbackOpen, setBreadcrumbs, setActiveComponent]);
 
     // Handler for starting security review with orchestrator
     const handleStartReview = useCallback(async (code, codeType) => {
@@ -288,15 +288,9 @@ function DashboardContent({ settings, mounted }) {
         // Check if we have either single file code or a project (from context)
         const hasSingleFile = code && code.trim().length > 0;
         const hasProject = projectStructure && Object.keys(projectStructure).length > 0;
-        
+
         if (!hasSingleFile && !hasProject) {
             toast.error('Please enter code or import a project to review');
-            return;
-        }
-
-        // For single file mode, require lock
-        if (hasSingleFile && !hasProject && !isCodeLocked) {
-            toast.error('Please lock your code first');
             return;
         }
 
@@ -305,16 +299,27 @@ function DashboardContent({ settings, mounted }) {
         try {
             // Get selected groups from workflow configuration or use the codeType
             let groupIds = getSelectedGroups();
-            
+
             // If no groups selected in workflow config, but codeType is provided, use it
             if (groupIds.length === 0 && codeType) {
                 groupIds = [codeType];
                 // Save it to localStorage for consistency
                 localStorage.setItem('vulniq_selected_groups', JSON.stringify(groupIds));
             }
-            
+
             if (groupIds.length === 0) {
                 toast.error('Please select a group in Code Input first');
+                setIsStartingReview(false);
+                return;
+            }
+
+            // SECURITY: Validate that knowledge base documents are selected for RAG
+            const selectedDocuments = getSelectedDocuments();
+            if (!selectedDocuments || selectedDocuments.length === 0) {
+                toast.error(
+                    'No knowledge base documents selected. Please configure your security review and select documents from the knowledge base to enable RAG.',
+                    { duration: 6000 }
+                );
                 setIsStartingReview(false);
                 return;
             }
@@ -328,17 +333,16 @@ function DashboardContent({ settings, mounted }) {
                     // Load all file contents from the project
                     const loadingToast = toast.loading('Loading project files...');
                     const filesWithContent = await loadAllProjectFiles(projectStructure, currentRepo);
-                    
-                    console.log('[handleStartReview] Loaded files:', filesWithContent.length);
-                    
+
+
                     toast.dismiss(loadingToast);
-                    
+
                     if (filesWithContent.length === 0) {
                         toast.error('No files found in project or failed to load files');
                         setIsStartingReview(false);
                         return;
                     }
-                    
+
                     // Extract all files from project structure (from context)
                     codePayload = {
                         type: 'project',
@@ -372,10 +376,11 @@ function DashboardContent({ settings, mounted }) {
 
             toast.dismiss();
             toast.success('Analysis started!');
-            
+
             // Store runId in localStorage for results page
             localStorage.setItem('vulniq_current_run_id', result.runId);
-            
+            setCurrentRunId(result.runId);
+
             // Switch to Results component (no route change)
             setActiveComponent('Results');
         } catch (error) {
@@ -385,120 +390,82 @@ function DashboardContent({ settings, mounted }) {
         } finally {
             setIsStartingReview(false);
         }
-    }, [session, isCodeLocked, currentRepo, projectStructure]);
+    }, [session, currentRepo, projectStructure]);
 
     // Helper function to load all files from project with their content
     const loadAllProjectFiles = async (structure, repo) => {
-        console.log('[loadAllProjectFiles] Starting, repo:', repo);
-        console.log('[loadAllProjectFiles] Structure:', structure);
-        
         const files = [];
         const { fetchFileContent } = await import('@/lib/github-api');
-        
+
         // File extensions to analyze (code files only)
         const analyzableExtensions = new Set([
-            'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs', 
+            'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs',
             'php', 'rb', 'swift', 'kt', 'scala', 'sql', 'sh', 'bash', 'html', 'css',
             'vue', 'svelte', 'json', 'yaml', 'yml', 'xml', 'md', 'txt'
         ]);
-        
+
         const isAnalyzableFile = (fileName) => {
             const ext = fileName.split('.').pop()?.toLowerCase();
             return ext && analyzableExtensions.has(ext);
         };
-        
+
         // Collect all file nodes first
         const fileNodes = [];
         const collectFiles = (node) => {
             if (!node) return;
-            
+
             if (node.type === 'file' && isAnalyzableFile(node.name)) {
                 fileNodes.push(node);
             } else if (node.type === 'folder' && node.children) {
                 node.children.forEach(child => collectFiles(child));
             }
         };
-        
+
         collectFiles(structure);
-        console.log('[loadAllProjectFiles] Found', fileNodes.length, 'analyzable files');
-        
+
         // Load files in batches with delay to avoid rate limiting
         const BATCH_SIZE = 5;
         const DELAY_MS = 1000; // 1 second between batches
-        
+
         for (let i = 0; i < fileNodes.length; i += BATCH_SIZE) {
             const batch = fileNodes.slice(i, i + BATCH_SIZE);
-            console.log(`[loadAllProjectFiles] Loading batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(fileNodes.length / BATCH_SIZE)}`);
-            
+
             const batchPromises = batch.map(async (node) => {
                 try {
-                    console.log('[loadAllProjectFiles] Loading file:', node.path);
                     const fileWithContent = await fetchFileContent(
-                        repo.owner, 
-                        repo.repo, 
-                        node.path, 
+                        repo.owner,
+                        repo.repo,
+                        node.path,
                         repo.provider || 'github'
                     );
-                    
+
                     // Only include if content is not too large (max 1MB per file)
                     if (fileWithContent.content && fileWithContent.content.length < 1024 * 1024) {
-                        console.log('[loadAllProjectFiles] Loaded file:', node.path, 'size:', fileWithContent.content.length);
                         return {
                             path: node.path,
                             content: fileWithContent.content,
                             language: detectLanguage(node.name)
                         };
-                    } else {
-                        console.log('[loadAllProjectFiles] Skipped large file:', node.path);
-                        return null;
                     }
+                    return null;
                 } catch (error) {
                     console.error(`[loadAllProjectFiles] Failed to load file ${node.path}:`, error.message);
                     return null;
                 }
             });
-            
+
             const batchResults = await Promise.all(batchPromises);
             files.push(...batchResults.filter(f => f !== null));
-            
+
             // Add delay between batches (except for the last batch)
             if (i + BATCH_SIZE < fileNodes.length) {
-                console.log(`[loadAllProjectFiles] Waiting ${DELAY_MS}ms before next batch...`);
                 await new Promise(resolve => setTimeout(resolve, DELAY_MS));
             }
         }
-        
-        console.log('[loadAllProjectFiles] Total files loaded:', files.length);
+
         return files;
     };
 
-    // Helper function to extract all files from project structure (for already loaded content)
-    const extractFilesFromProject = (structure) => {
-        const files = [];
-        
-        const traverse = (node, path = '') => {
-            if (!node) return;
-            
-            if (node.type === 'file' && node.content) {
-                files.push({
-                    path: path + node.name,
-                    content: node.content,
-                    language: node.language || detectLanguage(node.name)
-                });
-            } else if (node.type === 'folder' && node.children) {
-                const folderPath = path + node.name + '/';
-                node.children.forEach(child => traverse(child, folderPath));
-            } else if (Array.isArray(node)) {
-                node.forEach(item => traverse(item, path));
-            } else if (typeof node === 'object') {
-                Object.values(node).forEach(item => traverse(item, path));
-            }
-        };
-        
-        traverse(structure);
-        return files;
-    };
-    
     // Helper to detect language from file extension
     const detectLanguage = (fileName) => {
         const ext = fileName.split('.').pop()?.toLowerCase();
@@ -514,32 +481,21 @@ function DashboardContent({ settings, mounted }) {
     const renderComponent = () => {
         const content = (() => {
             switch (activeComponent) {
-                case "Code input":
-                    return <CodeInput 
-                        code={initialCode} 
-                        setCode={setInitialCode} 
-                        codeType={codeType} 
-                        setCodeType={setCodeType} 
-                        isLocked={isCodeLocked} 
-                        onLockChange={setIsCodeLocked}
-                        onStart={handleStartReview}
-                    />
                 case "Knowledge base":
                     return <KnowledgeBaseVisualization />
                 case "Results":
-                    return <Results runId={localStorage.getItem('vulniq_current_run_id')} />
+                    return <Results runId={currentRunId} />
                 case "Write article":
                     return <ArticleEditor />
                 case "Home":
-                    return <HomePage />
+                    return <HomePage onNavigate={handleNavigation} />
+                case "Code input":
                 default:
-                    return <CodeInput 
-                        code={initialCode} 
-                        setCode={setInitialCode} 
-                        codeType={codeType} 
-                        setCodeType={setCodeType} 
-                        isLocked={isCodeLocked} 
-                        onLockChange={setIsCodeLocked}
+                    return <CodeInput
+                        code={initialCode}
+                        setCode={setInitialCode}
+                        codeType={codeType}
+                        setCodeType={setCodeType}
                         onStart={handleStartReview}
                     />
             }
@@ -562,7 +518,7 @@ function DashboardContent({ settings, mounted }) {
                     <OnboardingProvider>
                         <CommandPaletteProvider
                             onNavigate={handleNavigation}
-                            isCodeLocked={isCodeLocked}
+
                             activeComponent={activeComponent}
                         >
                             <QuickFileSwitcherProvider
@@ -579,9 +535,9 @@ function DashboardContent({ settings, mounted }) {
                                     open={sidebarOpen}
                                     onOpenChange={setSidebarOpen}
                                 >
-                                    <AppSidebar onNavigate={handleNavigation} isCodeLocked={isCodeLocked} activeComponent={activeComponent}/>
+                                    <AppSidebar onNavigate={handleNavigation} activeComponent={activeComponent} />
                                     <SidebarInset className="flex flex-col overflow-hidden">
-                                        <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
+                                        <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
                                             <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>
                                                 <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
                                                     <SidebarTrigger className="-ml-1 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9" />
@@ -592,8 +548,11 @@ function DashboardContent({ settings, mounted }) {
                                                     <Breadcrumb className="min-w-0 hidden xs:block">
                                                         <BreadcrumbList className="flex-nowrap">
                                                             {breadcrumbs.map((crumb, index) => (
-                                                                <React.Fragment key={index}>
-                                                                    <BreadcrumbItem className={index === 0 ? "hidden md:block" : "truncate"}>
+                                                                <React.Fragment key={crumb.label}>
+                                                                    <BreadcrumbItem
+                                                                        className={index === 0 ? "hidden md:block" : "truncate"}
+                                                                        {...(index === breadcrumbs.length - 1 ? { 'aria-current': 'page' } : {})}
+                                                                    >
                                                                         <BreadcrumbLink
                                                                             href="#"
                                                                             className="truncate max-w-[80px] sm:max-w-[100px] md:max-w-none cursor-pointer text-xs sm:text-sm"
@@ -611,9 +570,11 @@ function DashboardContent({ settings, mounted }) {
                                                         </BreadcrumbList>
                                                     </Breadcrumb>
                                                     {/* Mobile breadcrumb - just show current page */}
-                                                    <span className="xs:hidden text-sm font-medium truncate">
-                                                        {breadcrumbs[breadcrumbs.length - 1]?.label}
-                                                    </span>
+                                                    <nav aria-label="Current page" className="xs:hidden min-w-0">
+                                                        <span className="text-sm font-medium truncate block">
+                                                            {breadcrumbs[breadcrumbs.length - 1]?.label}
+                                                        </span>
+                                                    </nav>
                                                 </div>
                                                 <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                     <QuickActionsTrigger />
@@ -624,11 +585,14 @@ function DashboardContent({ settings, mounted }) {
                                                 </div>
                                             </div>
                                         </header>
-                                        <div id="main-content" className={`flex-1 flex flex-col overflow-hidden w-full ${
-                                            settings.contentLayout === 'centered' && activeComponent !== 'Home' 
-                                                ? 'mx-auto max-w-full sm:max-w-5xl px-2 sm:px-3 md:px-4' 
-                                                : 'px-2 sm:px-3 md:px-4'
-                                        } pb-safe`}>
+                                        <div
+                                            id="main-content"
+                                            role="main"
+                                            aria-label={`${activeComponent} content`}
+                                            className={`flex-1 flex flex-col overflow-hidden w-full ${settings.contentLayout === 'centered' && activeComponent !== 'Home'
+                                            ? 'mx-auto max-w-full sm:max-w-5xl px-2 sm:px-3 md:px-4'
+                                            : 'px-2 sm:px-3 md:px-4'
+                                            } pb-safe`}>
                                             {renderComponent()}
                                         </div>
                                     </SidebarInset>
@@ -649,7 +613,7 @@ export default function Page() {
     const { settings, mounted } = useSettings();
 
     return (
-        <DashboardLoader minLoadTime={2000}>
+        <DashboardLoader minLoadTime={800}>
             <SharedDndProvider>
                 <ProjectProvider>
                     <Suspense fallback={null}>

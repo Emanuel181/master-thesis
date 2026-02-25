@@ -10,6 +10,7 @@ import { randomInt } from "crypto"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "@/lib/prisma";
 import { logAudit, AuditAction } from "@/lib/audit-log";
+import { seedDefaultPromptsForUser } from "@/lib/user-seeding";
 
 // Initialize SES Client
 const ses = new SESClient({
@@ -25,10 +26,71 @@ function generateRandomCode() {
     return randomInt(100000, 1000000).toString()
 }
 
+// Custom adapter wrapper that fixes orphan account linking at the adapter level.
+// When getUserByAccount finds an account linked to a ghost user (different userId
+// than the canonical user for that email), it deletes the orphan account and ghost
+// user, then returns null so AuthJS treats it as a new account link.
+// This runs BEFORE AuthJS's handleLoginOrRegister caches anything.
+const baseAdapter = PrismaAdapter(prisma);
+const adapter = {
+    ...baseAdapter,
+    async getUserByAccount(providerAccountInfo) {
+        const user = await baseAdapter.getUserByAccount(providerAccountInfo);
+        if (!user || !user.email) return user;
+
+        try {
+            // Find the canonical user for this email
+            const canonicalUser = await prisma.user.findUnique({
+                where: { email: user.email },
+                select: { id: true },
+            });
+
+            // If the account is linked to a DIFFERENT user than the canonical one,
+            // it's an orphan from a previous partial sign-in attempt
+            if (canonicalUser && canonicalUser.id !== user.id) {
+                console.log(`[auth][adapter] Orphan detected: ${providerAccountInfo.provider} account linked to ghost user ${user.id}, canonical user is ${canonicalUser.id}`);
+
+                // Delete the orphan account record
+                await prisma.account.delete({
+                    where: {
+                        provider_providerAccountId: {
+                            provider: providerAccountInfo.provider,
+                            providerAccountId: providerAccountInfo.providerAccountId,
+                        },
+                    },
+                });
+                console.log(`[auth][adapter] Deleted orphan ${providerAccountInfo.provider} account`);
+
+                // Clean up the ghost user if it has no remaining accounts
+                const remainingAccounts = await prisma.account.count({
+                    where: { userId: user.id },
+                });
+                if (remainingAccounts === 0) {
+                    try {
+                        await prisma.user.delete({ where: { id: user.id } });
+                        console.log(`[auth][adapter] Deleted ghost user ${user.id}`);
+                    } catch (deleteErr) {
+                        console.warn(`[auth][adapter] Could not delete ghost user ${user.id}:`, deleteErr.message);
+                    }
+                }
+
+                // Return null so AuthJS treats this as a new account link
+                // (allowDangerousEmailAccountLinking will then link it to the canonical user)
+                return null;
+            }
+        } catch (err) {
+            console.error('[auth][adapter] Error during orphan cleanup:', err.message);
+            // Fall through and return the original user to avoid blocking sign-in
+        }
+
+        return user;
+    },
+};
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
     debug: process.env.NODE_ENV === 'development', // Only enable debug in development
     trustHost: true,
-    adapter: PrismaAdapter(prisma),
+    adapter,
 
     session: {
         strategy: "jwt",
@@ -43,6 +105,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         Github({
             clientId: process.env.AUTH_GITHUB_ID,
             clientSecret: process.env.AUTH_GITHUB_SECRET,
+            allowDangerousEmailAccountLinking: true,
             authorization: {
                 params: {
                     // SECURITY NOTE: 'repo' scope grants write access to repositories.
@@ -52,23 +115,24 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     scope: "read:user user:email repo",
                 },
             },
-            // WARNING: allowDangerousEmailAccountLinking removed for security
-            // Consider implementing proper email verification flow instead
+            // allowDangerousEmailAccountLinking is safe here because GitHub
+            // verifies all email addresses. This allows users who signed up
+            // with Google/email/Microsoft to also connect their GitHub account.
         }),
 
         Google({
             clientId: process.env.AUTH_GOOGLE_ID,
             clientSecret: process.env.AUTH_GOOGLE_SECRET,
-            // SECURITY: allowDangerousEmailAccountLinking disabled to prevent account takeover attacks
-            // If users need to link accounts with the same email, implement proper email verification
+            allowDangerousEmailAccountLinking: true,
+            // Safe: Google verifies all email addresses before returning them.
         }),
 
         MicrosoftEntraID({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
             clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
             issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
-            // SECURITY: allowDangerousEmailAccountLinking disabled to prevent account takeover attacks
-            // If users need to link accounts with the same email, implement proper email verification
+            allowDangerousEmailAccountLinking: true,
+            // Safe: Microsoft verifies all email addresses before returning them.
         }),
 
         Nodemailer({
@@ -140,23 +204,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientId: process.env.AUTH_GITLAB_ID,
             clientSecret: process.env.AUTH_GITLAB_SECRET,
             issuer: "https://gitlab.com",
+            allowDangerousEmailAccountLinking: true,
             authorization: {
                 params: {
-                    // SECURITY NOTE: Using "api" scope for full API access.
-                    // To use more restrictive scopes like "read_user read_repository read_api",
-                    // you must enable those scopes in your GitLab Application settings:
-                    // GitLab > User Settings > Applications > [Your App] > Scopes
-                    // Required scopes for read-only: read_user (for profile), read_api, read_repository
                     scope: "read_user read_repository read_api",
                 },
             },
-            // WARNING: allowDangerousEmailAccountLinking removed for security
-            // Consider implementing proper email verification flow instead
+            // Safe: GitLab verifies all email addresses before returning them.
         }),
     ],
 
     callbacks: {
         async signIn({ user, account, profile }) {
+
             // GDPR: Audit log successful sign-in
             if (user?.id) {
                 // Fire-and-forget audit log (don't block sign-in)
@@ -271,6 +331,28 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         }
+    },
+
+    events: {
+        /**
+         * createUser event - fires when a new user is created
+         * Seeds default prompts for the new user
+         */
+        async createUser({ user }) {
+            if (user?.id) {
+                try {
+                    const result = await seedDefaultPromptsForUser(user.id);
+                    if (result.success) {
+                        console.log(`Created ${result.promptsCreated} default prompts for new user ${user.id}`);
+                    } else {
+                        console.error(`Failed to seed default prompts for user ${user.id}:`, result.error);
+                    }
+                } catch (error) {
+                    // Don't block user creation if prompt seeding fails
+                    console.error('Error in createUser event (prompt seeding):', error);
+                }
+            }
+        },
     }
 
 

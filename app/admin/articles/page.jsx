@@ -1542,7 +1542,7 @@ export default function AdminArticlesPage() {
                                 {articles.map((article) => (
                                     <div
                                         key={article.id}
-                                        className="p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+                                        className="p-4 hover:bg-muted/30 transition-all duration-150 cursor-pointer select-none"
                                         onClick={() => {
                                             setSelectedArticle(article);
                                             setIsArticlePreviewOpen(true);
@@ -2019,18 +2019,24 @@ export default function AdminArticlesPage() {
                                                 {/* Gradient Selection */}
                                                 <div className="space-y-2">
                                                     <Label className="text-xs">Select Gradient</Label>
-                                                    <div className="grid grid-cols-4 gap-2">
+                                                    <div className="grid grid-cols-4 gap-2.5 p-0.5">
                                                         {PRESET_GRADIENTS.map((g) => (
                                                             <button
                                                                 key={g.name}
                                                                 type="button"
-                                                                className={`h-12 rounded-lg border-2 transition-all ${
-                                                                    editedArticle.gradient === g.value ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-muted-foreground/30'
+                                                                className={`relative h-12 rounded-lg overflow-hidden transition-all ${
+                                                                    editedArticle.gradient === g.value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : 'ring-1 ring-border/50 hover:ring-2 hover:ring-muted-foreground/50'
                                                                 }`}
                                                                 style={{ background: g.value }}
                                                                 onClick={() => setEditedArticle(prev => ({ ...prev, gradient: g.value }))}
                                                                 title={g.name}
-                                                            />
+                                                            >
+                                                                {editedArticle.gradient === g.value && (
+                                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                                                                        <Check className="h-4 w-4 text-white drop-shadow-md" />
+                                                                    </div>
+                                                                )}
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -2055,21 +2061,26 @@ export default function AdminArticlesPage() {
                                                     </div>
                                                 </div>
 
-                                                {/* Icon Color */}
                                                 <div className="space-y-2">
                                                     <Label className="text-xs">Icon Color</Label>
-                                                    <div className="grid grid-cols-10 gap-1">
+                                                    <div className="grid grid-cols-10 gap-1.5 p-0.5">
                                                         {ICON_COLORS.map((color) => (
                                                             <button
                                                                 key={color.value}
                                                                 type="button"
-                                                                className={`w-6 h-6 rounded-full border-2 transition-all ${
-                                                                    editedArticle.iconColor === color.value ? 'ring-2 ring-primary ring-offset-2' : ''
+                                                                className={`relative w-6 h-6 rounded-full transition-all ${
+                                                                    editedArticle.iconColor === color.value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : 'ring-1 ring-border/30 hover:ring-2 hover:ring-border'
                                                                 }`}
-                                                                style={{ backgroundColor: color.value, borderColor: color.value === 'white' ? '#ccc' : color.value }}
+                                                                style={{ backgroundColor: color.value }}
                                                                 onClick={() => setEditedArticle(prev => ({ ...prev, iconColor: color.value }))}
                                                                 title={color.name}
-                                                            />
+                                                            >
+                                                                {editedArticle.iconColor === color.value && (
+                                                                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20">
+                                                                        <Check className="h-3 w-3 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+                                                                    </div>
+                                                                )}
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 </div>

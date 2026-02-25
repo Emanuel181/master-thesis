@@ -2,13 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, ScanSearch, Wrench, BugPlay, FileText } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { RefreshCw, ScanSearch, Wrench, BugPlay, FileText, Check } from "lucide-react"
 
 const AGENT_CONFIG = {
-    reviewer: { icon: ScanSearch, color: "text-blue-500", bg: "bg-blue-500" },
-    implementation: { icon: Wrench, color: "text-green-500", bg: "bg-green-500" },
-    tester: { icon: BugPlay, color: "text-orange-500", bg: "bg-orange-500" },
-    report: { icon: FileText, color: "text-purple-500", bg: "bg-purple-500" },
+    reviewer: { icon: ScanSearch, color: "text-agent-reviewer", bg: "bg-agent-reviewer" },
+    implementation: { icon: Wrench, color: "text-agent-implementation", bg: "bg-agent-implementation" },
+    tester: { icon: BugPlay, color: "text-agent-tester", bg: "bg-agent-tester" },
+    report: { icon: FileText, color: "text-agent-report", bg: "bg-agent-report" },
 }
 
 /**
@@ -27,7 +28,7 @@ export function PromptCard({
     onPageChange,
     truncateText,
 }) {
-    const config = AGENT_CONFIG[agent] || { icon: ScanSearch, color: "text-gray-500", bg: "bg-gray-500" }
+    const config = AGENT_CONFIG[agent] || { icon: ScanSearch, color: "text-muted-foreground", bg: "bg-muted" }
     const AgentIcon = config.icon
     const pageSize = 3
     
@@ -37,11 +38,17 @@ export function PromptCard({
     const visiblePrompts = promptsArray.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
 
     return (
-        <Card>
+        <Card className="transition-shadow duration-200 hover:shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                     <AgentIcon className={`w-5 h-5 ${config.color}`} />
                     <CardTitle className="text-lg font-medium capitalize">{agent} agent</CardTitle>
+                    {promptsArray.some(p => selectedPrompts[agent]?.includes(p.id)) && (
+                        <Badge variant="default" className="text-[9px] h-4 bg-indigo-500">
+                            <Check className="h-2.5 w-2.5 mr-0.5" />
+                            Active
+                        </Badge>
+                    )}
                 </div>
                 <Button
                     variant="ghost"
@@ -66,19 +73,28 @@ export function PromptCard({
                             return (
                                 <div 
                                     key={prompt.id} 
-                                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                                         isSelected 
-                                            ? 'border-primary bg-primary/10' 
-                                            : 'hover:border-muted-foreground/50'
+                                            ? 'border-indigo-500 bg-indigo-500/10 shadow-sm shadow-indigo-500/10' 
+                                            : 'hover:border-muted-foreground/50 hover:shadow-sm'
                                     }`}
                                     onClick={() => onPromptSelect(agent, prompt.id)}
                                 >
                                     <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate">{prompt.title || "Untitled"}</p>
-                                            <p className="text-xs text-muted-foreground line-clamp-1">
-                                                {truncateText(prompt.text, 50)}
-                                            </p>
+                                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                                            {isSelected && (
+                                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 mt-0.5 shrink-0">
+                                                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                                                </span>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : ''}`}>
+                                                    {prompt.title || "Untitled"}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground line-clamp-1">
+                                                    {truncateText(prompt.text, 50)}
+                                                </p>
+                                            </div>
                                         </div>
                                         <Button
                                             variant="ghost"

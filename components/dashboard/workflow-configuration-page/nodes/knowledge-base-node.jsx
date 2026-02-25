@@ -4,13 +4,6 @@ import React from "react";
 import { Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
     Popover,
     PopoverContent,
     PopoverTrigger,
@@ -18,10 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Database, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, ChevronRight as ChevronRightIcon, Folder, File } from "lucide-react";
+import { Database, ChevronDown, RefreshCw, ChevronRight as ChevronRightIcon, Folder, File, Check, AlertCircle, Loader2, CircleCheckBig } from "lucide-react";
 import { Input } from "@/components/ui/input";
-
-const USE_CASES_PER_PAGE = 5;
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUseCases } from "@/contexts/useCasesContext";
+import { useKbSelection } from "@/contexts/kbSelectionContext";
 
 /**
  * Knowledge Base Node component for the workflow visualization
@@ -29,15 +23,17 @@ const USE_CASES_PER_PAGE = 5;
 export function KnowledgeBaseNode({ data }) {
     const [open, setOpen] = React.useState(false);
     const [isRefreshing, setIsRefreshing] = React.useState(false);
-    const [useCasePage, setUseCasePage] = React.useState(0);
-    const [useCaseSearchTerm, setUseCaseSearchTerm] = React.useState("");
     const [kbSearchTerm, setKbSearchTerm] = React.useState(""); // Search term for KB dropdown
     
-    // Hierarchical selection state
+    // Get use cases directly from context (reactive, always fresh)
+    const { useCases: contextUseCases } = useUseCases();
+
+    // Shared KB selection state from context (single source of truth)
+    const { selectedFiles, selectedGroups, setSelectedFiles, setSelectedGroups } = useKbSelection();
+
+    // Hierarchical UI state (local to this node)
     const [expandedGroups, setExpandedGroups] = React.useState(new Set());
     const [expandedUseCases, setExpandedUseCases] = React.useState(new Set());
-    const [selectedFiles, setSelectedFiles] = React.useState(new Set());
-    const [selectedGroups, setSelectedGroups] = React.useState(new Set());
     const [useCaseGroups, setUseCaseGroups] = React.useState([]);
     const [useCasePdfs, setUseCasePdfs] = React.useState({});
     const [loadingPdfs, setLoadingPdfs] = React.useState(new Set());
@@ -70,57 +66,67 @@ export function KnowledgeBaseNode({ data }) {
         fetchGroups();
     }, []);
 
-    // Load auto-selected group from localStorage and sync with Knowledge Base
+    // Validate selectedFiles on mount — prune any IDs that no longer exist in the DB
     React.useEffect(() => {
-        const loadAutoSelectedGroup = async () => {
+        const allUseCases = contextUseCases || [];
+        if (allUseCases.length === 0 || selectedFiles.size === 0) return;
+
+        const validateSelectedFiles = async () => {
             try {
-                // Get auto-selected group from Code Input
-                const savedGroups = localStorage.getItem('vulniq_selected_groups');
-                const savedDocuments = localStorage.getItem('vulniq_selected_documents');
-                
-                if (savedGroups) {
-                    const groupIds = JSON.parse(savedGroups);
-                    if (groupIds.length > 0) {
-                        const groupId = groupIds[0]; // Take the first group
-                        
-                        // Set the group in the dropdown if not already set
-                        if (!data.codeType && data.onCodeTypeChange) {
-                            data.onCodeTypeChange(groupId);
-                        }
-                        
-                        // Auto-select the group
-                        setSelectedGroups(new Set([groupId]));
-                        
-                        // Expand the group to show use cases
-                        setExpandedGroups(new Set([groupId]));
-                        
-                        console.log('[KnowledgeBaseNode] Auto-selected group:', groupId);
-                    }
-                }
-                
-                if (savedDocuments) {
-                    const documentIds = JSON.parse(savedDocuments);
-                    setSelectedFiles(new Set(documentIds));
-                    console.log('[KnowledgeBaseNode] Auto-selected documents:', documentIds.length);
-                }
-            } catch (error) {
-                console.error('[KnowledgeBaseNode] Error loading auto-selected group:', error);
+                const allPdfsArrays = await Promise.all(
+                    allUseCases.map(async (uc) => {
+                        const response = await fetch(`/api/folders?useCaseId=${uc.id}`);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        const folders = data.data?.folders || data.folders || [];
+                        const extractPdfs = (items) => {
+                            let pdfs = [];
+                            items.forEach(item => {
+                                if (item.type === 'pdf') pdfs.push(item);
+                                if (item.children) pdfs = pdfs.concat(extractPdfs(item.children));
+                            });
+                            return pdfs;
+                        };
+                        return extractPdfs(folders);
+                    })
+                );
+                const validIds = new Set();
+                allPdfsArrays.forEach(pdfs => pdfs.forEach(pdf => validIds.add(pdf.id)));
+
+                setSelectedFiles(prev => {
+                    const pruned = new Set([...prev].filter(id => validIds.has(id)));
+                    if (pruned.size !== prev.size) return pruned;
+                    return prev;
+                });
+            } catch {
+                // Validation failure is non-critical
             }
         };
-        
-        // Only load once on mount
-        loadAutoSelectedGroup();
-    }, []); // Empty dependency array - only run once on mount
+
+        validateSelectedFiles();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [contextUseCases?.length]);
+
+    // Auto-expand group from codeType selection
+    React.useEffect(() => {
+        if (data.codeType) {
+            setExpandedGroups(prev => {
+                if (prev.has(data.codeType)) return prev;
+                return new Set(prev).add(data.codeType);
+            });
+        }
+    }, [data.codeType]);
 
     // Group use cases by groupId and filter by search term
     const groupedUseCases = React.useMemo(() => {
         const grouped = {};
-        
+        const allUseCases = contextUseCases || [];
+
         // Add all groups from useCaseGroups
         useCaseGroups.forEach(group => {
             // Filter use cases by search term
-            const allUseCasesInGroup = (data.useCases || []).filter(uc => uc.groupId === group.id);
-            const filteredUseCases = allUseCasesInGroup.filter(uc => 
+            const allUseCasesInGroup = allUseCases.filter(uc => uc.groupId === group.id);
+            const filteredUseCases = allUseCasesInGroup.filter(uc =>
                 kbSearchTerm === '' || 
                 uc.title.toLowerCase().includes(kbSearchTerm.toLowerCase())
             );
@@ -138,13 +144,13 @@ export function KnowledgeBaseNode({ data }) {
         });
         
         // Add ungrouped use cases
-        const allUngroupedUseCases = (data.useCases || []).filter(uc => !uc.groupId);
-        const filteredUngroupedUseCases = allUngroupedUseCases.filter(uc => 
+        const allUngroupedUseCases = allUseCases.filter(uc => !uc.groupId);
+        const filteredUngroupedUseCases = allUngroupedUseCases.filter(uc =>
             kbSearchTerm === '' || 
             uc.title.toLowerCase().includes(kbSearchTerm.toLowerCase())
         );
         
-        // Show ungrouped if: no search OR has matching use cases OR (no search and no other groups)
+        // Always show ungrouped if there are ungrouped use cases or no search
         if (kbSearchTerm === '' || filteredUngroupedUseCases.length > 0) {
             grouped['ungrouped'] = {
                 id: 'ungrouped',
@@ -153,40 +159,32 @@ export function KnowledgeBaseNode({ data }) {
             };
         }
         
-        console.log('[KnowledgeBaseNode] useCaseGroups:', useCaseGroups);
-        console.log('[KnowledgeBaseNode] data.useCases:', data.useCases);
-        console.log('[KnowledgeBaseNode] kbSearchTerm:', kbSearchTerm);
-        console.log('[KnowledgeBaseNode] Grouped use cases:', grouped);
-        console.log('[KnowledgeBaseNode] Total groups:', Object.keys(grouped).length);
         return grouped;
-    }, [useCaseGroups, data.useCases, kbSearchTerm]);
+    }, [useCaseGroups, contextUseCases, kbSearchTerm]);
 
-    // Fetch PDFs for a use case
-    const fetchUseCasePdfs = async (useCaseId) => {
-        if (useCasePdfs[useCaseId]) return;
-        
+    // Helper: ensure PDFs are fetched for a use case (returns the PDFs)
+    const ensurePdfsFetched = async (useCaseId) => {
+        if (useCasePdfs[useCaseId]) return useCasePdfs[useCaseId];
+
         setLoadingPdfs(prev => new Set(prev).add(useCaseId));
         try {
             const response = await fetch(`/api/folders?useCaseId=${useCaseId}`);
             if (response.ok) {
                 const data = await response.json();
                 const folders = data.data?.folders || data.folders || [];
-                
+
                 const extractPdfs = (items) => {
                     let pdfs = [];
                     items.forEach(item => {
-                        if (item.type === 'pdf') {
-                            pdfs.push(item);
-                        }
-                        if (item.children) {
-                            pdfs = pdfs.concat(extractPdfs(item.children));
-                        }
+                        if (item.type === 'pdf') pdfs.push(item);
+                        if (item.children) pdfs = pdfs.concat(extractPdfs(item.children));
                     });
                     return pdfs;
                 };
-                
+
                 const allPdfs = extractPdfs(folders);
                 setUseCasePdfs(prev => ({ ...prev, [useCaseId]: allPdfs }));
+                return allPdfs;
             }
         } catch (error) {
             console.error('Error fetching PDFs:', error);
@@ -197,6 +195,20 @@ export function KnowledgeBaseNode({ data }) {
                 return next;
             });
         }
+        return [];
+    };
+
+    // Fetch PDFs for a use case (kept for refresh and popover open)
+    const fetchUseCasePdfs = async (useCaseId, force = false) => {
+        if (force) {
+            setUseCasePdfs(prev => {
+                const next = { ...prev };
+                delete next[useCaseId];
+                return next;
+            });
+        }
+        if (!force && useCasePdfs[useCaseId]) return;
+        await ensurePdfsFetched(useCaseId);
     };
 
     // Toggle use case expansion and fetch PDFs
@@ -207,7 +219,7 @@ export function KnowledgeBaseNode({ data }) {
                 next.delete(useCaseId);
             } else {
                 next.add(useCaseId);
-                fetchUseCasePdfs(useCaseId);
+                ensurePdfsFetched(useCaseId);
             }
             return next;
         });
@@ -222,61 +234,62 @@ export function KnowledgeBaseNode({ data }) {
             } else {
                 next.add(fileId);
             }
-            // Save to localStorage
-            localStorage.setItem('vulniq_selected_documents', JSON.stringify(Array.from(next)));
             return next;
         });
     };
 
-    // Toggle group selection
-    const toggleGroup = (groupId) => {
+    // Toggle use case selection - selects/deselects all PDFs in the use case
+    const toggleUseCaseSelection = async (useCaseId) => {
+        const pdfs = await ensurePdfsFetched(useCaseId);
+        const pdfIds = pdfs.map(pdf => pdf.id);
+
+        const allSelected = pdfIds.length > 0 && pdfIds.every(id => selectedFiles.has(id));
+
+        setSelectedFiles(prev => {
+            const next = new Set(prev);
+            if (allSelected) {
+                pdfIds.forEach(id => next.delete(id));
+            } else {
+                pdfIds.forEach(id => next.add(id));
+            }
+            return next;
+        });
+    };
+
+    // Toggle group selection - fetches all PDFs then selects/deselects all
+    const toggleGroup = async (groupId) => {
         const isCurrentlySelected = selectedGroups.has(groupId);
-        
+        const group = groupedUseCases[groupId];
+
+        if (!group) return;
+
+        // Fetch all PDFs for every use case in the group
+        const allPdfsPromises = group.useCases.map(uc => ensurePdfsFetched(uc.id));
+        const allPdfsArrays = await Promise.all(allPdfsPromises);
+        const allFileIds = new Set();
+        allPdfsArrays.forEach(pdfs => pdfs.forEach(pdf => allFileIds.add(pdf.id)));
+
         if (isCurrentlySelected) {
             setSelectedGroups(prev => {
                 const next = new Set(prev);
                 next.delete(groupId);
-                // Save to localStorage
-                localStorage.setItem('vulniq_selected_groups', JSON.stringify(Array.from(next)));
                 return next;
             });
-            const group = groupedUseCases[groupId];
-            if (group) {
-                const allFileIds = new Set();
-                group.useCases.forEach(uc => {
-                    const pdfs = useCasePdfs[uc.id] || [];
-                    pdfs.forEach(pdf => allFileIds.add(pdf.id));
-                });
-                setSelectedFiles(prev => {
-                    const next = new Set(prev);
-                    allFileIds.forEach(id => next.delete(id));
-                    // Save to localStorage
-                    localStorage.setItem('vulniq_selected_documents', JSON.stringify(Array.from(next)));
-                    return next;
-                });
-            }
+            setSelectedFiles(prev => {
+                const next = new Set(prev);
+                allFileIds.forEach(id => next.delete(id));
+                return next;
+            });
         } else {
             setSelectedGroups(prev => {
                 const next = new Set(prev).add(groupId);
-                // Save to localStorage
-                localStorage.setItem('vulniq_selected_groups', JSON.stringify(Array.from(next)));
                 return next;
             });
-            const group = groupedUseCases[groupId];
-            if (group) {
-                const allFileIds = new Set();
-                group.useCases.forEach(uc => {
-                    const pdfs = useCasePdfs[uc.id] || [];
-                    pdfs.forEach(pdf => allFileIds.add(pdf.id));
-                });
-                setSelectedFiles(prev => {
-                    const next = new Set(prev);
-                    allFileIds.forEach(id => next.add(id));
-                    // Save to localStorage
-                    localStorage.setItem('vulniq_selected_documents', JSON.stringify(Array.from(next)));
-                    return next;
-                });
-            }
+            setSelectedFiles(prev => {
+                const next = new Set(prev);
+                allFileIds.forEach(id => next.add(id));
+                return next;
+            });
         }
     };
 
@@ -293,38 +306,44 @@ export function KnowledgeBaseNode({ data }) {
         });
     };
 
-    // Filter and paginate groups (group dropdown)
-    const filteredGroups = useCaseGroups.filter(group =>
-        group.name.toLowerCase().includes(useCaseSearchTerm.toLowerCase())
-    );
-    const totalGroupPages = Math.ceil(filteredGroups.length / USE_CASES_PER_PAGE);
-    const paginatedGroups = filteredGroups.slice(
-        useCasePage * USE_CASES_PER_PAGE,
-        (useCasePage + 1) * USE_CASES_PER_PAGE
-    );
-
-    const handleCodeTypeChange = (newCodeType) => {
-        if (data.onCodeTypeChange) {
-            data.onCodeTypeChange(newCodeType);
-        }
-    };
-
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        setTimeout(() => {
-            setIsRefreshing(false);
-        }, 1500);
+        // Clear cached PDFs so they are re-fetched with fresh data
+        setUseCasePdfs({});
+        // Re-fetch groups
+        try {
+            const response = await fetch('/api/use-case-groups');
+            if (response.ok) {
+                const responseData = await response.json();
+                const groups = responseData.data?.groups || responseData.groups || [];
+                setUseCaseGroups(groups);
+            }
+        } catch (error) {
+            console.error('[KnowledgeBaseNode] Error refreshing groups:', error);
+        }
+        // Re-fetch PDFs for any currently expanded use cases
+        for (const useCaseId of expandedUseCases) {
+            fetchUseCasePdfs(useCaseId, true);
+        }
+        setIsRefreshing(false);
     };
 
-    const isKnowledgeBaseDisabled = !data.codeType;
+    const isConfigured = selectedFiles.size > 0 || selectedGroups.size > 0;
 
     return (
         <>
-            <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 ${borderColor}`}>
+            <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 transition-all duration-300 ${borderColor} ${
+                isConfigured ? 'ring-2 ring-cyan-500/20 shadow-md' : 'opacity-90'
+            }`}>
                 <CardContent className="p-2 sm:p-4">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg}`}>
+                        <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <Database className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
+                            {isConfigured && (
+                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-cyan-500 border-2 border-background">
+                                    <Check className="h-2 w-2 text-white" strokeWidth={3} />
+                                </span>
+                            )}
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="font-semibold text-xs sm:text-base truncate">{data.label}</div>
@@ -335,73 +354,6 @@ export function KnowledgeBaseNode({ data }) {
                     </div>
                     <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
                         {data.description}
-                    </div>
-
-                    <div className="mb-2 sm:mb-3">
-                        <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                            <div className="text-[10px] sm:text-xs font-medium text-muted-foreground">Group:</div>
-                        </div>
-                        <Select
-                            value={data.codeType || ""}
-                            onValueChange={handleCodeTypeChange}
-                        >
-                            <SelectTrigger className="h-7 sm:h-8 text-[10px] sm:text-xs">
-                                <SelectValue placeholder="Select group" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <div onWheelCapture={(e) => e.stopPropagation()}>
-                                    <div className="p-2 border-b">
-                                        <Input
-                                            placeholder="Search groups..."
-                                            className="h-7 text-xs"
-                                            value={useCaseSearchTerm}
-                                            onChange={(e) => {
-                                                setUseCaseSearchTerm(e.target.value);
-                                                setUseCasePage(0);
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                            onKeyDown={(e) => e.stopPropagation()}
-                                        />
-                                    </div>
-                                    <div className="max-h-[160px]">
-                                        {paginatedGroups.length > 0 ? (
-                                            paginatedGroups.map((group) => (
-                                                <SelectItem key={group.id} value={group.id} className="text-xs">
-                                                    {group.name}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="py-2 px-3 text-xs text-muted-foreground text-center">No groups found</div>
-                                        )}
-                                    </div>
-                                    {totalGroupPages > 1 && (
-                                        <div className="flex items-center justify-between px-2 py-1.5 border-t">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6"
-                                                onClick={(e) => { e.stopPropagation(); setUseCasePage(p => Math.max(0, p - 1)); }}
-                                                disabled={useCasePage === 0}
-                                            >
-                                                <ChevronLeft className="h-3 w-3" />
-                                            </Button>
-                                            <span className="text-[10px] text-muted-foreground">
-                                                {useCasePage + 1} / {totalGroupPages}
-                                            </span>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6"
-                                                onClick={(e) => { e.stopPropagation(); setUseCasePage(p => Math.min(totalGroupPages - 1, p + 1)); }}
-                                                disabled={useCasePage >= totalGroupPages - 1}
-                                            >
-                                                <ChevronRight className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-                            </SelectContent>
-                        </Select>
                     </div>
 
                     <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
@@ -419,12 +371,18 @@ export function KnowledgeBaseNode({ data }) {
                         </Button>
                     </div>
 
-                    <Popover open={open} onOpenChange={setOpen}>
+                    <Popover open={open} onOpenChange={(isOpen) => {
+                        setOpen(isOpen);
+                        if (isOpen) {
+                            // Invalidate cached PDFs so expanded use cases show fresh data
+                            setUseCasePdfs({});
+                            expandedUseCases.forEach(ucId => fetchUseCasePdfs(ucId, true));
+                        }
+                    }}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 className="w-full h-auto justify-between text-left font-normal p-1.5 sm:p-2"
-                                disabled={isKnowledgeBaseDisabled}
                             >
                                 <div className="flex-1 min-w-0">
                                     {selectedGroups.size > 0 || selectedFiles.size > 0 ? (
@@ -497,25 +455,35 @@ export function KnowledgeBaseNode({ data }) {
                                                                 const isUseCaseExpanded = expandedUseCases.has(useCase.id);
                                                                 const pdfs = useCasePdfs[useCase.id] || [];
                                                                 const isLoadingPdfs = loadingPdfs.has(useCase.id);
-                                                                
+                                                                const allPdfsSelected = pdfs.length > 0 && pdfs.every(pdf => selectedFiles.has(pdf.id));
+                                                                const somePdfsSelected = pdfs.some(pdf => selectedFiles.has(pdf.id));
+
                                                                 return (
                                                                     <div key={useCase.id} className="border-b last:border-b-0">
                                                                         {/* Use Case Header */}
-                                                                        <button
-                                                                            onClick={() => toggleUseCase(useCase.id)}
-                                                                            className="w-full flex items-center gap-2 p-2 pl-6 hover:bg-accent/30 transition-colors"
-                                                                        >
-                                                                            <ChevronRightIcon className={`h-3 w-3 transition-transform ${isUseCaseExpanded ? 'rotate-90' : ''}`} />
-                                                                            <File className="h-3 w-3 text-orange-500" />
-                                                                            <span className="text-xs flex-1 text-left">{useCase.title}</span>
-                                                                            {isLoadingPdfs ? (
-                                                                                <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
-                                                                            ) : (
-                                                                                <span className="text-[10px] text-muted-foreground">
-                                                                                    {pdfs.length}
-                                                                                </span>
-                                                                            )}
-                                                                        </button>
+                                                                        <div className="w-full flex items-center gap-2 p-2 pl-6 hover:bg-accent/30 transition-colors">
+                                                                            <Checkbox
+                                                                                checked={allPdfsSelected ? true : somePdfsSelected ? "indeterminate" : false}
+                                                                                onCheckedChange={() => toggleUseCaseSelection(useCase.id)}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                className="h-3 w-3"
+                                                                            />
+                                                                            <button
+                                                                                onClick={() => toggleUseCase(useCase.id)}
+                                                                                className="flex items-center gap-2 flex-1"
+                                                                            >
+                                                                                <ChevronRightIcon className={`h-3 w-3 transition-transform ${isUseCaseExpanded ? 'rotate-90' : ''}`} />
+                                                                                <File className="h-3 w-3 text-severity-high" />
+                                                                                <span className="text-xs flex-1 text-left">{useCase.title}</span>
+                                                                                {isLoadingPdfs ? (
+                                                                                    <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+                                                                                ) : (
+                                                                                    <span className="text-[10px] text-muted-foreground">
+                                                                                        {pdfs.length}
+                                                                                    </span>
+                                                                                )}
+                                                                            </button>
+                                                                        </div>
 
                                                                         {/* PDF Files */}
                                                                         {isUseCaseExpanded && (
@@ -534,7 +502,12 @@ export function KnowledgeBaseNode({ data }) {
                                                                                             kbSearchTerm === '' || 
                                                                                             (pdf.name || pdf.title || '').toLowerCase().includes(kbSearchTerm.toLowerCase())
                                                                                         )
-                                                                                        .map(pdf => (
+                                                                                        .map(pdf => {
+                                                                                            const isVectorized = pdf.vectorized && pdf.embeddingStatus === 'completed';
+                                                                                            const isProcessing = pdf.embeddingStatus === 'processing';
+                                                                                            const isFailed = pdf.embeddingStatus === 'failed';
+
+                                                                                            return (
                                                                                             <label
                                                                                                 key={pdf.id}
                                                                                                 className="flex items-center gap-2 p-2 pl-12 hover:bg-accent/20 cursor-pointer transition-colors"
@@ -544,10 +517,29 @@ export function KnowledgeBaseNode({ data }) {
                                                                                                 onCheckedChange={() => toggleFile(pdf.id)}
                                                                                                 className="h-3 w-3"
                                                                                             />
-                                                                                            <File className="h-2.5 w-2.5 text-red-500" />
+                                                                                            <File className="h-2.5 w-2.5 text-destructive" />
                                                                                             <span className="text-[10px] flex-1">{pdf.name || pdf.title}</span>
+                                                                                            <TooltipProvider delayDuration={300}>
+                                                                                                <Tooltip>
+                                                                                                    <TooltipTrigger asChild>
+                                                                                                        <span className="shrink-0">
+                                                                                                            {isVectorized && <CircleCheckBig className="h-2.5 w-2.5 text-emerald-500" />}
+                                                                                                            {isProcessing && <Loader2 className="h-2.5 w-2.5 text-amber-500 animate-spin" />}
+                                                                                                            {isFailed && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
+                                                                                                            {!isVectorized && !isProcessing && !isFailed && <AlertCircle className="h-2.5 w-2.5 text-muted-foreground" />}
+                                                                                                        </span>
+                                                                                                    </TooltipTrigger>
+                                                                                                    <TooltipContent side="left" className="text-[10px]">
+                                                                                                        {isVectorized && 'Vectorized — ready for RAG'}
+                                                                                                        {isProcessing && 'Vectorizing — will be ready soon'}
+                                                                                                        {isFailed && 'Vectorization failed — re-upload recommended'}
+                                                                                                        {!isVectorized && !isProcessing && !isFailed && 'Pending vectorization'}
+                                                                                                    </TooltipContent>
+                                                                                                </Tooltip>
+                                                                                            </TooltipProvider>
                                                                                         </label>
-                                                                                    ))
+                                                                                        );
+                                                                                    })
                                                                                 )}
                                                                             </div>
                                                                         )}
@@ -584,9 +576,6 @@ export function KnowledgeBaseNode({ data }) {
                                         onClick={() => {
                                             setSelectedFiles(new Set());
                                             setSelectedGroups(new Set());
-                                            // Clear localStorage
-                                            localStorage.setItem('vulniq_selected_documents', JSON.stringify([]));
-                                            localStorage.setItem('vulniq_selected_groups', JSON.stringify([]));
                                         }}
                                         className="h-7 text-xs"
                                     >

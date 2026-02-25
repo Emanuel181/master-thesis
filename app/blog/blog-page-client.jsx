@@ -490,7 +490,7 @@ export default function BlogPageClient() {
             </div>
 
             {/* No Results */}
-            {filteredPosts.length === 0 && (
+            {filteredPosts.length === 0 && searchQuery.trim() && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

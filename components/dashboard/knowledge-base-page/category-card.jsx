@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DescriptionDialog } from "./description-dialog";
-import { Edit, Trash2, Eye, FileText, RefreshCw, Shield, Database, Lock, Code, Bug, Server, Globe, Key, MoreHorizontal } from "lucide-react";
+import { Edit, Trash2, Eye, FileText, RefreshCw, Shield, Database, Lock, Code, Bug, Server, Globe, Key, MoreHorizontal, Download, Loader2 } from "lucide-react";
 import { getCategoryColorClasses } from "./add-category-dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -39,9 +39,10 @@ const getCategoryIcon = (name) => {
     return Shield; // Default security icon
 };
 
-export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, onRefresh, isRefreshing, isChecked, onCheckChange, allSelectedIds = [] }) {
+export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, onRefresh, onDownload, onDropPdfs, isRefreshing, isDownloading, isChecked, onCheckChange, allSelectedIds = [], maxPdfCount = 1 }) {
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     // Use backend-provided shortDescription if available, otherwise truncate
     const fullDescription = useCase.fullDescription || useCase.description || '';
@@ -54,6 +55,10 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
     
     // Get category icon
     const CategoryIcon = getCategoryIcon(useCase.name);
+
+    // Document density percentage for mini bar
+    const docCount = useCase.pdfCount ?? useCase.count ?? 0;
+    const densityPercent = Math.min(100, Math.round((docCount / maxPdfCount) * 100));
 
     const handleCardClick = (e) => {
         // Prevent card selection if the click is on buttons or 'Show More' button's container
@@ -77,6 +82,11 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
     const handleRefresh = (e) => {
         e.stopPropagation();
         onRefresh?.(useCase);
+    };
+
+    const handleDownload = (e) => {
+        e.stopPropagation();
+        onDownload?.(useCase.id);
     };
 
     // Drag handlers
@@ -109,19 +119,53 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
         setIsDragging(false);
     };
 
+    // Drop handlers for receiving PDFs from folder tree or other sources
+    const handleDragOver = (e) => {
+        // Only accept pdf-move data transfers
+        if (e.dataTransfer.types.includes("application/pdf-move")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setIsDragOver(true);
+        }
+    };
+
+    const handleDragLeave = (e) => {
+        // Only clear if leaving the card itself
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            setIsDragOver(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        try {
+            const data = JSON.parse(e.dataTransfer.getData("application/pdf-move"));
+            if (data?.pdfIds && data.pdfIds.length > 0 && onDropPdfs) {
+                onDropPdfs(data.pdfIds, useCase.id);
+            }
+        } catch {
+            // Not a valid PDF move transfer
+        }
+    };
+
     return (
         <Card
             draggable
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             className={cn(
-                "group cursor-pointer transition-all duration-200 bg-card relative overflow-hidden",
+                "group cursor-pointer transition-all duration-200 bg-card relative overflow-hidden border",
                 isSelected
-                    ? `shadow-md shadow-primary/5 border-primary`
-                    : "border hover:border-primary/30 hover:shadow-sm",
+                    ? "shadow-md shadow-primary/5 border-primary"
+                    : "hover:border-primary/30 hover:shadow-sm",
                 colorClasses.class,
-                isDragging && "opacity-60 scale-[0.98] shadow-lg ring-2 ring-primary/50 cursor-grabbing",
-                isChecked && !isDragging && "ring-2 ring-primary"
+                isDragging && "opacity-60 scale-[0.98] shadow-lg border-primary/50 cursor-grabbing",
+                isChecked && !isSelected && !isDragging && "border-primary/60",
+                isDragOver && "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
             )}
             onClick={handleCardClick}
             onMouseEnter={() => setIsHovered(true)}
@@ -148,6 +192,16 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
             <div className="absolute right-2 top-2 z-10 flex items-center">
                 {/* Inline buttons - visible on wider cards (md and up) */}
                 <div className="hidden md:flex items-center gap-0.5">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="action-button h-7 w-7 text-muted-foreground hover:text-primary hover:bg-background/80"
+                        onClick={handleDownload}
+                        disabled={isDownloading || docCount === 0}
+                        title="Download all PDFs as zip"
+                    >
+                        {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                    </Button>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -189,6 +243,10 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={handleDownload} disabled={isDownloading || docCount === 0}>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download All
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleRefresh} disabled={isRefreshing}>
                                 <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
                                 Refresh
@@ -206,14 +264,15 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
                 </div>
             </div>
 
-            <CardHeader className={cn("pb-2 pt-3 px-3 pr-12 md:pr-24", onCheckChange && "pl-8")}>
+            <CardHeader className={cn("pb-2 pt-3 px-3 pr-12 md:pr-[7.5rem]", onCheckChange && "pl-8")}>
                 {/* Icon + Title row */}
                 <div className="flex items-center gap-2 mb-1 w-full">
                     <div className={cn(
                         "shrink-0 p-1.5 rounded-lg transition-colors",
                         isSelected
                             ? "bg-primary/15 text-primary"
-                            : "bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary/80"
+                            : "bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary/80",
+                        isRefreshing && "animate-pulse"
                     )}>
                         <CategoryIcon className="h-4 w-4" />
                     </div>
@@ -238,7 +297,25 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete, 
                 )}
             </CardHeader>
 
-            <CardFooter className="pt-0 pb-3 px-3 flex-wrap gap-2">
+            <CardFooter className="pt-0 pb-3 px-3 flex-col gap-2 items-stretch">
+                {/* Document density mini bar */}
+                {docCount > 0 && (
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                            <div
+                                className={cn(
+                                    "h-full rounded-full transition-all duration-500",
+                                    isSelected ? "bg-primary" : "bg-primary/40"
+                                )}
+                                style={{ width: `${densityPercent}%` }}
+                            />
+                        </div>
+                        <span className="text-[9px] text-muted-foreground tabular-nums">
+                            {docCount} doc{docCount !== 1 ? 's' : ''}
+                        </span>
+                    </div>
+                )}
+
                 {/* Stats badges */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                     <Badge

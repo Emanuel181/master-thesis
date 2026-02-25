@@ -28,11 +28,12 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw, Folder, FolderPlus, PanelLeftClose, PanelLeftOpen, GripVertical } from "lucide-react"
+import { File, X, Upload, Search, FolderOpen, Loader2, RefreshCw, Folder, FolderPlus, PanelLeftClose, PanelLeftOpen, GripVertical, Download, Trash2 } from "lucide-react"
 import * as LucideIcons from "lucide-react";
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { AddCategoryDialog } from "./add-category-dialog";
 import { EditCategoryDialog } from "./edit-category-dialog";
@@ -42,6 +43,7 @@ import { UseCaseGroupsPanel } from "./use-case-groups-panel";
 import { CategoryCardSkeleton, DocumentListSkeleton } from "@/components/ui/loading-skeletons";
 import { NoCategoriesEmptyState, NoDocumentsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-states";
 import { DEMO_USE_CASES, DEMO_USE_CASE_GROUPS, DEMO_DOCUMENTS } from "@/contexts/demoContext";
+import { useBiometricAuth } from "@/hooks/use-biometric-auth";
 
 // Dynamically import PDF viewer to avoid SSR issues with DOMMatrix
 const PdfViewerDialog = dynamic(
@@ -53,6 +55,10 @@ export default function KnowledgeBaseVisualization() {
     const pathname = usePathname();
     const isDemoMode = pathname?.startsWith('/demo');
     
+    // Biometric authentication for sensitive actions
+    const { authenticate: biometricAuth, isAuthenticating: isBioAuthenticating } = useBiometricAuth();
+    const [isDownloading, setIsDownloading] = useState(false);
+
     const [useCases, setUseCases] = useState([]);
     const [selectedUseCase, setSelectedUseCase] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -98,6 +104,9 @@ export default function KnowledgeBaseVisualization() {
     // Track documents being deleted to prevent duplicate calls
     const [deletingDocs, setDeletingDocs] = useState(new Set());
 
+    // Drop zone drag-active state
+    const [isDragActive, setIsDragActive] = useState(false);
+
     // Delete confirmation dialog state
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState(null);
@@ -129,6 +138,11 @@ export default function KnowledgeBaseVisualization() {
     const resizeRef = useRef(null);
     const containerRef = useRef(null);
 
+    // Resizable groups panel width (px)
+    const [groupsPanelWidth, setGroupsPanelWidth] = useState(256); // default lg:w-64 = 256px
+    const [isResizingGroups, setIsResizingGroups] = useState(false);
+    const groupsResizeRef = useRef(null);
+
     // Multi-select use cases for drag-drop to groups
     const [selectedUseCases, setSelectedUseCases] = useState(new Set());
 
@@ -159,6 +173,68 @@ export default function KnowledgeBaseVisualization() {
         setCurrentDocPage(1);
         setSelectedDocs(new Set());
     }, [selectedUseCase]);
+
+    // Poll vectorization + virus scan status for documents still in progress
+    // Notifications are handled server-side via DB; this only updates UI badges.
+    useEffect(() => {
+        const pollingIds = [];
+        Object.values(documents).forEach(docs => {
+            (docs || []).forEach(doc => {
+                if (doc.embeddingStatus === 'processing' || doc.embeddingStatus === 'pending' ||
+                    doc.virusScanStatus === 'scanning') {
+                    pollingIds.push(doc.id);
+                }
+            });
+        });
+
+        if (pollingIds.length === 0) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/pdfs/vectorization-status?ids=${pollingIds.join(',')}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const updatedDocs = data.data?.documents || data.documents || [];
+
+                if (updatedDocs.length === 0) return;
+
+                // Build lookup map
+                const statusMap = {};
+                updatedDocs.forEach(d => { statusMap[d.id] = d; });
+
+                // Update local state with all new statuses
+                setDocuments(prev => {
+                    const next = { ...prev };
+                    let changed = false;
+                    for (const [ucId, docs] of Object.entries(next)) {
+                        next[ucId] = (docs || []).map(doc => {
+                            const updated = statusMap[doc.id];
+                            if (!updated) return doc;
+                            const needsUpdate =
+                                (updated.embeddingStatus !== doc.embeddingStatus) ||
+                                (updated.vectorized !== doc.vectorized) ||
+                                (updated.virusScanStatus && updated.virusScanStatus !== doc.virusScanStatus);
+                            if (needsUpdate) {
+                                changed = true;
+                                return {
+                                    ...doc,
+                                    vectorized: updated.vectorized,
+                                    embeddingStatus: updated.embeddingStatus,
+                                    ...(updated.virusScanStatus ? { virusScanStatus: updated.virusScanStatus } : {}),
+                                };
+                            }
+                            return doc;
+                        });
+                    }
+                    return changed ? next : prev;
+                });
+            } catch {
+                // Silently ignore polling errors
+            }
+        }, 8000); // Poll every 8 seconds
+
+        return () => clearInterval(interval);
+    }, [documents]);
 
     const fetchUseCases = async () => {
         try {
@@ -218,6 +294,9 @@ export default function KnowledgeBaseVisualization() {
                     type: "pdf",
                     url: pdf.url,
                     s3Key: pdf.s3Key,
+                    vectorized: pdf.vectorized || false,
+                    embeddingStatus: pdf.embeddingStatus || 'pending',
+                    virusScanStatus: pdf.virusScanStatus || 'pending',
                 }));
             });
 
@@ -244,16 +323,12 @@ export default function KnowledgeBaseVisualization() {
                 throw new Error("Failed to fetch groups");
             }
             const jsonResponse = await response.json();
-            console.log('[KnowledgeBase] Fetch groups response:', jsonResponse);
-            
+
             // The API returns { success: true, data: { groups: [...] } }
             const groups = jsonResponse.data?.groups || jsonResponse.groups || [];
-            console.log('[KnowledgeBase] Extracted groups:', groups);
-            console.log('[KnowledgeBase] Groups count:', groups.length);
-            
+
             // Filter out any null/undefined values
             const validGroups = groups.filter(g => g && g.id);
-            console.log('[KnowledgeBase] Valid groups after filtering:', validGroups);
             setUseCaseGroups(validGroups);
         } catch (error) {
             console.error("[KnowledgeBase] Error fetching use case groups:", error);
@@ -273,17 +348,17 @@ export default function KnowledgeBaseVisualization() {
 
         const container = containerRef.current;
         const containerRect = container.getBoundingClientRect();
-        const groupsPanelWidth = isGroupsPanelCollapsed ? 48 : (window.innerWidth >= 1024 ? 256 : 224); // collapsed button width or lg:w-64 or md:w-56
-        const availableWidth = containerRect.width - groupsPanelWidth - 48; // minus gaps and resize handle
+        const panelWidth = isGroupsPanelCollapsed ? 48 : groupsPanelWidth + 8; // panel + resize handle
+        const availableWidth = containerRect.width - panelWidth - 48; // minus gaps and resize handle
 
         // Calculate mouse position relative to the resizable area
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const mouseX = clientX - containerRect.left - groupsPanelWidth - 16;
+        const mouseX = clientX - containerRect.left - panelWidth - 16;
         // Minimum 25% to ensure card content is readable, maximum 75%
         const newWidth = Math.max(25, Math.min(75, (mouseX / availableWidth) * 100));
 
         setCategoriesWidth(newWidth);
-    }, [isResizing, isGroupsPanelCollapsed]);
+    }, [isResizing, isGroupsPanelCollapsed, groupsPanelWidth]);
 
     const handleResizeEnd = useCallback(() => {
         setIsResizing(false);
@@ -309,6 +384,41 @@ export default function KnowledgeBaseVisualization() {
             document.body.style.userSelect = '';
         };
     }, [isResizing, handleResizeMove, handleResizeEnd]);
+
+    // ── Groups panel resize handlers ──────────────────────────────────
+    const handleGroupsResizeMove = useCallback((e) => {
+        if (!isResizingGroups || !containerRef.current) return;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const newWidth = clientX - containerRect.left;
+        // Clamp between 160px and 600px
+        setGroupsPanelWidth(Math.max(160, Math.min(600, newWidth)));
+    }, [isResizingGroups]);
+
+    const handleGroupsResizeEnd = useCallback(() => {
+        setIsResizingGroups(false);
+    }, []);
+
+    useEffect(() => {
+        if (isResizingGroups) {
+            window.addEventListener('mousemove', handleGroupsResizeMove);
+            window.addEventListener('mouseup', handleGroupsResizeEnd);
+            window.addEventListener('touchmove', handleGroupsResizeMove);
+            window.addEventListener('touchend', handleGroupsResizeEnd);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleGroupsResizeMove);
+            window.removeEventListener('mouseup', handleGroupsResizeEnd);
+            window.removeEventListener('touchmove', handleGroupsResizeMove);
+            window.removeEventListener('touchend', handleGroupsResizeEnd);
+            if (!isResizing) {
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        };
+    }, [isResizingGroups, handleGroupsResizeMove, handleGroupsResizeEnd, isResizing]);
 
     // --- Logic Handlers ---
 
@@ -393,6 +503,29 @@ export default function KnowledgeBaseVisualization() {
         setSelectedUseCases(new Set());
     };
 
+    // Move PDFs from one category to another (drag-drop on category card)
+    const handleMovePdfsToCategory = async (pdfIds, targetUseCaseId) => {
+        if (!pdfIds || pdfIds.length === 0 || !targetUseCaseId) return;
+        try {
+            const res = await fetch("/api/pdfs/bulk-move", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pdfIds, targetUseCaseId }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Failed to move documents");
+            }
+            const data = await res.json();
+            toast.success(`Moved ${data.data?.moved || pdfIds.length} document(s)`);
+            // Refresh all to keep state consistent
+            fetchUseCases();
+        } catch (error) {
+            console.error("Move PDFs error:", error);
+            toast.error(error.message || "Failed to move documents");
+        }
+    };
+
     const useCasesWithCounts = useCases.map(uc => {
         // @ts-ignore
         const IconComponent = LucideIcons[uc.icon];
@@ -402,6 +535,32 @@ export default function KnowledgeBaseVisualization() {
             iconElement: IconComponent ? React.createElement(IconComponent) : null
         };
     });
+
+    // Stats for overview bar
+    const kbStats = useMemo(() => {
+        const totalDocs = Object.values(documents).reduce((sum, docs) => sum + (docs?.length || 0), 0);
+        const totalSizeBytes = Object.values(documents).reduce((sum, docs) =>
+            sum + (docs || []).reduce((s, d) => s + (d.sizeBytes || 0), 0), 0
+        );
+        const formatSize = (bytes) => {
+            if (bytes === 0) return "0 B";
+            const k = 1024;
+            const sizes = ["B", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+        };
+        return {
+            totalCategories: useCases.length,
+            totalDocs,
+            totalSize: formatSize(totalSizeBytes),
+            totalGroups: useCaseGroups.length,
+        };
+    }, [useCases, documents, useCaseGroups]);
+
+    // Max pdf count for relative density on category cards
+    const maxPdfCount = useMemo(() => {
+        return Math.max(1, ...useCasesWithCounts.map(uc => uc.count));
+    }, [useCasesWithCounts]);
 
     const filteredCategories = useCasesWithCounts.filter(
         (uc) => {
@@ -485,22 +644,48 @@ export default function KnowledgeBaseVisualization() {
     const handleFiles = async (files) => {
         if (!files || files.length === 0) return;
 
+        // Enforce max 4 PDFs per user
+        const MAX_PDFS_PER_USER = 4;
+        const totalExistingPdfs = Object.values(documents).reduce(
+            (sum, docs) => sum + (docs || []).length, 0
+        );
+        const remainingSlots = MAX_PDFS_PER_USER - totalExistingPdfs;
+
+        if (remainingSlots <= 0) {
+            toast.error(`You've reached the limit of ${MAX_PDFS_PER_USER} PDFs. Delete an existing file to upload more.`);
+            return;
+        }
+
+        const MAX_PDF_SIZE = 12 * 1024 * 1024; // 12MB
         const validFiles = [];
         const invalidFiles = [];
+        const oversizedFiles = [];
 
         Array.from(files).forEach(file => {
             const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
             const isValidType = validFileTypes.includes(file.type) || validExtensions.includes(fileExt);
 
-            if (isValidType) {
-                validFiles.push(file);
-            } else {
+            if (!isValidType) {
                 invalidFiles.push(file.name);
+            } else if (file.size > MAX_PDF_SIZE) {
+                oversizedFiles.push(file.name);
+            } else {
+                validFiles.push(file);
             }
         });
 
         if (invalidFiles.length > 0) {
             toast.error(`Invalid files: ${invalidFiles.join(', ')}. Only PDF files are allowed.`);
+        }
+
+        if (oversizedFiles.length > 0) {
+            toast.error(`Files too large (max 12 MB): ${oversizedFiles.join(', ')}`);
+        }
+
+        // Trim to remaining slots
+        if (validFiles.length > remainingSlots) {
+            toast.warning(`Only ${remainingSlots} upload slot${remainingSlots !== 1 ? 's' : ''} remaining (max ${MAX_PDFS_PER_USER} PDFs). ${validFiles.length - remainingSlots} file(s) were excluded.`);
+            validFiles.length = remainingSlots;
         }
 
         if (validFiles.length > 0) {
@@ -577,7 +762,7 @@ export default function KnowledgeBaseVisualization() {
 
         const processNextFile = async (fileIndex) => {
             if (fileIndex >= totalFiles) {
-                toast.success(`${totalFiles} document${totalFiles > 1 ? 's' : ''} uploaded successfully!`);
+                toast.success(`📄 ${totalFiles} document${totalFiles > 1 ? 's' : ''} uploaded and scanned! Vectorization in progress — check 🔔 for updates.`, { duration: 5000 });
                 if (fileInputRef.current) fileInputRef.current.value = "";
                 setPendingFiles([]);
                 setCustomPdfNames({});
@@ -591,12 +776,48 @@ export default function KnowledgeBaseVisualization() {
             const customName = namesToUse[fileIndex]?.trim();
             const finalName = customName ? `${customName}.pdf` : file.name;
 
-            setUploadState({ file: file, progress: 0, uploading: true });
+            setUploadState({ file: file, progress: 0, uploading: true, status: 'Scanning for threats…' });
 
             try {
-                // Step 1: Get presigned URL from API
-                setUploadState(prev => ({ ...prev, progress: 10 }));
+                // Step 1: Security scan BEFORE uploading to S3
+                setUploadState(prev => ({ ...prev, progress: 5, status: `🔍 Scanning "${finalName}" for threats…` }));
 
+                let scanVerdict = 'skipped';
+                const scanForm = new FormData();
+                scanForm.append('file', file);
+                scanForm.append('fileName', finalName);
+
+                try {
+                    const scanRes = await fetch("/api/pdfs/pre-scan", {
+                        method: "POST",
+                        credentials: "include",
+                        body: scanForm,
+                    });
+
+                    if (scanRes.ok) {
+                        const scanJson = await scanRes.json();
+                        const scanData = scanJson.data || scanJson;
+                        scanVerdict = scanData.verdict || 'clean';
+
+                        if (scanVerdict === 'malicious') {
+                            toast.error(`🛑 "${finalName}" was flagged as malicious and will not be uploaded.`, { duration: 8000 });
+                            // Skip this file, continue with next
+                            await processNextFile(fileIndex + 1);
+                            return;
+                        }
+                    } else {
+                        // Scan endpoint returned error — treat as scan error, proceed anyway
+                        scanVerdict = 'error';
+                        console.warn(`Pre-scan failed for "${finalName}", proceeding with upload.`);
+                    }
+                } catch (scanErr) {
+                    console.warn(`Pre-scan network error for "${finalName}":`, scanErr.message);
+                    scanVerdict = 'error';
+                }
+
+                setUploadState(prev => ({ ...prev, progress: 25, status: scanVerdict === 'clean' ? `🛡️ "${finalName}" is clean — uploading…` : `⚠️ Scan inconclusive — uploading…` }));
+
+                // Step 2: Get presigned URL from API
                 const presignedResponse = await fetch("/api/pdfs", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -622,9 +843,9 @@ export default function KnowledgeBaseVisualization() {
                     throw new Error("Failed to get upload URL from server");
                 }
                 
-                setUploadState(prev => ({ ...prev, progress: 30 }));
+                setUploadState(prev => ({ ...prev, progress: 40, status: `📤 Uploading "${finalName}"…` }));
 
-                // Step 2: Upload file directly to S3
+                // Step 3: Upload file directly to S3
                 const uploadResponse = await fetch(uploadUrl, {
                     method: "PUT",
                     headers: { "Content-Type": "application/pdf" },
@@ -637,9 +858,9 @@ export default function KnowledgeBaseVisualization() {
                     throw new Error(`S3 upload failed (${uploadResponse.status}). Check CORS configuration.`);
                 }
 
-                setUploadState(prev => ({ ...prev, progress: 70 }));
+                setUploadState(prev => ({ ...prev, progress: 75, status: `✅ Confirming "${finalName}"…` }));
 
-                // Step 3: Confirm upload and save to database
+                // Step 4: Confirm upload and save to database (pass scan verdict)
                 const confirmResponse = await fetch("/api/pdfs/confirm", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -650,6 +871,7 @@ export default function KnowledgeBaseVisualization() {
                         fileSize: file.size,
                         useCaseId: selectedUseCase,
                         folderId: targetFolderId,
+                        scanVerdict,
                     }),
                 });
 
@@ -666,7 +888,7 @@ export default function KnowledgeBaseVisualization() {
                     throw new Error("Failed to confirm upload");
                 }
                 
-                setUploadState(prev => ({ ...prev, progress: 100 }));
+                setUploadState(prev => ({ ...prev, progress: 100, status: `📊 Vectorizing "${finalName}"…` }));
 
                 // Add document to local state
                 const newDoc = {
@@ -677,6 +899,9 @@ export default function KnowledgeBaseVisualization() {
                     type: "pdf",
                     url: pdf.url,
                     s3Key: pdf.s3Key,
+                    vectorized: pdf.vectorized || false,
+                    embeddingStatus: pdf.embeddingStatus || 'processing', // Server triggers vectorization on confirm
+                    virusScanStatus: scanVerdict === 'clean' ? 'clean' : scanVerdict === 'skipped' ? 'skipped' : 'error',
                 };
 
                 setDocuments(prev => ({
@@ -816,7 +1041,7 @@ export default function KnowledgeBaseVisualization() {
         }
     };
 
-    // Handle actual deletion after confirmation
+    // Handle actual deletion after confirmation (with biometric auth)
     const handleConfirmedDelete = async () => {
         if (!documentToDelete) return;
 
@@ -826,6 +1051,13 @@ export default function KnowledgeBaseVisualization() {
         // Close dialog first
         setDeleteDialogOpen(false);
         setDocumentToDelete(null);
+
+        // Require biometric authentication
+        try {
+            await biometricAuth();
+        } catch {
+            return;
+        }
 
         // Prevent duplicate delete calls
         if (deletingDocs.has(docId)) {
@@ -873,16 +1105,19 @@ export default function KnowledgeBaseVisualization() {
                 toast.info("Opening demo PDF viewer...", { duration: 2000 });
                 return;
             }
-            
+
             // Fetch a fresh presigned URL from the API
             const response = await fetch(`/api/pdfs/${doc.id}`);
             if (!response.ok) {
                 throw new Error("Failed to fetch PDF URL");
             }
             const data = await response.json();
-            setSelectedPdf({ url: data.pdf.url, name: doc.name || doc.title });
+            const pdf = data.data?.pdf || data.pdf;
+            if (!pdf?.url) {
+                throw new Error("No URL returned for PDF");
+            }
+            setSelectedPdf({ url: pdf.url, name: doc.name || doc.title });
             setPdfViewerOpen(true);
-            toast.info("Opening PDF viewer...", { duration: 2000 });
         } catch (error) {
             console.error("Error fetching PDF:", error);
             toast.error("Failed to open PDF viewer");
@@ -930,12 +1165,18 @@ export default function KnowledgeBaseVisualization() {
         setSelectedDocs(new Set());
     };
 
-    // Bulk delete selected documents
+    // Bulk delete selected documents (with biometric auth)
     const handleBulkDelete = async () => {
         if (selectedDocs.size === 0) return;
 
+        // Require biometric authentication
+        try {
+            await biometricAuth();
+        } catch {
+            return;
+        }
+
         const docIds = Array.from(selectedDocs);
-        const docsToDelete = currentDocs.filter(doc => selectedDocs.has(doc.id));
 
         // Prevent duplicate delete calls
         setDeletingDocs(prev => new Set([...prev, ...docIds]));
@@ -972,13 +1213,184 @@ export default function KnowledgeBaseVisualization() {
         }
     };
 
+    // Bulk download selected documents as zip (with biometric auth)
+    const handleBulkDownload = async (pdfIds) => {
+        if (!pdfIds || pdfIds.length === 0) return;
+
+        let token;
+        try {
+            token = await biometricAuth();
+        } catch {
+            return;
+        }
+
+        setIsDownloading(true);
+        try {
+            const res = await fetch("/api/pdfs/download-zip", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({ pdfIds }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Download failed");
+            }
+
+            // Stream the zip as a download
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = res.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] || "documents.zip";
+            link.click();
+            URL.revokeObjectURL(url);
+            toast.success(`Downloaded ${pdfIds.length} document${pdfIds.length > 1 ? 's' : ''}`);
+        } catch (error) {
+            console.error("Download error:", error);
+            toast.error(error.message || "Failed to download documents");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    // Download all PDFs in a category/use case
+    const handleCategoryDownload = async (useCaseId) => {
+        const docs = documents[useCaseId] || [];
+        if (docs.length === 0) {
+            toast.info("No documents to download in this category");
+            return;
+        }
+        await handleBulkDownload(docs.map(d => d.id));
+    };
+
+    // Download all PDFs across selected use cases
+    const handleSelectedUseCasesDownload = async () => {
+        const allIds = [];
+        for (const ucId of selectedUseCases) {
+            const docs = documents[ucId] || [];
+            allIds.push(...docs.map(d => d.id));
+        }
+        if (allIds.length === 0) {
+            toast.info("No documents found in selected categories");
+            return;
+        }
+        await handleBulkDownload(allIds);
+    };
+
+    // Bulk delete selected use cases (with biometric auth)
+    const handleBulkDeleteUseCases = async () => {
+        if (selectedUseCases.size === 0) return;
+
+        try {
+            await biometricAuth();
+        } catch {
+            return;
+        }
+
+        const ucIds = Array.from(selectedUseCases);
+        try {
+            for (const ucId of ucIds) {
+                const response = await fetch(`/api/use-cases/${ucId}`, { method: "DELETE" });
+                if (!response.ok) throw new Error(`Failed to delete use case ${ucId}`);
+            }
+            toast.success(`${ucIds.length} categor${ucIds.length > 1 ? 'ies' : 'y'} deleted successfully!`);
+            setSelectedUseCases(new Set());
+            if (ucIds.includes(selectedUseCase)) setSelectedUseCase(null);
+            fetchUseCases();
+        } catch (error) {
+            console.error("Bulk delete use cases error:", error);
+            toast.error("Failed to delete some categories");
+        }
+    };
+
+    // Bulk move selected use cases to a different group
+    const handleBulkMoveUseCasesToGroup = async (targetGroupId) => {
+        if (selectedUseCases.size === 0) return;
+        const ucIds = Array.from(selectedUseCases);
+        try {
+            for (const ucId of ucIds) {
+                await fetch(`/api/use-cases/${ucId}/move`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ groupId: targetGroupId || null }),
+                });
+            }
+            toast.success(`Moved ${ucIds.length} categor${ucIds.length > 1 ? 'ies' : 'y'}`);
+            setSelectedUseCases(new Set());
+            fetchUseCases();
+            fetchUseCaseGroups();
+        } catch (error) {
+            console.error("Bulk move error:", error);
+            toast.error("Failed to move some categories");
+        }
+    };
+
+    // Download all PDFs in a single group
+    const handleGroupDownload = async (groupId) => {
+        // Collect all use cases in this group
+        const groupUseCases = groupId === "ungrouped"
+            ? useCases.filter(uc => !uc.groupId)
+            : useCases.filter(uc => uc.groupId === groupId);
+
+        if (groupUseCases.length === 0) {
+            toast.info("No categories in this group");
+            return;
+        }
+
+        const allIds = [];
+        for (const uc of groupUseCases) {
+            const docs = documents[uc.id] || [];
+            allIds.push(...docs.map(d => d.id));
+        }
+
+        if (allIds.length === 0) {
+            toast.info("No documents found in this group");
+            return;
+        }
+
+        await handleBulkDownload(allIds);
+    };
+
+    // Bulk download multiple groups at once
+    const handleBulkGroupsDownload = async (groupIds) => {
+        if (!groupIds || groupIds.length === 0) return;
+
+        const allIds = [];
+        for (const gId of groupIds) {
+            const groupUseCases = gId === "ungrouped"
+                ? useCases.filter(uc => !uc.groupId)
+                : useCases.filter(uc => uc.groupId === gId);
+
+            for (const uc of groupUseCases) {
+                const docs = documents[uc.id] || [];
+                allIds.push(...docs.map(d => d.id));
+            }
+        }
+
+        if (allIds.length === 0) {
+            toast.info("No documents found in selected groups");
+            return;
+        }
+
+        await handleBulkDownload(allIds);
+    };
+
     const currentDocsDisplay = paginatedDocs.map(doc => {
         const isSelected = selectedDocs.has(doc.id);
         return (
             <div
                 key={doc.id}
                 className={`group relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer ${isSelected ? 'bg-accent/10' : ''}`}
-                onClick={() => openPdfViewer(doc)}
+                onClick={(e) => {
+                    // Don't open viewer if click came from a button, checkbox, or label inside
+                    const target = e.target;
+                    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('label')) return;
+                    openPdfViewer(doc);
+                }}
             >
                 <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                     <File className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -988,10 +1400,79 @@ export default function KnowledgeBaseVisualization() {
                     <p className="text-xs sm:text-sm font-medium text-foreground truncate pr-6 hover:text-primary transition-colors" title={doc.name}>
                         {doc.name}
                     </p>
-                    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
                         <span className="text-[10px] sm:text-xs text-muted-foreground bg-muted px-1 sm:px-1.5 py-0.5 rounded">PDF</span>
                         <span className="text-[10px] sm:text-xs text-muted-foreground">•</span>
                         <span className="text-[10px] sm:text-xs text-muted-foreground">{doc.size}</span>
+                        {/* Virus scan status badge */}
+                        {doc.virusScanStatus && doc.virusScanStatus !== 'skipped' && (
+                            <>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">•</span>
+                                {doc.virusScanStatus === 'scanning' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-amber-600 dark:text-amber-400">
+                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        Scanning
+                                    </span>
+                                )}
+                                {doc.virusScanStatus === 'clean' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-emerald-600 dark:text-emerald-400">
+                                        <LucideIcons.ShieldCheck className="h-2.5 w-2.5" />
+                                        Clean
+                                    </span>
+                                )}
+                                {doc.virusScanStatus === 'malicious' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-destructive font-medium">
+                                        <LucideIcons.ShieldAlert className="h-2.5 w-2.5" />
+                                        Malware detected
+                                    </span>
+                                )}
+                                {doc.virusScanStatus === 'error' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground">
+                                        <LucideIcons.ShieldQuestion className="h-2.5 w-2.5" />
+                                        Scan failed
+                                    </span>
+                                )}
+                                {doc.virusScanStatus === 'pending' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground">
+                                        <LucideIcons.Shield className="h-2.5 w-2.5" />
+                                        Pending scan
+                                    </span>
+                                )}
+                            </>
+                        )}
+                        {/* Vectorization status badge */}
+                        {doc.embeddingStatus && doc.embeddingStatus !== 'completed' && (
+                            <>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">•</span>
+                                {doc.embeddingStatus === 'processing' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-blue-600 dark:text-blue-400">
+                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        Vectorizing
+                                    </span>
+                                )}
+                                {doc.embeddingStatus === 'pending' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground">
+                                        <LucideIcons.Clock className="h-2.5 w-2.5" />
+                                        Pending
+                                    </span>
+                                )}
+                                {doc.embeddingStatus === 'failed' && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-destructive">
+                                        <LucideIcons.AlertCircle className="h-2.5 w-2.5" />
+                                        Failed
+                                    </span>
+                                )}
+                            </>
+                        )}
+                        {doc.embeddingStatus === 'completed' && (
+                            <>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">•</span>
+                                <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs text-emerald-600 dark:text-emerald-400">
+                                    <LucideIcons.Database className="h-2.5 w-2.5" />
+                                    RAG ready
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -1000,8 +1481,11 @@ export default function KnowledgeBaseVisualization() {
                     size="icon"
                     className="absolute right-1.5 sm:right-2 top-1.5 sm:top-2 h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all disabled:opacity-50"
                     disabled={deletingDocs.has(doc.id)}
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
+                        e.nativeEvent?.stopImmediatePropagation?.();
                         confirmDelete(selectedUseCase, doc);
                     }}
                 >
@@ -1027,12 +1511,61 @@ export default function KnowledgeBaseVisualization() {
 
     return (
         <>
+        {/* Stats Overview Bar */}
+        {!isLoading && (
+            <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-wrap items-center gap-3 sm:gap-4 px-2 py-2.5 mb-3 rounded-lg bg-muted/40 border"
+            >
+                <div className="flex items-center gap-1.5 text-xs">
+                    <div className="p-1 rounded bg-primary/10">
+                        <FolderOpen className="h-3 w-3 text-primary" />
+                    </div>
+                    <span className="font-semibold">{kbStats.totalCategories}</span>
+                    <span className="text-muted-foreground hidden sm:inline">categories</span>
+                </div>
+                <div className="h-4 w-px bg-border hidden sm:block" />
+                <div className="flex items-center gap-1.5 text-xs">
+                    <div className="p-1 rounded bg-cyan-500/10">
+                        <File className="h-3 w-3 text-cyan-500" />
+                    </div>
+                    <span className={`font-semibold ${kbStats.totalDocs >= 4 ? 'text-amber-600 dark:text-amber-400' : ''}`}>{kbStats.totalDocs}/4</span>
+                    <span className="text-muted-foreground hidden sm:inline">documents</span>
+                </div>
+                <div className="h-4 w-px bg-border hidden sm:block" />
+                <div className="flex items-center gap-1.5 text-xs">
+                    <div className="p-1 rounded bg-emerald-500/10">
+                        <Upload className="h-3 w-3 text-emerald-500" />
+                    </div>
+                    <span className="font-semibold">{kbStats.totalSize}</span>
+                    <span className="text-muted-foreground hidden sm:inline">total</span>
+                </div>
+                <div className="h-4 w-px bg-border hidden sm:block" />
+                <div className="flex items-center gap-1.5 text-xs">
+                    <div className="p-1 rounded bg-indigo-500/10">
+                        <Folder className="h-3 w-3 text-indigo-500" />
+                    </div>
+                    <span className="font-semibold">{kbStats.totalGroups}</span>
+                    <span className="text-muted-foreground hidden sm:inline">groups</span>
+                </div>
+                {selectedGroupId && selectedGroupId !== "ungrouped" && (
+                    <>
+                        <div className="h-4 w-px bg-border" />
+                        <Badge variant="outline" className="text-[10px] h-5 gap-1 font-medium">
+                            Viewing: {useCaseGroups.find(g => g.id === selectedGroupId)?.name || "Group"}
+                        </Badge>
+                    </>
+                )}
+            </motion.div>
+        )}
+
         {/* MAIN CONTAINER */}
         <div
             ref={containerRef}
             className={cn(
-                "flex flex-col md:flex-row flex-1 gap-4 pt-0 pb-4 pl-0 h-auto md:h-[calc(100vh-120px)] overflow-auto md:overflow-hidden",
-                isResizing && "select-none"
+                "flex flex-col md:flex-row flex-1 gap-4 md:gap-0 pt-0 pb-4 pl-0 h-auto md:h-[calc(100vh-120px)] overflow-auto md:overflow-hidden",
+                (isResizing || isResizingGroups) && "select-none"
             )}
         >
             {/* Mobile Groups Panel Toggle */}
@@ -1075,6 +1608,9 @@ export default function KnowledgeBaseVisualization() {
                         onGroupsChange={setUseCaseGroups}
                         selectedUseCases={selectedUseCases}
                         onMoveUseCases={handleMoveUseCasesToGroup}
+                        onDownloadGroup={handleGroupDownload}
+                        onBulkDownloadGroups={handleBulkGroupsDownload}
+                        isDownloading={isDownloading}
                         onSelectUseCase={(id) => {
                             setSelectedUseCase(id);
                             // Only collapse on mobile when selecting a specific use case, not when selecting a group
@@ -1107,7 +1643,11 @@ export default function KnowledgeBaseVisualization() {
 
             {/* Desktop Groups Panel (collapsible sidebar) */}
             {!isGroupsPanelCollapsed && (
-                <div className="hidden md:flex md:w-56 lg:w-64 flex-col rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden shrink-0">
+                <>
+                <div
+                    className="hidden md:flex flex-col rounded-xl bg-muted/50 border border-border/50 shadow-sm overflow-hidden shrink-0"
+                    style={{ width: `${groupsPanelWidth}px`, minWidth: '160px', maxWidth: '600px' }}
+                >
                     <UseCaseGroupsPanel
                         groups={useCaseGroups}
                         useCases={useCasesWithCounts}
@@ -1116,10 +1656,29 @@ export default function KnowledgeBaseVisualization() {
                         onGroupsChange={setUseCaseGroups}
                         selectedUseCases={selectedUseCases}
                         onMoveUseCases={handleMoveUseCasesToGroup}
+                        onDownloadGroup={handleGroupDownload}
+                        onBulkDownloadGroups={handleBulkGroupsDownload}
+                        isDownloading={isDownloading}
                         onSelectUseCase={setSelectedUseCase}
                         onCollapse={() => setIsGroupsPanelCollapsed(true)}
                     />
                 </div>
+                {/* Resize handle for groups panel */}
+                <div
+                    ref={groupsResizeRef}
+                    onMouseDown={(e) => { e.preventDefault(); setIsResizingGroups(true); }}
+                    onTouchStart={(e) => { e.preventDefault(); setIsResizingGroups(true); }}
+                    className={cn(
+                        "hidden md:flex items-center justify-center w-4 cursor-col-resize group shrink-0 transition-colors",
+                        isResizingGroups && ""
+                    )}
+                >
+                    <div className={cn(
+                        "w-1 h-16 rounded-full bg-border group-hover:bg-primary/50 transition-colors",
+                        isResizingGroups && "bg-primary"
+                    )} />
+                </div>
+                </>
             )}
 
             {/* Main content area with resizable columns */}
@@ -1180,9 +1739,43 @@ export default function KnowledgeBaseVisualization() {
                         <span className="text-sm font-medium text-primary">
                             {selectedUseCases.size} selected
                         </span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                                Drag to a group to move
+                        <div className="flex items-center gap-1.5">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleSelectedUseCasesDownload}
+                                            disabled={isDownloading || isBioAuthenticating}
+                                            className="h-7 text-xs gap-1"
+                                        >
+                                            {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                                            Download
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Download all PDFs from selected categories as zip (biometric required)</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleBulkDeleteUseCases}
+                                            disabled={isBioAuthenticating}
+                                            className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            Delete
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Delete selected categories (biometric required)</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <span className="text-xs text-muted-foreground hidden sm:inline">
+                                Drag to group
                             </span>
                             <Button
                                 variant="ghost"
@@ -1190,7 +1783,7 @@ export default function KnowledgeBaseVisualization() {
                                 onClick={clearUseCaseSelection}
                                 className="h-7 text-xs"
                             >
-                                Clear selection
+                                Clear
                             </Button>
                         </div>
                     </div>
@@ -1205,25 +1798,59 @@ export default function KnowledgeBaseVisualization() {
                                 <p className="mt-2 text-sm text-muted-foreground">Loading categories...</p>
                             </div>
                         ) : paginatedCategories.length > 0 ? (
-                            paginatedCategories.map((useCase) => (
-                                <CategoryCard
-                                    key={useCase.id}
-                                    useCase={useCase}
-                                    onSelect={setSelectedUseCase}
-                                    isSelected={selectedUseCase === useCase.id}
-                                    onEdit={handleEditUseCase}
-                                    onDelete={handleDeleteUseCase}
-                                    onRefresh={handleRefreshUseCase}
-                                    isRefreshing={refreshingUseCases.has(useCase.id)}
-                                    isChecked={selectedUseCases.has(useCase.id)}
-                                    onCheckChange={toggleUseCaseSelection}
-                                    allSelectedIds={Array.from(selectedUseCases)}
-                                />
-                            ))
+                            <AnimatePresence mode="popLayout">
+                                {paginatedCategories.map((useCase, index) => (
+                                    <motion.div
+                                        key={useCase.id}
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -8 }}
+                                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                                        layout
+                                    >
+                                        <CategoryCard
+                                            useCase={useCase}
+                                            onSelect={setSelectedUseCase}
+                                            isSelected={selectedUseCase === useCase.id}
+                                            onEdit={handleEditUseCase}
+                                            onDelete={handleDeleteUseCase}
+                                            onRefresh={handleRefreshUseCase}
+                                            onDownload={handleCategoryDownload}
+                                            onDropPdfs={handleMovePdfsToCategory}
+                                            isRefreshing={refreshingUseCases.has(useCase.id)}
+                                            isChecked={selectedUseCases.has(useCase.id)}
+                                            onCheckChange={toggleUseCaseSelection}
+                                            allSelectedIds={Array.from(selectedUseCases)}
+                                            maxPdfCount={maxPdfCount}
+                                            isDownloading={isDownloading}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
                         ) : (
-                            <div className="text-center py-10 text-muted-foreground text-sm">
-                                No categories found
-                            </div>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-center py-10 text-muted-foreground text-sm"
+                            >
+                                {searchTerm ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center">
+                                            <Search className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                        <p className="font-medium">No results for &quot;{searchTerm}&quot;</p>
+                                        <p className="text-xs">Try a different search term</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center">
+                                            <FolderOpen className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                        <p className="font-medium">No categories found</p>
+                                        <p className="text-xs">Create a new category to get started</p>
+                                    </div>
+                                )}
+                            </motion.div>
                         )}
 
                         {/* Spacer to allow final card to scroll fully into view */}
@@ -1267,9 +1894,9 @@ export default function KnowledgeBaseVisualization() {
             <div
                 ref={resizeRef}
                 onMouseDown={handleResizeStart}
+                onTouchStart={handleResizeStart}
                 className={cn(
-                    "hidden md:flex items-center justify-center w-4 cursor-col-resize group shrink-0 hover:bg-primary/5 transition-colors",
-                    isResizing && "bg-primary/10"
+                    "hidden md:flex items-center justify-center w-4 cursor-col-resize group shrink-0 transition-colors",
                 )}
             >
                 <div className={cn(
@@ -1295,52 +1922,87 @@ export default function KnowledgeBaseVisualization() {
                                     <h2 className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 flex-wrap">
                                         <span className="truncate max-w-[150px] sm:max-w-none">{selectedCategoryName}</span>
                                         <span className="text-muted-foreground font-normal text-xs sm:text-sm">/ Upload</span>
+                                        {currentDocs.length > 0 && (
+                                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-medium">
+                                                {currentDocs.length} file{currentDocs.length !== 1 ? 's' : ''}
+                                            </Badge>
+                                        )}
                                     </h2>
                                     <p className="text-xs sm:text-sm text-muted-foreground">Add relevant documents to this knowledge base.</p>
                                 </div>
                             </div>
 
                             <div
-                                className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input px-4 sm:px-6 py-4 sm:py-8 transition-colors hover:bg-accent/50 hover:border-accent-foreground/50 bg-background"
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={handleDrop}
+                                className={cn(
+                                    "flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 sm:px-6 py-4 sm:py-8 transition-all duration-200 bg-background",
+                                    isDragActive
+                                        ? "border-primary bg-primary/5 scale-[1.01] shadow-inner"
+                                        : "border-input hover:bg-accent/50 hover:border-accent-foreground/50"
+                                )}
+                                onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
+                                onDragEnter={(e) => { e.preventDefault(); setIsDragActive(true); }}
+                                onDragLeave={(e) => { e.preventDefault(); setIsDragActive(false); }}
+                                onDrop={(e) => { setIsDragActive(false); handleDrop(e); }}
                             >
                                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
-                                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10">
+                                    <motion.div
+                                        animate={isDragActive ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+                                        transition={{ repeat: isDragActive ? Infinity : 0, duration: 1.2 }}
+                                        className={cn(
+                                            "flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-colors",
+                                            isDragActive ? "bg-primary/20" : "bg-primary/10"
+                                        )}
+                                    >
                                         <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-primary" aria-hidden={true} />
-                                    </div>
+                                    </motion.div>
                                     <div>
-                                        <div className="flex flex-wrap justify-center sm:justify-start text-xs sm:text-sm leading-6 text-muted-foreground">
-                                            <label
-                                                htmlFor={`file-upload-${selectedUseCase}`}
-                                                className="relative cursor-pointer font-semibold text-primary hover:underline hover:underline-offset-4"
-                                            >
-                                                <span>Click to upload</span>
-                                                <input
-                                                    id={`file-upload-${selectedUseCase}`}
-                                                    name={`file-upload-${selectedUseCase}`}
-                                                    type="file"
-                                                    className="sr-only"
-                                                    accept=".pdf,application/pdf"
-                                                    multiple
-                                                    onChange={handleFileChange}
-                                                    ref={fileInputRef}
-                                                />
-                                            </label>
-                                            <p className="pl-1">or drag and drop PDFs</p>
-                                        </div>
-                                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Multiple files • Max 10MB per file</p>
+                                        {isDragActive ? (
+                                            <p className="text-sm font-semibold text-primary">Drop files here</p>
+                                        ) : (
+                                            <div className="flex flex-wrap justify-center sm:justify-start text-xs sm:text-sm leading-6 text-muted-foreground">
+                                                <label
+                                                    htmlFor={`file-upload-${selectedUseCase}`}
+                                                    className="relative cursor-pointer font-semibold text-primary hover:underline hover:underline-offset-4"
+                                                >
+                                                    <span>Click to upload</span>
+                                                    <input
+                                                        id={`file-upload-${selectedUseCase}`}
+                                                        name={`file-upload-${selectedUseCase}`}
+                                                        type="file"
+                                                        className="sr-only"
+                                                        accept=".pdf,application/pdf"
+                                                        multiple
+                                                        onChange={handleFileChange}
+                                                        ref={fileInputRef}
+                                                    />
+                                                </label>
+                                                <p className="pl-1">or drag and drop PDFs</p>
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Max 12 MB per file • 4 PDFs total per account</p>
                                     </div>
                                 </div>
 
                                 {uploadState.uploading && (
-                                    <div className="w-full mt-4 max-w-md">
-                                        <div className="flex items-center justify-between text-xs mb-1">
-                                            <span className="truncate">{uploadState.file?.name}</span>
-                                            <span>{uploadState.progress}%</span>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="w-full mt-4 max-w-md"
+                                    >
+                                        <div className="flex items-center gap-2 text-xs mb-1.5">
+                                            <File className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                                            <span className="truncate flex-1">
+                                                {uploadState.status || uploadState.file?.name}
+                                            </span>
+                                            <span className={cn(
+                                                "font-medium shrink-0",
+                                                uploadState.progress === 100 ? "text-emerald-500" : "text-primary"
+                                            )}>
+                                                {uploadState.progress}%
+                                            </span>
                                         </div>
                                         <Progress value={uploadState.progress} className="h-2" />
-                                    </div>
+                                    </motion.div>
                                 )}
                             </div>
                         </div>
@@ -1352,17 +2014,32 @@ export default function KnowledgeBaseVisualization() {
                                 useCaseId={selectedUseCase}
                                 onFileSelect={openPdfViewer}
                                 onRefresh={fetchUseCases}
+                                onBulkDownload={handleBulkDownload}
+                                onBiometricAuth={biometricAuth}
+                                isDownloading={isDownloading}
+                                isBioAuthenticating={isBioAuthenticating}
                             />
                         </div>
                     </>
                 ) : (
-                    <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center p-4 sm:p-8">
-                        <div className="h-12 w-12 sm:h-16 sm:w-16 bg-muted rounded-full flex items-center justify-center mb-3 sm:mb-4">
-                            <Search className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex h-full min-h-[200px] flex-col items-center justify-center text-center p-4 sm:p-8"
+                    >
+                        <div className="h-14 w-14 sm:h-16 sm:w-16 bg-muted rounded-full flex items-center justify-center mb-3 sm:mb-4 ring-4 ring-muted/50">
+                            <FolderOpen className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground" />
                         </div>
-                        <h3 className="text-base sm:text-lg font-medium">No category selected</h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2 max-w-sm">Select a category from above to view documents and upload new files.</p>
-                    </div>
+                        <h3 className="text-base sm:text-lg font-semibold">No category selected</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 max-w-sm">
+                            Select a category from the list to view its documents, upload files, and manage your knowledge base.
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground/70">
+                            <div className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+                            <span>Click a category card to get started</span>
+                            <div className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+                        </div>
+                    </motion.div>
                 )}
             </div>
 
@@ -1613,6 +2290,13 @@ export default function KnowledgeBaseVisualization() {
 
                             setDeleteUseCaseDialogOpen(false);
                             setUseCaseToDelete(null);
+
+                            // Require biometric authentication
+                            try {
+                                await biometricAuth();
+                            } catch {
+                                return;
+                            }
 
                             try {
                                 const response = await fetch(`/api/use-cases/${id}`, {

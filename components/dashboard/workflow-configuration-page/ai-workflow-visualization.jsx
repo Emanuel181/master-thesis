@@ -6,6 +6,8 @@ import {
     useNodesState,
     useEdgesState,
     MarkerType,
+    MiniMap,
+    Background,
 } from "reactflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,13 +52,12 @@ export function AIWorkflowVisualization({
     onKnowledgeBaseChange,
     codeType,
     onCodeTypeChange,
-    useCases = [],
     prompts = {},
     selectedPrompts = {},
+    selectedSystemPrompts = {},
     onPromptChange,
     onSave,
     onCancel,
-    isCodeLocked = false,
     isRefreshingAll = false,
 }) {
     const [isDarkMode, setIsDarkMode] = React.useState(false);
@@ -157,14 +158,12 @@ export function AIWorkflowVisualization({
                 data: {
                     label: "Knowledge base",
                     description: "RAG context source",
-                    iconBg: "bg-cyan-500",
+                    iconBg: "bg-primary",
                     knowledgeBases,
                     selectedKnowledgeBases,
                     onKnowledgeBaseChange,
                     codeType,
                     onCodeTypeChange,
-                    useCases,
-                    isCodeLocked,
                     isRefreshingAll,
                 },
             },
@@ -203,7 +202,7 @@ export function AIWorkflowVisualization({
                     label: "Reviewer agent",
                     description: "Analyzes code quality",
                     icon: ScanSearch,
-                    iconBg: "bg-blue-500",
+                    iconBg: "bg-agent-reviewer",
                     model: agentModels.reviewer,
                     models,
                     onModelChange,
@@ -236,7 +235,7 @@ export function AIWorkflowVisualization({
                     label: "Implementation agent",
                     description: "Implements code changes",
                     icon: Wrench,
-                    iconBg: "bg-green-500",
+                    iconBg: "bg-agent-implementation",
                     model: agentModels.implementation,
                     models,
                     onModelChange,
@@ -269,7 +268,7 @@ export function AIWorkflowVisualization({
                     label: "Tester agent",
                     description: "Tests code functionality",
                     icon: BugPlay,
-                    iconBg: "bg-orange-500",
+                    iconBg: "bg-agent-tester",
                     model: agentModels.tester,
                     models,
                     onModelChange,
@@ -302,7 +301,7 @@ export function AIWorkflowVisualization({
                     label: "Report agent",
                     description: "Generates final report",
                     icon: FileText,
-                    iconBg: "bg-purple-500",
+                    iconBg: "bg-agent-report",
                     model: agentModels.report,
                     models,
                     onModelChange,
@@ -310,7 +309,7 @@ export function AIWorkflowVisualization({
                 },
             },
         ],
-        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, useCases, prompts, selectedPrompts, onPromptChange, isCodeLocked, isRefreshingAll, getNodePosition]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, prompts, selectedPrompts, onPromptChange, isRefreshingAll, getNodePosition]
     );
 
     const initialEdges = React.useMemo(
@@ -457,6 +456,28 @@ export function AIWorkflowVisualization({
         );
     }, [agentModels, setNodes]);
 
+    // Update promptNode data when selectedPrompts changes (for cross-tab synchronization)
+    React.useEffect(() => {
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (node.type === "promptNode" && node.data && node.data.agent) {
+                    const agent = node.data.agent;
+                    const agentPrompts = prompts[agent] || [];
+                    const agentSelectedPrompts = selectedPrompts[agent] || [];
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            prompts: agentPrompts,
+                            selectedPrompts: agentSelectedPrompts
+                        }
+                    };
+                }
+                return node;
+            })
+        );
+    }, [selectedPrompts, prompts, setNodes]);
+
     React.useEffect(() => {
         setNodes(initialNodes);
     }, [initialNodes, setNodes]);
@@ -526,7 +547,62 @@ export function AIWorkflowVisualization({
                             <Button type="button" onClick={onCancel} variant="ghost" size="sm" className="text-xs h-7 sm:h-8 px-2 sm:px-3 text-muted-foreground">
                                 Cancel
                             </Button>
-                            <Button type="button" onClick={onSave} size="sm" className="text-xs h-7 sm:h-8 px-3 sm:px-4">
+                            <Button type="button" onClick={() => {
+                                // Helper to resolve prompt text
+                                const getPromptText = (agentId, promptId) => {
+                                    if (!promptId) return '';
+                                    const agentPrompts = prompts[agentId] || [];
+                                    const prompt = agentPrompts.find(p => p.id === promptId);
+                                    return prompt?.text || '';
+                                };
+                                // Save all configurations before closing
+                                try {
+                                    // Save agent configurations (include prompt info)
+                                    const agentConfigurations = {
+                                        reviewer: {
+                                            enabled: true,
+                                            modelId: agentModels['reviewer'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                                            customPrompt: getPromptText('reviewer', selectedSystemPrompts?.['reviewer']),
+                                            promptId: selectedSystemPrompts?.['reviewer'] || '',
+                                        },
+                                        implementer: {
+                                            enabled: !!agentModels['implementation'],
+                                            modelId: agentModels['implementation'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                                            customPrompt: getPromptText('implementation', selectedSystemPrompts?.['implementation']),
+                                            promptId: selectedSystemPrompts?.['implementation'] || '',
+                                        },
+                                        tester: {
+                                            enabled: !!agentModels['tester'],
+                                            modelId: agentModels['tester'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                                            customPrompt: getPromptText('tester', selectedSystemPrompts?.['tester']),
+                                            promptId: selectedSystemPrompts?.['tester'] || '',
+                                        },
+                                        reporter: {
+                                            enabled: true,
+                                            modelId: agentModels['report'] || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                                            customPrompt: getPromptText('report', selectedSystemPrompts?.['report']),
+                                            promptId: selectedSystemPrompts?.['report'] || '',
+                                        },
+                                    };
+                                    localStorage.setItem('vulniq_agent_configurations', JSON.stringify(agentConfigurations));
+
+                                    // Save selected prompts
+                                    if (selectedPrompts) {
+                                        localStorage.setItem('vulniq_selected_prompts', JSON.stringify(selectedPrompts));
+                                    }
+
+                                    // Save selected knowledge bases
+                                    if (selectedKnowledgeBases && selectedKnowledgeBases.length > 0) {
+                                        localStorage.setItem('vulniq_selected_groups', JSON.stringify(selectedKnowledgeBases));
+                                    }
+
+                                    toast.success('Workflow configuration saved!');
+                                } catch (err) {
+                                    console.error('Error saving configuration:', err);
+                                    toast.error('Failed to save some configurations');
+                                }
+                                onSave();
+                            }} size="sm" className="text-xs h-7 sm:h-8 px-3 sm:px-4">
                                 Save
                             </Button>
                         </div>
@@ -540,14 +616,30 @@ export function AIWorkflowVisualization({
                     </p>
                 </div>
 
+                {/* Edge legend */}
+                <div className="hidden sm:flex items-center gap-4 px-4 py-1.5 border-b bg-muted/20 text-[10px] text-muted-foreground">
+                    <span className="font-medium text-foreground/70">Legend:</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.amber }} />
+                        <span>Code flow</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.cyan }} />
+                        <span>Knowledge base</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.indigo }} />
+                        <span>Prompt input</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.blue }} />
+                        <span>Agent pipeline</span>
+                    </div>
+                </div>
+
                 {/* ReactFlow container - responsive height */}
                 <div
-                    className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px]"
-                    style={{
-                        backgroundColor: isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)',
-                        backgroundImage: `radial-gradient(circle, ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'} 1px, transparent 1px)`,
-                        backgroundSize: '20px 20px',
-                    }}
+                    className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] relative"
                 >
                     <ReactFlow
                         nodes={nodes}
@@ -570,8 +662,22 @@ export function AIWorkflowVisualization({
                         panOnScroll
                         panOnDrag
                         zoomOnPinch
-                        style={{ background: 'transparent' }}
-                    />
+                        proOptions={{ hideAttribution: true }}
+                    >
+                        <Background
+                            color={isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}
+                            gap={20}
+                            size={1}
+                        />
+                        <MiniMap
+                            nodeStrokeWidth={3}
+                            zoomable
+                            pannable
+                            className="!bg-background/80 !border !border-border !rounded-lg !shadow-lg"
+                            maskColor={isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)'}
+                            style={{ width: 150, height: 100 }}
+                        />
+                    </ReactFlow>
                 </div>
             </div>
         </div>

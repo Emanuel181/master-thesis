@@ -24,6 +24,7 @@ import {
   PanelLeft,
   Save,
   Filter,
+  Check,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -108,12 +109,12 @@ const TABS = [
 // Status configuration
 const STATUS_CONFIG = {
   DRAFT: { label: "Draft", icon: FileText, color: "bg-secondary text-secondary-foreground" },
-  PENDING_REVIEW: { label: "Pending", icon: Clock, color: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400" },
-  IN_REVIEW: { label: "In review", icon: Eye, color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  PUBLISHED: { label: "Published", icon: CheckCircle, color: "bg-green-500/15 text-green-600 dark:text-green-400" },
-  APPROVED: { label: "Published", icon: CheckCircle, color: "bg-green-500/15 text-green-600 dark:text-green-400" },
-  REJECTED: { label: "Rejected", icon: XCircle, color: "bg-red-500/15 text-red-600 dark:text-red-400" },
-  SCHEDULED_FOR_DELETION: { label: "Pending deletion", icon: Trash2, color: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
+  PENDING_REVIEW: { label: "Pending", icon: Clock, color: "bg-severity-medium/15 text-severity-medium" },
+  IN_REVIEW: { label: "In review", icon: Eye, color: "bg-primary/15 text-primary" },
+  PUBLISHED: { label: "Published", icon: CheckCircle, color: "bg-success/15 text-success" },
+  APPROVED: { label: "Published", icon: CheckCircle, color: "bg-success/15 text-success" },
+  REJECTED: { label: "Rejected", icon: XCircle, color: "bg-destructive/15 text-destructive" },
+  SCHEDULED_FOR_DELETION: { label: "Pending deletion", icon: Trash2, color: "bg-severity-high/15 text-severity-high" },
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -736,14 +737,6 @@ export function DemoArticleEditor() {
                   </>
                 );
               })()}
-
-              {/* New article button at bottom of content */}
-              <div className="p-3 border-t mt-auto">
-                <Button onClick={handleCreateArticle} disabled={isCreating} className="w-full">
-                  {isCreating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                  New article
-                </Button>
-              </div>
             </CardContent>
           </>
         )}
@@ -851,23 +844,28 @@ export function DemoArticleEditor() {
                             <ImageIcon className="h-10 w-10 text-muted-foreground" />
                           </div>
                         )}
-                        {editFormState.iconName && (
+                        {editFormState.iconName && (() => {
+                          const presetColor = ICON_COLORS.find(c => c.id === editFormState.iconColor)
+                          const resolvedBg = presetColor?.bg || "bg-black/40"
+                          const resolvedValue = presetColor?.value || (editFormState.iconColor?.startsWith("custom-") ? editFormState.iconColor.replace("custom-", "") : "#ffffff")
+                          return (
                           <div className={cn(
                             "absolute inset-0 flex p-4",
                             ICON_POSITIONS.find(p => p.id === editFormState.iconPosition)?.class || "items-center justify-center"
                           )}>
                             <div className={cn(
                               "backdrop-blur-sm rounded-full p-4 shadow-lg",
-                              ICON_COLORS.find(c => c.id === editFormState.iconColor)?.bg || "bg-black/40"
+                              resolvedBg
                             )}>
                               <IconDisplay
                                 name={editFormState.iconName}
                                 className="h-10 w-10"
-                                style={{ color: ICON_COLORS.find(c => c.id === editFormState.iconColor)?.value || "#ffffff" }}
+                                style={{ color: resolvedValue }}
                               />
                             </div>
                           </div>
-                        )}
+                          )
+                        })()}
                       </div>
 
                       <Tabs value={editFormState.coverType} onValueChange={(v) => setEditFormState((s) => ({ ...s, coverType: v }))}>
@@ -881,27 +879,36 @@ export function DemoArticleEditor() {
                         </TabsList>
 
                         <TabsContent value="gradient" className="space-y-4 mt-4">
-                          <div className="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-1.5 sm:gap-2">
-                            {PRESET_GRADIENTS.map((g) => (
-                              <TooltipProvider key={g.name}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      className={cn(
-                                        "h-10 rounded-md transition-all",
-                                        editFormState.gradient === g.value
-                                          ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                          : "ring-1 ring-border/50 hover:ring-2 hover:ring-muted-foreground/50"
-                                      )}
-                                      style={{ background: g.value }}
-                                      onClick={() => setEditFormState((s) => ({ ...s, gradient: g.value }))}
-                                      disabled={!canEdit}
-                                    />
-                                  </TooltipTrigger>
-                                  <TooltipContent>{g.name}</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ))}
+                          <div className="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-2.5 sm:gap-3 p-1">
+                            {PRESET_GRADIENTS.map((g) => {
+                              const isSelected = editFormState.gradient === g.value
+                              return (
+                                <TooltipProvider key={g.name}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        className={cn(
+                                          "relative h-12 rounded-lg transition-all overflow-hidden",
+                                          isSelected
+                                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                            : "ring-1 ring-border/50 hover:ring-2 hover:ring-muted-foreground/50"
+                                        )}
+                                        style={{ background: g.value }}
+                                        onClick={() => setEditFormState((s) => ({ ...s, gradient: g.value }))}
+                                        disabled={!canEdit}
+                                      >
+                                        {isSelected && (
+                                          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                                            <Check className="h-4 w-4 text-white drop-shadow-md" />
+                                          </div>
+                                        )}
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{g.name}</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )
+                            })}
                           </div>
                         </TabsContent>
 
@@ -1049,49 +1056,67 @@ export function DemoArticleEditor() {
                             {/* Icon Color */}
                             <div className="space-y-3">
                               <Label className="text-xs text-muted-foreground">Color</Label>
-                              <div className="grid grid-cols-6 gap-1.5">
-                                {ICON_COLORS.slice(0, 12).map((color) => (
-                                  <TooltipProvider key={color.id}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <button
-                                          className={cn(
-                                            "h-7 w-full rounded-md transition-all border-2",
-                                            editFormState.iconColor === color.id
-                                              ? "border-primary ring-2 ring-primary/20 scale-110"
-                                              : "border-transparent hover:scale-105"
-                                          )}
-                                          style={{ backgroundColor: color.value }}
-                                          onClick={() => setEditFormState((s) => ({ ...s, iconColor: color.id }))}
-                                          disabled={!canEdit}
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top">{color.label}</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ))}
+                              <div className="grid grid-cols-6 gap-2 p-0.5">
+                                {ICON_COLORS.slice(0, 12).map((color) => {
+                                  const isSelected = editFormState.iconColor === color.id
+                                  return (
+                                    <TooltipProvider key={color.id}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            className={cn(
+                                              "relative h-7 w-full rounded-md transition-all",
+                                              isSelected
+                                                ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                                : "ring-1 ring-border/30 hover:ring-2 hover:ring-border"
+                                            )}
+                                            style={{ backgroundColor: color.value }}
+                                            onClick={() => setEditFormState((s) => ({ ...s, iconColor: color.id }))}
+                                            disabled={!canEdit}
+                                          >
+                                            {isSelected && (
+                                              <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/20">
+                                                <Check className="h-3 w-3 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+                                              </div>
+                                            )}
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">{color.label}</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )
+                                })}
                               </div>
-                              <div className="grid grid-cols-6 gap-1.5">
-                                {ICON_COLORS.slice(12).map((color) => (
-                                  <TooltipProvider key={color.id}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <button
-                                          className={cn(
-                                            "h-7 w-full rounded-md transition-all border-2",
-                                            editFormState.iconColor === color.id
-                                              ? "border-primary ring-2 ring-primary/20 scale-110"
-                                              : "border-transparent hover:scale-105"
-                                          )}
-                                          style={{ backgroundColor: color.value }}
-                                          onClick={() => setEditFormState((s) => ({ ...s, iconColor: color.id }))}
-                                          disabled={!canEdit}
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top">{color.label}</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ))}
+                              <div className="grid grid-cols-6 gap-2 p-0.5">
+                                {ICON_COLORS.slice(12).map((color) => {
+                                  const isSelected = editFormState.iconColor === color.id
+                                  return (
+                                    <TooltipProvider key={color.id}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            className={cn(
+                                              "relative h-7 w-full rounded-md transition-all",
+                                              isSelected
+                                                ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                                : "ring-1 ring-border/30 hover:ring-2 hover:ring-border"
+                                            )}
+                                            style={{ backgroundColor: color.value }}
+                                            onClick={() => setEditFormState((s) => ({ ...s, iconColor: color.id }))}
+                                            disabled={!canEdit}
+                                          >
+                                            {isSelected && (
+                                              <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/20">
+                                                <Check className="h-3 w-3 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+                                              </div>
+                                            )}
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">{color.label}</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )
+                                })}
                               </div>
                             </div>
                           </div>

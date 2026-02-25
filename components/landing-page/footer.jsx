@@ -359,6 +359,10 @@ export function Footer({ onScrollToTop }) {
                         <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
                             © 2026 VulnIQ. All rights reserved.
                         </p>
+                        <span className="hidden sm:inline text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30 text-xs">•</span>
+                        <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
+                            🇷🇴 Made in RO, Timișoara
+                        </p>
                         <div className="flex items-center justify-center sm:justify-start gap-2">
                             <Link
                                 href="/privacy"

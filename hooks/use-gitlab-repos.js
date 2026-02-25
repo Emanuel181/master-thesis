@@ -82,17 +82,27 @@ export function useGitLabRepos() {
         
         try {
             const response = await fetch('/api/gitlab/repos')
-            const data = await response.json()
+            const jsonResponse = await response.json()
 
             if (response.ok) {
-                const dataWithProvider = data.map(r => ({ ...r, provider: 'gitlab' }))
+                // Handle wrapped response from createApiHandler
+                const reposData = jsonResponse.data || jsonResponse
+
+                if (!Array.isArray(reposData)) {
+                    console.error('[useGitLabRepos] Repos data is not an array:', reposData)
+                    toast.error('Invalid response format from GitLab API')
+                    fetchOnceRef.current = false
+                    return
+                }
+
+                const dataWithProvider = reposData.map(r => ({ ...r, provider: 'gitlab' }))
                 setRepos(dataWithProvider)
             } else {
-                console.warn('[useGitLabRepos] fetch failed', data)
-                if (data?.debug?.message) {
-                    console.log(`gitlab debug: ${data.debug.message}`)
-                } else if (data?.error) {
-                    console.log(`gitlab error: ${data.error}`)
+                console.warn('[useGitLabRepos] fetch failed', jsonResponse)
+                if (jsonResponse?.debug?.message) {
+                    console.log(`gitlab debug: ${jsonResponse.debug.message}`)
+                } else if (jsonResponse?.error) {
+                    console.log(`gitlab error: ${jsonResponse.error}`)
                 }
                 fetchOnceRef.current = false
             }
@@ -112,11 +122,33 @@ export function useGitLabRepos() {
             return { gitlabLinked: true }
         }
         try {
-            const res = await fetch('/api/providers/linked', { cache: 'no-store' })
-            const data = await res.json()
+            const res = await fetch('/api/providers/linked', {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                }
+            })
             if (!res.ok) return null
 
-            const linked = new Set(data.providers || [])
+            const response = await res.json()
+
+            // Handle wrapped response from createApiHandler
+            // The response could be: { success: true, data: { providers: [...] } }
+            // Or just: { providers: [...] }
+            let providers = []
+
+            if (response.success && response.data && Array.isArray(response.data.providers)) {
+                providers = response.data.providers
+            } else if (Array.isArray(response.providers)) {
+                providers = response.providers
+            } else if (response.data && Array.isArray(response.data)) {
+                providers = response.data
+            } else {
+                console.error('[useGitLabRepos] Could not find providers array in response:', response)
+            }
+
+            const linked = new Set(providers)
             const gitlabLinked = linked.has('gitlab')
 
             setIsConnected(gitlabLinked)
@@ -135,12 +167,12 @@ export function useGitLabRepos() {
         if (status === "authenticated" && session) {
             ;(async () => {
                 const linked = await refreshLinkedProviders()
-                if (linked?.gitlabLinked && repos.length === 0) {
+                if (linked?.gitlabLinked) {
                     fetchRepos()
                 }
             })()
         }
-    }, [isDemoMode, status, session, repos.length, refreshLinkedProviders, fetchRepos])
+    }, [isDemoMode, status, session, refreshLinkedProviders, fetchRepos])
 
     // Periodic refresh of linked providers
     useEffect(() => {

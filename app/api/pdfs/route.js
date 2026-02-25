@@ -12,10 +12,11 @@ import { createApiHandler, ApiErrors, errorResponse } from '@/lib/api-handler';
 import { isDemoRequest } from '@/lib/demo-mode';
 
 // Security constants
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
+const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12MB max
 const ALLOWED_EXTENSIONS = ['.pdf'];
 const ALLOWED_MIME_TYPE = 'application/pdf';
 const MAX_FILENAME_LENGTH = 255;
+const MAX_PDFS_PER_USER = 4;
 
 /**
  * Upload schema for generating presigned URL
@@ -39,6 +40,17 @@ export const POST = createApiHandler(
 
         if (!user) {
             return ApiErrors.notFound('User', requestId);
+        }
+
+        // Enforce per-user PDF limit
+        const currentPdfCount = await prisma.pdf.count({
+            where: { useCase: { userId: user.id } },
+        });
+        if (currentPdfCount >= MAX_PDFS_PER_USER) {
+            return errorResponse(
+                `You have reached the maximum of ${MAX_PDFS_PER_USER} PDFs. Please delete an existing PDF before uploading a new one.`,
+                { status: 403, code: 'PDF_LIMIT_EXCEEDED', requestId }
+            );
         }
 
         const { fileName, fileSize, useCaseId } = body;

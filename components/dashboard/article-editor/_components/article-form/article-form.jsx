@@ -1,12 +1,13 @@
 "use client"
 
-import React from "react"
-import { PenLine, FileText, PanelLeft, Loader2, Send, Save } from "lucide-react"
+import React, { useMemo } from "react"
+import { PenLine, FileText, PanelLeft, Loader2, Send, Save, Maximize2, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 import { CoverSection } from "./cover-section"
@@ -48,6 +49,18 @@ export function ArticleForm({
     onCoverImageUpload,
 }) {
     const currentStatusConfig = statusConfig[selectedArticle?.status] || statusConfig.DRAFT
+
+    // Compute article completeness for progress hints
+    const completeness = useMemo(() => {
+        if (!selectedArticle) return { steps: [], count: 0, total: 4 }
+        const steps = [
+            { label: "Title", done: !!formState.title?.trim() },
+            { label: "Excerpt", done: !!formState.excerpt?.trim() },
+            { label: "Cover", done: !!(formState.gradient || formState.coverImage) },
+            { label: "Content", done: !!(selectedArticle.content || selectedArticle.contentMarkdown) },
+        ]
+        return { steps, count: steps.filter(s => s.done).length, total: steps.length }
+    }, [selectedArticle, formState.title, formState.excerpt, formState.gradient, formState.coverImage])
 
     return (
         <Card className="flex-1 flex flex-col min-h-0 min-w-0">
@@ -175,6 +188,38 @@ export function ArticleForm({
                         </div>
                     )}
                 </div>
+                {/* Progress hints */}
+                {selectedArticle && (
+                    <div className="flex items-center gap-2 pt-2 mt-1 border-t border-border/40">
+                        <TooltipProvider delayDuration={200}>
+                            <div className="flex items-center gap-1">
+                                {completeness.steps.map((step) => (
+                                    <Tooltip key={step.label}>
+                                        <TooltipTrigger asChild>
+                                            <div className={cn(
+                                                "h-1.5 w-6 rounded-full transition-colors",
+                                                step.done ? "bg-emerald-500" : "bg-muted"
+                                            )} />
+                                        </TooltipTrigger>
+                                        <TooltipContent className="text-xs">
+                                            {step.label}: {step.done ? "✓" : "Missing"}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                ))}
+                            </div>
+                        </TooltipProvider>
+                        <span className={cn(
+                            "text-[10px] font-medium",
+                            completeness.count === completeness.total
+                                ? "text-emerald-500"
+                                : "text-muted-foreground"
+                        )}>
+                            {completeness.count === completeness.total
+                                ? "Ready to publish"
+                                : `${completeness.count}/${completeness.total} complete`}
+                        </span>
+                    </div>
+                )}
             </CardHeader>
 
             {selectedArticle ? (
@@ -224,22 +269,39 @@ export function ArticleForm({
                 </CardContent>
             ) : (
                 <CardContent className="flex-1 flex flex-col items-center justify-center text-center">
-                    <div className="rounded-full bg-muted p-6 mb-4">
-                        <FileText className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1">No article selected</h3>
-                    <p className="text-sm text-muted-foreground mb-6 max-w-[300px]">
-                        Select an article from the sidebar to edit, or create a new one to get
-                        started.
-                    </p>
-                    <div className="flex items-center gap-3">
-                        {!sidebarOpen && (
-                            <Button variant="outline" onClick={() => setSidebarOpen(true)}>
-                                <PanelLeft className="h-4 w-4 mr-2" />
-                                Open Sidebar
-                            </Button>
-                        )}
-                    </div>
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center"
+                    >
+                        <div className="relative mb-6">
+                            <div className="rounded-full bg-gradient-to-br from-primary/20 to-primary/5 p-8 ring-4 ring-primary/10">
+                                <PenLine className="h-12 w-12 text-primary" />
+                            </div>
+                            <motion.div
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                                className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary/30"
+                            />
+                            <motion.div
+                                animate={{ y: [0, 3, 0] }}
+                                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut", delay: 0.5 }}
+                                className="absolute -bottom-1 -left-2 h-3 w-3 rounded-full bg-primary/20"
+                            />
+                        </div>
+                        <h3 className="font-semibold text-lg mb-1">Ready to write?</h3>
+                        <p className="text-sm text-muted-foreground mb-6 max-w-[300px]">
+                            Select an article from the sidebar to start editing, or create a new one to share your ideas.
+                        </p>
+                        <div className="flex items-center gap-3">
+                            {!sidebarOpen && (
+                                <Button variant="outline" onClick={() => setSidebarOpen(true)}>
+                                    <PanelLeft className="h-4 w-4 mr-2" />
+                                    Open Sidebar
+                                </Button>
+                            )}
+                        </div>
+                    </motion.div>
                 </CardContent>
             )}
         </Card>

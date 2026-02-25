@@ -20,10 +20,10 @@ const Toaster = ({
       theme={theme}
       className="toaster group"
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
+        success: <CircleCheckIcon className="size-4 text-green-500 animate-in zoom-in-75 duration-200" />,
+        info: <InfoIcon className="size-4 text-blue-500" />,
+        warning: <TriangleAlertIcon className="size-4 text-yellow-500" />,
+        error: <OctagonXIcon className="size-4 text-red-500 animate-in shake duration-300" />,
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       style={

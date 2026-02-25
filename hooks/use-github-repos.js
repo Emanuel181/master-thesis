@@ -102,9 +102,6 @@ export function useGitHubRepos() {
                 const dataWithProvider = reposData.map(r => ({ ...r, provider: 'github' }))
                 setRepos(dataWithProvider)
                 console.log('[GitHub Home] Loaded', dataWithProvider.length, 'repositories')
-                if (allowRefresh) {
-                    toast.success(`Loaded ${dataWithProvider.length} repositories`)
-                }
             } else {
                 console.error('[GitHub Home] fetch failed', jsonResponse)
                 const errorMsg = jsonResponse?.error || jsonResponse?.debug?.message || 'Failed to load repositories'

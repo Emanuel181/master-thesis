@@ -66,7 +66,7 @@ export function ImportDialog({
         if (isDemoMode && onConnectGitHub) {
             onConnectGitHub();
         } else {
-            signIn('github');
+            signIn('github', { callbackUrl: '/dashboard' });
         }
     };
 
@@ -74,7 +74,7 @@ export function ImportDialog({
         if (isDemoMode && onConnectGitlab) {
             onConnectGitlab();
         } else {
-            signIn('gitlab');
+            signIn('gitlab', { callbackUrl: '/dashboard' });
         }
     };
 

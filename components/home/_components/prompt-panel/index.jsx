@@ -7,5 +7,6 @@ export {
     AddPromptDialog, 
     ViewPromptDialog, 
     EditPromptDialog, 
-    DeleteConfirmDialog 
+    DeleteConfirmDialog,
+    ResetConfirmDialog,
 } from "./prompt-dialogs"

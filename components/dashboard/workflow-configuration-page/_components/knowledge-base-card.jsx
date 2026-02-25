@@ -38,10 +38,10 @@ export function KnowledgeBaseCard({
 
     return (
         <Card
-            className={`transition-all duration-200 ${
+            className={`transition-all duration-200 card-hover-lift ${
                 isSelected
-                    ? 'border-cyan-500 dark:border-cyan-400 border-2 bg-cyan-50 dark:bg-cyan-950/30'
-                    : 'hover:border-cyan-300 dark:hover:border-cyan-600'
+                    ? 'border-primary border-2 bg-primary/5'
+                    : 'hover:border-primary/40'
             }`}
         >
             <CardContent className="p-4 sm:p-5">
@@ -51,13 +51,13 @@ export function KnowledgeBaseCard({
                 >
                     <div className={`p-2 sm:p-3 rounded-lg shrink-0 ${
                         isSelected
-                            ? 'bg-cyan-500 dark:bg-cyan-500'
-                            : 'bg-cyan-100 dark:bg-cyan-900/50'
+                            ? 'bg-primary'
+                            : 'bg-primary/10'
                     }`}>
                         <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${
                             isSelected
-                                ? 'text-white'
-                                : 'text-cyan-600 dark:text-cyan-400'
+                                ? 'text-primary-foreground'
+                                : 'text-primary'
                         }`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -108,7 +108,7 @@ export function KnowledgeBaseCard({
                             {/* Root documents */}
                             {rootDocs.map(doc => (
                                 <div key={doc.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
-                                    <File className="h-4 w-4 text-red-500 shrink-0" />
+                                    <File className="h-4 w-4 text-destructive shrink-0" />
                                     <span className="truncate flex-1">{doc.name}</span>
                                     <span className="text-xs text-muted-foreground shrink-0">{doc.size}</span>
                                 </div>
@@ -118,14 +118,14 @@ export function KnowledgeBaseCard({
                             {Object.entries(folders).map(([folderName, folderDocs]) => (
                                 <div key={folderName} className="space-y-1">
                                     <div className="flex items-center gap-2 text-sm font-medium py-1 px-2">
-                                        <Folder className="h-4 w-4 text-yellow-500 shrink-0" />
+                                        <Folder className="h-4 w-4 text-severity-medium shrink-0" />
                                         <span>{folderName}</span>
                                         <span className="text-xs text-muted-foreground">({folderDocs.length})</span>
                                     </div>
                                     <div className="ml-6 space-y-1">
                                         {folderDocs.map(doc => (
                                             <div key={doc.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-muted/50">
-                                                <File className="h-4 w-4 text-red-500 shrink-0" />
+                                                <File className="h-4 w-4 text-destructive shrink-0" />
                                                 <span className="truncate flex-1">{doc.name}</span>
                                                 <span className="text-xs text-muted-foreground shrink-0">{doc.size}</span>
                                             </div>
