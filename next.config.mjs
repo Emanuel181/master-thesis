@@ -1,11 +1,23 @@
 /** @type {import('next').NextConfig} */
 
 // ── Shared security headers ────────────────────────────────────────
-const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' blob: data: https:; font-src 'self' data: https://website-widgets.pages.dev; connect-src 'self' https:; worker-src 'self' blob:; frame-src 'self' blob: https://challenges.cloudflare.com https://*.s3.amazonaws.com https://*.amazonaws.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none';";
-
 // SECURITY NOTE: CSP includes 'unsafe-eval' which is required for Monaco Editor
 // (syntax highlighting, tokenization). No eval() or new Function() in our code.
 // See: https://github.com/microsoft/monaco-editor/issues/2949
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com",
+  "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+  "img-src 'self' blob: data: https:",
+  "font-src 'self' data: https://website-widgets.pages.dev",
+  "connect-src 'self' https:",
+  "worker-src 'self' blob:",
+  "frame-src 'self' blob: https://challenges.cloudflare.com https://*.s3.amazonaws.com",
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join("; ") + ";";
 
 const baseSecurityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
@@ -158,26 +170,35 @@ const nextConfig = {
       {
         source: '/_next/static/:path*',
         headers: [
+          ...baseSecurityHeaders,
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ]
       },
       {
         source: '/static/:path*',
         headers: [
+          ...baseSecurityHeaders,
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ]
       },
       {
         source: '/:path*.{jpg,jpeg,png,gif,ico,svg,webp}',
         headers: [
+          ...baseSecurityHeaders,
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ]
       },
       {
         source: '/:path*.{woff,woff2,ttf,otf,eot}',
         headers: [
+          ...baseSecurityHeaders,
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ]
+      },
+      // Catch-all: ensure every response gets security headers
+      {
+        source: '/:path*',
+        headers: baseSecurityHeaders,
       }
     ]
   }
