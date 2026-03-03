@@ -4,6 +4,12 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { GraduationCap, Rocket, BookOpen, Building2, Users } from "lucide-react";
 
+// Check if device is mobile
+const isTouchDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
+
 const defaultTitleClass = "text-sm sm:text-base md:text-lg font-semibold mb-0.5 sm:mb-1 text-foreground transition-opacity duration-300";
 const defaultDescriptionClass = "text-xs sm:text-sm font-medium text-muted-foreground max-w-[350px] leading-[140%] transition-opacity duration-300";
 
@@ -138,10 +144,22 @@ const VisualCard = ({ visual, isActive }) => {
 
 export function UseCasesScrollReveal({ className }) {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef(null);
 
+  // Check for mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(isTouchDevice() || window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isMobile) return;
 
     const viewportHeight = window.innerHeight;
     const sectionRect = containerRef.current.getBoundingClientRect();
@@ -167,10 +185,12 @@ export function UseCasesScrollReveal({ className }) {
   }, []);
 
   useEffect(() => {
+    if (isMobile) return; // Skip scroll listener on mobile
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+  }, [handleScroll, isMobile]);
 
   const totalItems = useCasesData.length;
   const thresholdStep = 1 / totalItems;

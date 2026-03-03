@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     Database,
@@ -16,7 +16,26 @@ import {
     XCircle,
 } from "lucide-react";
 
+// Check if device is mobile
+const isTouchDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
+
 export function FeaturesGrid() {
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Check for mobile on mount and resize
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(isTouchDevice() || window.innerWidth < 768);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     return (
         <ul className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 md:grid-cols-12 lg:gap-8 xl:grid-rows-2 w-full">
             {/* 1. GROUNDED SECURITY INTELLIGENCE (Top Left) */}
@@ -25,7 +44,8 @@ export function FeaturesGrid() {
                 icon={<Database className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 title="Grounded security intelligence"
                 description="Each agent retrieves guidance from your security knowledge bases and use-case playbooks (e.g., secure login), so fixes stay consistent with your ground truth."
-                header={<SkeletonKnowledgeRAG />}
+                header={<SkeletonKnowledgeRAG isMobile={isMobile} />}
+                isMobile={isMobile}
             />
 
             {/* 2. SECURE CODE INGESTION (Bottom Left) */}
@@ -34,7 +54,8 @@ export function FeaturesGrid() {
                 icon={<Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 title="Secure code ingestion"
                 description="Connect GitHub or GitLab and import repositories in minutes. VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting."
-                header={<SkeletonRepoImport />}
+                header={<SkeletonRepoImport isMobile={isMobile} />}
+                isMobile={isMobile}
             />
 
             {/* 3. MULTI-AGENT SECURITY WORKFLOW (Center Tall) */}
@@ -43,7 +64,8 @@ export function FeaturesGrid() {
                 icon={<Settings2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 title="Multi-agent security workflow"
                 description="A 4-agent pipeline: reviewer, implementer, tester, reporter. With per-agent specialized prompts and knowledge base for your stack and policies."
-                header={<SkeletonAgentPipeline />}
+                header={<SkeletonAgentPipeline isMobile={isMobile} />}
+                isMobile={isMobile}
             />
 
             {/* 4. AUTOMATED SECURITY VALIDATION (Top Right) */}
@@ -52,7 +74,8 @@ export function FeaturesGrid() {
                 icon={<ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 title="Automated security validation"
                 description="After remediation, the Tester agent validates fixes with targeted security checks, confirming vulnerabilities are resolved without breaking behavior."
-                header={<SkeletonSecurityTesting />}
+                header={<SkeletonSecurityTesting isMobile={isMobile} />}
+                isMobile={isMobile}
             />
 
             {/* 5. PROFESSIONAL SECURITY REPORTS (Bottom Right) */}
@@ -61,20 +84,21 @@ export function FeaturesGrid() {
                 icon={<FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 title="Professional security reports"
                 description="The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes. Ready for audits."
-                header={<SkeletonReportGeneration />}
+                header={<SkeletonReportGeneration isMobile={isMobile} />}
+                isMobile={isMobile}
             />
         </ul>
     );
 }
 
-const GridItem = ({ area, icon, title, description, header }) => {
+const GridItem = ({ area, icon, title, description, header, isMobile }) => {
     return (
         <motion.li
             className={`min-h-[200px] xs:min-h-[220px] sm:min-h-[240px] md:min-h-[280px] lg:min-h-[300px] list-none ${area}`}
-            initial={{ opacity: 0, transform: "translateY(24px)" }}
-            whileInView={{ opacity: 1, transform: "translateY(0px)" }}
+            initial={isMobile ? {} : { opacity: 0, transform: "translateY(24px)" }}
+            whileInView={isMobile ? {} : { opacity: 1, transform: "translateY(0px)" }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={isMobile ? {} : { duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             style={{ willChange: "transform, opacity" }}
         >
             <div className="relative h-full rounded-xl sm:rounded-2xl border border-[var(--brand-primary)]/30 dark:border-[var(--brand-accent)]/30 bg-[var(--card)] dark:bg-[var(--brand-primary)]/90 p-3 sm:p-4 md:p-5 lg:p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/60 hover:shadow-xl hover:shadow-[var(--brand-accent)]/15 group shadow-md flex flex-col">
@@ -116,7 +140,7 @@ const GridItem = ({ area, icon, title, description, header }) => {
  * 1) Knowledge RAG:
  * KB cards -> retrieval beam -> grounded output check
  */
-const SkeletonKnowledgeRAG = () => {
+const SkeletonKnowledgeRAG = ({ isMobile }) => {
     return (
         <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-[200px] sm:max-w-[240px] flex items-center justify-between gap-2 sm:gap-4">
@@ -126,8 +150,8 @@ const SkeletonKnowledgeRAG = () => {
                         <motion.div
                             key={label}
                             initial={{ opacity: 0.7, y: 0 }}
-                            animate={{ opacity: [0.65, 1, 0.65], y: [0, -1, 0] }}
-                            transition={{ duration: 2.4, delay: i * 0.2, repeat: Infinity, ease: "easeInOut" }}
+                            animate={isMobile ? {} : { opacity: [0.65, 1, 0.65], y: [0, -1, 0] }}
+                            transition={isMobile ? {} : { duration: 2.4, delay: i * 0.2, repeat: Infinity, ease: "easeInOut" }}
                             className="w-12 sm:w-16 h-6 sm:h-8 rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex items-center justify-center"
                         >
               <span className="text-[7px] sm:text-[9px] font-mono tracking-wider text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
@@ -149,8 +173,8 @@ const SkeletonKnowledgeRAG = () => {
                 {/* Grounded output */}
                 <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 flex flex-col items-center justify-center gap-1.5 sm:gap-2">
                     <motion.div
-                        animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        animate={isMobile ? {} : { scale: [1, 1.05, 1] }}
+                        transition={isMobile ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         className="w-5 sm:w-7 h-5 sm:h-7 rounded-full bg-[var(--brand-accent)]/15 flex items-center justify-center"
                     >
                         <CheckCircle2 className="h-3 sm:h-4 w-3 sm:w-4 text-[var(--brand-accent)]" />
@@ -168,7 +192,7 @@ const SkeletonKnowledgeRAG = () => {
  * 2) Repo Import:
  * GitHub/GitLab -> secure intake container -> files flowing in
  */
-const SkeletonRepoImport = () => {
+const SkeletonRepoImport = ({ isMobile }) => {
     return (
         <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-[200px] sm:max-w-[240px] flex items-center justify-between gap-2 sm:gap-4">
@@ -196,8 +220,8 @@ const SkeletonRepoImport = () => {
                             key={i}
                             className="absolute h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-sm bg-[var(--brand-accent)]/45"
                             initial={{ x: -40, opacity: 0 }}
-                            animate={{ x: 40, opacity: [0, 1, 0] }}
-                            transition={{ duration: 1.6, delay: i * 0.35, repeat: Infinity, ease: "easeInOut" }}
+                            animate={isMobile ? {} : { x: 40, opacity: [0, 1, 0] }}
+                            transition={isMobile ? {} : { duration: 1.6, delay: i * 0.35, repeat: Infinity, ease: "easeInOut" }}
                         />
                     ))}
                 </div>
@@ -205,8 +229,8 @@ const SkeletonRepoImport = () => {
                 {/* Intake box */}
                 <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-accent)]/20 flex flex-col items-center justify-center gap-1.5 sm:gap-2">
                     <motion.div
-                        animate={{ opacity: [0.6, 1, 0.6] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        animate={isMobile ? {} : { opacity: [0.6, 1, 0.6] }}
+                        transition={isMobile ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         className="w-5 sm:w-7 h-5 sm:h-7 rounded-full bg-[var(--brand-accent)]/15 flex items-center justify-center"
                     >
                         <Database className="h-3 sm:h-4 w-3 sm:w-4 text-[var(--brand-accent)]" />
@@ -224,7 +248,7 @@ const SkeletonRepoImport = () => {
  * 3) 4-Agent pipeline:
  * Reviewer -> Implementer -> Tester -> Reporter, sequential highlight
  */
-const SkeletonAgentPipeline = () => {
+const SkeletonAgentPipeline = ({ isMobile }) => {
     const steps = [
         { label: "REVIEWER", Icon: Search },
         { label: "IMPLEMENT", Icon: Wrench },
@@ -239,7 +263,7 @@ const SkeletonAgentPipeline = () => {
                     <motion.div
                         key={s.label}
                         className="relative rounded-xl bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/20 px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2"
-                        animate={{
+                        animate={isMobile ? {} : {
                             borderColor: [
                                 "rgba(0,0,0,0)",
                                 "rgba(0,0,0,0)",
@@ -251,8 +275,8 @@ const SkeletonAgentPipeline = () => {
                         <motion.div
                             className="absolute inset-0 rounded-xl bg-[var(--brand-accent)]/10"
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{
+                            animate={isMobile ? {} : { opacity: [0, 1, 0] }}
+                            transition={isMobile ? {} : {
                                 duration: 4.8,
                                 repeat: Infinity,
                                 ease: "easeInOut",
@@ -270,8 +294,8 @@ const SkeletonAgentPipeline = () => {
                                 <motion.span
                                     className="text-[7px] sm:text-[9px] font-mono text-[var(--brand-accent)]"
                                     initial={{ opacity: 0 }}
-                                    animate={{ opacity: [0, 1, 0] }}
-                                    transition={{
+                                    animate={isMobile ? {} : { opacity: [0, 1, 0] }}
+                                    transition={isMobile ? {} : {
                                         duration: 4.8,
                                         repeat: Infinity,
                                         ease: "easeInOut",
@@ -285,8 +309,8 @@ const SkeletonAgentPipeline = () => {
                                 <motion.div
                                     className="h-full rounded bg-[var(--brand-accent)]/60"
                                     initial={{ width: "0%" }}
-                                    animate={{ width: ["0%", "100%", "0%"] }}
-                                    transition={{
+                                    animate={isMobile ? {} : { width: ["0%", "100%", "0%"] }}
+                                    transition={isMobile ? {} : {
                                         duration: 4.8,
                                         repeat: Infinity,
                                         ease: "easeInOut",
@@ -306,7 +330,7 @@ const SkeletonAgentPipeline = () => {
  * 4) Testing:
  * A small suite runs: fail -> fixed -> pass (shows validation)
  */
-const SkeletonSecurityTesting = () => {
+const SkeletonSecurityTesting = ({ isMobile }) => {
     const rows = [
         { label: "auth.spec", initial: "FAIL" },
         { label: "csrf.spec", initial: "FAIL" },
@@ -322,8 +346,8 @@ const SkeletonSecurityTesting = () => {
           </span>
                     <motion.span
                         className="text-[7px] sm:text-[9px] font-mono text-[var(--brand-accent)]"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.6, repeat: Infinity }}
+                        animate={isMobile ? {} : { opacity: [0.4, 1, 0.4] }}
+                        transition={isMobile ? {} : { duration: 1.6, repeat: Infinity }}
                     >
                         RUNNING
                     </motion.span>
@@ -343,8 +367,8 @@ const SkeletonSecurityTesting = () => {
                                 {/* FAIL badge then PASS badge */}
                                 <motion.div
                                     className="flex items-center gap-1"
-                                    animate={{ opacity: [1, 1, 0, 0] }}
-                                    transition={{
+                                    animate={isMobile ? {} : { opacity: [1, 1, 0, 0] }}
+                                    transition={isMobile ? {} : {
                                         duration: 4.2,
                                         repeat: Infinity,
                                         ease: "easeInOut",
@@ -360,8 +384,8 @@ const SkeletonSecurityTesting = () => {
 
                                 <motion.div
                                     className="flex items-center gap-1"
-                                    animate={{ opacity: [0, 0, 1, 1] }}
-                                    transition={{
+                                    animate={isMobile ? {} : { opacity: [0, 0, 1, 1] }}
+                                    transition={isMobile ? {} : {
                                         duration: 4.2,
                                         repeat: Infinity,
                                         ease: "easeInOut",
@@ -383,8 +407,8 @@ const SkeletonSecurityTesting = () => {
                 <div className="mt-2 sm:mt-3 h-1.5 sm:h-2 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60 overflow-hidden">
                     <motion.div
                         className="h-full rounded bg-[var(--brand-accent)]/60"
-                        animate={{ width: ["10%", "100%", "10%"] }}
-                        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+                        animate={isMobile ? {} : { width: ["10%", "100%", "10%"] }}
+                        transition={isMobile ? {} : { duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
                     />
                 </div>
             </div>
@@ -396,7 +420,7 @@ const SkeletonSecurityTesting = () => {
  * 5) Report generation:
  * Evidence/logs transform into a structured report
  */
-const SkeletonReportGeneration = () => {
+const SkeletonReportGeneration = ({ isMobile }) => {
     return (
         <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-[220px] sm:max-w-[260px] grid grid-cols-2 gap-2 sm:gap-3">
@@ -411,16 +435,16 @@ const SkeletonReportGeneration = () => {
                                 key={i}
                                 className="h-1.5 sm:h-2 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60"
                                 style={{ width: `${w}%` }}
-                                animate={{ opacity: [0.6, 1, 0.6] }}
-                                transition={{ duration: 2.2, delay: i * 0.15, repeat: Infinity, ease: "easeInOut" }}
+                                animate={isMobile ? {} : { opacity: [0.6, 1, 0.6] }}
+                                transition={isMobile ? {} : { duration: 2.2, delay: i * 0.15, repeat: Infinity, ease: "easeInOut" }}
                             />
                         ))}
                     </div>
 
                     <motion.div
                         className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-[7px] sm:text-[9px] font-mono text-[var(--brand-accent)]"
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 1.8, repeat: Infinity }}
+                        animate={isMobile ? {} : { opacity: [0.5, 1, 0.5] }}
+                        transition={isMobile ? {} : { duration: 1.8, repeat: Infinity }}
                     >
                         <Database className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         <span>KB CITED</span>
@@ -435,8 +459,8 @@ const SkeletonReportGeneration = () => {
             </span>
                         <motion.span
                             className="text-[7px] sm:text-[9px] font-mono text-[var(--brand-accent)]"
-                            animate={{ opacity: [0.35, 1, 0.35] }}
-                            transition={{ duration: 1.6, repeat: Infinity }}
+                            animate={isMobile ? {} : { opacity: [0.35, 1, 0.35] }}
+                            transition={isMobile ? {} : { duration: 1.6, repeat: Infinity }}
                         >
                             GENERATING
                         </motion.span>
@@ -453,8 +477,8 @@ const SkeletonReportGeneration = () => {
                                 key={s.label}
                                 className="flex items-center gap-1.5 sm:gap-2"
                                 initial={{ opacity: 0, x: -6 }}
-                                animate={{ opacity: [0, 1, 1, 0] }}
-                                transition={{ duration: 4.8, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
+                                animate={isMobile ? {} : { opacity: [0, 1, 1, 0] }}
+                                transition={isMobile ? {} : { duration: 4.8, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
                             >
                                 <div className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-[var(--brand-accent)]/60" />
                                 <div className="h-1.5 sm:h-2 rounded bg-[var(--brand-light)] dark:bg-[var(--brand-primary)]/60 w-full" />
@@ -465,8 +489,8 @@ const SkeletonReportGeneration = () => {
                     {/* Page shimmer */}
                     <motion.div
                         className="absolute inset-y-0 -left-10 w-16 bg-[var(--brand-accent)]/10 rotate-12"
-                        animate={{ x: ["-40%", "160%"] }}
-                        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                        animate={isMobile ? {} : { x: ["-40%", "160%"] }}
+                        transition={isMobile ? {} : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
                     />
                 </div>
             </div>

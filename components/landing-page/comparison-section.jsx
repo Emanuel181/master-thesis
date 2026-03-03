@@ -1,8 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle } from "lucide-react";
+
+// Check if device is mobile
+const isTouchDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
 
 const comparisonRows = [
   {
@@ -37,13 +43,13 @@ const comparisonRows = [
   },
 ];
 
-function ComparisonRow({ row, index }) {
+function ComparisonRow({ row, index, isMobile }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={isMobile ? {} : { opacity: 0, y: 12 }}
+      whileInView={isMobile ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-30px" }}
-      transition={{ duration: 0.4, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      transition={isMobile ? {} : { duration: 0.4, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
       className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr] gap-3 md:gap-0 py-4 sm:py-5 border-b border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 last:border-b-0"
     >
       {/* Feature label */}
@@ -67,15 +73,28 @@ function ComparisonRow({ row, index }) {
 }
 
 export function ComparisonSection() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(isTouchDevice() || window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <section className="relative z-10 py-12 sm:py-16 md:py-20 lg:py-28 overflow-hidden">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 relative">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={isMobile ? {} : { opacity: 0, y: 20 }}
+          whileInView={isMobile ? {} : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={isMobile ? {} : { duration: 0.5 }}
           className="text-center mb-10 sm:mb-14 md:mb-16"
         >
           <p className="text-sm sm:text-base text-muted-foreground mb-3 font-medium">
@@ -104,7 +123,7 @@ export function ComparisonSection() {
 
           {/* Rows */}
           {comparisonRows.map((row, i) => (
-            <ComparisonRow key={row.feature} row={row} index={i} />
+            <ComparisonRow key={row.feature} row={row} index={i} isMobile={isMobile} />
           ))}
         </div>
       </div>
