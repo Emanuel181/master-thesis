@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
 COPY package.json package-lock.json .npmrc ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # ----------------------------
 # Builder (Next.js)
@@ -17,6 +17,9 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Run postinstall manually (needs public/ directory from COPY . .)
+RUN node -e "require('fs').copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')"
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
