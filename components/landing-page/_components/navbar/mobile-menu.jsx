@@ -6,6 +6,8 @@ import {
     Sparkles, Zap, Shield, GitBranch, Rss, FileCode, Heart, Rocket, BookOpen,
     Building2, MessageSquare, LayoutDashboard, ArrowRight, ExternalLink
 } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { AccessibilityButton } from "./accessibility-button"
 
 // Motion-enabled Link component for internal navigation
 const MotionLink = motion.create(Link)
@@ -178,7 +180,13 @@ function CompanySection({ onClose }) {
 
 function BottomActions({ onClose, isAuthenticated }) {
     return (
-        <div className="border-t border-border/40 p-3 bg-gradient-to-r from-muted/30 via-muted/50 to-muted/30 flex gap-2">
+        <div className="border-t border-border/40 p-3 bg-gradient-to-r from-muted/30 via-muted/50 to-muted/30 space-y-2">
+            <div className="flex items-center justify-center gap-1 bg-muted/30 rounded-xl p-1 border border-border/30">
+                <AccessibilityButton compact />
+                <div className="w-px h-5 bg-border/50" />
+                <ThemeToggle compact />
+            </div>
+            <div className="flex gap-2">
             <MotionLink
                 href="/demo"
                 onClick={onClose}
@@ -206,6 +214,7 @@ function BottomActions({ onClose, isAuthenticated }) {
                     </>
                 )}
             </MotionLink>
+            </div>
         </div>
     )
 }
