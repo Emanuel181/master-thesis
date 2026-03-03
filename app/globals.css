@@ -455,6 +455,10 @@ html {
   .xs\:min-h-\[120px\] {
     min-height: 120px !important;
   }
+  .xs\:-translate-y-24 {
+    --tw-translate-y: -6rem !important;
+    transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) rotate(var(--tw-rotate, 0)) skewX(var(--tw-skew-x, 0)) skewY(var(--tw-skew-y, 0)) scaleX(var(--tw-scale-x, 1)) scaleY(var(--tw-scale-y, 1)) !important;
+  }
 }
 
 /* Reduce motion for users who prefer it */

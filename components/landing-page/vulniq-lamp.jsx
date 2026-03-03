@@ -112,7 +112,7 @@ export const LampContainer = ({ children, className }) => {
                 {/* Top dark cover */}
                 <div className="absolute inset-auto z-40 h-44 w-full -translate-y-[12.5rem] bg-[var(--brand-dark)]" />
             </div>
-            <div className="relative z-50 flex -translate-y-32 xs:-translate-y-40 sm:-translate-y-56 md:-translate-y-80 flex-col items-center px-4 xs:px-6 sm:px-8 w-full max-w-[100vw]">
+            <div className="relative z-50 flex -translate-y-16 xs:-translate-y-24 sm:-translate-y-56 md:-translate-y-80 flex-col items-center px-4 xs:px-6 sm:px-8 w-full max-w-[100vw]">
                 {children}
             </div>
         </div>
