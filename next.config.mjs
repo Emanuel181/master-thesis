@@ -12,7 +12,7 @@ const CSP = [
   "font-src 'self' data: https://website-widgets.pages.dev",
   "connect-src 'self' https:",
   "worker-src 'self' blob:",
-  "frame-src 'self' blob: https://challenges.cloudflare.com https://*.s3.amazonaws.com",
+  "frame-src 'self' blob: https://challenges.cloudflare.com https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com https://*.s3.us-west-2.amazonaws.com https://*.s3.eu-west-1.amazonaws.com https://*.s3.eu-central-1.amazonaws.com",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",
