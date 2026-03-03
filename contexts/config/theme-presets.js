@@ -48,12 +48,12 @@ export const themePresets = {
   'default': {
     name: 'Default',
     light: {
-      primary: 'oklch(0.242 0.015 286)',
-      background: 'oklch(1 0 0)',
+      primary: '#0e2736',
+      background: '#ffffff',
     },
     dark: {
-      primary: 'oklch(0.831 0.012 286)',
-      background: 'oklch(0.145 0.007 286)',
+      primary: '#1fb6cf',
+      background: 'oklch(0.145 0 0)',
     },
   },
 };
