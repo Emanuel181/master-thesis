@@ -34,8 +34,7 @@ const baseSecurityHeaders = [
 const nextConfig = {
   // Note: standalone output may fail on Windows with Next.js 16 + Turbopack due to colon in chunk filenames
   // Build on Linux/Docker for production, or use WSL on Windows
-  // Temporarily disabled for Windows development
-  // output: 'standalone',
+  output: 'standalone',
   poweredByHeader: false,
   compress: true,
   productionBrowserSourceMaps: false,
