@@ -4,10 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { Footer } from '@/components/landing-page/footer';
 import { Button } from '@/components/ui/button';
 import { ChevronUp } from 'lucide-react';
-import { StickyFeedback } from '@/components/landing-page/sticky-feedback';
 
 // Lazy load the code demo to overlay on the hero after hydration
 const SecurityCodeDemo = dynamic(
@@ -77,6 +75,16 @@ const CardDemo = dynamic(
 const LogoLoop = dynamic(
   () => import('@/components/ui/logo-loop').then(mod => mod.LogoLoop),
   { ssr: false, loading: () => <div className="h-16" /> }
+);
+
+const Footer = dynamic(
+  () => import('@/components/landing-page/footer').then(mod => mod.Footer),
+  { loading: () => <div className="min-h-[300px]" /> }
+);
+
+const StickyFeedback = dynamic(
+  () => import('@/components/landing-page/sticky-feedback').then(mod => mod.StickyFeedback),
+  { ssr: false }
 );
 
 // Inline SVG icons to avoid loading entire react-icons library

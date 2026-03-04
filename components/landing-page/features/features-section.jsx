@@ -1,18 +1,17 @@
-import {
-  Database,
-  Github,
-  Gitlab,
-  Search,
-  Wrench,
-  ShieldCheck,
-  FileText,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
-import { PointerHighlight } from '@/components/ui/pointer-highlight';
+import dynamic from 'next/dynamic';
+
+const PointerHighlight = dynamic(
+  () => import('@/components/ui/pointer-highlight').then(mod => mod.PointerHighlight),
+  {
+    loading: () => <span className="px-1"><span className="gradient-text">agentic remediation</span></span>,
+  }
+);
 
 // Import the client-side FeaturesGrid for animations
-import { FeaturesGrid } from './features-grid';
+const FeaturesGrid = dynamic(
+  () => import('./features-grid').then(mod => mod.FeaturesGrid),
+  { loading: () => <div className="min-h-[400px]" /> }
+);
 
 /**
  * Server-rendered Features Section wrapper.

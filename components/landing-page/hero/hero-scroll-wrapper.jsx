@@ -1,8 +1,13 @@
 'use client';
 
 import React, { useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { HexGridBackground } from '@/components/landing-page/hex-grid-background';
+
+const HexGridBackground = dynamic(
+  () => import('@/components/landing-page/hex-grid-background').then(mod => mod.HexGridBackground),
+  { ssr: false }
+);
 
 /**
  * Wraps the hero section with scroll-linked shrinking border animation.
