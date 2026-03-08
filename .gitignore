@@ -43,3 +43,17 @@ next-env.d.ts
 
 /lib/generated/prisma
 
+# infrastructure - large binaries & terraform state
+infrastructure/awscliv2.zip
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.backup
+infrastructure/lambda/**/*.zip
+infrastructure/lambda/**/node_modules/
+infrastructure/lambda/**/__pycache__/
+infrastructure/lambda/**/function.zip
+
+# script output
+reset-output.txt
+git-info.txt
+
