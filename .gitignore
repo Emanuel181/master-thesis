@@ -46,14 +46,19 @@ next-env.d.ts
 # infrastructure - large binaries & terraform state
 infrastructure/awscliv2.zip
 infrastructure/terraform/.terraform/
+infrastructure/terraform/awscliv2.zip
 infrastructure/terraform/*.tfstate
 infrastructure/terraform/*.tfstate.backup
+infrastructure/terraform/*.zip
 infrastructure/lambda/**/*.zip
 infrastructure/lambda/**/node_modules/
 infrastructure/lambda/**/__pycache__/
 infrastructure/lambda/**/function.zip
 
-# script output
+# script output / temp files
 reset-output.txt
 git-info.txt
+large-scan.txt
+large-files.txt
+filter-result.txt
 
