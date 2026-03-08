@@ -1,0 +1,18 @@
+# Example Terraform variables file
+# Copy this to terraform.tfvars and fill in your values
+
+aws_region = "us-east-1"
+environment = "dev"
+
+# Your existing Aurora Postgres connection details
+aurora_host     = "your-aurora-cluster.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+aurora_port     = 5432
+aurora_database = "your_database_name"
+aurora_username = "your_username"
+aurora_password = "your_password"  # Will be stored in Secrets Manager automatically
+
+# Your existing S3 bucket where PDFs/documents are stored
+existing_s3_bucket = "your-existing-documents-bucket"
+
+# Bedrock model to use for agents
+bedrock_model_id = "anthropic.claude-3-sonnet-20240229-v1:0"

@@ -1,0 +1,10 @@
+{
+  "name": "agent-reporter",
+  "version": "1.0.0",
+  "description": "Reporter agent Lambda function",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.709.0",
+    "pg": "^8.11.3"
+  }
+}

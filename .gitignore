@@ -43,7 +43,3 @@ next-env.d.ts
 
 /lib/generated/prisma
 
-# script output
-reset-output.txt
-git-info.txt
-

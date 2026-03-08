@@ -1,0 +1,8 @@
+environment         = "dev"
+aws_region          = "us-east-1"
+existing_s3_bucket  = "vulniq-bucket-dev"
+aurora_host         = "vulniq-db-dev.ckz6aqg6853e.us-east-1.rds.amazonaws.com"
+aurora_database     = "vulniq-db-de"
+aurora_username     = "postgres"
+aurora_password     = "jgk9nH4EWwhnatNQ31ss"
+bedrock_model_id    = "anthropic.claude-3-sonnet-20240229-v1:0"
