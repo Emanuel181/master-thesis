@@ -477,10 +477,6 @@ export function UseCaseGroupsPanel({
     }
 
 
-    // Compute total document count across all use cases
-    const totalDocCount = useMemo(() => {
-        return (useCases || []).reduce((sum, uc) => sum + (uc.count || 0), 0)
-    }, [useCases])
 
     return (
         <div className="flex flex-col h-full min-h-0">
@@ -492,11 +488,6 @@ export function UseCaseGroupsPanel({
                         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
                             {groups.length}
                         </span>
-                        {totalDocCount > 0 && (
-                            <span className="text-[10px] text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-md font-medium">
-                                {totalDocCount} doc{totalDocCount !== 1 ? 's' : ''}
-                            </span>
-                        )}
                     </div>
                     <div className="flex items-center gap-1">
                         {/* Collapse panel button */}

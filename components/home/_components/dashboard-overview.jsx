@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,18 +28,134 @@ import {
     Activity,
     Trash2,
     GitBranch,
+    Newspaper,
 } from "lucide-react"
+
+// Demo mock blogs for the daily recommendation
+const DEMO_BLOGS = [
+    { slug: 'owasp-top-10-explained', title: 'OWASP Top 10 Security Risks Explained', excerpt: 'A comprehensive guide to the most critical web application security risks and how to mitigate them.', category: 'Web Security', readTime: '8 min read', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    { slug: 'understanding-sql-injection', title: 'Understanding SQL Injection Attacks', excerpt: 'A deep dive into SQL injection vulnerabilities, attack vectors, and prevention techniques.', category: 'Database Security', readTime: '10 min read', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+    { slug: 'api-security-best-practices', title: 'API Security Best Practices', excerpt: 'Essential security measures for protecting your REST and GraphQL APIs from common threats.', category: 'API Security', readTime: '6 min read', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+    { slug: 'authentication-patterns', title: 'Authentication Patterns in Modern Apps', excerpt: 'Exploring OAuth 2.0, JWT, session-based auth, and passkey strategies for secure applications.', category: 'Authentication', readTime: '12 min read', gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+    { slug: 'secure-coding-guidelines', title: 'Secure Coding Guidelines for JavaScript', excerpt: 'Best practices for writing secure code in JavaScript and TypeScript applications.', category: 'Development', readTime: '7 min read', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
+    { slug: 'container-security', title: 'Container Security Fundamentals', excerpt: 'Securing Docker containers and Kubernetes deployments against common attack vectors.', category: 'DevOps', readTime: '9 min read', gradient: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)' },
+    { slug: 'xss-prevention-guide', title: 'Cross-Site Scripting Prevention Guide', excerpt: 'Understanding reflected, stored, and DOM-based XSS attacks with practical mitigation strategies.', category: 'Web Security', readTime: '11 min read', gradient: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)' },
+]
+
+/**
+ * Pick a deterministic "daily" blog based on the current date.
+ * Uses day-of-year so every day a different blog is recommended.
+ */
+function getDailyIndex(count) {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), 0, 0)
+    const dayOfYear = Math.floor((now - start) / 86400000)
+    return dayOfYear % count
+}
+
+/**
+ * DailyRecommendedBlog — shows a blog recommendation that changes each day.
+ */
+function DailyRecommendedBlog({ isDemoMode }) {
+    const router = useRouter()
+    const [blog, setBlog] = useState(null)
+    const [isLoading, setIsLoading] = useState(!isDemoMode)
+
+    useEffect(() => {
+        if (isDemoMode) {
+            const idx = getDailyIndex(DEMO_BLOGS.length)
+            setBlog(DEMO_BLOGS[idx])
+            return
+        }
+
+        let cancelled = false
+        const fetchBlog = async () => {
+            try {
+                const res = await fetch('/api/articles/published?limit=50')
+                if (!res.ok || cancelled) return
+                const data = await res.json()
+                const articles = data.articles || []
+                if (articles.length === 0) {
+                    setBlog(null)
+                } else {
+                    const idx = getDailyIndex(articles.length)
+                    setBlog(articles[idx])
+                }
+            } catch {
+                // Silently fail — card will show "no blogs"
+            } finally {
+                if (!cancelled) setIsLoading(false)
+            }
+        }
+        fetchBlog()
+        return () => { cancelled = true }
+    }, [isDemoMode])
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-3 p-2.5 rounded-lg border bg-muted/30 animate-pulse">
+                <div className="shrink-0 w-10 h-10 rounded-md bg-muted" />
+                <div className="flex-1 space-y-1.5">
+                    <div className="h-3 w-3/4 rounded bg-muted" />
+                    <div className="h-2.5 w-1/2 rounded bg-muted" />
+                </div>
+            </div>
+        )
+    }
+
+    if (!blog) {
+        return (
+            <div className="flex items-center gap-3 p-2.5 rounded-lg border border-dashed border-border/60 bg-muted/20">
+                <div className="shrink-0 w-10 h-10 rounded-md bg-muted/50 flex items-center justify-center">
+                    <Newspaper className="h-4 w-4 text-muted-foreground/50" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">No blogs for today</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-0.5">Published articles will appear here as daily recommendations.</p>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <button
+            onClick={() => router.push(`/blog/${blog.slug}`)}
+            className="group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-150 text-left w-full"
+        >
+            <div
+                className="shrink-0 w-10 h-10 rounded-md"
+                style={{ background: blog.gradient || 'linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)' }}
+            />
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                    <Newspaper className="h-3 w-3 text-primary shrink-0" />
+                    <span className="text-[10px] font-medium text-primary">Daily read</span>
+                    {blog.category && (
+                        <Badge variant="outline" className="text-[8px] h-3.5 px-1 py-0 shrink-0">{blog.category}</Badge>
+                    )}
+                </div>
+                <p className="text-xs font-medium truncate mt-0.5 group-hover:text-primary transition-colors">
+                    {blog.title}
+                </p>
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{blog.excerpt}</p>
+            </div>
+            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+        </button>
+    )
+}
 
 /**
  * WelcomeBanner — personalized greeting + quick-start actions.
  */
 export function WelcomeBanner({ userName, onNavigate, onNewScan }) {
+    const pathname = usePathname()
+    const isDemoMode = pathname?.startsWith('/demo')
     const hour = new Date().getHours()
     const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
     const firstName = userName?.split(" ")[0] || userName
 
     const quickActions = [
-        { label: "Code input", icon: Code, page: "Code input" },
+        { label: "Code inspection", icon: Code, page: "Code inspection" },
         { label: "Configure workflow", icon: Settings2, page: "Workflow configuration" },
         { label: "Knowledge base", icon: BookOpen, page: "Knowledge base" },
         { label: "Write article", icon: FileText, page: "Write article" },
@@ -64,6 +181,11 @@ export function WelcomeBanner({ userName, onNavigate, onNewScan }) {
                         <Zap className="h-3.5 w-3.5 mr-1.5" />
                         New scan
                     </Button>
+                </div>
+
+                {/* Daily recommended blog */}
+                <div className="mb-3">
+                    <DailyRecommendedBlog isDemoMode={isDemoMode} />
                 </div>
 
                 {/* Quick action buttons */}
@@ -184,10 +306,16 @@ export const MAX_SCANS = 3
  * RecentScansCard — table-style list of recent workflow runs with severity breakdown.
  */
 export function RecentScansCard({ runs, isLoading, onNavigate, onRefresh }) {
+    const pathname = usePathname()
+    const isDemoMode = pathname?.startsWith('/demo')
     const [deletingId, setDeletingId] = useState(null)
 
     const handleDeleteRun = async (runId, e) => {
         e?.stopPropagation()
+        if (isDemoMode) {
+            toast.info("Deleting scans is disabled in demo mode")
+            return
+        }
         setDeletingId(runId)
         try {
             const res = await fetch("/api/workflow/runs", {
@@ -478,8 +606,49 @@ export function TopVulnerabilitiesCard({ vulnerabilities, isLoading, onNavigate 
 /**
  * Hook to fetch dashboard overview data.
  */
+// ── Demo mock data ──────────────────────────────────────────────────────────
+const DEMO_RECENT_RUNS = [
+    {
+        id: "demo-run-1",
+        status: "completed",
+        startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2h ago
+        metadata: { projectName: "vulnerable-express-app", branch: "main" },
+        severityCounts: { Critical: 2, High: 3, Medium: 4, Low: 1 },
+    },
+    {
+        id: "demo-run-2",
+        status: "completed",
+        startedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(), // 26h ago
+        metadata: { projectName: "insecure-flask-api", branch: "develop" },
+        severityCounts: { Critical: 1, High: 2, Medium: 3, Low: 3 },
+    },
+]
+
+const DEMO_TOP_VULNERABILITIES = [
+    { id: "demo-v1", severity: "Critical", title: "SQL Injection in user login endpoint", fileName: "routes/auth.js", resolved: false },
+    { id: "demo-v2", severity: "Critical", title: "Remote Code Execution via eval()", fileName: "utils/parser.py", resolved: false },
+    { id: "demo-v3", severity: "High", title: "Insecure deserialization of user input", fileName: "api/data.py", resolved: false },
+    { id: "demo-v4", severity: "High", title: "Hardcoded API key in source code", fileName: "config/settings.js", resolved: false },
+    { id: "demo-v5", severity: "Medium", title: "Missing rate limiting on auth endpoints", fileName: "middleware/auth.js", resolved: false },
+]
+
+const DEMO_OVERVIEW = {
+    stats: {
+        totalScans: 2,
+        totalVulnerabilities: 19,
+        openVulnerabilities: 16,
+        resolvedVulnerabilities: 3,
+        criticalCount: 3,
+    },
+    recentRuns: DEMO_RECENT_RUNS,
+    topVulnerabilities: DEMO_TOP_VULNERABILITIES,
+}
+
 export function useDashboardOverview() {
     const { data: session } = useSession()
+    const pathname = usePathname()
+    const isDemoMode = pathname?.startsWith('/demo')
+
     const [data, setData] = useState({
         stats: {
             totalScans: 0,
@@ -494,6 +663,13 @@ export function useDashboardOverview() {
     const [isLoading, setIsLoading] = useState(true)
 
     const fetchOverview = useCallback(async () => {
+        // Demo mode: use mock data immediately
+        if (isDemoMode) {
+            setData(DEMO_OVERVIEW)
+            setIsLoading(false)
+            return
+        }
+
         if (!session?.user?.id) {
             setIsLoading(false)
             return
@@ -531,7 +707,7 @@ export function useDashboardOverview() {
         } finally {
             setIsLoading(false)
         }
-    }, [session?.user?.id])
+    }, [session?.user?.id, isDemoMode])
 
     useEffect(() => {
         fetchOverview()

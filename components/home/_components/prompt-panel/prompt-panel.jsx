@@ -65,7 +65,7 @@ export function PromptPanel({
                             className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                             onClick={onResetToDefaults}
                             disabled={isResetting || isRefreshing}
-                            title="Reset to default prompts"
+                            title="Revert edited default prompts back to their original content (custom prompts are not affected)"
                         >
                             <RotateCcw className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`} />
                         </Button>

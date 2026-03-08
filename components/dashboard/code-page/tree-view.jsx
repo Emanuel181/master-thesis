@@ -12,6 +12,7 @@ import {
     File as DefaultFileIcon,
     Folder as DefaultFolderIcon,
     FolderOpen as DefaultFolderOpen,
+    ShieldAlert,
 } from "lucide-react";
 import {
     Tooltip,
@@ -19,6 +20,8 @@ import {
     TooltipContent,
     TooltipProvider,
 } from "@/components/ui/tooltip";
+import { useProject } from "@/contexts/projectContext";
+import { getFileVulnSummary, getFolderVulnSummary } from "./hooks/use-vulnerability-decorations";
 
 // ---------- CONFIG ----------
 const BASE_ICON_URL = "https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons";
@@ -412,6 +415,33 @@ const SmartFileIcon = React.memo(function SmartFileIcon({ name, isDir, isOpen })
 // IMPORTANT: ID must be unique. Prefer Path > ID > Name
 const getId = (item) => item.path || item.id || item.name;
 
+/**
+ * Build the full path of a node by walking up the react-arborist parent chain.
+ * Skips the root node (depth 0) since it's the repo name, not part of the file path.
+ * Falls back to item.path if available.
+ */
+function getNodeFullPath(node) {
+    const item = node.data;
+    // If the node already has a path property, use it directly
+    if (item.path) return item.path;
+
+    // Build path from parent chain
+    const parts = [];
+    let current = node;
+    while (current) {
+        // Skip the root node (repo name) — it shouldn't be part of the file path
+        if (current.parent && current.parent.parent !== null) {
+            parts.unshift(current.data.name);
+        } else if (!current.parent) {
+            // This is the root — skip it
+        } else {
+            parts.unshift(current.data.name);
+        }
+        current = current.parent;
+    }
+    return parts.join('/');
+}
+
 function filterTree(items, q) {
     if (!q) return items;
     const lower = q.toLowerCase();
@@ -426,13 +456,29 @@ function filterTree(items, q) {
     return matches;
 }
 
+// Severity text colors for tree view icon
+const VULN_ICON_COLORS = {
+    Critical: 'text-[var(--severity-critical)]',
+    High:     'text-[var(--severity-high)]',
+    Medium:   'text-[var(--severity-medium)]',
+    Low:      'text-[var(--severity-low)]',
+};
+
 // ---------- ROW COMPONENT ----------
-const TreeRow = React.memo(function TreeRow({ node, style, showCheckboxes, checked, toggleCheck, onItemClick }) {
+const TreeRow = React.memo(function TreeRow({ node, style, showCheckboxes, checked, toggleCheck, onItemClick, fileVulnerabilities }) {
     const item = node.data;
     const id = getId(item);
     const hasChildren = item.children && item.children.length > 0;
     const isFolder = Array.isArray(item.children) || item.isFolder;
     const isOpen = node.isOpen;
+
+    // Build the full path for this node (works even without item.path)
+    const fullPath = getNodeFullPath(node);
+
+    // Compute vulnerability summary for this node (files get exact match, folders aggregate children)
+    const vulnSummary = isFolder
+        ? getFolderVulnSummary(fileVulnerabilities, fullPath)
+        : getFileVulnSummary(fileVulnerabilities, fullPath);
 
     return (
         <div
@@ -458,7 +504,6 @@ const TreeRow = React.memo(function TreeRow({ node, style, showCheckboxes, check
                     if (hasChildren) node.toggle();
                 }}
             >
-                {/* Only show arrow if it is a folder AND has children */}
                 {isFolder && hasChildren ? (
                     isOpen ? (
                         <ChevronDown className="w-3 h-3 text-muted-foreground pointer-events-none" />
@@ -466,7 +511,6 @@ const TreeRow = React.memo(function TreeRow({ node, style, showCheckboxes, check
                         <ChevronRight className="w-3 h-3 text-muted-foreground pointer-events-none" />
                     )
                 ) : (
-                    // Spacer for alignment if no arrow (files or empty folders)
                     <span className="w-3 h-3" />
                 )}
             </div>
@@ -493,12 +537,25 @@ const TreeRow = React.memo(function TreeRow({ node, style, showCheckboxes, check
             <span className="truncate flex-1 text-muted-foreground group-hover:text-foreground">
                 {item.name}
             </span>
+
+            {/* VULNERABILITY BADGE — ShieldAlert icon + count */}
+            {vulnSummary && (
+                <span
+                    className={`ml-1 flex-shrink-0 inline-flex items-center gap-0.5 ${isFolder ? 'opacity-70' : ''} ${VULN_ICON_COLORS[vulnSummary.highestSeverity] || VULN_ICON_COLORS.Medium}`}
+                    title={
+                        isFolder
+                            ? `${vulnSummary.count} ${vulnSummary.count === 1 ? 'vulnerability' : 'vulnerabilities'} in files under this folder`
+                            : `${vulnSummary.count} ${vulnSummary.count === 1 ? 'vulnerability' : 'vulnerabilities'}`
+                    }
+                >
+                    <ShieldAlert className={isFolder ? "w-3 h-3" : "w-3.5 h-3.5"} />
+                    <span className="text-[10px] font-semibold tabular-nums leading-none">{vulnSummary.count}</span>
+                </span>
+            )}
         </div>
     );
 }, (prev, next) => {
     // Custom comparator: skip re-render if the visible data hasn't changed.
-    // The `node` wrapper from react-arborist is a new object on every Tree render,
-    // but the underlying data, open/selected state, and style are what matter.
     const pn = prev.node;
     const nn = next.node;
     return (
@@ -509,7 +566,8 @@ const TreeRow = React.memo(function TreeRow({ node, style, showCheckboxes, check
         prev.showCheckboxes === next.showCheckboxes &&
         prev.checked === next.checked &&
         prev.toggleCheck === next.toggleCheck &&
-        prev.onItemClick === next.onItemClick
+        prev.onItemClick === next.onItemClick &&
+        prev.fileVulnerabilities === next.fileVulnerabilities
     );
 });
 
@@ -531,6 +589,9 @@ const TreeView = forwardRef(function TreeView({
     const treeContainerRef = useRef();
     const lastHeightRef = useRef(400);
     const rafRef = useRef(null);
+
+    // Access fileVulnerabilities from project context for tree badges
+    const { fileVulnerabilities } = useProject();
 
     const filtered = useMemo(() => filterTree(data, query), [data, query]);
 
@@ -588,8 +649,9 @@ const TreeView = forwardRef(function TreeView({
             checked={checked}
             toggleCheck={toggleCheck}
             onItemClick={onItemClick}
+            fileVulnerabilities={fileVulnerabilities}
         />
-    ), [showCheckboxes, checked, toggleCheck, onItemClick]);
+    ), [showCheckboxes, checked, toggleCheck, onItemClick, fileVulnerabilities]);
 
     return (
         <div className={`flex flex-col h-full min-h-0 overflow-hidden ${className}`}>

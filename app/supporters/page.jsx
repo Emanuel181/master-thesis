@@ -226,7 +226,7 @@ export default function SupportersPage() {
     }, [supporters.length]);
 
     return (
-        <div className="h-screen flex flex-col bg-background font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
+        <div className="landing-page h-screen flex flex-col bg-background font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
             {/* Background effects - matching landing page */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />

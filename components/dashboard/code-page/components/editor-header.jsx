@@ -72,6 +72,7 @@ export function EditorHeader({
     onConnectGitlab,
     onRefreshGitHubRepos,
     onRefreshGitLabRepos,
+    isDemoMode = false,
 }) {
     return (
         <CardHeader className="py-2 px-2 sm:py-2.5 sm:px-4 shrink-0 border-b bg-card/50">
@@ -82,7 +83,7 @@ export function EditorHeader({
                     <CardTitle className="text-base font-semibold shrink-0">Code Editor</CardTitle>
                     
                     {/* Project Controls - only when project imported */}
-                    {hasImportedProject && currentRepo && (
+                    {hasImportedProject && (
                         <div className="flex items-center gap-2 pl-2 border-l border-border/60">
                             {/* View Mode Toggle - compact */}
                             <div className="flex items-center gap-1 bg-muted/40 rounded px-1.5 py-0.5">
@@ -210,15 +211,37 @@ export function EditorHeader({
 
                         {/* Start Review */}
                         {!isViewOnly && (
-                            <Button
-                                size="sm"
-                                className="h-7 px-3 ml-1 gap-1.5"
-                                onClick={() => onStart(activeTab ? activeTab.content : code, codeType)}
-                                disabled={!hasCode}
-                            >
-                                <Play className="h-3.5 w-3.5" />
-                                <span className="text-xs font-medium">Review</span>
-                            </Button>
+                            isDemoMode ? (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span tabIndex={0}>
+                                                <Button
+                                                    size="sm"
+                                                    className="h-7 px-3 ml-1 gap-1.5"
+                                                    disabled
+                                                >
+                                                    <Play className="h-3.5 w-3.5" />
+                                                    <span className="text-xs font-medium">Review</span>
+                                                </Button>
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Review is disabled in demo mode. Sign up to run AI-powered reviews.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    className="h-7 px-3 ml-1 gap-1.5"
+                                    onClick={() => onStart?.(activeTab ? activeTab.content : code, codeType)}
+                                    disabled={!hasCode || !onStart}
+                                >
+                                    <Play className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-medium">Review</span>
+                                </Button>
+                            )
                         )}
                     </div>
                 )}
@@ -229,7 +252,7 @@ export function EditorHeader({
                 {/* Left: Title + Project indicator */}
                 <div className="flex items-center gap-2 min-w-0">
                     <CardTitle className="text-sm whitespace-nowrap">Editor</CardTitle>
-                    {hasImportedProject && currentRepo && (
+                    {hasImportedProject && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-6 px-1.5 gap-1 text-xs text-muted-foreground">
@@ -284,14 +307,35 @@ export function EditorHeader({
                     <div className="flex items-center gap-1">
                         {/* Start Review button */}
                         {!isViewOnly && (
-                            <Button
-                                size="sm"
-                                className="h-7 px-2"
-                                onClick={() => onStart(activeTab ? activeTab.content : code, codeType)}
-                                disabled={!hasCode}
-                            >
-                                <Play className="h-3.5 w-3.5" />
-                            </Button>
+                            isDemoMode ? (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span tabIndex={0}>
+                                                <Button
+                                                    size="sm"
+                                                    className="h-7 px-2"
+                                                    disabled
+                                                >
+                                                    <Play className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Review is disabled in demo mode.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={() => onStart?.(activeTab ? activeTab.content : code, codeType)}
+                                    disabled={!hasCode || !onStart}
+                                >
+                                    <Play className="h-3.5 w-3.5" />
+                                </Button>
+                            )
                         )}
 
                         {/* More options menu */}

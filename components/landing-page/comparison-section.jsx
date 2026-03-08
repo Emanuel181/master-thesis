@@ -78,9 +78,6 @@ export function ComparisonSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-10 sm:mb-14 md:mb-16"
         >
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 font-medium">
-            A fundamentally different approach
-          </p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
             Why <span className="gradient-text">VulnIQ</span>?
           </h2>

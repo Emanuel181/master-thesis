@@ -611,6 +611,51 @@ html {
   --success: oklch(0.627 0.194 149.214);
 }
 
+/* ============================================
+   LANDING PAGE SCOPE
+   Forces theme variables to default design colors,
+   ignoring any user theme customization (which applies to dashboard only).
+   ============================================ */
+.landing-page {
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: #ffffff;
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #0e2736;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+.dark .landing-page {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #1fb6cf;
+  --primary-foreground: #0e2736;
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
 .dark {
   /* Brand Colors (for landing page only) */
   --brand-primary: #0e2736;
@@ -726,6 +771,39 @@ html {
   .border-severity-high\/30 { border-color: color-mix(in oklch, var(--severity-high) 30%, transparent); }
   .border-severity-medium\/30 { border-color: color-mix(in oklch, var(--severity-medium) 30%, transparent); }
   .border-severity-low\/30 { border-color: color-mix(in oklch, var(--severity-low) 30%, transparent); }
+
+  /* ── Monaco vulnerability decorations ── */
+  /* Glyph-margin dots (small circle in the editor gutter) */
+  .vuln-glyph-critical,
+  .vuln-glyph-high,
+  .vuln-glyph-medium,
+  .vuln-glyph-low {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+  .vuln-glyph-critical::before,
+  .vuln-glyph-high::before,
+  .vuln-glyph-medium::before,
+  .vuln-glyph-low::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 6px;
+    box-shadow: 0 0 4px 1px currentColor;
+  }
+  .vuln-glyph-critical::before { background: var(--severity-critical); color: var(--severity-critical); }
+  .vuln-glyph-high::before    { background: var(--severity-high);     color: var(--severity-high); }
+  .vuln-glyph-medium::before  { background: var(--severity-medium);   color: var(--severity-medium); }
+  .vuln-glyph-low::before     { background: var(--severity-low);      color: var(--severity-low); }
+
+  /* Line highlights (subtle tinted background for flagged lines) */
+  .vuln-line-critical { background: color-mix(in oklch, var(--severity-critical) 8%, transparent) !important; }
+  .vuln-line-high     { background: color-mix(in oklch, var(--severity-high) 7%, transparent) !important; }
+  .vuln-line-medium   { background: color-mix(in oklch, var(--severity-medium) 6%, transparent) !important; }
+  .vuln-line-low      { background: color-mix(in oklch, var(--severity-low) 5%, transparent) !important; }
 
   /* Success / Connected */
   .text-success { color: var(--success); }

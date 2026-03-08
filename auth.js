@@ -217,6 +217,38 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     callbacks: {
         async signIn({ user, account, profile }) {
 
+            // ── Guard: reject OAuth sign-in when provider email ≠ DB email ──
+            // When `allowDangerousEmailAccountLinking` links a provider account
+            // to an existing user whose canonical email differs, the user ends
+            // up in someone else's session.  Block that here and return a clear
+            // error so the login page can display it.
+            if (account?.type === 'oauth' && user?.id && profile) {
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: user.id },
+                        select: { email: true },
+                    });
+                    const providerEmail = (
+                        profile.email
+                        || profile.preferred_username
+                        || profile.upn
+                        || ''
+                    ).toLowerCase().trim();
+                    const canonicalEmail = (dbUser?.email || '').toLowerCase().trim();
+
+                    if (providerEmail && canonicalEmail && providerEmail !== canonicalEmail) {
+                        console.warn(
+                            `[auth][signIn] Blocked cross-email sign-in: provider ${account.provider} `
+                            + `email (${providerEmail}) ≠ canonical email (${canonicalEmail})`
+                        );
+                        return `/login?error=CrossEmailBlocked`;
+                    }
+                } catch (err) {
+                    console.error('[auth][signIn] Guard check failed:', err.message);
+                    // Don't block sign-in if the guard itself errors
+                }
+            }
+
             // GDPR: Audit log successful sign-in
             if (user?.id) {
                 // Fire-and-forget audit log (don't block sign-in)
@@ -229,64 +261,84 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
 
             // Update user profile with data from the OAuth provider
+            // IMPORTANT: Only fill in fields that are currently empty/null.
+            // Do NOT overwrite existing data — the canonical user profile should
+            // remain stable regardless of which linked provider is used to log in.
+            // ALSO: Only fill data from the provider that owns the canonical email.
+            // Linked secondary accounts (different email) should NOT contribute
+            // profile data — especially the profile image.
             if (profile && user?.id) {
                 try {
-                    const updateData = {};
+                    // Fetch current user data to check what's already set
+                    const existingUser = await prisma.user.findUnique({
+                        where: { id: user.id },
+                        select: { email: true, name: true, image: true, bio: true, company: true, location: true, firstName: true, lastName: true, jobTitle: true },
+                    });
 
-                    // Update name from provider if not already set or if it changed
-                    if (profile.name) {
-                        updateData.name = profile.name;
+                    // Skip profile data merge if the provider's email doesn't match
+                    // the canonical user email — this is a linked secondary account.
+                    // Microsoft Entra may return email in preferred_username or upn
+                    // instead of the standard email field.
+                    const providerEmail = (
+                        profile.email
+                        || profile.preferred_username
+                        || profile.upn
+                        || user.email
+                        || ''
+                    ).toLowerCase().trim();
+                    const canonicalEmail = (existingUser?.email || '').toLowerCase().trim();
+                    if (existingUser && providerEmail && canonicalEmail && providerEmail !== canonicalEmail) {
+                        console.log(`[auth][signIn] Skipping profile merge: provider email (${providerEmail}) differs from canonical email (${canonicalEmail})`);
+                        return true;
                     }
 
-                    // Update image/avatar from provider
-                    if (profile.picture || profile.avatar_url || profile.image) {
-                        updateData.image = profile.picture || profile.avatar_url || profile.image;
-                    }
+                    if (existingUser) {
+                        const updateData = {};
 
-                    // Provider-specific fields
-                    if (account?.provider === 'github') {
-                        // GitHub provides login (username), name, avatar_url, bio, company, location
-                        if (profile.bio) updateData.bio = profile.bio;
-                        if (profile.company) updateData.company = profile.company;
-                        if (profile.location) updateData.location = profile.location;
-                    }
+                        // Only set name if not already present
+                        if (!existingUser.name && profile.name) {
+                            updateData.name = profile.name;
+                        }
 
-                    if (account?.provider === 'gitlab') {
-                        // GitLab provides name, username, avatar_url, bio, location
-                        if (profile.bio) updateData.bio = profile.bio;
-                        if (profile.location) updateData.location = profile.location;
-                    }
+                        // Only set image if not already present
+                        if (!existingUser.image && (profile.picture || profile.avatar_url || profile.image)) {
+                            updateData.image = profile.picture || profile.avatar_url || profile.image;
+                        }
 
-                    if (account?.provider === 'google') {
-                        // Google provides given_name, family_name, picture
-                        if (profile.given_name) updateData.firstName = profile.given_name;
-                        if (profile.family_name) updateData.lastName = profile.family_name;
-                    }
+                        // Provider-specific fields — only fill blanks
+                        if (account?.provider === 'github') {
+                            if (!existingUser.bio && profile.bio) updateData.bio = profile.bio;
+                            if (!existingUser.company && profile.company) updateData.company = profile.company;
+                            if (!existingUser.location && profile.location) updateData.location = profile.location;
+                        }
 
-                    if (account?.provider === 'microsoft-entra-id') {
-                        // Microsoft provides givenName, surname, displayName
-                        if (profile.givenName) updateData.firstName = profile.givenName;
-                        if (profile.surname) updateData.lastName = profile.surname;
-                        if (profile.jobTitle) updateData.jobTitle = profile.jobTitle;
-                    }
+                        if (account?.provider === 'gitlab') {
+                            if (!existingUser.bio && profile.bio) updateData.bio = profile.bio;
+                            if (!existingUser.location && profile.location) updateData.location = profile.location;
+                        }
 
-                    // Only update if we have data to update
-                    if (Object.keys(updateData).length > 0) {
-                        try {
-                            // Check if user exists before updating
-                            const existingUser = await prisma.user.findUnique({
-                                where: { id: user.id }
-                            });
+                        if (account?.provider === 'google') {
+                            if (!existingUser.firstName && profile.given_name) updateData.firstName = profile.given_name;
+                            if (!existingUser.lastName && profile.family_name) updateData.lastName = profile.family_name;
+                        }
 
-                            if (existingUser) {
+                        if (account?.provider === 'microsoft-entra-id') {
+                            if (!existingUser.firstName && profile.givenName) updateData.firstName = profile.givenName;
+                            if (!existingUser.lastName && profile.surname) updateData.lastName = profile.surname;
+                            if (!existingUser.jobTitle && profile.jobTitle) updateData.jobTitle = profile.jobTitle;
+                        }
+
+                        // Only update if we have new data to fill in
+                        if (Object.keys(updateData).length > 0) {
+                            try {
                                 await prisma.user.update({
                                     where: { id: user.id },
                                     data: updateData,
                                 });
-                                console.log('Updated user profile from provider:', account?.provider, updateData);
+                                console.log('Filled in missing user profile fields from provider:', account?.provider, Object.keys(updateData));
+                            } catch (updateError) {
+                                console.error('Error in user update block:', updateError);
                             }
-                        } catch (updateError) {
-                            console.error('Error in user update block:', updateError);
                         }
                     }
                 } catch (error) {
@@ -300,14 +352,49 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (account) {
                 token.accessToken = account.access_token;
                 token.provider = account.provider; // Store which provider the token is for
+                // Clear provider-sourced picture immediately — the canonical image
+                // will be set below from the DB. This prevents a linked provider's
+                // avatar from leaking into the session when the DB image differs.
+                token.picture = null;
             }
             // store the user id on initial sign in so session callback can use it later
             if (user) {
                 token.userId = user.id;
             }
-            // Store profile data in token for potential use
-            if (profile) {
-                token.picture = profile.picture || profile.avatar_url || profile.image;
+            // Fetch canonical user data from the DB so the session always
+            // reflects the DB user, not whichever provider was used to log in.
+            //
+            // Runs on:
+            //  1. Initial sign-in (user object present)
+            //  2. Periodically (every 5 min) to self-heal corrupted data and
+            //     pick up profile changes without requiring re-login.
+            const DB_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+            const lookupId = user?.id || token.userId;
+            const isSignIn = !!user?.id;
+            const isStale = token._dbRefreshedAt
+                && (Date.now() - token._dbRefreshedAt > DB_REFRESH_INTERVAL_MS);
+            const needsRefresh = isSignIn || isStale;
+
+            if (lookupId && needsRefresh) {
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: lookupId },
+                        select: { email: true, name: true, image: true },
+                    });
+                    if (dbUser) {
+                        token.email = dbUser.email;
+                        token.name = dbUser.name;
+                        // Always use the DB image as the canonical source.
+                        // Set to null if not present — prevents NextAuth from
+                        // auto-populating token.picture with the current provider's
+                        // profile photo (which may differ from the user's canonical image).
+                        token.picture = dbUser.image ?? null;
+                    }
+                    token._dbRefreshedAt = Date.now();
+                } catch (err) {
+                    console.error('[auth][jwt] Error fetching DB user:', err.message);
+                    // Fall through — token will use defaults from the provider
+                }
             }
             // SECURITY: Only log non-sensitive info in development
             if (process.env.NODE_ENV === 'development') {
@@ -321,10 +408,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             session.provider = token.provider; // Pass provider to session
             // prefer stored userId (from jwt) falling back to token.sub
             session.user.id = token.userId ?? token.sub;
-            // Include the provider picture if available
-            if (token.picture) {
-                session.user.image = token.picture;
-            }
+            // Always use the canonical image from the JWT token (sourced from DB).
+            // Setting this unconditionally ensures NextAuth's auto-populated
+            // provider image is overridden — even with null/undefined.
+            session.user.image = token.picture || null;
             // Only log in development to avoid leaking sensitive info
             if (process.env.NODE_ENV === 'development') {
                 console.log('session callback', { provider: session.provider });

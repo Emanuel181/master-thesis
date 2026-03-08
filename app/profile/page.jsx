@@ -21,6 +21,7 @@ import ProfileHeader from "@/components/profile/profile-header"
 import ProfileContent from "@/components/profile/profile-content"
 import { UserArticlesSection } from "@/components/profile/user-articles-section"
 import { SavedArticlesSection } from "@/components/profile/saved-articles-section"
+import { DataExportSection } from "@/components/profile/data-export-section"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomizationDialog } from "@/components/customization-dialog"
 import { useSettings } from "@/contexts/settingsContext"
@@ -211,7 +212,7 @@ export default function ProfilePage() {
                                         <BreadcrumbList>
                                             <BreadcrumbItem className="hidden md:block">
                                                 <BreadcrumbLink href="/dashboard">
-                                                    Home
+                                                    Dashboard
                                                 </BreadcrumbLink>
                                             </BreadcrumbItem>
                                             <BreadcrumbSeparator />
@@ -265,6 +266,9 @@ export default function ProfilePage() {
                                     {session?.user?.id && (
                                         <SavedArticlesSection />
                                     )}
+
+                                    {/* 7. Data export (GDPR) */}
+                                    <DataExportSection />
                                 </div>
                             </ScrollArea>
                         </div>

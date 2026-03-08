@@ -20,8 +20,6 @@ export function EditorEmptyState({
     onImport,
     onPasteClick,
     displayLanguages = [],
-    language,
-    setLanguage,
     onFileDrop,
 }) {
     const [isDragOver, setIsDragOver] = useState(false)
@@ -132,9 +130,8 @@ export function EditorEmptyState({
                     {displayLanguages.map((lang) => (
                         <Badge
                             key={lang.prism}
-                            variant={lang.prism === language?.prism ? "default" : "outline"}
-                            className="cursor-pointer text-[10px] px-2 py-0.5 hover:bg-accent transition-colors"
-                            onClick={() => setLanguage(lang)}
+                            variant="outline"
+                            className="cursor-default text-[10px] px-2 py-0.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors"
                         >
                             {lang.name}
                         </Badge>

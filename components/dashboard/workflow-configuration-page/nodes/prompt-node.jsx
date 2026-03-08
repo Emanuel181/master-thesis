@@ -24,9 +24,9 @@ export function PromptNode({ data }) {
     const [promptPage, setPromptPage] = React.useState(0);
     const [promptSearchTerm, setPromptSearchTerm] = React.useState("");
     const borderColorMap = {
-        "bg-indigo-500": "border-indigo-500 dark:border-indigo-400",
+        "bg-primary": "border-primary",
     };
-    const borderColor = borderColorMap[data.iconBg] || "border-indigo-500 dark:border-indigo-400";
+    const borderColor = borderColorMap[data.iconBg] || "border-primary";
 
     const selectedCount = data.selectedPrompts?.length || 0;
     const isConfigured = selectedCount > 0;
@@ -72,18 +72,18 @@ export function PromptNode({ data }) {
         <>
             {/* Input from KB (Left) - Conditionally Rendered */}
             {showKbInput && (
-                <Handle type="target" position={Position.Left} className="!bg-cyan-500 !w-3 !h-3" />
+                <Handle type="target" position={Position.Left} className="!bg-primary !w-3 !h-3" />
             )}
 
             <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 transition-all duration-300 ${borderColor} ${
-                isConfigured ? 'ring-2 ring-indigo-500/20 shadow-md' : 'opacity-90'
+                isConfigured ? 'ring-2 ring-primary/20 shadow-md' : 'opacity-90'
             }`}>
                 <CardContent className="p-2 sm:p-4">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                         <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <MessageSquare className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
                             {isConfigured && (
-                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-indigo-500 border-2 border-background">
+                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary border-2 border-background">
                                     <Check className="h-2 w-2 text-white" strokeWidth={3} />
                                 </span>
                             )}
@@ -92,7 +92,7 @@ export function PromptNode({ data }) {
                             <div className="font-semibold text-xs sm:text-base truncate">{data.label}</div>
                             <div className={`text-[10px] sm:text-xs font-medium ${
                                 isConfigured
-                                    ? 'text-indigo-600 dark:text-indigo-400'
+                                    ? 'text-primary'
                                     : 'text-muted-foreground'
                             }`}>
                                 {selectedCount} selected
@@ -177,7 +177,7 @@ export function PromptNode({ data }) {
                                                 className={cn(
                                                     "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
                                                     "hover:bg-accent",
-                                                    isSelected && "bg-indigo-5 dark:bg-indigo-950/30"
+                                                    isSelected && "bg-primary/5 dark:bg-primary/10"
                                                 )}
                                                 onClick={() => handleToggle(prompt.id)}
                                             >
@@ -229,7 +229,7 @@ export function PromptNode({ data }) {
                         </PopoverContent>
                     </Popover>
                     {isConfigured ? (
-                        <div className="mt-1.5 flex items-center gap-1 text-[9px] sm:text-[10px] text-indigo-600 dark:text-indigo-400">
+                        <div className="mt-1.5 flex items-center gap-1 text-[9px] sm:text-[10px] text-primary">
                             <Check className="h-2.5 w-2.5" />
                             <span className="truncate">{selectedTexts}</span>
                         </div>
@@ -242,7 +242,7 @@ export function PromptNode({ data }) {
             </Card>
 
             {/* Output to Agent (Bottom) */}
-            <Handle type="source" position={Position.Bottom} className="!bg-indigo-500 !w-3 !h-3" />
+            <Handle type="source" position={Position.Bottom} className="!bg-primary !w-3 !h-3" />
         </>
     );
 }

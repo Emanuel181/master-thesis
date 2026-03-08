@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { Eye, Edit, Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react"
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -74,7 +75,14 @@ export function SortablePromptItem({
                         onClick={(e) => e.stopPropagation()}
                     />
                     <div className="flex-1 min-w-0" onClick={() => setViewFullTextPrompt(prompt)}>
-                        <h4 className="font-medium text-xs truncate text-foreground/90">{prompt.title || "Untitled"}</h4>
+                        <div className="flex items-center gap-1.5">
+                            <h4 className="font-medium text-xs truncate text-foreground/90">{prompt.title || "Untitled"}</h4>
+                            {prompt.isDefault && (
+                                <Badge variant="outline" className="shrink-0 h-4 px-1 text-[8px] font-medium bg-primary/10 text-primary border-primary/20">
+                                    Default
+                                </Badge>
+                            )}
+                        </div>
                         <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">{truncateText(prompt.text, 35)}</p>
                     </div>
                 </div>

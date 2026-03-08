@@ -44,6 +44,12 @@ const LastUsedBadge = () => (
 )
 
 const ERROR_MESSAGES = {
+    CrossEmailBlocked: {
+        title: "Wrong Account",
+        description: "This sign-in provider is linked to a different email address than your VulnIQ account.",
+        details: "Please sign in with the same email you originally used, or use a different sign-in method.",
+        icon: Mail,
+    },
     OAuthAccountNotLinked: {
         title: "Account Already Exists",
         description: "An account with this email already exists but is linked to a different sign-in provider.",

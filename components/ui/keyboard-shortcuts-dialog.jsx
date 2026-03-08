@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation" // navigation hooks
 import {
     CommandDialog,
     CommandEmpty,
@@ -42,7 +42,7 @@ const quickActions = [
         category: "Navigation",
         items: [
             { icon: Home, description: "Go to Home", action: "navigate-home" },
-            { icon: Code, description: "Go to Code Input", action: "navigate-code" },
+            { icon: Code, description: "Go to Code Inspection", action: "navigate-code" },
             { icon: Database, description: "Go to Knowledge Base", action: "navigate-kb" },
             { icon: BarChart3, description: "Go to Results", action: "navigate-results" },
             { icon: User, description: "Go to Profile", action: "navigate-profile" },
@@ -84,7 +84,9 @@ const quickActions = [
 export function KeyboardShortcutsDialog() {
     const [open, setOpen] = React.useState(false)
     const router = useRouter()
+    const pathname = usePathname()
     const { setTheme, theme } = useTheme()
+    const isDemo = pathname?.startsWith('/demo')
 
     // Listen for open-keyboard-shortcuts event and Ctrl+Shift+K shortcut
     React.useEffect(() => {
@@ -116,22 +118,22 @@ export function KeyboardShortcutsDialog() {
                     window.dispatchEvent(new CustomEvent("open-command-palette"))
                     break
                 case "navigate-home":
-                    router.push("/dashboard?active=Home")
+                    router.push(isDemo ? "/demo/home" : "/dashboard?active=Home")
                     break
                 case "navigate-code":
-                    router.push("/dashboard?active=Code input")
+                    router.push(isDemo ? "/demo/code-input" : "/dashboard?active=Code inspection")
                     break
                 case "navigate-kb":
-                    router.push("/dashboard?active=Knowledge base")
+                    router.push(isDemo ? "/demo/knowledge-base" : "/dashboard?active=Knowledge base")
                     break
                 case "navigate-results":
-                    router.push("/dashboard?active=Results")
+                    router.push(isDemo ? "/demo/results" : "/dashboard?active=Results")
                     break
                 case "navigate-profile":
-                    router.push("/profile")
+                    router.push(isDemo ? "/demo/profile" : "/profile")
                     break
                 case "navigate-article":
-                    router.push("/dashboard?active=Write article")
+                    router.push(isDemo ? "/demo/write-article" : "/dashboard?active=Write article")
                     break
                 case "theme-toggle":
                     setTheme(theme === "dark" ? "light" : "dark")
@@ -143,7 +145,7 @@ export function KeyboardShortcutsDialog() {
                     window.dispatchEvent(new CustomEvent("open-notifications"))
                     break
                 case "workflow":
-                    window.dispatchEvent(new CustomEvent("open-workflow"))
+                    window.dispatchEvent(new CustomEvent("open-workflow-config"))
                     break
                 case "toggle-sidebar":
                     window.dispatchEvent(new CustomEvent("toggle-sidebar"))
@@ -168,7 +170,7 @@ export function KeyboardShortcutsDialog() {
                     break
             }
         }, 100)
-    }, [router, setTheme, theme])
+    }, [router, setTheme, theme, isDemo])
 
 
     return (

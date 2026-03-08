@@ -123,7 +123,7 @@ export function ViewPromptDialog({
                         </p>
                     </div>
                 )}
-                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <DialogFooter className="flex-col sm:flex-row gap-2">
                     <Button
                         variant="outline"
                         onClick={onClose}
@@ -201,7 +201,7 @@ export function EditPromptDialog({
                     </div>
                 )}
 
-                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <DialogFooter className="flex-col sm:flex-row gap-2">
                     <Button
                         variant="outline"
                         onClick={() => {
@@ -274,9 +274,16 @@ export function ResetConfirmDialog({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Reset Default Prompts?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This will restore any edited default prompts back to their original content.
-                        Your custom prompts will not be affected.
+                    <AlertDialogDescription asChild>
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                            <p>
+                                This will only affect prompts marked with a <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">Default</span> badge.
+                                If you edited any of these default prompts, they will be reverted back to their original content.
+                            </p>
+                            <p>
+                                Your custom prompts (ones you created yourself) will <strong className="text-foreground">not</strong> be affected.
+                            </p>
+                        </div>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -828,6 +828,439 @@ const DEMO_CODE = DEMO_PROJECT_EXPRESS.children
 const DEMO_PROJECT_STRUCTURE = DEMO_PROJECT_EXPRESS;
 
 // =============================================
+// DEMO VULNERABILITY MAP (filePath → Vulnerability[])
+// Maps to the DEMO_PROJECT_EXPRESS file structure
+// =============================================
+const DEMO_VULNERABILITIES = {
+    "src/index.js": [
+        {
+            id: "demo-vuln-1",
+            severity: "Critical",
+            title: "SQL Injection",
+            cweId: "CWE-89",
+            lineNumber: 10,
+            explanation: "User input `req.query.id` is concatenated directly into the SQL query string without parameterisation. An attacker can inject arbitrary SQL, leading to data exfiltration or database destruction.",
+            bestPractices: "Use parameterised queries or prepared statements: `connection.query('SELECT * FROM users WHERE id = ?', [userId], ...)`",
+            details: "SQL Injection via unsanitised query parameter",
+        },
+        {
+            id: "demo-vuln-2",
+            severity: "High",
+            title: "Cross-Site Scripting (XSS)",
+            cweId: "CWE-79",
+            lineNumber: 25,
+            explanation: "The `username` query parameter is embedded directly into the HTML response without escaping. An attacker can inject `<script>` tags to steal cookies or redirect users.",
+            bestPractices: "Escape HTML entities before embedding user input, or use a template engine with auto-escaping enabled.",
+            details: "Reflected XSS via unescaped user input in HTML",
+        },
+        {
+            id: "demo-vuln-3",
+            severity: "High",
+            title: "Path Traversal",
+            cweId: "CWE-22",
+            lineNumber: 38,
+            explanation: "The `filename` parameter is appended to the file path without validation. An attacker can use `../` sequences to read arbitrary files from the server (e.g., `/etc/passwd`).",
+            bestPractices: "Validate file names against an allow-list, use `path.resolve()` and verify the resolved path stays within the uploads directory.",
+            details: "Path traversal via unsanitised file parameter",
+        },
+        {
+            id: "demo-vuln-4",
+            severity: "Critical",
+            title: "Hardcoded Credentials",
+            cweId: "CWE-798",
+            lineNumber: 46,
+            explanation: "Database password `password123` is hardcoded in the source code. Anyone with access to the repository can see these credentials.",
+            bestPractices: "Store credentials in environment variables or a secrets manager. Never commit secrets to version control.",
+            details: "Hardcoded database password in source code",
+        },
+    ],
+    "src/routes/users.js": [
+        {
+            id: "demo-vuln-5",
+            severity: "Critical",
+            title: "SQL Injection",
+            cweId: "CWE-89",
+            lineNumber: 6,
+            explanation: "Route parameter `req.params.id` is concatenated directly into the SQL query, allowing injection of arbitrary SQL.",
+            bestPractices: "Use parameterised queries: `db.query('SELECT * FROM users WHERE id = ?', [req.params.id], ...)`",
+            details: "SQL Injection in user lookup route",
+        },
+        {
+            id: "demo-vuln-6",
+            severity: "Critical",
+            title: "SQL Injection",
+            cweId: "CWE-89",
+            lineNumber: 13,
+            explanation: "The `name` field from the request body is interpolated directly into a LIKE query using template literals, enabling SQL injection.",
+            bestPractices: "Use parameterised queries with wildcards: `db.query('SELECT * FROM users WHERE name LIKE ?', [`%${name}%`], ...)`",
+            details: "SQL Injection in user search",
+        },
+    ],
+    "src/routes/auth.js": [
+        {
+            id: "demo-vuln-7",
+            severity: "High",
+            title: "Weak Cryptographic Hash (MD5)",
+            cweId: "CWE-328",
+            lineNumber: 9,
+            explanation: "MD5 is cryptographically broken and unsuitable for password hashing. It is vulnerable to collision and preimage attacks, and rainbow table lookups.",
+            bestPractices: "Use bcrypt, scrypt, or Argon2 for password hashing with a per-user salt.",
+            details: "Passwords hashed with MD5 instead of a modern KDF",
+        },
+    ],
+    "src/routes/admin.js": [
+        {
+            id: "demo-vuln-8",
+            severity: "High",
+            title: "Missing Authorization",
+            cweId: "CWE-862",
+            lineNumber: 5,
+            explanation: "The admin `/users` endpoint has no authentication or authorization middleware. Any unauthenticated user can list all users in the database.",
+            bestPractices: "Add authentication middleware and verify the user has admin privileges before serving admin routes.",
+            details: "Admin endpoint accessible without authentication",
+        },
+        {
+            id: "demo-vuln-9",
+            severity: "High",
+            title: "Insecure Direct Object Reference (IDOR)",
+            cweId: "CWE-639",
+            lineNumber: 12,
+            explanation: "The delete endpoint accepts a user ID directly from the URL without verifying the requester's authority to delete that specific user.",
+            bestPractices: "Verify the authenticated user has permission to perform the action on the specific resource.",
+            details: "IDOR in user deletion endpoint",
+        },
+    ],
+    "src/utils/database.js": [
+        {
+            id: "demo-vuln-10",
+            severity: "Critical",
+            title: "Hardcoded Credentials",
+            cweId: "CWE-798",
+            lineNumber: 5,
+            explanation: "The root database password `admin123` is hardcoded in the source code with a comment acknowledging the issue.",
+            bestPractices: "Use environment variables: `password: process.env.DB_PASSWORD`",
+            details: "Hardcoded database root password",
+        },
+    ],
+    "src/utils/crypto.js": [
+        {
+            id: "demo-vuln-11",
+            severity: "Critical",
+            title: "Weak Encryption Algorithm (DES-ECB)",
+            cweId: "CWE-327",
+            lineNumber: 4,
+            explanation: "DES is a deprecated algorithm with only 56-bit key strength. ECB mode does not use an IV and reveals patterns in the plaintext.",
+            bestPractices: "Use AES-256-GCM or AES-256-CBC with a random IV for encryption.",
+            details: "Encryption uses deprecated DES-ECB cipher",
+        },
+        {
+            id: "demo-vuln-12",
+            severity: "Medium",
+            title: "Insecure Random Number Generation",
+            cweId: "CWE-338",
+            lineNumber: 11,
+            explanation: "`Math.random()` is not cryptographically secure. Tokens generated this way are predictable and can be guessed by an attacker.",
+            bestPractices: "Use `crypto.randomBytes(32).toString('hex')` for cryptographically secure token generation.",
+            details: "Token generation uses Math.random()",
+        },
+    ],
+    "src/middleware/auth.js": [
+        {
+            id: "demo-vuln-13",
+            severity: "Critical",
+            title: "Hardcoded JWT Secret",
+            cweId: "CWE-798",
+            lineNumber: 3,
+            explanation: "The JWT signing secret `super-secret-key-123` is hardcoded. An attacker who discovers this secret can forge valid authentication tokens.",
+            bestPractices: "Store the JWT secret in an environment variable and rotate it regularly.",
+            details: "JWT secret hardcoded in source code",
+        },
+    ],
+    "config/secrets.js": [
+        {
+            id: "demo-vuln-14",
+            severity: "Critical",
+            title: "Exposed Cloud Credentials",
+            cweId: "CWE-798",
+            lineNumber: 3,
+            explanation: "AWS access keys are committed to source control. These credentials could be used to access cloud resources, incur charges, or exfiltrate data.",
+            bestPractices: "Use IAM roles, environment variables, or a secrets manager. Never commit cloud credentials to version control. Rotate any exposed keys immediately.",
+            details: "AWS credentials exposed in source code",
+        },
+        {
+            id: "demo-vuln-15",
+            severity: "Critical",
+            title: "Hardcoded JWT Secret",
+            cweId: "CWE-798",
+            lineNumber: 5,
+            explanation: "The JWT secret is stored alongside other secrets in a committed configuration file.",
+            bestPractices: "Move all secrets to environment variables or a dedicated secrets management service.",
+            details: "JWT signing secret in committed config file",
+        },
+    ],
+};
+
+
+// =============================================
+// DEMO VULNERABILITIES PER REPO (for Results page)
+// =============================================
+const DEMO_VULNERABILITIES_FLASK = {
+    "app/routes.py": [
+        {
+            id: "flask-vuln-1",
+            severity: "Critical",
+            title: "SQL Injection",
+            cweId: "CWE-89",
+            lineNumber: 10,
+            explanation: "User input from `request.args.get('q')` is directly interpolated into the SQL query using an f-string. An attacker can inject arbitrary SQL to read, modify, or delete the entire database.",
+            bestPractices: "Use SQLAlchemy ORM queries with parameterised filters: `User.query.filter(User.name.like(f'%{query}%'))` or use `db.engine.execute(text(...), {'q': query})`.",
+            details: "SQL Injection via f-string interpolation in raw SQL query",
+        },
+        {
+            id: "flask-vuln-2",
+            severity: "Critical",
+            title: "OS Command Injection",
+            cweId: "CWE-78",
+            lineNumber: 16,
+            explanation: "The `host` parameter from user input is directly passed into `subprocess.check_output` with `shell=True`. An attacker can chain commands with `;`, `&&`, or `|` to execute arbitrary system commands.",
+            bestPractices: "Use `subprocess.run(['ping', '-c', '1', host], shell=False)` and validate the host against a strict allowlist or regex pattern.",
+            details: "Command Injection via unsanitised subprocess call with shell=True",
+        },
+        {
+            id: "flask-vuln-3",
+            severity: "Critical",
+            title: "Insecure Deserialization",
+            cweId: "CWE-502",
+            lineNumber: 23,
+            explanation: "`pickle.loads()` on untrusted user input can execute arbitrary code. An attacker can craft a malicious pickle payload to achieve remote code execution.",
+            bestPractices: "Never use `pickle` to deserialize untrusted data. Use JSON for data interchange and validate input schema with libraries like Pydantic or Marshmallow.",
+            details: "Arbitrary code execution via pickle deserialization of user input",
+        },
+        {
+            id: "flask-vuln-4",
+            severity: "High",
+            title: "Server-Side Template Injection (SSTI)",
+            cweId: "CWE-1336",
+            lineNumber: 30,
+            explanation: "User input is directly embedded into a Jinja2 template string via `render_template_string`. An attacker can inject template expressions like `{{7*7}}` or `{{config}}` to read secrets or achieve RCE.",
+            bestPractices: "Pass user input as a template variable: `render_template_string('<h1>Hello {{name}}!</h1>', name=name)`. Never concatenate user input into template strings.",
+            details: "SSTI via unescaped user input in render_template_string",
+        },
+    ],
+    "app/__init__.py": [
+        {
+            id: "flask-vuln-5",
+            severity: "High",
+            title: "Debug Mode Enabled in Production",
+            cweId: "CWE-489",
+            lineNumber: 6,
+            explanation: "Flask debug mode (`DEBUG = True`) exposes a Werkzeug interactive debugger that allows arbitrary code execution if accessed remotely.",
+            bestPractices: "Set `DEBUG = False` in production. Use environment variables: `app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'False') == 'True'`.",
+            details: "Debug mode enabled, exposing interactive debugger",
+        },
+        {
+            id: "flask-vuln-6",
+            severity: "Critical",
+            title: "Hardcoded Secret Key",
+            cweId: "CWE-798",
+            lineNumber: 7,
+            explanation: "The Flask SECRET_KEY is hardcoded as `'dev'`. This key is used for session signing — a known secret allows session forgery and cookie tampering.",
+            bestPractices: "Generate a strong random key and store it in an environment variable: `app.config['SECRET_KEY'] = os.environ['SECRET_KEY']`.",
+            details: "Hardcoded Flask SECRET_KEY enables session forgery",
+        },
+    ],
+    "app/models.py": [
+        {
+            id: "flask-vuln-7",
+            severity: "High",
+            title: "Weak Password Hashing (MD5)",
+            cweId: "CWE-328",
+            lineNumber: 14,
+            explanation: "Passwords are hashed with MD5 via `generate_password_hash(password, method='md5')`. MD5 is cryptographically broken and susceptible to rainbow table and collision attacks.",
+            bestPractices: "Use `generate_password_hash(password, method='scrypt')` (default in Werkzeug) or use bcrypt/argon2 via `passlib`.",
+            details: "MD5 used for password hashing instead of modern KDF",
+        },
+        {
+            id: "flask-vuln-8",
+            severity: "Medium",
+            title: "Sensitive Data Exposure in API Response",
+            cweId: "CWE-200",
+            lineNumber: 17,
+            explanation: "The `to_dict()` method exposes `password_hash` and `is_admin` fields in API responses, leaking sensitive internal data.",
+            bestPractices: "Exclude sensitive fields from serialization. Return only necessary fields: `{'id': self.id, 'username': self.username, 'email': self.email}`.",
+            details: "Password hash and admin flag exposed in API response",
+        },
+    ],
+    "config.py": [
+        {
+            id: "flask-vuln-9",
+            severity: "Critical",
+            title: "Hardcoded Database Credentials",
+            cweId: "CWE-798",
+            lineNumber: 5,
+            explanation: "Database connection string with credentials is hardcoded in the configuration file.",
+            bestPractices: "Use environment variables for database URIs: `SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')`.",
+            details: "Database credentials committed to source control",
+        },
+    ],
+};
+
+const DEMO_VULNERABILITIES_REACT = {
+    "src/components/Login.tsx": [
+        {
+            id: "react-vuln-1",
+            severity: "Critical",
+            title: "Client-Side Authentication Bypass",
+            cweId: "CWE-602",
+            lineNumber: 15,
+            explanation: "Authentication logic is performed entirely on the client side. The login check uses a simple string comparison against hardcoded credentials stored in the frontend bundle.",
+            bestPractices: "Always perform authentication on the server. Use secure session tokens (e.g., HTTP-only cookies) returned from a server-side authentication endpoint.",
+            details: "Authentication bypass via client-side credential validation",
+        },
+        {
+            id: "react-vuln-2",
+            severity: "High",
+            title: "Credentials Stored in Frontend Code",
+            cweId: "CWE-798",
+            lineNumber: 8,
+            explanation: "Admin username and password are hardcoded in the React component. Anyone inspecting the JS bundle can extract these credentials.",
+            bestPractices: "Never store credentials in frontend code. All credential validation must happen server-side via secure API endpoints.",
+            details: "Hardcoded admin credentials visible in JS bundle",
+        },
+    ],
+    "src/components/Dashboard.tsx": [
+        {
+            id: "react-vuln-3",
+            severity: "High",
+            title: "Cross-Site Scripting (XSS) via dangerouslySetInnerHTML",
+            cweId: "CWE-79",
+            lineNumber: 22,
+            explanation: "User-supplied content from URL parameters is rendered using `dangerouslySetInnerHTML` without sanitization, allowing XSS attacks.",
+            bestPractices: "Avoid `dangerouslySetInnerHTML`. If HTML rendering is required, use a sanitization library like DOMPurify: `<div dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(content)}} />`.",
+            details: "Stored XSS via unsanitized HTML rendering",
+        },
+        {
+            id: "react-vuln-4",
+            severity: "Medium",
+            title: "Insecure Direct Object Reference (IDOR)",
+            cweId: "CWE-639",
+            lineNumber: 35,
+            explanation: "User profile data is fetched using a user ID from the URL without server-side authorization. Any authenticated user can access other users' profiles by changing the ID.",
+            bestPractices: "Implement server-side authorization checks. Verify the requesting user has permission to access the requested resource.",
+            details: "IDOR in profile data fetching endpoint",
+        },
+    ],
+    "src/utils/api.ts": [
+        {
+            id: "react-vuln-5",
+            severity: "High",
+            title: "JWT Token Stored in localStorage",
+            cweId: "CWE-922",
+            lineNumber: 10,
+            explanation: "JWT authentication tokens are stored in `localStorage`, which is accessible to any JavaScript running on the page, including injected scripts from XSS attacks.",
+            bestPractices: "Store tokens in HTTP-only, Secure, SameSite cookies. If localStorage must be used, implement additional protections like token rotation and short expiry.",
+            details: "Authentication tokens vulnerable to XSS exfiltration",
+        },
+        {
+            id: "react-vuln-6",
+            severity: "Medium",
+            title: "Missing CSRF Protection",
+            cweId: "CWE-352",
+            lineNumber: 25,
+            explanation: "API requests are made without CSRF tokens. State-changing operations (POST, PUT, DELETE) can be triggered by malicious cross-origin requests.",
+            bestPractices: "Implement CSRF tokens for all state-changing requests. Use the `SameSite` cookie attribute and verify the `Origin` header on the server.",
+            details: "No CSRF protection on state-changing API calls",
+        },
+    ],
+    "src/config/auth.ts": [
+        {
+            id: "react-vuln-7",
+            severity: "Critical",
+            title: "Hardcoded JWT Secret in Frontend",
+            cweId: "CWE-798",
+            lineNumber: 3,
+            explanation: "The JWT signing secret is hardcoded in the frontend configuration file. This allows anyone to forge valid JWT tokens and impersonate any user.",
+            bestPractices: "JWT secrets must be server-side only. Remove all signing logic from the frontend. Use server-issued tokens verified exclusively on the backend.",
+            details: "JWT signing secret exposed in client-side code",
+        },
+    ],
+    "src/components/UserProfile.tsx": [
+        {
+            id: "react-vuln-8",
+            severity: "Medium",
+            title: "Sensitive Data Logged to Console",
+            cweId: "CWE-532",
+            lineNumber: 18,
+            explanation: "User PII (email, phone, address) and authentication tokens are logged to `console.log` in production builds. These can be captured by browser extensions or monitoring tools.",
+            bestPractices: "Remove all `console.log` statements containing sensitive data. Use a logging library with level control and data masking for production.",
+            details: "PII and auth tokens exposed in browser console",
+        },
+    ],
+};
+
+// Combined results map for all demo repos
+const DEMO_RESULTS_MAP = {
+    "demo-org/vulnerable-express-app": DEMO_VULNERABILITIES,
+    "demo-org/insecure-flask-api": DEMO_VULNERABILITIES_FLASK,
+    "demo-org/react-auth-example": DEMO_VULNERABILITIES_REACT,
+    // Aliases for repos that share the same project structure
+    "demo-group/php-cms-demo": DEMO_VULNERABILITIES,
+    "demo-group/go-microservices": DEMO_VULNERABILITIES_FLASK,
+    "demo-group/ruby-rails-blog": DEMO_VULNERABILITIES_REACT,
+};
+
+// =============================================
+// DEMO WORKFLOW CONFIGURATIONS PER REPO
+// =============================================
+const DEMO_WORKFLOW_CONFIGS = {
+    "demo-org/vulnerable-express-app": {
+        agentModels: {
+            reviewer: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            implementation: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            tester: "anthropic.claude-3-5-haiku-20241022-v1:0",
+            report: "anthropic.claude-3-sonnet-20240229-v1:0",
+        },
+        selectedKnowledgeBases: ["demo-sql-injection", "demo-xss", "demo-secrets"],
+        selectedPrompts: {
+            reviewer: ["demo-prompt-1"],
+            implementation: ["demo-prompt-7"],
+            tester: ["demo-prompt-13"],
+            report: ["demo-prompt-18"],
+        },
+    },
+    "demo-org/insecure-flask-api": {
+        agentModels: {
+            reviewer: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            implementation: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            tester: "anthropic.claude-3-5-haiku-20241022-v1:0",
+            report: "anthropic.claude-3-sonnet-20240229-v1:0",
+        },
+        selectedKnowledgeBases: ["demo-sql-injection", "demo-auth", "demo-api-security"],
+        selectedPrompts: {
+            reviewer: ["demo-prompt-2"],
+            implementation: ["demo-prompt-8"],
+            tester: ["demo-prompt-14"],
+            report: ["demo-prompt-19"],
+        },
+    },
+    "demo-org/react-auth-example": {
+        agentModels: {
+            reviewer: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            implementation: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+            tester: "anthropic.claude-3-5-haiku-20241022-v1:0",
+            report: "anthropic.claude-3-sonnet-20240229-v1:0",
+        },
+        selectedKnowledgeBases: ["demo-xss", "demo-auth", "demo-secrets"],
+        selectedPrompts: {
+            reviewer: ["demo-prompt-4"],
+            implementation: ["demo-prompt-11"],
+            tester: ["demo-prompt-16"],
+            report: ["demo-prompt-21"],
+        },
+    },
+};
+
+// =============================================
 // DEMO USE CASE GROUPS (Folders for organizing use cases)
 // =============================================
 const DEMO_USE_CASE_GROUPS = [
@@ -1191,18 +1624,21 @@ const DEMO_PROMPTS = {
             title: "Security Code Review",
             text: "Analyze the provided code for security vulnerabilities. Focus on OWASP Top 10 issues including injection flaws, broken authentication, sensitive data exposure, and security misconfigurations. Provide severity ratings and line-specific findings.",
             order: 0,
+            isDefault: true,
         },
         {
             id: "demo-prompt-2",
             title: "Deep Vulnerability Scan",
             text: "Perform a comprehensive security analysis identifying all potential vulnerabilities, their attack vectors, and potential impact. Include CVE references where applicable.",
             order: 1,
+            isDefault: true,
         },
         {
             id: "demo-prompt-3",
             title: "SQL Injection Analysis",
             text: "Focus specifically on SQL injection vulnerabilities. Identify all database query patterns, classify injection types (in-band, blind, out-of-band), and assess exploitability.",
             order: 2,
+            isDefault: true,
         },
         {
             id: "demo-prompt-4",
@@ -1229,18 +1665,21 @@ const DEMO_PROMPTS = {
             title: "Generate Secure Fix",
             text: "Generate secure code to remediate the identified vulnerabilities. Follow security best practices and include comments explaining the security improvements. Maintain code functionality while eliminating security risks.",
             order: 0,
+            isDefault: true,
         },
         {
             id: "demo-prompt-8",
             title: "Refactor for Security",
             text: "Refactor the vulnerable code following secure coding guidelines. Implement input validation, output encoding, parameterized queries, and proper error handling.",
             order: 1,
+            isDefault: true,
         },
         {
             id: "demo-prompt-9",
             title: "Parameterize SQL Queries",
             text: "Convert all raw SQL queries to parameterized queries or ORM methods. Ensure proper type checking and prevent SQL injection while maintaining query functionality.",
             order: 2,
+            isDefault: true,
         },
         {
             id: "demo-prompt-10",
@@ -1267,18 +1706,21 @@ const DEMO_PROMPTS = {
             title: "Security Test Cases",
             text: "Generate security test cases to verify the remediation is effective. Include positive and negative test scenarios, edge cases, and regression tests for the original vulnerabilities.",
             order: 0,
+            isDefault: true,
         },
         {
             id: "demo-prompt-14",
             title: "SQL Injection Tests",
             text: "Create comprehensive SQL injection test cases including union-based, boolean-blind, time-based blind, and error-based payloads. Include parameterized query validation tests.",
             order: 1,
+            isDefault: true,
         },
         {
             id: "demo-prompt-15",
             title: "XSS Test Suite",
             text: "Generate XSS test cases covering reflected, stored, and DOM-based attacks. Include payload encoding variations, filter bypass techniques, and output encoding validation.",
             order: 2,
+            isDefault: true,
         },
         {
             id: "demo-prompt-16",
@@ -1299,18 +1741,21 @@ const DEMO_PROMPTS = {
             title: "Executive Summary Report",
             text: "Generate an executive summary of the security findings, remediation steps taken, and verification results. Include risk ratings, business impact, and recommendations for further security improvements.",
             order: 0,
+            isDefault: true,
         },
         {
             id: "demo-prompt-19",
             title: "Technical Findings Report",
             text: "Create a detailed technical report with vulnerability descriptions, affected code locations, attack scenarios, remediation code, and verification evidence.",
             order: 1,
+            isDefault: true,
         },
         {
             id: "demo-prompt-20",
             title: "Compliance Report",
             text: "Generate a compliance-focused report mapping findings to OWASP Top 10, PCI-DSS requirements, and SOC 2 controls. Include remediation status and evidence.",
             order: 2,
+            isDefault: true,
         },
         {
             id: "demo-prompt-21",
@@ -1337,7 +1782,13 @@ export function DemoProvider({ children }) {
     // This ensures demo mode cannot be manipulated via React devtools
     const isDemoMode = isDemoPath(pathname);
 
-    const [currentDemoProject, setCurrentDemoProject] = useState("demo-org/vulnerable-express-app");
+    const [currentDemoProject, setCurrentDemoProject] = useState(() => {
+        if (typeof window === 'undefined') return "demo-org/vulnerable-express-app";
+        try {
+            const saved = sessionStorage.getItem('vulniq_demo_current_project');
+            return saved && DEMO_PROJECTS[saved] ? saved : "demo-org/vulnerable-express-app";
+        } catch { return "demo-org/vulnerable-express-app"; }
+    });
 
 
 
@@ -1370,6 +1821,7 @@ export function DemoProvider({ children }) {
     const switchDemoProject = useCallback((projectFullName) => {
         if (DEMO_PROJECTS[projectFullName]) {
             setCurrentDemoProject(projectFullName);
+            try { sessionStorage.setItem('vulniq_demo_current_project', projectFullName); } catch {}
             return DEMO_PROJECTS[projectFullName];
         }
         return null;
@@ -1385,6 +1837,32 @@ export function DemoProvider({ children }) {
     const getDemoGithubRepos = useCallback(() => DEMO_GITHUB_REPOS, []);
     const getDemoGitlabRepos = useCallback(() => DEMO_GITLAB_REPOS, []);
     const getDemoProjects = useCallback(() => DEMO_PROJECTS, []);
+    const getDemoResultsForRepo = useCallback((repoFullName) => {
+        const vulnMap = DEMO_RESULTS_MAP[repoFullName] || DEMO_RESULTS_MAP["demo-org/vulnerable-express-app"];
+        // Flatten the file-keyed vulnerability map into a flat array suitable for the Results component
+        const flatVulns = [];
+        let idx = 1;
+        for (const [fileName, vulns] of Object.entries(vulnMap)) {
+            for (const v of vulns) {
+                flatVulns.push({
+                    id: idx++,
+                    severity: v.severity,
+                    title: v.title,
+                    type: v.cweId || "CWE-000",
+                    details: v.details,
+                    fileName,
+                    cweId: v.cweId,
+                    vulnerableCode: v.vulnerableCode || "",
+                    explanation: v.explanation,
+                    bestPractices: v.bestPractices,
+                });
+            }
+        }
+        return flatVulns;
+    }, []);
+    const getDemoWorkflowConfig = useCallback((repoFullName) => {
+        return DEMO_WORKFLOW_CONFIGS[repoFullName] || DEMO_WORKFLOW_CONFIGS["demo-org/vulnerable-express-app"];
+    }, []);
 
     return (
         <DemoContext.Provider
@@ -1402,6 +1880,8 @@ export function DemoProvider({ children }) {
                 getDemoGithubRepos,
                 getDemoGitlabRepos,
                 getDemoProjects,
+                getDemoResultsForRepo,
+                getDemoWorkflowConfig,
                 // Export constants for direct access
                 DEMO_CODE,
                 DEMO_PROJECT_STRUCTURE,
@@ -1412,6 +1892,9 @@ export function DemoProvider({ children }) {
                 DEMO_GITHUB_REPOS,
                 DEMO_GITLAB_REPOS,
                 DEMO_PROJECTS,
+                DEMO_VULNERABILITIES,
+                DEMO_RESULTS_MAP,
+                DEMO_WORKFLOW_CONFIGS,
             }}
         >
             {children}
@@ -1437,4 +1920,7 @@ export {
     DEMO_GITHUB_REPOS,
     DEMO_GITLAB_REPOS,
     DEMO_PROJECTS,
+    DEMO_VULNERABILITIES,
+    DEMO_RESULTS_MAP,
+    DEMO_WORKFLOW_CONFIGS,
 };

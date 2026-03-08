@@ -1686,7 +1686,7 @@ export function HomePage() {
                             </p>
                         </div>
                     )}
-                    <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button
                             variant="outline"
                             onClick={() => setViewFullTextPrompt(null)}
@@ -1752,7 +1752,7 @@ export function HomePage() {
                         </div>
                     )}
 
-                    <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button
                             variant="outline"
                             onClick={() => {

@@ -21,6 +21,7 @@ import {
     Save,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 import "reactflow/dist/style.css";
 
 // Import extracted nodes and edges
@@ -64,6 +65,10 @@ export function AIWorkflowVisualization({
     const [hasPositionChanges, setHasPositionChanges] = React.useState(false);
     const reactFlowInstanceRef = React.useRef(null);
 
+    // Detect demo mode once at this level and pass down to nodes
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
+
     const MIN_ZOOM = 0.5;
     const MAX_ZOOM = 1.5;
     const ZOOM_STEP = 0.15;
@@ -88,14 +93,21 @@ export function AIWorkflowVisualization({
         return () => observer.disconnect();
     }, []);
 
+    // Read the user's primary color from CSS variable
+    const primaryColor = React.useMemo(() => {
+        if (typeof window === 'undefined') return isDarkMode ? "#22d3ee" : "#06b6d4";
+        const style = getComputedStyle(document.documentElement);
+        return style.getPropertyValue('--primary').trim() || (isDarkMode ? "#22d3ee" : "#06b6d4");
+    }, [isDarkMode]);
+
     const edgeColors = React.useMemo(() => ({
         amber: "#facc15",
-        cyan: isDarkMode ? "#22d3ee" : "#06b6d4",
-        indigo: isDarkMode ? "#818cf8" : "#6366f1",
-        blue: isDarkMode ? "#60a5fa" : "#3b82f6",
-        green: isDarkMode ? "#4ade80" : "#22c55e",
+        cyan: primaryColor,
+        indigo: primaryColor,
+        blue: primaryColor,
+        green: primaryColor,
         orange: isDarkMode ? "#fb923c" : "#f97316",
-    }), [isDarkMode]);
+    }), [isDarkMode, primaryColor]);
 
     const GRID_START_X = 30;
     const COL_WIDTH = 380;
@@ -165,6 +177,7 @@ export function AIWorkflowVisualization({
                     codeType,
                     onCodeTypeChange,
                     isRefreshingAll,
+                    isDemoMode,
                 },
             },
             {
@@ -185,7 +198,7 @@ export function AIWorkflowVisualization({
                 data: {
                     label: "Reviewer prompt",
                     description: "Select prompts for reviewer",
-                    iconBg: "bg-indigo-500",
+                    iconBg: "bg-primary",
                     agent: "reviewer",
                     prompts: prompts.reviewer || [],
                     selectedPrompts: selectedPrompts.reviewer || [],
@@ -218,7 +231,7 @@ export function AIWorkflowVisualization({
                 data: {
                     label: "Implementation prompt",
                     description: "Select prompts for changes",
-                    iconBg: "bg-indigo-500",
+                    iconBg: "bg-primary",
                     agent: "implementation",
                     prompts: prompts.implementation || [],
                     selectedPrompts: selectedPrompts.implementation || [],
@@ -251,7 +264,7 @@ export function AIWorkflowVisualization({
                 data: {
                     label: "Tester prompt",
                     description: "Select prompts for testing",
-                    iconBg: "bg-indigo-500",
+                    iconBg: "bg-primary",
                     agent: "tester",
                     prompts: prompts.tester || [],
                     selectedPrompts: selectedPrompts.tester || [],
@@ -284,7 +297,7 @@ export function AIWorkflowVisualization({
                 data: {
                     label: "Report prompt",
                     description: "Select prompts for report",
-                    iconBg: "bg-indigo-500",
+                    iconBg: "bg-primary",
                     agent: "report",
                     prompts: prompts.report || [],
                     selectedPrompts: selectedPrompts.report || [],
@@ -309,7 +322,7 @@ export function AIWorkflowVisualization({
                 },
             },
         ],
-        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, prompts, selectedPrompts, onPromptChange, isRefreshingAll, getNodePosition]
+        [agentModels, models, onModelChange, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange, codeType, onCodeTypeChange, prompts, selectedPrompts, onPromptChange, isRefreshingAll, isDemoMode, getNodePosition]
     );
 
     const initialEdges = React.useMemo(

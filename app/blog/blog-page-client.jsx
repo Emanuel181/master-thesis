@@ -383,7 +383,7 @@ export default function BlogPageClient() {
   }, [searchQuery]);
 
   return (
-    <ScrollArea className="h-screen" viewportRef={scrollRef}>
+    <ScrollArea className="landing-page h-screen" viewportRef={scrollRef}>
       <FloatingNavbar />
       
       {/* Landing page background patterns */}

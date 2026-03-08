@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUseCases } from "@/contexts/useCasesContext";
 import { useKbSelection } from "@/contexts/kbSelectionContext";
+import { DEMO_USE_CASE_GROUPS, DEMO_DOCUMENTS } from "@/contexts/demoContext";
 
 /**
  * Knowledge Base Node component for the workflow visualization
@@ -25,6 +26,9 @@ export function KnowledgeBaseNode({ data }) {
     const [isRefreshing, setIsRefreshing] = React.useState(false);
     const [kbSearchTerm, setKbSearchTerm] = React.useState(""); // Search term for KB dropdown
     
+    // Demo mode passed from parent (AIWorkflowVisualization) — avoids usePathname timing issues in portals
+    const isDemoMode = data.isDemoMode;
+
     // Get use cases directly from context (reactive, always fresh)
     const { useCases: contextUseCases } = useUseCases();
 
@@ -48,13 +52,16 @@ export function KnowledgeBaseNode({ data }) {
 
     // Fetch groups on mount
     React.useEffect(() => {
+        if (isDemoMode) {
+            setUseCaseGroups(DEMO_USE_CASE_GROUPS);
+            return;
+        }
         const fetchGroups = async () => {
             try {
                 const response = await fetch('/api/use-case-groups');
                 if (response.ok) {
                     const responseData = await response.json();
                     const groups = responseData.data?.groups || responseData.groups || [];
-                    console.log('[KnowledgeBaseNode] Fetched groups:', groups);
                     setUseCaseGroups(groups);
                 } else {
                     console.error('[KnowledgeBaseNode] Failed to fetch groups:', response.status);
@@ -64,12 +71,24 @@ export function KnowledgeBaseNode({ data }) {
             }
         };
         fetchGroups();
-    }, []);
+    }, [isDemoMode]);
 
     // Validate selectedFiles on mount — prune any IDs that no longer exist in the DB
     React.useEffect(() => {
         const allUseCases = contextUseCases || [];
         if (allUseCases.length === 0 || selectedFiles.size === 0) return;
+
+        if (isDemoMode) {
+            // In demo mode, validate against DEMO_DOCUMENTS
+            const validIds = new Set();
+            Object.values(DEMO_DOCUMENTS).forEach(docs => docs.forEach(doc => validIds.add(doc.id)));
+            setSelectedFiles(prev => {
+                const pruned = new Set([...prev].filter(id => validIds.has(id)));
+                if (pruned.size !== prev.size) return pruned;
+                return prev;
+            });
+            return;
+        }
 
         const validateSelectedFiles = async () => {
             try {
@@ -105,7 +124,7 @@ export function KnowledgeBaseNode({ data }) {
 
         validateSelectedFiles();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [contextUseCases?.length]);
+    }, [contextUseCases?.length, isDemoMode]);
 
     // Auto-expand group from codeType selection
     React.useEffect(() => {
@@ -165,6 +184,13 @@ export function KnowledgeBaseNode({ data }) {
     // Helper: ensure PDFs are fetched for a use case (returns the PDFs)
     const ensurePdfsFetched = async (useCaseId) => {
         if (useCasePdfs[useCaseId]) return useCasePdfs[useCaseId];
+
+        // In demo mode, use DEMO_DOCUMENTS
+        if (isDemoMode) {
+            const demoPdfs = DEMO_DOCUMENTS[useCaseId] || [];
+            setUseCasePdfs(prev => ({ ...prev, [useCaseId]: demoPdfs }));
+            return demoPdfs;
+        }
 
         setLoadingPdfs(prev => new Set(prev).add(useCaseId));
         try {
@@ -310,17 +336,23 @@ export function KnowledgeBaseNode({ data }) {
         setIsRefreshing(true);
         // Clear cached PDFs so they are re-fetched with fresh data
         setUseCasePdfs({});
-        // Re-fetch groups
-        try {
-            const response = await fetch('/api/use-case-groups');
-            if (response.ok) {
-                const responseData = await response.json();
-                const groups = responseData.data?.groups || responseData.groups || [];
-                setUseCaseGroups(groups);
+
+        if (isDemoMode) {
+            setUseCaseGroups(DEMO_USE_CASE_GROUPS);
+        } else {
+            // Re-fetch groups
+            try {
+                const response = await fetch('/api/use-case-groups');
+                if (response.ok) {
+                    const responseData = await response.json();
+                    const groups = responseData.data?.groups || responseData.groups || [];
+                    setUseCaseGroups(groups);
+                }
+            } catch (error) {
+                console.error('[KnowledgeBaseNode] Error refreshing groups:', error);
             }
-        } catch (error) {
-            console.error('[KnowledgeBaseNode] Error refreshing groups:', error);
         }
+
         // Re-fetch PDFs for any currently expanded use cases
         for (const useCaseId of expandedUseCases) {
             fetchUseCasePdfs(useCaseId, true);
@@ -333,21 +365,21 @@ export function KnowledgeBaseNode({ data }) {
     return (
         <>
             <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 transition-all duration-300 ${borderColor} ${
-                isConfigured ? 'ring-2 ring-cyan-500/20 shadow-md' : 'opacity-90'
+                isConfigured ? 'ring-2 ring-primary/20 shadow-md' : 'opacity-90'
             }`}>
                 <CardContent className="p-2 sm:p-4">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                         <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <Database className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
                             {isConfigured && (
-                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-cyan-500 border-2 border-background">
+                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary border-2 border-background">
                                     <Check className="h-2 w-2 text-white" strokeWidth={3} />
                                 </span>
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="font-semibold text-xs sm:text-base truncate">{data.label}</div>
-                            <div className="text-[10px] sm:text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                            <div className="text-[10px] sm:text-xs text-primary font-medium">
                                 {selectedGroups.size} group{selectedGroups.size !== 1 ? 's' : ''}, {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''}
                             </div>
                         </div>
@@ -523,7 +555,7 @@ export function KnowledgeBaseNode({ data }) {
                                                                                                 <Tooltip>
                                                                                                     <TooltipTrigger asChild>
                                                                                                         <span className="shrink-0">
-                                                                                                            {isVectorized && <CircleCheckBig className="h-2.5 w-2.5 text-emerald-500" />}
+                                                                                                            {isVectorized && <CircleCheckBig className="h-2.5 w-2.5 text-primary" />}
                                                                                                             {isProcessing && <Loader2 className="h-2.5 w-2.5 text-amber-500 animate-spin" />}
                                                                                                             {isFailed && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
                                                                                                             {!isVectorized && !isProcessing && !isFailed && <AlertCircle className="h-2.5 w-2.5 text-muted-foreground" />}
@@ -588,7 +620,7 @@ export function KnowledgeBaseNode({ data }) {
                 </CardContent>
             </Card>
             {/* Output to Reviewer Agent (Bottom) */}
-            <Handle type="source" position={Position.Bottom} className="!bg-cyan-500 !w-3 !h-3" />
+            <Handle type="source" position={Position.Bottom} className="!bg-primary !w-3 !h-3" />
         </>
     );
 }

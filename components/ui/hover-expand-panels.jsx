@@ -3,7 +3,7 @@
 import * as React from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { useIsMobile } from "@/hooks/use-mobile"
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile"
 import {
     Database,
     Sparkles,
@@ -92,6 +92,8 @@ export function HoverExpandPanels({
   const [active, setActive] = React.useState(0)
   const [isAnimating, setIsAnimating] = React.useState(true) // Start in animating state
   const isMobile = useIsMobile()
+  const isTablet = useIsTablet()
+  const isMobileOrTablet = isMobile || isTablet
 
   // Check reduced motion preference once on mount
   const [reduceMotion, setReduceMotion] = React.useState(false)
@@ -215,7 +217,7 @@ export function HoverExpandPanels({
               }}
               transition={{ duration: 0.15, ease: [0.33, 1, 0.68, 1] }}
               style={{
-                boxShadow: !isAnimating && isActive && !isMobile 
+                boxShadow: !isAnimating && isActive && !isMobileOrTablet
                   ? "0 16px 40px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.1)"
                   : "0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
@@ -229,47 +231,53 @@ export function HoverExpandPanels({
                   backgroundSize: "200% 200%",
                   backgroundPosition: "0% 50%",
                   transform: "translateZ(0)",
-                  animation: shouldAnimate ? `panelGradientShift ${dur}s ease-in-out infinite` : "none",
+                  animation: shouldAnimate && !isMobileOrTablet ? `panelGradientShift ${dur}s ease-in-out infinite` : "none",
                 }}
               />
 
-              {/* Animated content like features cards */}
-              <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 z-0 opacity-50 sm:opacity-60 md:opacity-100">
-                {getPanelAnimation(i)}
-              </div>
+              {/* Animated content - only render on desktop to save mobile resources */}
+              {!isMobileOrTablet && (
+                <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 z-0">
+                  {getPanelAnimation(i)}
+                </div>
+              )}
 
-              {/* Active glow effect */}
-              <motion.div
-                aria-hidden="true"
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ 
-                  opacity: isActive ? 1 : 0,
-                }}
-                transition={{ duration: 0.1 }}
-                style={{
-                  background: "radial-gradient(800px circle at 25% 15%, rgba(255,255,255,0.25), transparent 55%)",
-                }}
-              />
+              {/* Active glow effect - desktop only */}
+              {!isMobileOrTablet && (
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: isActive ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.1 }}
+                  style={{
+                    background: "radial-gradient(800px circle at 25% 15%, rgba(255,255,255,0.25), transparent 55%)",
+                  }}
+                />
+              )}
 
-              {/* Scan line effect on active */}
-              <motion.div
-                className="absolute inset-x-0 h-[1px] pointer-events-none"
-                style={{
-                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
-                }}
-                initial={{ top: 0, opacity: 0 }}
-                animate={{
-                  top: isActive ? ["0%", "100%"] : "0%",
-                  opacity: isActive ? [0, 0.5, 0.5, 0] : 0,
-                }}
-                transition={{
-                  duration: 0.9,
-                  repeat: isActive ? Infinity : 0,
-                  ease: "linear",
-                  repeatDelay: 0.2,
-                }}
-              />
+              {/* Scan line effect on active - desktop only */}
+              {!isMobileOrTablet && (
+                <motion.div
+                  className="absolute inset-x-0 h-[1px] pointer-events-none"
+                  style={{
+                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)",
+                  }}
+                  initial={{ top: 0, opacity: 0 }}
+                  animate={{
+                    top: isActive ? ["0%", "100%"] : "0%",
+                    opacity: isActive ? [0, 0.5, 0.5, 0] : 0,
+                  }}
+                  transition={{
+                    duration: 0.9,
+                    repeat: isActive ? Infinity : 0,
+                    ease: "linear",
+                    repeatDelay: 0.2,
+                  }}
+                />
+              )}
 
               {/* Readability overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15 z-10" />
@@ -295,17 +303,19 @@ export function HoverExpandPanels({
                 </motion.div>
               </div>
 
-              {/* Active indicator dot */}
+              {/* Active indicator dot - static on mobile/tablet, animated on desktop */}
               <motion.div
                 className="absolute top-4 right-4 sm:top-5 sm:right-5 md:top-6 md:right-6 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white"
-                animate={{
+                animate={isMobileOrTablet ? {
+                  opacity: isActive ? 1 : 0.3,
+                } : {
                   scale: isActive ? [1, 1.2, 1] : 1,
                   opacity: isActive ? 1 : 0.3,
                   boxShadow: isActive 
                     ? "0 0 8px 3px rgba(255,255,255,0.4)"
                     : "0 0 0px 0px transparent",
                 }}
-                transition={{
+                transition={isMobileOrTablet ? { duration: 0.15 } : {
                   duration: 0.6,
                   repeat: isActive ? Infinity : 0,
                   ease: "easeInOut",

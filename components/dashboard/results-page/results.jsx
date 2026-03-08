@@ -1020,13 +1020,13 @@ export function DataTable({
     )
 }
 
-export function Results({ initialCode: _initialCode, problems: _problems = [], generatedCode: _generatedCode = "", vulnerabilities: initialVulnerabilities = [], runId: propRunId, userId: _userId }) {
+export function Results({ initialCode: _initialCode, problems: _problems = [], generatedCode: _generatedCode = "", vulnerabilities: initialVulnerabilities = [], runId: propRunId, userId: _userId, demoMode = false }) {
     const [vulnerabilities, setVulnerabilities] = React.useState(initialVulnerabilities)
-    const [progressValue, setProgressValue] = React.useState(0)
+    const [progressValue, setProgressValue] = React.useState(demoMode ? 100 : 0)
     const [, setIsLoading] = React.useState(false)
     const [error, setError] = React.useState(null)
     const [runId, setRunId] = React.useState(propRunId)
-    const [isPolling, setIsPolling] = React.useState(true)
+    const [isPolling, setIsPolling] = React.useState(!demoMode)
     const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false)
     const [pdfPassword, setPdfPassword] = React.useState(null)
     const [showPdfPassword, setShowPdfPassword] = React.useState(false)
@@ -1036,42 +1036,56 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
     const [hasPasskey, setHasPasskey] = React.useState(false)
     const [, setPasskeyChecked] = React.useState(false)
     const [detailedStatus, setDetailedStatus] = React.useState({
-        phase: 'initializing',
-        message: '',
-        steps: []
+        phase: demoMode ? 'completed' : 'initializing',
+        message: demoMode ? `Complete — ${initialVulnerabilities.length} finding(s)` : '',
+        steps: demoMode ? [
+            { name: 'Reviewer Agent', status: 'completed' },
+            { name: 'Implementation Agent', status: 'completed' },
+            { name: 'Tester Agent', status: 'completed' },
+            { name: 'Report Agent', status: 'completed' },
+        ] : []
     })
-    const [statusItems, setStatusItems] = React.useState([])
-    const completedRef = React.useRef(false)
+    const [statusItems, setStatusItems] = React.useState(demoMode ? [
+        { id: 1, name: 'Reviewer Agent', status: 'completed' },
+        { id: 2, name: 'Implementation Agent', status: 'completed' },
+        { id: 3, name: 'Tester Agent', status: 'completed' },
+        { id: 4, name: 'Report Agent', status: 'completed' },
+    ] : [])
+    const completedRef = React.useRef(demoMode)
 
     // Get runId from localStorage if not provided as prop
     React.useEffect(() => {
+        if (demoMode) return
         if (!propRunId && typeof window !== 'undefined') {
             const storedRunId = localStorage.getItem('vulniq_current_run_id')
             if (storedRunId) {
                 setRunId(storedRunId)
             }
         }
-    }, [propRunId])
+    }, [propRunId, demoMode])
 
     // Check if user has a registered passkey for biometric unlock
     React.useEffect(() => {
+        if (demoMode) { setPasskeyChecked(true); return }
         const controller = new AbortController()
         fetch('/api/user/passkey/status', { signal: controller.signal })
             .then(r => r.ok ? r.json() : { hasPasskey: false })
             .then(d => { setHasPasskey(d.hasPasskey); setPasskeyChecked(true) })
             .catch((err) => { if (err.name !== 'AbortError') setPasskeyChecked(true) })
         return () => controller.abort()
-    }, [])
+    }, [demoMode])
 
     // Set loading state when runId is available
     React.useEffect(() => {
+        if (demoMode) return
         if (runId) {
             setIsLoading(true)
         }
-    }, [runId])
+    }, [runId, demoMode])
 
     // Fetch workflow data if runId is provided
     React.useEffect(() => {
+        if (demoMode) return
         if (!runId) return
 
         const fetchWorkflowData = async () => {
@@ -1081,7 +1095,10 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
             try {
                 const response = await fetch(`/api/workflow/start?runId=${runId}`)
                 if (!response.ok) {
-                    throw new Error('Failed to fetch workflow data')
+                    // Stale or invalid runId — stop polling silently
+                    setIsPolling(false)
+                    setIsLoading(false)
+                    return
                 }
 
                 const result = await response.json()
@@ -1153,7 +1170,7 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
         }, 3000)
 
         return () => clearInterval(interval)
-    }, [runId, isPolling])
+    }, [runId, isPolling, demoMode])
 
     // Calculate vulnerability statistics from actual data
     const vulnerabilityStats = React.useMemo(() => {
@@ -1196,6 +1213,37 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
 
     // PDF Download Handler
     const handleExportPdf = React.useCallback(async () => {
+        // Demo mode: generate PDF entirely client-side
+        if (demoMode) {
+            if (vulnerabilities.length === 0) {
+                toast.error('No vulnerabilities to export')
+                return
+            }
+            setIsGeneratingPdf(true)
+            try {
+                const { generateDemoReportPDF } = await import('@/lib/demo-pdf-generator')
+                const pdfBytes = await generateDemoReportPDF({
+                    vulnerabilities,
+                    projectName: 'Demo Security Assessment',
+                })
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `vulniq-demo-report.pdf`
+                a.click()
+                URL.revokeObjectURL(url)
+                setPdfDownloaded(true)
+                toast.success('Demo PDF report downloaded!')
+            } catch (error) {
+                console.error('Error generating demo PDF:', error)
+                toast.error(error.message || 'Failed to generate PDF report')
+            } finally {
+                setIsGeneratingPdf(false)
+            }
+            return
+        }
+
         if (!runId || vulnerabilities.length === 0) {
             toast.error('No vulnerabilities to export')
             return
@@ -1248,7 +1296,7 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
         } finally {
             setIsGeneratingPdf(false)
         }
-    }, [runId, vulnerabilities])
+    }, [runId, vulnerabilities, demoMode])
 
     // Copy PDF password to clipboard
     const handleCopyPassword = React.useCallback(async () => {
@@ -1614,16 +1662,22 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
                                                     </>
                                                 )}
                                             </Button>
-                                            {pdfDownloaded && (
+                                            {pdfDownloaded && !demoMode && (
                                                 <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0.5">
                                                     <Lock className="h-2.5 w-2.5" />
                                                     Encrypted
                                                 </Badge>
                                             )}
+                                            {pdfDownloaded && demoMode && (
+                                                <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0.5">
+                                                    <Download className="h-2.5 w-2.5" />
+                                                    Demo
+                                                </Badge>
+                                            )}
                                         </div>
 
-                                        {/* PDF Password section */}
-                                        {pdfDownloaded && (
+                                        {/* PDF Password section - only for authenticated (non-demo) reports */}
+                                        {pdfDownloaded && !demoMode && (
                                             <div className="rounded-md border bg-muted/30 p-2.5 space-y-2">
                                                 <div className="flex items-center gap-1.5">
                                                     <Lock className="h-3 w-3 text-muted-foreground" />

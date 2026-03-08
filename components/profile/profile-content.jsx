@@ -88,8 +88,20 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
             }
 
             if (!response.ok) {
+                // If unauthorized (401), the session may not be ready yet.
+                // Retry once after a short delay to allow session to establish.
+                if (response.status === 401 && !fetchProfile._retried) {
+                    fetchProfile._retried = true;
+                    setTimeout(() => {
+                        if (isMountedRef.current && fetchId === fetchIdRef.current) {
+                            fetchProfile(fetchId);
+                        }
+                    }, 1000);
+                    return;
+                }
                 throw new Error('Failed to fetch profile');
             }
+            fetchProfile._retried = false;
 
             const responseData = await response.json();
             // Handle wrapped response: { success: true, data: { user: {...} } }

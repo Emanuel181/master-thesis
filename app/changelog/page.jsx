@@ -29,12 +29,184 @@ import {
     Activity,
     Smartphone,
     ArrowLeft,
-    PersonStanding
+    PersonStanding,
+    ScanLine,
+    Bell,
+    Fingerprint,
+    Key,
+    Bug,
+    Globe,
+    Palette,
+    Monitor,
+    FileDown,
+    Bot,
+    Radio,
+    Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const changelogData = [
+    {
+        version: "v2.1.0",
+        date: "March 2026",
+        title: "Landing page polish & theme scoping",
+        description: "Refined the public-facing experience and isolated dashboard themes from the landing page.",
+        type: "minor",
+        changes: [
+            {
+                category: "Theme scoping",
+                icon: <Palette className="w-4 h-4 text-violet-500" />,
+                items: [
+                    "Landing page now uses fixed brand design colors regardless of user theme settings.",
+                    "Dashboard theme customization no longer bleeds into public pages.",
+                    "Consistent brand styling enforced across all public-facing routes (blog, changelog, about, etc.)."
+                ]
+            },
+            {
+                category: "Landing page fixes",
+                icon: <Monitor className="w-4 h-4 text-sky-500" />,
+                items: [
+                    "Added dark/light mode toggle to mobile navigation menu.",
+                    "Fixed VulnIQ lamp section text being clipped on mobile viewports.",
+                    "Disabled heavy background animations on mobile for better performance.",
+                    "Improved changelog timeline to no longer extend into the footer section."
+                ]
+            },
+            {
+                category: "UI/UX refinements",
+                icon: <Sparkles className="w-4 h-4 text-pink-500" />,
+                items: [
+                    "Removed bouncing hover effects on repository cards and home page panels.",
+                    "Improved panel resize handles with consistent design in knowledge base.",
+                    "Removed zoom-on-hover effect for use case cards and fixed selected card outlines.",
+                    "Better breadcrumb navigation starting with Dashboard across all pages."
+                ]
+            }
+        ]
+    },
+    {
+        version: "v2.0.0",
+        date: "February 2026",
+        title: "Security scanning, results engine & workflow execution",
+        description: "The full end-to-end security pipeline: scan code, execute multi-agent workflows, view results, and export reports.",
+        type: "major",
+        changes: [
+            {
+                category: "New scan dialog",
+                icon: <ScanLine className="w-4 h-4 text-emerald-500" />,
+                items: [
+                    "New scan dialog for starting security assessments from the dashboard.",
+                    "Select repository provider (GitHub/GitLab), project, and branch.",
+                    "Upload ZIP archives with multi-layer security validation.",
+                    "Import from public repository URL with strict input validation.",
+                    "Recent scans panel with scan history and automatic rotation."
+                ]
+            },
+            {
+                category: "Results page",
+                icon: <Bug className="w-4 h-4 text-red-500" />,
+                items: [
+                    "Full security overview dashboard with severity distribution charts.",
+                    "Vulnerability detail sheet with CVSS scoring, CWE mapping, and remediation steps.",
+                    "Attack path graph visualization showing vulnerability exploitation chains.",
+                    "Multi-agent debate panel displaying Reviewer ↔ Implementer discussions.",
+                    "File-level analysis view with inline vulnerability annotations.",
+                    "API endpoints security view for discovered routes.",
+                    "Fix review panel for accepting, rejecting, or creating PRs from agent-generated fixes."
+                ]
+            },
+            {
+                category: "Workflow execution engine",
+                icon: <Workflow className="w-4 h-4 text-purple-500" />,
+                items: [
+                    "Cloud-native orchestrator for multi-agent security review pipelines.",
+                    "Real-time progress updates via WebSocket with automatic reconnection.",
+                    "Live workflow progress tracking with per-agent status indicators.",
+                    "Four specialized agents: Reviewer, Implementer, Tester, and Reporter."
+                ]
+            },
+            {
+                category: "Document security scanning",
+                icon: <Shield className="w-4 h-4 text-orange-500" />,
+                items: [
+                    "Automated malware scanning for all uploaded documents.",
+                    "Deep file validation beyond extension checking.",
+                    "Real-time notifications for scan progress and results.",
+                    "Upload limits enforced per user for safe resource usage."
+                ]
+            },
+            {
+                category: "RAG vectorization",
+                icon: <Database className="w-4 h-4 text-indigo-500" />,
+                items: [
+                    "Automatic document vectorization for RAG-powered security reviews.",
+                    "Per-user data isolation for secure vector storage.",
+                    "Background processing with status tracking and progress notifications.",
+                    "Vectorized documents used as context during agentic code review."
+                ]
+            },
+            {
+                category: "Notification system",
+                icon: <Bell className="w-4 h-4 text-amber-500" />,
+                items: [
+                    "Persistent notification center for tracking document and scan events.",
+                    "Real-time updates for security scanning and vectorization progress.",
+                    "Read/unread state, mark all as read, and clear all functionality.",
+                    "Do not disturb mode, sound controls, and desktop notification support."
+                ]
+            },
+            {
+                category: "Passkey authentication",
+                icon: <Fingerprint className="w-4 h-4 text-cyan-500" />,
+                items: [
+                    "WebAuthn passkey support for regular user accounts.",
+                    "Passkey-gated access to sensitive actions like report downloads.",
+                    "Short-lived session tokens for elevated operations."
+                ]
+            },
+            {
+                category: "Report export",
+                icon: <FileDown className="w-4 h-4 text-teal-500" />,
+                items: [
+                    "Professional branded PDF security reports with executive dashboard.",
+                    "Risk score gauge, severity distribution, and compliance mapping tables.",
+                    "HTML and CSV export options for vulnerability data.",
+                    "Encrypted PDF reports with passkey-gated access."
+                ]
+            },
+            {
+                category: "API keys & rate limiting",
+                icon: <Key className="w-4 h-4 text-slate-500" />,
+                items: [
+                    "Programmatic API key management with scoped permissions.",
+                    "Secure key storage with per-key usage tracking and audit logging.",
+                    "Improved rate limiting with higher accuracy and abuse prevention.",
+                    "Tiered rate limits based on endpoint sensitivity."
+                ]
+            },
+            {
+                category: "Security hardening",
+                icon: <Lock className="w-4 h-4 text-rose-500" />,
+                items: [
+                    "Comprehensive input validation across all API endpoints.",
+                    "Hardened file upload pipeline with multiple defense layers.",
+                    "Secure repository fetching via official provider APIs.",
+                    "Strengthened request validation for all external inputs."
+                ]
+            },
+            {
+                category: "Knowledge base sync",
+                icon: <Database className="w-4 h-4 text-blue-500" />,
+                items: [
+                    "Synchronized workflow configuration with knowledge base page.",
+                    "Group/use case/PDF selection in workflow tab reflects knowledge base state.",
+                    "Cascading selection: selecting a group selects all use cases and PDFs within it.",
+                    "Real-time pipeline readiness percentage updates on selection changes."
+                ]
+            }
+        ]
+    },
     {
         version: "v1.6.0",
         date: "January 2026",
@@ -381,7 +553,7 @@ export default function ChangelogPage() {
     const { openPanel } = useAccessibility();
     
     return (
-        <div className="h-screen flex flex-col bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
+        <div className="landing-page h-screen flex flex-col bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
              {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -433,14 +605,16 @@ export default function ChangelogPage() {
                 {/* Timeline */}
                 <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-10 relative z-10">
                     <div className="relative">
-                        {changelogData.map((release, index) => (
+                        {changelogData.map((release, index) => {
+                            const isLast = index === changelogData.length - 1;
+                            return (
                             <div
                                 key={release.version}
                                 className="relative flex flex-col md:flex-row gap-y-6"
                             >
                                 {/* Left side - Date and Version (sticky) */}
                                 <div className="md:w-48 flex-shrink-0">
-                                    <div className="md:sticky md:top-8 pb-10">
+                                    <div className={`md:sticky md:top-8 ${isLast ? 'pb-0' : 'pb-10'}`}>
                                         <time className="text-sm font-medium text-muted-foreground block mb-3">
                                             {release.date}
                                         </time>
@@ -456,13 +630,14 @@ export default function ChangelogPage() {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true, margin: "-50px" }}
                                     transition={{ duration: 0.5, delay: index * 0.05 }}
-                                    className="flex-1 md:pl-8 relative pb-10"
+                                    className={`flex-1 md:pl-8 relative ${isLast ? 'pb-0' : 'pb-10'}`}
                                 >
                                     {/* Vertical timeline line */}
-                                    <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-border">
-                                        {/* Timeline dot */}
-                                        <div className="absolute -translate-x-1/2 size-3 bg-[var(--brand-accent)] rounded-full z-10" />
-                                    </div>
+                                    {!isLast && (
+                                    <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-border" />
+                                    )}
+                                    {/* Timeline dot */}
+                                    <div className="hidden md:block absolute top-2 left-0 -translate-x-1/2 size-3 bg-[var(--brand-accent)] rounded-full z-10" />
 
                                     <div className="space-y-6">
                                         <div className="relative z-10 flex flex-col gap-2">
@@ -514,7 +689,8 @@ export default function ChangelogPage() {
                                     </div>
                                 </motion.div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 

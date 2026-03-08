@@ -58,7 +58,7 @@ export default function TermsPage() {
     useScrollRestoration(scrollRef);
 
     return (
-        <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
+        <div className="landing-page h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
             {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />

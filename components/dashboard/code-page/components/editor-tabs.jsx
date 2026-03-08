@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react';
-import { X, Copy, XCircle, FolderPlus, FolderMinus, ChevronDown, ChevronRight, Palette, Pencil, Trash2 } from "lucide-react";
+import { X, Copy, XCircle, FolderPlus, FolderMinus, ChevronDown, ChevronRight, Palette, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ import { ContextMenuTrigger } from "@radix-ui/react-context-menu";
 import { getFileIconUrl } from '../constants/icon-config';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useProject } from "@/contexts/projectContext";
+import { getFileVulnSummary } from "../hooks/use-vulnerability-decorations";
 
 /**
  * Editor Tabs component for managing open files with grouping support
@@ -66,6 +68,9 @@ export function EditorTabs({
     const [editingGroupName, setEditingGroupName] = useState("");
     const [dragOverGroupId, setDragOverGroupId] = useState(null);
     const [dragOverUngroupedArea, setDragOverUngroupedArea] = useState(false);
+
+    // Access vulnerability data for tab badges
+    const { fileVulnerabilities } = useProject();
 
     // Use external state if provided, otherwise use internal
     const newGroupDialogOpen = externalNewGroupDialogOpen ?? internalNewGroupDialogOpen;
@@ -154,6 +159,14 @@ export function EditorTabs({
             onDragStart(e, index);
         };
 
+        const tabVulnSummary = getFileVulnSummary(fileVulnerabilities, tab.path || tab.name);
+        const vulnBorderColor = tabVulnSummary
+            ? `border-b-2 border-b-[var(--severity-${tabVulnSummary.highestSeverity.toLowerCase()})]`
+            : '';
+        const vulnTextColor = tabVulnSummary
+            ? `text-[var(--severity-${tabVulnSummary.highestSeverity.toLowerCase()})]`
+            : '';
+
         return (
             <ContextMenu key={`tab-${tab.id}-${index}`}>
                 <ContextMenuTrigger asChild>
@@ -168,7 +181,8 @@ export function EditorTabs({
                             isActive
                                 ? "text-primary font-medium border-t-2 border-t-primary"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/30 border-t-2 border-t-transparent",
-                            colorClasses && `${colorClasses.bg} border-b-2 ${colorClasses.border}`
+                            colorClasses && `${colorClasses.bg} border-b-2 ${colorClasses.border}`,
+                            !colorClasses && vulnBorderColor
                         )}
                         draggable="true"
                         onDragStart={handleDragStart}
@@ -182,6 +196,12 @@ export function EditorTabs({
                             "truncate max-w-[120px]",
                             isActive && "text-foreground"
                         )}>{tab.name}</span>
+                        {tabVulnSummary && (
+                            <ShieldAlert
+                                className={cn("flex-shrink-0 w-3 h-3", vulnTextColor)}
+                                title={`${tabVulnSummary.count} ${tabVulnSummary.count === 1 ? 'vulnerability' : 'vulnerabilities'}`}
+                            />
+                        )}
                         <span
                             onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
                             className={cn(

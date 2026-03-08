@@ -50,6 +50,8 @@ import {
     useRepoImport,
     useEditorTabs,
     useEditorConfig,
+    useVulnerabilityDecorations,
+    getTotalVulnSummary,
 } from './hooks';
 
 import {
@@ -130,7 +132,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     // --- Contexts ---
     const { useCases, refresh: refreshUseCases } = useUseCases();
     // Use projectStructure from context (not props) to avoid conflicts
-    const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo, clearProject } = useProject();
+    const { projectStructure, setProjectStructure, selectedFile, setSelectedFile, viewMode, setViewMode, currentRepo, setCurrentRepo, clearProject, fileVulnerabilities, isHydrated } = useProject();
 
     // --- Fetch Groups ---
     const [useCaseGroups, setUseCaseGroups] = React.useState([]);
@@ -223,6 +225,21 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
 
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
+
+    // --- Vulnerability inline decorations ---
+    const currentFilePath = activeTab?.path || selectedFile?.path || '';
+    const currentFileVulns = React.useMemo(() => {
+        if (!fileVulnerabilities || !currentFilePath) return [];
+        return fileVulnerabilities[currentFilePath] || [];
+    }, [fileVulnerabilities, currentFilePath]);
+
+    useVulnerabilityDecorations(editorRef, monacoRef, currentFilePath, currentFileVulns);
+
+    // Total vulnerability summary for the status bar
+    const totalVulnSummary = React.useMemo(
+        () => getTotalVulnSummary(fileVulnerabilities),
+        [fileVulnerabilities]
+    );
 
     // Load repos when import dialog opens
     useEffect(() => {
@@ -490,9 +507,12 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     const isViewOnly = viewOnlyExtensions.includes(currentFileExtension);
     const isReviewable = !isViewOnly && reviewableLanguages.includes(currentLanguage);
     const isFormattable = formattableLanguages.includes(currentLanguage);
-    const hasContent = activeTab || (selectedFile && selectedFile.content) || hasCode;
-    const hasImportedProject = Boolean(currentRepo);
-    const showEmptyState = isPlaceholder && !activeTab && !selectedFile?.content && !hasImportedProject;
+    // Suppress hydration-sensitive checks until after mount to avoid SSR mismatch
+    const [hasMounted, setHasMounted] = useState(false);
+    useEffect(() => { setHasMounted(true); }, []);
+    const hasContent = hasMounted && (activeTab || (selectedFile && selectedFile.content) || hasCode);
+    const hasImportedProject = hasMounted && isHydrated && Boolean(currentRepo);
+    const showEmptyState = !hasMounted || (isPlaceholder && !activeTab && !selectedFile?.content && !hasImportedProject);
 
     // --- Empty State Handlers ---
     const handleEmptyPasteClick = useCallback(() => {
@@ -531,9 +551,10 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                         isCopied={isCopied}
                         handleCopy={handleCopy}
                         hasCode={hasCode}
-                        onStart={() => onStart(code, codeType)}
+                        onStart={onStart ? () => onStart(code, codeType) : undefined}
                         activeTab={activeTab}
                         code={code}
+                        isDemoMode={isDemoMode}
                         // Tab group props
                         onCreateGroup={() => setNewGroupDialogOpen(true)}
                         hasOpenTabs={openTabs.length > 0}
@@ -569,7 +590,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                         <div className="flex items-center gap-1 border-b sm:border-b-0">
                             {/* Mobile: Project Files button */}
                             <div className="sm:hidden p-1">
-                                {viewMode === 'project' && projectStructure && (
+                                {hasMounted && viewMode === 'project' && projectStructure && (
                                     <ProjectTree
                                         structure={projectStructure}
                                         onFileClick={onFileClick}
@@ -646,7 +667,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                             <div className="flex flex-1 overflow-hidden">
                                 {/* Desktop: Project Tree sidebar */}
                                 <div className="hidden sm:block">
-                                    {viewMode === 'project' && projectStructure && (
+                                    {hasMounted && viewMode === 'project' && projectStructure && (
                                         <ProjectTree
                                             structure={projectStructure}
                                             onFileClick={onFileClick}
@@ -699,6 +720,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                             formatOnType: false,
                                             bracketPairColorization: { enabled: true },
                                             matchBrackets: 'always',
+                                            glyphMargin: currentFileVulns.length > 0,
                                         }}
                                         onMount={(editor, monaco) => {
                                             monacoRef.current = monaco;
@@ -745,6 +767,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                 lineCount={getLineCount()}
                                 tabSize={4}
                                 isViewOnly={isViewOnly}
+                                vulnSummary={totalVulnSummary}
                             />
                         )}
                     </CardContent>

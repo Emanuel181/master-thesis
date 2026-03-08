@@ -2,4 +2,4 @@
 export { useProviderConnection, useRepoImport } from './use-provider-connection';
 export { useEditorTabs } from './use-editor-tabs';
 export { useEditorConfig } from './use-editor-config';
-
+export { useVulnerabilityDecorations, getFileVulnSummary, getFolderVulnSummary, getTotalVulnSummary } from './use-vulnerability-decorations';

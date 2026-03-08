@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { toast } from "sonner";
-import { DEMO_GITHUB_REPOS, DEMO_GITLAB_REPOS } from '@/contexts/demoContext';
+import { DEMO_GITHUB_REPOS, DEMO_GITLAB_REPOS, DEMO_PROJECTS } from '@/contexts/demoContext';
 import { fetchRepoTree as apiFetchRepoTree } from '@/lib/github-api';
 
 /**
@@ -48,17 +48,28 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         }
     };
 
-    // Provider connection state
-    const [isGithubConnected, setIsGithubConnected] = useState(() => 
-        isDemoMode ? getInitialDemoState(DEMO_GITHUB_KEY) : false
-    );
-    const [isGitlabConnected, setIsGitlabConnected] = useState(() => 
-        isDemoMode ? getInitialDemoState(DEMO_GITLAB_KEY) : false
-    );
+    // Provider connection state — always start false for SSR, then hydrate from localStorage
+    const [isGithubConnected, setIsGithubConnected] = useState(false);
+    const [isGitlabConnected, setIsGitlabConnected] = useState(false);
 
-    // Persist demo connection state
+    // Guard: don't persist demo state until after initial hydration from localStorage
+    const demoHydratedRef = useRef(false);
+
+    // Hydrate demo connection state from localStorage after mount
+    useEffect(() => {
+        if (isDemoMode) {
+            setIsGithubConnected(getInitialDemoState(DEMO_GITHUB_KEY));
+            setIsGitlabConnected(getInitialDemoState(DEMO_GITLAB_KEY));
+            // Mark hydration complete after a tick so persist effects see fresh values
+            requestAnimationFrame(() => { demoHydratedRef.current = true; });
+        }
+        return () => { demoHydratedRef.current = false; };
+    }, [isDemoMode]);
+
+    // Persist demo connection state (only after initial hydration)
     useEffect(() => {
         if (!isDemoMode) return;
+        if (!demoHydratedRef.current) return;
         try {
             localStorage.setItem(DEMO_GITHUB_KEY, String(isGithubConnected));
         } catch {}
@@ -66,6 +77,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
 
     useEffect(() => {
         if (!isDemoMode) return;
+        if (!demoHydratedRef.current) return;
         try {
             localStorage.setItem(DEMO_GITLAB_KEY, String(isGitlabConnected));
         } catch {}
@@ -440,6 +452,8 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
 export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode }) {
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const pathname = usePathname();
+    const isDemoMode = pathname?.startsWith('/demo');
 
     // Listen for open-project-switcher event (from command palette shortcut Ctrl+O)
     useEffect(() => {
@@ -450,13 +464,31 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
         return () => window.removeEventListener("open-project-switcher", handleOpenProjectSwitcher);
     }, []);
 
+    /**
+     * In demo mode, resolve a project structure from DEMO_PROJECTS by full_name.
+     * Falls back to null if not found.
+     */
+    const resolveDemoProject = (fullName) => {
+        const structure = DEMO_PROJECTS[fullName];
+        if (!structure) return null;
+        return structure;
+    };
+
     // Import repo by search term (owner/repo format)
     const handleImport = async () => {
         if (!searchTerm.trim()) return;
         try {
             const [owner, repo] = searchTerm.split('/');
             if (!owner || !repo) throw new Error("Invalid format");
-            const structure = await apiFetchRepoTree(owner, repo);
+
+            let structure;
+            if (isDemoMode) {
+                structure = resolveDemoProject(searchTerm.trim());
+                if (!structure) throw new Error("Demo project not found");
+            } else {
+                structure = await apiFetchRepoTree(owner, repo);
+            }
+
             setProjectStructure(structure);
             setCurrentRepo({ owner, repo });
             setViewMode('project');
@@ -479,9 +511,21 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
     // Select GitHub repo
     const handleSelectRepo = async (repo) => {
         try {
-            const structure = await apiFetchRepoTree(repo.owner.login, repo.name);
+            const owner = repo.owner?.login || repo.full_name?.split('/')[0];
+            const repoName = repo.name;
+            if (!owner || !repoName) throw new Error("Invalid repo data");
+            const fullName = repo.full_name || `${owner}/${repoName}`;
+
+            let structure;
+            if (isDemoMode) {
+                structure = resolveDemoProject(fullName);
+                if (!structure) throw new Error("Demo project not found");
+            } else {
+                structure = await apiFetchRepoTree(owner, repoName, 'github');
+            }
+
             setProjectStructure(structure);
-            setCurrentRepo({ owner: repo.owner.login, repo: repo.name });
+            setCurrentRepo({ owner, repo: repoName, provider: 'github' });
             setViewMode('project');
             setIsImportDialogOpen(false);
             // Clear any existing code state and editor tabs so the editor starts fresh
@@ -501,9 +545,21 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
     // Select GitLab repo
     const handleSelectGitlabRepo = async (repo) => {
         try {
-            const structure = await apiFetchRepoTree(repo.full_name.split('/')[0], repo.name, 'gitlab');
+            const owner = repo.full_name?.split('/')[0];
+            const repoName = repo.name;
+            if (!owner || !repoName) throw new Error("Invalid repo data");
+            const fullName = repo.full_name || `${owner}/${repoName}`;
+
+            let structure;
+            if (isDemoMode) {
+                structure = resolveDemoProject(fullName);
+                if (!structure) throw new Error("Demo project not found");
+            } else {
+                structure = await apiFetchRepoTree(owner, repoName, 'gitlab');
+            }
+
             setProjectStructure(structure);
-            setCurrentRepo({ owner: repo.full_name.split('/')[0], repo: repo.name, provider: 'gitlab' });
+            setCurrentRepo({ owner, repo: repoName, provider: 'gitlab' });
             setViewMode('project');
             setIsImportDialogOpen(false);
             // Clear any existing code state and editor tabs so the editor starts fresh

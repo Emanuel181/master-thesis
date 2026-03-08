@@ -59,10 +59,6 @@ const FlipWordsDemo = dynamic(
   { loading: () => <div className="min-h-[100px]" /> }
 );
 
-const SocialProofBar = dynamic(
-  () => import('@/components/landing-page/social-proof-bar'),
-  { loading: () => <div className="min-h-[120px]" /> }
-);
 
 const ComparisonSection = dynamic(
   () => import('@/components/landing-page/comparison-section'),
@@ -214,7 +210,7 @@ export function ClientLandingWrapper({ children }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 flex flex-col relative w-full">
+    <div className="landing-page min-h-screen bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] text-[var(--brand-primary)] dark:text-[var(--brand-light)] font-sans selection:bg-[var(--brand-accent)]/20 flex flex-col relative w-full">
         {/* Background effects */}
         <div className="fixed inset-0 mesh-gradient pointer-events-none" />
         <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -230,8 +226,6 @@ export function ClientLandingWrapper({ children }) {
           {/* Portal overlay for code demo - renders inside ServerHero's placeholder */}
           {isHydrated && <HeroCodeDemoOverlay />}
 
-          {/* Social proof stats bar */}
-          <SocialProofBar />
 
           {/* Server-rendered features section (second child) */}
           {React.Children.toArray(children)[1]}

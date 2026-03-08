@@ -59,7 +59,7 @@ const useCasesData = [
     visual: {
       icon: Building2,
       title: "Enterprise scale",
-      subtitle: "Compliant & repeatable",
+      subtitle: "Secure the development",
       color: "from-slate-500 to-zinc-700",
     },
   },

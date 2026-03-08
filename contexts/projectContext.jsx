@@ -17,6 +17,9 @@ const ProjectContext = createContext({
     isDemoMode: false,
     projectUnloaded: false,
     setProjectUnloaded: () => {},
+    fileVulnerabilities: {},
+    setFileVulnerabilities: () => {},
+    isHydrated: false,
 });
 
 // SECURITY: Separate storage keys for demo and production modes
@@ -39,7 +42,9 @@ export function ProjectProvider({ children }) {
     const [projectClearCounter, setProjectClearCounter] = useState(0);
     // Track if user explicitly unloaded the project (to prevent auto-reload in demo mode)
     const [projectUnloaded, setProjectUnloaded] = useState(false);
-    
+    // Vulnerability map: filePath → Vulnerability[]
+    const [fileVulnerabilities, setFileVulnerabilities] = useState({});
+
     // Track current mode to detect mode changes
     const [prevIsDemoMode, setPrevIsDemoMode] = useState(isDemoMode);
 
@@ -126,6 +131,7 @@ export function ProjectProvider({ children }) {
         setViewMode("project");
         setProjectClearCounter(prev => prev + 1); // Notify listeners that project was cleared
         setProjectUnloaded(true); // Mark project as explicitly unloaded
+        setFileVulnerabilities({}); // Clear vulnerability annotations
         try {
             localStorage.removeItem(STORAGE_KEY);
             // Also clear code state when project is unloaded (mode-specific)
@@ -168,7 +174,10 @@ export function ProjectProvider({ children }) {
         projectClearCounter,
         projectUnloaded,
         setProjectUnloaded,
-    }), [projectStructure, setProjectStructure, selectedFile, viewMode, currentRepo, setCurrentRepo, clearProject, clearCodeState, projectClearCounter, projectUnloaded]);
+        fileVulnerabilities,
+        setFileVulnerabilities,
+        isHydrated,
+    }), [projectStructure, setProjectStructure, selectedFile, viewMode, currentRepo, setCurrentRepo, clearProject, clearCodeState, projectClearCounter, projectUnloaded, fileVulnerabilities, isHydrated]);
 
     return (
         <ProjectContext.Provider value={value}>

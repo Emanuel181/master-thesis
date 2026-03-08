@@ -30,6 +30,7 @@ export function UseCasesProvider({ children }) {
         shortDescription: uc.shortDescription,
         fullContent: uc.fullDescription,
         icon: uc.icon,
+        groupId: uc.groupId || null,
         pdfCount: uc.pdfCount,
         formattedTotalSize: uc.formattedTotalSize,
       }));

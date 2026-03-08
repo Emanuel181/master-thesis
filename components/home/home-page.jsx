@@ -89,7 +89,7 @@ export function HomePage({ onNavigate }) {
         } else if (scanConfig.type === "upload") {
             // For ZIP upload - store the file info and navigate to code input
             toast.success(`Project "${scanConfig.name}" ready for scanning`)
-            onNavigate({ title: "Code input" })
+            onNavigate({ title: "Code inspection" })
         } else if (scanConfig.type === "oss") {
             // URL already validated & sanitized by the dialog (SSRF-safe)
             await handleImportRepo({
@@ -119,6 +119,13 @@ export function HomePage({ onNavigate }) {
                 await new Promise(resolve => setTimeout(resolve, 400))
                 structure = DEMO_PROJECTS[repo.full_name] || DEMO_PROJECTS["demo-org/vulnerable-express-app"]
                 switchDemoProject(repo.full_name)
+                // Mark the provider as connected so the code-input page doesn't clear the project
+                const provider = repo.provider || 'github'
+                if (provider === 'gitlab') {
+                    localStorage.setItem('vulniq_demo_gitlab_connected', 'true')
+                } else {
+                    localStorage.setItem('vulniq_demo_github_connected', 'true')
+                }
             } else {
                 structure = await fetchRepoTree(owner, repoName, repo.provider)
             }
@@ -149,7 +156,7 @@ export function HomePage({ onNavigate }) {
 
             toast.success(`Repository "${repo.full_name}" imported successfully!`)
             setImportingRepo(null)
-            router.push(isDemoMode ? "/demo/code-input" : "/dashboard?active=Code%20input")
+            router.push(isDemoMode ? "/demo/code-input" : "/dashboard?active=Code%20inspection")
         } catch (err) {
             setImportingRepo(prev => ({ ...prev, progress: 0, status: 'Failed' }))
             await new Promise(resolve => setTimeout(resolve, 500))
@@ -164,7 +171,7 @@ export function HomePage({ onNavigate }) {
     }
 
     const handleOpenInEditor = () => {
-        router.push(isDemoMode ? "/demo/code-input" : "/dashboard?active=Code%20input")
+        router.push(isDemoMode ? "/demo/code-input" : "/dashboard?active=Code%20inspection")
     }
 
     // ── Section renderers ───────────────────────────────────────────────────
@@ -174,7 +181,7 @@ export function HomePage({ onNavigate }) {
         return (
             <WelcomeBanner
                 key="welcome"
-                userName={session?.user?.name}
+                userName={isDemoMode ? "Demo User" : session?.user?.name}
                 onNavigate={onNavigate}
                 onNewScan={handleOpenNewScan}
             />

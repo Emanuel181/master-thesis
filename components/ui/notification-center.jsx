@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
@@ -47,6 +47,7 @@ const NotificationContext = React.createContext(null)
 const DND_STORAGE_KEY = 'vulniq_dnd_mode'
 const SOUND_STORAGE_KEY = 'vulniq_notification_sound'
 const DESKTOP_NOTIF_KEY = 'vulniq_desktop_notifications'
+const PRE_DND_STORAGE_KEY = 'vulniq_pre_dnd_states'
 
 export function useNotifications() {
     const context = React.useContext(NotificationContext)
@@ -151,6 +152,60 @@ const showDesktopNotification = (title, options = {}) => {
     }
 }
 
+// Demo mock notifications
+const DEMO_NOTIFICATIONS = [
+    {
+        id: 'demo-notif-1',
+        type: 'SCAN_CLEAN',
+        title: 'Security scan completed',
+        description: 'No malware detected in uploaded document "api-security-guide.pdf".',
+        read: false,
+        timestamp: new Date(Date.now() - 5 * 60 * 1000),
+        source: 'security',
+        persistent: true,
+    },
+    {
+        id: 'demo-notif-2',
+        type: 'VECTORIZATION_COMPLETED',
+        title: 'Document vectorized',
+        description: '"OWASP Top 10 - 2021.pdf" has been vectorized and is ready for RAG queries.',
+        read: false,
+        timestamp: new Date(Date.now() - 15 * 60 * 1000),
+        source: 'vectorization',
+        persistent: true,
+    },
+    {
+        id: 'demo-notif-3',
+        type: 'ARTICLE_PUBLISHED',
+        title: 'Article published',
+        description: 'Your article "Getting Started with Web Security" is now live.',
+        read: true,
+        timestamp: new Date(Date.now() - 2 * 3600 * 1000),
+        source: 'articles',
+        persistent: true,
+    },
+    {
+        id: 'demo-notif-4',
+        type: 'ARTICLE_REACTION',
+        title: 'New reaction on your article',
+        description: 'Someone liked "Understanding SQL Injection Attacks".',
+        read: true,
+        timestamp: new Date(Date.now() - 5 * 3600 * 1000),
+        source: 'articles',
+        persistent: true,
+    },
+    {
+        id: 'demo-notif-5',
+        type: 'info',
+        title: 'Welcome to VulnIQ demo',
+        description: 'Explore the dashboard features — all data here is simulated.',
+        read: true,
+        timestamp: new Date(Date.now() - 24 * 3600 * 1000),
+        source: 'system',
+        persistent: true,
+    },
+]
+
 export function NotificationProvider({ children }) {
     const [notifications, setNotifications] = React.useState([])
     const [open, setOpen] = React.useState(false)
@@ -158,6 +213,8 @@ export function NotificationProvider({ children }) {
     const [soundEnabled, setSoundEnabled] = React.useState(true)
     const [desktopEnabled, setDesktopEnabled] = React.useState(false)
     const { data: session } = useSession()
+    const pathname = usePathname()
+    const isDemoMode = pathname?.startsWith('/demo')
 
     // Track known notification IDs so we can detect genuinely new ones for sound/desktop
     const knownIdsRef = React.useRef(new Set())
@@ -178,17 +235,35 @@ export function NotificationProvider({ children }) {
             const savedDnd = localStorage.getItem(DND_STORAGE_KEY)
             const savedSound = localStorage.getItem(SOUND_STORAGE_KEY)
             const savedDesktop = localStorage.getItem(DESKTOP_NOTIF_KEY)
+            const savedPreDnd = localStorage.getItem(PRE_DND_STORAGE_KEY)
 
             if (savedDnd === 'true') setDoNotDisturb(true)
             if (savedSound === 'false') setSoundEnabled(false)
             if (savedDesktop === 'true') setDesktopEnabled(true)
+
+            // Restore pre-DND states so we know what to revert to when DND is turned off
+            if (savedPreDnd) {
+                try {
+                    preDndRef.current = JSON.parse(savedPreDnd)
+                } catch { /* ignore */ }
+            }
         } catch (e) {
             console.error('Failed to load notification settings:', e)
         }
     }, [])
 
+    // Load demo notifications in demo mode
+    React.useEffect(() => {
+        if (isDemoMode) {
+            setNotifications(DEMO_NOTIFICATIONS)
+            knownIdsRef.current = new Set(DEMO_NOTIFICATIONS.map(n => n.id))
+            firstFetchDoneRef.current = true
+        }
+    }, [isDemoMode])
+
     // Fetch all notifications from API (both read and unread)
     const fetchNotifications = React.useCallback(async () => {
+        if (isDemoMode) return
         if (!session?.user?.id) return
 
         try {
@@ -243,17 +318,21 @@ export function NotificationProvider({ children }) {
         } catch (error) {
             console.error('Error fetching notifications:', error)
         }
-    }, [session?.user?.id, soundEnabled, doNotDisturb, desktopEnabled])
+    }, [isDemoMode, session?.user?.id, soundEnabled, doNotDisturb, desktopEnabled])
 
     // Initial fetch and poll
     React.useEffect(() => {
+        if (isDemoMode) return
         if (!session?.user?.id) return
 
         fetchNotifications()
 
         const interval = setInterval(fetchNotifications, 15000)
         return () => clearInterval(interval)
-    }, [session?.user?.id, fetchNotifications])
+    }, [isDemoMode, session?.user?.id, fetchNotifications])
+
+    // Remember pre-DND states so we can restore them
+    const preDndRef = React.useRef({ sound: true, desktop: false })
 
     // Toggle DND mode
     const toggleDoNotDisturb = React.useCallback(() => {
@@ -262,9 +341,31 @@ export function NotificationProvider({ children }) {
             try {
                 localStorage.setItem(DND_STORAGE_KEY, String(next))
             } catch (e) { /* ignore */ }
+
+            if (next) {
+                // Entering DND — save current states and disable sound & desktop
+                preDndRef.current = { sound: soundEnabled, desktop: desktopEnabled }
+                setSoundEnabled(false)
+                setDesktopEnabled(false)
+                try {
+                    localStorage.setItem(SOUND_STORAGE_KEY, 'false')
+                    localStorage.setItem(DESKTOP_NOTIF_KEY, 'false')
+                    localStorage.setItem(PRE_DND_STORAGE_KEY, JSON.stringify(preDndRef.current))
+                } catch (e) { /* ignore */ }
+            } else {
+                // Leaving DND — restore previous states
+                setSoundEnabled(preDndRef.current.sound)
+                setDesktopEnabled(preDndRef.current.desktop)
+                try {
+                    localStorage.setItem(SOUND_STORAGE_KEY, String(preDndRef.current.sound))
+                    localStorage.setItem(DESKTOP_NOTIF_KEY, String(preDndRef.current.desktop))
+                    localStorage.removeItem(PRE_DND_STORAGE_KEY)
+                } catch (e) { /* ignore */ }
+            }
+
             return next
         })
-    }, [])
+    }, [soundEnabled, desktopEnabled])
 
     // Toggle sound
     const toggleSound = React.useCallback(() => {
@@ -300,12 +401,13 @@ export function NotificationProvider({ children }) {
         setNotifications(prev => prev.filter(n => n.id !== id))
         knownIdsRef.current.delete(id)
 
+        if (isDemoMode) return
         try {
             await fetch(`/api/notifications/${id}`, { method: 'DELETE' })
         } catch (error) {
             console.error('Error deleting notification:', error)
         }
-    }, [])
+    }, [isDemoMode])
 
     // Add a local notification (e.g. from client-side events)
     // Persistent server-side notifications come from polling instead.
@@ -355,17 +457,19 @@ export function NotificationProvider({ children }) {
             prev.map(n => n.id === id ? { ...n, read: true } : n)
         )
 
+        if (isDemoMode) return
         try {
             await fetch(`/api/notifications/${id}`, { method: 'PATCH' })
         } catch (error) {
             console.error('Error marking notification as read:', error)
         }
-    }, [])
+    }, [isDemoMode])
 
     // Mark all as read (keeps them in the list)
     const markAllAsRead = React.useCallback(async () => {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
 
+        if (isDemoMode) return
         try {
             await fetch('/api/notifications', {
                 method: 'POST',
@@ -375,13 +479,14 @@ export function NotificationProvider({ children }) {
         } catch (error) {
             console.error('Error marking all as read:', error)
         }
-    }, [])
+    }, [isDemoMode])
 
     // Clear all — deletes ALL from DB
     const clearAll = React.useCallback(async () => {
         setNotifications([])
         knownIdsRef.current = new Set()
 
+        if (isDemoMode) return
         try {
             await fetch('/api/notifications', {
                 method: 'POST',
@@ -391,7 +496,7 @@ export function NotificationProvider({ children }) {
         } catch (error) {
             console.error('Error deleting all notifications:', error)
         }
-    }, [])
+    }, [isDemoMode])
 
     // Clear by type
     const clearByType = React.useCallback((type) => {
@@ -637,7 +742,7 @@ export function NotificationCenter() {
                                         onCheckedChange={toggleDoNotDisturb}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between">
+                                <div className={cn("flex items-center justify-between", doNotDisturb && "opacity-50")}>
                                     <Label htmlFor="sound" className="text-xs flex items-center gap-2">
                                         {soundEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
                                         Sound
@@ -646,9 +751,10 @@ export function NotificationCenter() {
                                         id="sound"
                                         checked={soundEnabled}
                                         onCheckedChange={toggleSound}
+                                        disabled={doNotDisturb}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between">
+                                <div className={cn("flex items-center justify-between", doNotDisturb && "opacity-50")}>
                                     <Label htmlFor="desktop" className="text-xs flex items-center gap-2">
                                         <ExternalLink className="h-3 w-3" />
                                         Desktop Notifications
@@ -657,6 +763,7 @@ export function NotificationCenter() {
                                         id="desktop"
                                         checked={desktopEnabled}
                                         onCheckedChange={toggleDesktopNotifications}
+                                        disabled={doNotDisturb}
                                     />
                                 </div>
                             </div>

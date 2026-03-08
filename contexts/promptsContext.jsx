@@ -87,6 +87,24 @@ export function PromptsProvider({ children }) {
                 // Validate that data is an object with agent keys
                 if (data && typeof data === 'object') {
                     setPrompts(data);
+
+                    // Prune stale prompt IDs from selectedPrompts
+                    // If localStorage had prompt IDs that no longer exist, clear them
+                    setSelectedPrompts(prev => {
+                        const agents = ['reviewer', 'implementation', 'tester', 'report'];
+                        let changed = false;
+                        const cleaned = { ...prev };
+                        agents.forEach(agent => {
+                            const currentIds = cleaned[agent] || [];
+                            const validIds = (data[agent] || []).map(p => p.id);
+                            const prunedIds = currentIds.filter(id => validIds.includes(id));
+                            if (prunedIds.length !== currentIds.length) {
+                                cleaned[agent] = prunedIds;
+                                changed = true;
+                            }
+                        });
+                        return changed ? cleaned : prev;
+                    });
                 } else {
                     console.error('[Prompts] Invalid prompts data structure:', jsonResponse);
                     setError('Invalid prompts data structure');

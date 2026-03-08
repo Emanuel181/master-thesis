@@ -2,6 +2,7 @@
 
 import React from "react"
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 import {
     Drawer,
     DrawerContent,
@@ -23,16 +24,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Search, ChevronRight, Folder, File, Check, CircleCheck, CircleDashed, ArrowRight } from "lucide-react"
+import { ScanSearch, Wrench, BugPlay, FileText, Database, RefreshCw, Search, ChevronRight, Folder, File, Check, CircleDashed } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 
 // Custom hook
 import { useModelsDialog } from "@/hooks/use-models-dialog"
 import { useKbSelection } from "@/contexts/kbSelectionContext"
+import { DEMO_USE_CASE_GROUPS, DEMO_DOCUMENTS } from "@/contexts/demoContext"
 
 // Sub-components
 import { AgentCard, KnowledgeBaseCard, PromptCard } from "./_components"
@@ -126,7 +127,7 @@ function ModelsDialogInner({ isOpen, onOpenChange, codeType, onCodeTypeChange })
                                         key={completenessPercent}
                                         initial={{ opacity: 0, y: 4 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className={`text-sm font-semibold ${completenessPercent === 100 ? 'text-emerald-500' : 'text-foreground'}`}
+                                        className="text-sm font-semibold text-primary"
                                     >
                                         {completenessPercent}% ready
                                     </motion.div>
@@ -138,145 +139,52 @@ function ModelsDialogInner({ isOpen, onOpenChange, codeType, onCodeTypeChange })
                         </div>
                     </DrawerHeader>
 
-                    {/* Configuration summary bar - pipeline visualization */}
-                    <div className="px-4 pb-3">
-                        <TooltipProvider delayDuration={200}>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-0 rounded-lg bg-muted/40 border p-2 sm:p-2.5">
-                                {/* Pipeline flow: Agent pills connected by arrows */}
-                                {AGENTS.map((agent, idx) => {
-                                    const status = configStatus.agents[agent.id]
-                                    const isComplete = status?.hasModel && status?.hasPrompt
-                                    const isPartial = status?.hasModel || status?.hasPrompt
-                                    const Icon = agent.icon
-                                    const statusLabel = isComplete ? 'Configured' : isPartial ? 'Partially configured' : 'Not configured'
-                                    const statusDetail = `Model: ${status?.hasModel ? '✓' : '✗'} | Prompt: ${status?.hasPrompt ? '✓' : '✗'}`
-                                    return (
-                                        <React.Fragment key={agent.id}>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div
-                                                        className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-all duration-200 cursor-default ${
-                                                            isComplete
-                                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                                                                : isPartial
-                                                                ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400'
-                                                                : 'bg-background border-border text-muted-foreground'
-                                                        }`}
-                                                    >
-                                                        <div className="relative">
-                                                            <Icon className="h-3.5 w-3.5" />
-                                                            {isComplete && (
-                                                                <motion.span
-                                                                    initial={{ scale: 0 }}
-                                                                    animate={{ scale: 1 }}
-                                                                    className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-emerald-500 border border-background"
-                                                                />
-                                                            )}
-                                                        </div>
-                                                        <span className="hidden sm:inline font-medium">
-                                                            {agent.title.replace(' agent', '')}
-                                                        </span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="bottom" className="text-xs">
-                                                    <p className="font-medium">{agent.title}: {statusLabel}</p>
-                                                    <p className="text-muted-foreground">{statusDetail}</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                            {idx < AGENTS.length - 1 && (
-                                                <ArrowRight className="h-3 w-3 text-muted-foreground/40 hidden sm:block shrink-0" />
-                                            )}
-                                        </React.Fragment>
-                                    )
-                                })}
 
-                                <div className="hidden sm:block h-5 w-px bg-border mx-1" />
-
-                                {/* KB count pill */}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-all duration-200 cursor-default ${
-                                            hasKbFiles
-                                                ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-400'
-                                                : 'bg-background border-border text-muted-foreground'
-                                        }`}>
-                                            <Database className="h-3.5 w-3.5" />
-                                            <span className="font-medium">{kbFileCount}</span>
-                                            <span className="hidden sm:inline">file{kbFileCount !== 1 ? 's' : ''}</span>
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom" className="text-xs">
-                                        Knowledge base documents selected for RAG context
-                                    </TooltipContent>
-                                </Tooltip>
-
-                                {/* Save CTA */}
-                                <div className="ml-auto">
-                                    <Button
-                                        size="sm"
-                                        className={`h-7 text-xs gap-1 transition-all duration-200 ${
-                                            completenessPercent === 100
-                                                ? 'bg-emerald-600 hover:bg-emerald-700'
-                                                : ''
-                                        }`}
-                                        onClick={handleSaveConfiguration}
-                                    >
-                                        {completenessPercent === 100 ? (
-                                            <CircleCheck className="h-3 w-3" />
-                                        ) : (
-                                            <Check className="h-3 w-3" />
-                                        )}
-                                        Save
-                                    </Button>
-                                </div>
-                            </div>
-                        </TooltipProvider>
-                    </div>
 
                     <div className="p-4 pt-0">
                         <Tabs defaultValue="workflow" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
                                 <TabsTrigger value="workflow" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
-                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold shrink-0">1</span>
                                     <span>Workflow</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="models" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
                                     <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 ${
-                                        allAgentsConfigured ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                                        allAgentsConfigured ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'
                                     }`}>{allAgentsConfigured ? '✓' : '2'}</span>
                                     <span className="hidden sm:inline">Agents</span>
                                     <span className="sm:hidden">Agents</span>
                                     <Badge
                                         variant={allAgentsConfigured ? "default" : "secondary"}
-                                        className={`h-4 px-1 text-[9px] leading-none ${allAgentsConfigured ? 'bg-emerald-500' : ''}`}
+                                        className={`h-4 px-1 text-[9px] leading-none ${allAgentsConfigured ? 'bg-primary' : ''}`}
                                     >
                                         {configStatus.configuredAgents}/{configStatus.totalAgents}
                                     </Badge>
                                 </TabsTrigger>
                                 <TabsTrigger value="prompts" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
-                                    <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 ${
-                                        allPromptsConfigured ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
-                                    }`}>{allPromptsConfigured ? '✓' : '3'}</span>
+                                    {allPromptsConfigured && (
+                                        <span className="inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 bg-primary/20 text-primary">✓</span>
+                                    )}
                                     <span className="hidden sm:inline">Prompts</span>
                                     <span className="sm:hidden">Prompts</span>
                                     <Badge
                                         variant={allPromptsConfigured ? "default" : "secondary"}
-                                        className={`h-4 px-1 text-[9px] leading-none ${allPromptsConfigured ? 'bg-emerald-500' : ''}`}
+                                        className={`h-4 px-1 text-[9px] leading-none ${allPromptsConfigured ? 'bg-primary' : ''}`}
                                     >
                                         {configStatus.promptedAgents}/{configStatus.totalAgents}
                                     </Badge>
                                 </TabsTrigger>
                                 <TabsTrigger value="knowledge" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
-                                    <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 ${
-                                        hasKbFiles ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
-                                    }`}>{hasKbFiles ? '✓' : '4'}</span>
+                                    {hasKbFiles && (
+                                        <span className="inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold shrink-0 bg-primary/20 text-primary">✓</span>
+                                    )}
                                     <span className="hidden sm:inline">Knowledge</span>
                                     <span className="sm:hidden">KB</span>
-                                    {(kbFileCount > 0 || sharedSelectedGroups.size > 0) && (
-                                        <Badge variant="default" className="h-4 px-1 text-[9px] leading-none bg-cyan-500">
-                                            {kbFileCount}
-                                        </Badge>
-                                    )}
+                                    <Badge
+                                        variant={hasKbFiles ? "default" : "secondary"}
+                                        className={`h-4 px-1 text-[9px] leading-none ${hasKbFiles ? 'bg-primary' : ''}`}
+                                    >
+                                        {kbFileCount}
+                                    </Badge>
                                 </TabsTrigger>
                             </TabsList>
 
@@ -579,6 +487,9 @@ function PromptsTab({ dialog }) {
  * KnowledgeBaseTab - Knowledge base selection tab content with hierarchical group/use case/file selection
  */
 function KnowledgeBaseTab({ dialog, codeType }) {
+    const pathname = usePathname()
+    const isDemoMode = pathname?.startsWith('/demo')
+
     const [expandedGroups, setExpandedGroups] = React.useState(new Set())
     const [expandedUseCases, setExpandedUseCases] = React.useState(new Set())
     const [useCaseGroups, setUseCaseGroups] = React.useState([])
@@ -590,6 +501,10 @@ function KnowledgeBaseTab({ dialog, codeType }) {
 
     // Fetch groups on mount
     React.useEffect(() => {
+        if (isDemoMode) {
+            setUseCaseGroups(DEMO_USE_CASE_GROUPS);
+            return;
+        }
         const fetchGroups = async () => {
             try {
                 const response = await fetch('/api/use-case-groups')
@@ -603,11 +518,19 @@ function KnowledgeBaseTab({ dialog, codeType }) {
             }
         }
         fetchGroups()
-    }, [])
+    }, [isDemoMode])
 
     // Helper: ensure PDFs are fetched (returns PDFs)
     const ensurePdfsFetched = async (useCaseId) => {
         if (useCasePdfs[useCaseId]) return useCasePdfs[useCaseId]
+
+        // In demo mode, use demo documents instead of fetching from API
+        if (isDemoMode) {
+            const demoPdfs = DEMO_DOCUMENTS[useCaseId] || []
+            setUseCasePdfs(prev => ({ ...prev, [useCaseId]: demoPdfs }))
+            return demoPdfs
+        }
+
         setLoadingPdfs(prev => new Set(prev).add(useCaseId))
         try {
             const response = await fetch(`/api/folders?useCaseId=${useCaseId}`)
@@ -673,6 +596,17 @@ function KnowledgeBaseTab({ dialog, codeType }) {
     // Toggle group selection - async, fetches all PDFs first
     const toggleGroup = async (groupId) => {
         const isCurrentlySelected = selectedGroups.has(groupId)
+        const group = groupedUseCases[groupId]
+
+        if (!group) return
+
+        // Always fetch all PDFs for every use case in the group before toggling
+        // This ensures we have the complete file IDs even for unexpanded use cases
+        const allPdfsArrays = await Promise.all(
+            group.useCases.map(uc => ensurePdfsFetched(uc.id))
+        )
+        const allFileIds = new Set()
+        allPdfsArrays.forEach(pdfs => pdfs.forEach(pdf => allFileIds.add(pdf.id)))
 
         if (isCurrentlySelected) {
             // Deselect group and all its files
@@ -681,37 +615,19 @@ function KnowledgeBaseTab({ dialog, codeType }) {
                 next.delete(groupId)
                 return next
             })
-            // Remove all files from this group
-            const group = groupedUseCases[groupId]
-            if (group) {
-                const allFileIds = new Set()
-                group.useCases.forEach(uc => {
-                    const pdfs = useCasePdfs[uc.id] || []
-                    pdfs.forEach(pdf => allFileIds.add(pdf.id))
-                })
-                setSelectedFiles(prev => {
-                    const next = new Set(prev)
-                    allFileIds.forEach(id => next.delete(id))
-                    return next
-                })
-            }
+            setSelectedFiles(prev => {
+                const next = new Set(prev)
+                allFileIds.forEach(id => next.delete(id))
+                return next
+            })
         } else {
             // Select group and all its files
             setSelectedGroups(prev => new Set(prev).add(groupId))
-            // Add all files from this group
-            const group = groupedUseCases[groupId]
-            if (group) {
-                const allFileIds = new Set()
-                group.useCases.forEach(uc => {
-                    const pdfs = useCasePdfs[uc.id] || []
-                    pdfs.forEach(pdf => allFileIds.add(pdf.id))
-                })
-                setSelectedFiles(prev => {
-                    const next = new Set(prev)
-                    allFileIds.forEach(id => next.add(id))
-                    return next
-                })
-            }
+            setSelectedFiles(prev => {
+                const next = new Set(prev)
+                allFileIds.forEach(id => next.add(id))
+                return next
+            })
         }
     }
 

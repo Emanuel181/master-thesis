@@ -11,22 +11,22 @@ import { Code, ArrowRight } from "lucide-react";
 export function UserCodeNode({ data }) {
     return (
         <>
-            <Card className="w-[180px] sm:w-[220px] shadow-lg border-2 border-yellow-400 dark:border-yellow-400 relative overflow-hidden">
+            <Card className="w-[180px] sm:w-[220px] shadow-lg border-2 border-primary relative overflow-hidden">
                 {/* Animated gradient border shimmer */}
                 <div className="absolute inset-0 pointer-events-none"
                      style={{
-                         background: 'linear-gradient(90deg, transparent, rgba(250,204,21,0.08), transparent)',
+                         background: 'linear-gradient(90deg, transparent, rgba(var(--brand-accent-rgb),0.08), transparent)',
                          backgroundSize: '200% 100%',
                          animation: 'shimmer 3s ease-in-out infinite'
                      }} />
                 <CardContent className="p-2 sm:p-4 relative">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className="p-2 sm:p-3 rounded-lg bg-yellow-400">
-                            <Code className="w-5 h-5 sm:w-7 sm:h-7 text-yellow-950 dark:text-yellow-950" strokeWidth={2.5} />
+                        <div className="p-2 sm:p-3 rounded-lg bg-primary">
+                            <Code className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" strokeWidth={2.5} />
                         </div>
                         <div>
                             <div className="font-semibold text-xs sm:text-base">{data.label}</div>
-                            <div className="text-[9px] sm:text-[10px] text-yellow-600 dark:text-yellow-400 font-medium">Input</div>
+                            <div className="text-[9px] sm:text-[10px] text-primary font-medium">Input</div>
                         </div>
                     </div>
                     <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">

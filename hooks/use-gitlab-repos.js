@@ -36,18 +36,24 @@ export function useGitLabRepos() {
     // Prevent double-fetch in React 18 dev mode
     const fetchOnceRef = useRef(false)
 
+    // Guard: don't persist demo state until after initial hydration from localStorage
+    const demoHydratedRef = useRef(false)
+
     // Load demo connection state from localStorage
     useEffect(() => {
         if (isDemoMode) {
             try {
                 setIsConnected(localStorage.getItem(DEMO_GITLAB_KEY) === 'true')
             } catch {}
+            requestAnimationFrame(() => { demoHydratedRef.current = true })
         }
+        return () => { demoHydratedRef.current = false }
     }, [isDemoMode])
 
-    // Persist demo connection state
+    // Persist demo connection state (only after initial hydration)
     useEffect(() => {
         if (!isDemoMode) return
+        if (!demoHydratedRef.current) return
         try {
             localStorage.setItem(DEMO_GITLAB_KEY, String(isConnected))
         } catch {}

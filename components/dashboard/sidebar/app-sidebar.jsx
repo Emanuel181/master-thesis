@@ -102,9 +102,9 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
             url: "/dashboard?active=Home",
         },
         {
-            title: "Code input",
+            title: "Code inspection",
             icon: SquareTerminal,
-            url: "/dashboard?active=Code input",
+            url: "/dashboard?active=Code inspection",
         },
         {
             title: "Workflow configuration",

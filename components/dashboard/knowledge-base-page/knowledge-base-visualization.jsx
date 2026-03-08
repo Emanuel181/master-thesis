@@ -536,26 +536,6 @@ export default function KnowledgeBaseVisualization() {
         };
     });
 
-    // Stats for overview bar
-    const kbStats = useMemo(() => {
-        const totalDocs = Object.values(documents).reduce((sum, docs) => sum + (docs?.length || 0), 0);
-        const totalSizeBytes = Object.values(documents).reduce((sum, docs) =>
-            sum + (docs || []).reduce((s, d) => s + (d.sizeBytes || 0), 0), 0
-        );
-        const formatSize = (bytes) => {
-            if (bytes === 0) return "0 B";
-            const k = 1024;
-            const sizes = ["B", "KB", "MB", "GB"];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-        };
-        return {
-            totalCategories: useCases.length,
-            totalDocs,
-            totalSize: formatSize(totalSizeBytes),
-            totalGroups: useCaseGroups.length,
-        };
-    }, [useCases, documents, useCaseGroups]);
 
     // Max pdf count for relative density on category cards
     const maxPdfCount = useMemo(() => {
@@ -1511,54 +1491,6 @@ export default function KnowledgeBaseVisualization() {
 
     return (
         <>
-        {/* Stats Overview Bar */}
-        {!isLoading && (
-            <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap items-center gap-3 sm:gap-4 px-2 py-2.5 mb-3 rounded-lg bg-muted/40 border"
-            >
-                <div className="flex items-center gap-1.5 text-xs">
-                    <div className="p-1 rounded bg-primary/10">
-                        <FolderOpen className="h-3 w-3 text-primary" />
-                    </div>
-                    <span className="font-semibold">{kbStats.totalCategories}</span>
-                    <span className="text-muted-foreground hidden sm:inline">categories</span>
-                </div>
-                <div className="h-4 w-px bg-border hidden sm:block" />
-                <div className="flex items-center gap-1.5 text-xs">
-                    <div className="p-1 rounded bg-cyan-500/10">
-                        <File className="h-3 w-3 text-cyan-500" />
-                    </div>
-                    <span className={`font-semibold ${kbStats.totalDocs >= 4 ? 'text-amber-600 dark:text-amber-400' : ''}`}>{kbStats.totalDocs}/4</span>
-                    <span className="text-muted-foreground hidden sm:inline">documents</span>
-                </div>
-                <div className="h-4 w-px bg-border hidden sm:block" />
-                <div className="flex items-center gap-1.5 text-xs">
-                    <div className="p-1 rounded bg-emerald-500/10">
-                        <Upload className="h-3 w-3 text-emerald-500" />
-                    </div>
-                    <span className="font-semibold">{kbStats.totalSize}</span>
-                    <span className="text-muted-foreground hidden sm:inline">total</span>
-                </div>
-                <div className="h-4 w-px bg-border hidden sm:block" />
-                <div className="flex items-center gap-1.5 text-xs">
-                    <div className="p-1 rounded bg-indigo-500/10">
-                        <Folder className="h-3 w-3 text-indigo-500" />
-                    </div>
-                    <span className="font-semibold">{kbStats.totalGroups}</span>
-                    <span className="text-muted-foreground hidden sm:inline">groups</span>
-                </div>
-                {selectedGroupId && selectedGroupId !== "ungrouped" && (
-                    <>
-                        <div className="h-4 w-px bg-border" />
-                        <Badge variant="outline" className="text-[10px] h-5 gap-1 font-medium">
-                            Viewing: {useCaseGroups.find(g => g.id === selectedGroupId)?.name || "Group"}
-                        </Badge>
-                    </>
-                )}
-            </motion.div>
-        )}
 
         {/* MAIN CONTAINER */}
         <div

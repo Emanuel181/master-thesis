@@ -577,7 +577,7 @@ Transparent, community-driven security. Shared knowledge bases produce trustwort
 
 ### Enterprise teams
 
-Scale security across large codebases with specialized prompts and compliance tracking.
+Scale security across large codebases with specialized prompts.
 
 #### Guided learning
 
@@ -597,7 +597,7 @@ Transparent improvements
 
 #### Enterprise scale
 
-Compliant & repeatable
+Secure development practices
 
 ![Agentic RAG](https://vulniq.org/demo/agentic-rag.png)
 
@@ -1902,7 +1902,7 @@ VulnIQAgentic
 Navigation
 
 - Home
-- Code input
+- Code inspection
 - Workflow configuration
 - Knowledge base
 - Results

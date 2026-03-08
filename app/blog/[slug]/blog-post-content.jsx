@@ -1934,7 +1934,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
 
   if (!post) {
     return (
-      <ScrollArea className="h-screen">
+      <ScrollArea className="landing-page h-screen">
         <FloatingNavbar />
         <div className="fixed inset-0 mesh-gradient pointer-events-none" />
         <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -1982,7 +1982,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
       <ArticleJsonLd post={post} url={currentUrl} />
       <BreadcrumbJsonLd post={post} />
 
-      <ScrollArea className="h-screen" viewportRef={scrollRef}>
+      <ScrollArea className="landing-page h-screen" viewportRef={scrollRef}>
         <FloatingNavbar />
 
         {/* Background patterns */}

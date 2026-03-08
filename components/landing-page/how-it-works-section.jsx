@@ -69,7 +69,7 @@ function StepCard({ step, index, total }) {
           <Icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
         </div>
         {/* Step number badge */}
-        <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-background border-2 border-[var(--brand-accent)]/40 flex items-center justify-center">
+        <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] border-2 border-[var(--brand-accent)]/40 flex items-center justify-center">
           <span className="text-[10px] font-bold text-[var(--brand-accent)]">{step.number}</span>
         </div>
       </div>

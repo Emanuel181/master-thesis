@@ -91,7 +91,11 @@ export const config = {
     matcher: [
         "/dashboard/:path*",
         "/demo/:path*",
-        // Match /api/* routes EXCEPT /api/health
-        "/api/((?!health).*)",
+        // Match /api/* routes EXCEPT /api/health and /api/auth/*
+        // /api/auth/* is excluded because NextAuth's route handler manages its own
+        // auth lifecycle. Running the middleware auth() wrapper on these routes causes
+        // failures (e.g. Prisma adapter errors) to return HTML error pages instead of
+        // JSON, triggering ClientFetchError on the client.
+        "/api/((?!health|auth).*)",
     ],
 }

@@ -44,7 +44,7 @@ export function PromptCard({
                     <AgentIcon className={`w-5 h-5 ${config.color}`} />
                     <CardTitle className="text-lg font-medium capitalize">{agent} agent</CardTitle>
                     {promptsArray.some(p => selectedPrompts[agent]?.includes(p.id)) && (
-                        <Badge variant="default" className="text-[9px] h-4 bg-indigo-500">
+                        <Badge variant="default" className="text-[9px] h-4 bg-primary">
                             <Check className="h-2.5 w-2.5 mr-0.5" />
                             Active
                         </Badge>
@@ -75,7 +75,7 @@ export function PromptCard({
                                     key={prompt.id} 
                                     className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                                         isSelected 
-                                            ? 'border-indigo-500 bg-indigo-500/10 shadow-sm shadow-indigo-500/10' 
+                                            ? 'border-primary bg-primary/10 shadow-sm shadow-primary/10' 
                                             : 'hover:border-muted-foreground/50 hover:shadow-sm'
                                     }`}
                                     onClick={() => onPromptSelect(agent, prompt.id)}
@@ -83,12 +83,12 @@ export function PromptCard({
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-start gap-2 flex-1 min-w-0">
                                             {isSelected && (
-                                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 mt-0.5 shrink-0">
-                                                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary mt-0.5 shrink-0">
+                                                    <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
                                                 </span>
                                             )}
                                             <div className="flex-1 min-w-0">
-                                                <p className={`text-sm font-medium truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : ''}`}>
+                                                <p className={`text-sm font-medium truncate ${isSelected ? 'text-primary' : ''}`}>
                                                     {prompt.title || "Untitled"}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground line-clamp-1">

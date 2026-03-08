@@ -4,6 +4,9 @@ import React, { useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ProfileHeader from "@/components/profile/profile-header"
 import ProfileContent from "@/components/profile/profile-content"
+import { UserArticlesSection } from "@/components/profile/user-articles-section"
+import { SavedArticlesSection } from "@/components/profile/saved-articles-section"
+import { DataExportSection } from "@/components/profile/data-export-section"
 import { PageErrorBoundary } from "@/components/ui/error-boundary"
 import { PageTransition } from "@/components/ui/page-transitions"
 import { toast } from "sonner"
@@ -51,6 +54,15 @@ export default function DemoProfilePage() {
                             onImageUpload={handleImageUpload}
                             isDemo={isDemo}
                         />
+
+                        {/* User's Published Articles */}
+                        <UserArticlesSection />
+
+                        {/* User's Saved Articles */}
+                        <SavedArticlesSection />
+
+                        {/* Data export (GDPR) */}
+                        <DataExportSection isDemo={isDemo} />
                     </div>
                 </ScrollArea>
             </PageTransition>

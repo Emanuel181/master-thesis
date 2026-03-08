@@ -35,6 +35,8 @@ export function Footer({ onScrollToTop }) {
     const [message, setMessage] = useState("");
     const [serviceStatus, setServiceStatus] = useState("checking"); // checking, operational, partial, down
     const [feedbackOpen, setFeedbackOpen] = useState(false);
+    const [hoveredResource, setHoveredResource] = useState(null);
+    const [hoveredThesis, setHoveredThesis] = useState(null);
 
     useEffect(() => {
         const checkHealth = async () => {
@@ -91,7 +93,7 @@ export function Footer({ onScrollToTop }) {
     };
 
     return (
-        <footer ref={ref} className="relative pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 md:px-8 bg-background w-full pb-safe overflow-hidden">
+        <footer ref={ref} className="relative pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 md:px-8 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] w-full pb-safe overflow-hidden">
             {/* Hex Grid Background - hidden on mobile for performance */}
             <HexGridBackground className="z-0 opacity-60 hidden md:block" />
             
@@ -102,7 +104,7 @@ export function Footer({ onScrollToTop }) {
                 animate={isInView ? "visible" : "hidden"}
             >
                 {/* Main footer card */}
-                <div className="relative rounded-2xl sm:rounded-3xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 bg-[var(--brand-light)]/95 dark:bg-[var(--brand-primary)]/40 backdrop-blur-sm overflow-hidden">
+                <div className="relative rounded-2xl sm:rounded-3xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]/50 dark:hover:border-[var(--brand-accent)]/50 bg-[var(--brand-light)]/95 dark:bg-[var(--brand-primary)]/40 backdrop-blur-sm overflow-hidden transition-[border-color] duration-500 ease-in-out">
                     {/* Decorative top accent */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 sm:w-1/2 md:w-1/3 h-px bg-gradient-to-r from-transparent via-[var(--brand-accent)]/50 to-transparent" />
 
@@ -142,31 +144,35 @@ export function Footer({ onScrollToTop }) {
                     {/* Column 2: Resources */}
                     <motion.div variants={itemVariants} className="space-y-4">
                         <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Resources</h4>
-                        <div className="flex flex-col gap-2.5">
+                        <div className="flex flex-col gap-2.5" onMouseLeave={() => setHoveredResource(null)}>
                             <button
                                 onClick={() => setFeedbackOpen(true)}
-                                className="inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline text-left"
+                                onMouseEnter={() => setHoveredResource('feedback')}
+                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline text-left transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'feedback' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <MessageSquare className="w-4 h-4" />
                                 Have a feedback?
                             </button>
                             <Link
                                 href="/changelog"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                onMouseEnter={() => setHoveredResource('changelog')}
+                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'changelog' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <FileText className="w-4 h-4" />
                                 Changelog
                             </Link>
                             <Link
                                 href="/site-map"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                onMouseEnter={() => setHoveredResource('sitemap')}
+                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'sitemap' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <Map className="w-4 h-4" />
                                 Sitemap
                             </Link>
                             <Link
                                 href="/supporters"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                onMouseEnter={() => setHoveredResource('supporters')}
+                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'supporters' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <Heart className="w-4 h-4" />
                                 Supporters
@@ -175,7 +181,8 @@ export function Footer({ onScrollToTop }) {
                                 href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline"
+                                onMouseEnter={() => setHoveredResource('thesis')}
+                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'thesis' ? 'opacity-30' : 'opacity-100'}`}
                                 whileHover={{ x: 2 }}
                             >
                                 <FileText className="w-4 h-4" />
@@ -186,7 +193,8 @@ export function Footer({ onScrollToTop }) {
                                 href="https://status.vulniq.org"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                onMouseEnter={() => setHoveredResource('status')}
+                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'status' ? 'opacity-30' : 'opacity-100'}`}
                                 whileHover={{ x: 2 }}
                             >
                                 <span className="relative flex h-2.5 w-2.5">
@@ -210,27 +218,44 @@ export function Footer({ onScrollToTop }) {
                     </motion.div>
 
                     {/* Column 3: About */}
-                    <motion.div variants={itemVariants} className="space-y-4">
+                    <motion.div variants={itemVariants} className="space-y-4" onMouseLeave={() => setHoveredThesis(null)}>
                         <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master thesis</h4>
                         <div className="space-y-1.5 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
-                            <p className="font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)]">Emanuel Rusu</p>
-                            <a 
+                            <p
+                                onMouseEnter={() => setHoveredThesis('name')}
+                                className={`font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] transition-opacity duration-200 ${hoveredThesis && hoveredThesis !== 'name' ? 'opacity-30' : 'opacity-100'}`}
+                            >Emanuel Rusu</p>
+                            <a
                                 href="https://www.uvt.ro/en/" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors"
+                                onMouseEnter={() => setHoveredThesis('university')}
+                                className={`inline-flex items-center gap-1 hover:text-[var(--brand-primary)] dark:hover:text-white transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'university' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 West University of Timișoara
                                 <ExternalLink className="w-3 h-3" />
                             </a>
-                            <p>Faculty of Computer Science</p>
-                            <p>MSc Cybersecurity</p>
+                            <p
+                                onMouseEnter={() => setHoveredThesis('faculty')}
+                                className={`transition-opacity duration-200 ${hoveredThesis && hoveredThesis !== 'faculty' ? 'opacity-30' : 'opacity-100'}`}
+                            >Faculty of Computer Science</p>
+                            <a
+                                href="https://info.uvt.ro/master/cybersecurity/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onMouseEnter={() => setHoveredThesis('msc')}
+                                className={`inline-flex items-center gap-1 hover:text-[var(--brand-primary)] dark:hover:text-white transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'msc' ? 'opacity-30' : 'opacity-100'}`}
+                            >
+                                MSc Cybersecurity
+                                <ExternalLink className="w-3 h-3" />
+                            </a>
                         </div>
                         <motion.a
                             href="https://www.linkedin.com/in/rusu-emanuel/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0077b5] transition-colors"
+                            onMouseEnter={() => setHoveredThesis('linkedin')}
+                            className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[#0077b5] transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'linkedin' ? 'opacity-30' : 'opacity-100'}`}
                             whileHover={{ x: 2 }}
                         >
                             <Linkedin className="w-4 h-4" />

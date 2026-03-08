@@ -191,7 +191,7 @@ export function UserArticlesSection() {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push('/dashboard?tab=write')}
+                        onClick={() => router.push(isDemo ? '/demo/write-article' : '/dashboard?tab=write')}
                         className="gap-1.5 w-full sm:w-auto"
                     >
                         <PenLine className="h-3.5 w-3.5" />
@@ -216,7 +216,7 @@ export function UserArticlesSection() {
                         <Button
                             size="sm"
                             className="mt-4 gap-1.5"
-                            onClick={() => router.push('/dashboard?tab=write')}
+                            onClick={() => router.push(isDemo ? '/demo/write-article' : '/dashboard?tab=write')}
                         >
                             <PenLine className="h-3.5 w-3.5" />
                             Create your first article
@@ -234,7 +234,7 @@ export function UserArticlesSection() {
                                             if (article.status === 'PUBLISHED') {
                                                 router.push(`/blog/${article.slug}`)
                                             } else {
-                                                router.push('/dashboard?tab=write')
+                                                router.push(isDemo ? '/demo/write-article' : '/dashboard?tab=write')
                                             }
                                         }}
                                     >

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { usePathname } from "next/navigation"
 import { useUseCases } from "@/contexts/useCasesContext"
 import { usePrompts } from "@/contexts/promptsContext"
-import { DEMO_DOCUMENTS } from "@/contexts/demoContext"
+import { DEMO_DOCUMENTS, DEMO_WORKFLOW_CONFIGS } from "@/contexts/demoContext"
 import { toast } from "sonner"
 
 // Available AWS Bedrock models with human-friendly names
@@ -285,6 +285,33 @@ export function useModelsDialog({ codeType }) {
         setModels(DEMO_MODELS)
     }, [status])
 
+    // In demo mode, pre-populate agent models and KB selections from per-repo configs
+    useEffect(() => {
+        if (!isDemoMode) return
+        // Only apply if no models are configured yet (first load)
+        if (reviewerModel && implementationModel && testerModel && reportModel) return
+
+        // Try to determine the current demo project from localStorage or use default
+        let currentProject = 'demo-org/vulnerable-express-app'
+        try {
+            const saved = sessionStorage.getItem('vulniq_demo_current_project')
+            if (saved) currentProject = saved
+        } catch {}
+
+        const config = DEMO_WORKFLOW_CONFIGS[currentProject] || DEMO_WORKFLOW_CONFIGS['demo-org/vulnerable-express-app']
+        if (!config) return
+
+        if (config.agentModels) {
+            setReviewerModel(prev => prev || config.agentModels.reviewer || '')
+            setImplementationModel(prev => prev || config.agentModels.implementation || '')
+            setTesterModel(prev => prev || config.agentModels.tester || '')
+            setReportModel(prev => prev || config.agentModels.report || '')
+        }
+        if (config.selectedKnowledgeBases) {
+            setSelectedKnowledgeBases(prev => prev.length > 0 ? prev : config.selectedKnowledgeBases)
+        }
+    }, [isDemoMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
     // Helper functions for pagination with search
     const getFilteredModels = useCallback((agent) => {
         const searchTerm = modelSearchTerm[agent] || ""
@@ -332,16 +359,24 @@ export function useModelsDialog({ codeType }) {
         report: reportModel,
     }
 
+    // Helper: check if a prompt ID actually exists in the fetched prompts for an agent
+    const isValidPromptSelection = (agent, promptId) => {
+        if (!promptId) return false
+        const agentPrompts = prompts[agent] || []
+        return agentPrompts.some(p => p.id === promptId)
+    }
+
     // Configuration readiness status
     const configStatus = {
         agents: {
-            reviewer: { hasModel: !!reviewerModel, hasPrompt: !!selectedSystemPrompts.reviewer },
-            implementation: { hasModel: !!implementationModel, hasPrompt: !!selectedSystemPrompts.implementation },
-            tester: { hasModel: !!testerModel, hasPrompt: !!selectedSystemPrompts.tester },
-            report: { hasModel: !!reportModel, hasPrompt: !!selectedSystemPrompts.report },
+            reviewer: { hasModel: !!reviewerModel, hasPrompt: isValidPromptSelection('reviewer', selectedSystemPrompts.reviewer) },
+            implementation: { hasModel: !!implementationModel, hasPrompt: isValidPromptSelection('implementation', selectedSystemPrompts.implementation) },
+            tester: { hasModel: !!testerModel, hasPrompt: isValidPromptSelection('tester', selectedSystemPrompts.tester) },
+            report: { hasModel: !!reportModel, hasPrompt: isValidPromptSelection('report', selectedSystemPrompts.report) },
         },
         configuredAgents: [reviewerModel, implementationModel, testerModel, reportModel].filter(Boolean).length,
-        promptedAgents: [selectedSystemPrompts.reviewer, selectedSystemPrompts.implementation, selectedSystemPrompts.tester, selectedSystemPrompts.report].filter(Boolean).length,
+        promptedAgents: ['reviewer', 'implementation', 'tester', 'report']
+            .filter(agent => isValidPromptSelection(agent, selectedSystemPrompts[agent])).length,
         totalAgents: 4,
         selectedKbCount: selectedKnowledgeBases.length,
     }

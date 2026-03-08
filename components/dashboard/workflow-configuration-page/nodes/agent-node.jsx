@@ -120,7 +120,7 @@ export function AgentNode({ data }) {
                 type="target"
                 position={Position.Top}
                 id="prompt-in"
-                className="!bg-indigo-500 !w-3 !h-3"
+                className="!bg-primary !w-3 !h-3"
                 style={{ left: '50%' }}
                 title="Prompt Instructions"
             />

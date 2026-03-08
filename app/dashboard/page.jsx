@@ -105,8 +105,13 @@ const loadSavedCodeState = () => {
 const loadSavedActivePage = () => {
     if (typeof window === 'undefined') return 'Home';
     try {
-        const saved = localStorage.getItem('vulniq_active_page');
+        let saved = localStorage.getItem('vulniq_active_page');
         if (saved) {
+            // Migration: rename old page names to new ones
+            if (saved === 'Code input') {
+                saved = 'Code inspection';
+                localStorage.setItem('vulniq_active_page', saved);
+            }
             return saved;
         }
     } catch (err) {
@@ -117,11 +122,11 @@ const loadSavedActivePage = () => {
 
 // Inner component that can use useProject context
 function DashboardContent({ settings, mounted }) {
-    const { projectClearCounter, projectStructure, setSelectedFile, currentRepo } = useProject();
+    const { projectClearCounter, projectStructure, setSelectedFile, currentRepo, setFileVulnerabilities } = useProject();
     const { setForceHideFloating } = useAccessibility();
     const { data: session } = useSession();
     const searchParams = useSearchParams()
-    const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Home", href: "/" }])
+    const [breadcrumbs, setBreadcrumbs] = useState([{ label: "Dashboard", href: "/" }, { label: "Home", href: "#" }])
     // Initialize with defaults to avoid hydration mismatch, load from localStorage after mount
     const [activeComponent, setActiveComponent] = useState('Home')
     const [isModelsDialogOpen, setIsModelsDialogOpen] = useState(false)
@@ -145,6 +150,33 @@ function DashboardContent({ settings, mounted }) {
             if (savedRunId) setCurrentRunId(savedRunId);
         } catch { /* ignore */ }
     }, []);
+
+    // Fetch vulnerabilities for the current run and populate file-level map
+    useEffect(() => {
+        if (!currentRunId) return;
+        let cancelled = false;
+        const fetchVulns = async () => {
+            try {
+                const res = await fetch(`/api/vulnerabilities?runId=${currentRunId}`);
+                if (!res.ok || cancelled) return;
+                const json = await res.json();
+                const vulns = json.data?.vulnerabilities || json.vulnerabilities || [];
+                // Group by fileName
+                const map = {};
+                for (const v of vulns) {
+                    const key = v.fileName || '';
+                    if (!key) continue;
+                    if (!map[key]) map[key] = [];
+                    map[key].push(v);
+                }
+                if (!cancelled) setFileVulnerabilities(map);
+            } catch (err) {
+                console.error('[Dashboard] Failed to fetch vulnerabilities for code annotations:', err);
+            }
+        };
+        fetchVulns();
+        return () => { cancelled = true; };
+    }, [currentRunId, setFileVulnerabilities]);
 
     // Auto-save selected group to localStorage when codeType changes (only if none saved)
     useEffect(() => {
@@ -173,6 +205,13 @@ function DashboardContent({ settings, mounted }) {
         const handleOpenFeedback = () => setIsFeedbackOpen(true);
         window.addEventListener("open-feedback", handleOpenFeedback);
         return () => window.removeEventListener("open-feedback", handleOpenFeedback);
+    }, []);
+
+    // Listen for open-workflow-config event (from keyboard shortcuts dialog)
+    useEffect(() => {
+        const handleOpenWorkflow = () => setIsModelsDialogOpen(true);
+        window.addEventListener("open-workflow-config", handleOpenWorkflow);
+        return () => window.removeEventListener("open-workflow-config", handleOpenWorkflow);
     }, []);
 
     // Clear code state when project is cleared
@@ -211,15 +250,17 @@ function DashboardContent({ settings, mounted }) {
 
     // Handle navigation from URL params
     useEffect(() => {
-        const active = searchParams.get('active')
+        let active = searchParams.get('active')
         const workflow = searchParams.get('workflow')
         if (active) {
+            // Migration: map old page names to new ones
+            if (active === 'Code input') active = 'Code inspection';
             setActiveComponent(active)
             if (active === "Home") {
-                setBreadcrumbs([{ label: 'Home', href: '#' }])
+                setBreadcrumbs([{ label: 'Dashboard', href: '#' }, { label: 'Home', href: '#' }])
             } else {
                 const newBreadcrumbs = [
-                    { label: 'Home', href: '#' },
+                    { label: 'Dashboard', href: '#' },
                     { label: active, href: '#' }
                 ]
                 setBreadcrumbs(newBreadcrumbs)
@@ -243,9 +284,9 @@ function DashboardContent({ settings, mounted }) {
     // Initialize breadcrumbs based on active component on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only run on mount to restore state
     useEffect(() => {
-        if (activeComponent && activeComponent !== "Home") {
+        if (activeComponent) {
             setBreadcrumbs([
-                { label: 'Home', href: '#' },
+                { label: 'Dashboard', href: '#' },
                 { label: activeComponent, href: '#' }
             ]);
         }
@@ -261,11 +302,13 @@ function DashboardContent({ settings, mounted }) {
             return
         }
 
-        if (item.title === "Home") {
-            setBreadcrumbs([{ label: 'Home', href: '#' }])
+        if (item.title === "Home" || item.title === "Dashboard") {
+            setBreadcrumbs([{ label: 'Dashboard', href: '#' }, { label: 'Home', href: '#' }])
+            setActiveComponent("Home")
+            return
         } else {
             const newBreadcrumbs = [
-                { label: 'Home', href: '#' },
+                { label: 'Dashboard', href: '#' },
                 { label: item.title, href: item.url }
             ]
 
@@ -489,7 +532,7 @@ function DashboardContent({ settings, mounted }) {
                     return <ArticleEditor />
                 case "Home":
                     return <HomePage onNavigate={handleNavigation} />
-                case "Code input":
+                case "Code inspection":
                 default:
                     return <CodeInput
                         code={initialCode}
@@ -525,8 +568,8 @@ function DashboardContent({ settings, mounted }) {
                                 projectStructure={projectStructure}
                                 onFileSelect={(file) => {
                                     setSelectedFile(file);
-                                    if (activeComponent !== "Code input") {
-                                        handleNavigation({ title: "Code input" });
+                                    if (activeComponent !== "Code inspection") {
+                                        handleNavigation({ title: "Code inspection" });
                                     }
                                 }}
                             >
@@ -580,7 +623,7 @@ function DashboardContent({ settings, mounted }) {
                                                     <QuickActionsTrigger />
                                                     <NotificationCenter />
                                                     <AccessibilityTrigger />
-                                                    <CustomizationDialog showEditorTabs={activeComponent === "Code input"} />
+                                                    <CustomizationDialog showEditorTabs={activeComponent === "Code inspection"} />
                                                     <ThemeToggle />
                                                 </div>
                                             </div>
