@@ -88,7 +88,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Passkey auth verify error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to verify authentication' },
+            { error: 'Failed to verify authentication' },
             { status: 500 }
         );
     }

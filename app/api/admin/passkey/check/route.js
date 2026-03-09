@@ -56,7 +56,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Passkey check error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to check passkey status' },
+            { error: 'Failed to check passkey status' },
             { status: 500 }
         );
     }

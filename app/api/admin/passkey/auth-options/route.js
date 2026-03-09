@@ -70,7 +70,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Passkey auth options error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to generate authentication options' },
+            { error: 'Failed to generate authentication options' },
             { status: 500 }
         );
     }

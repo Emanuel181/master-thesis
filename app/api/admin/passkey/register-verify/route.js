@@ -77,7 +77,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Passkey registration verify error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to verify registration' },
+            { error: 'Failed to verify registration' },
             { status: 500 }
         );
     }

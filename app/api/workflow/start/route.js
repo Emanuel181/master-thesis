@@ -92,7 +92,6 @@ const startWorkflowSchema = z.object({
  */
 export async function POST(request) {
   try {
-    console.log('[workflow/start] Request received');
 
     const session = await auth();
     if (!session?.user?.email) {

@@ -63,6 +63,19 @@ export async function POST(request) {
             );
         }
 
+        // Verify the workflow run belongs to the authenticated user
+        const workflowRun = await prisma.workflowRun.findUnique({
+            where: { id: runId },
+            select: { userId: true },
+        });
+
+        if (!workflowRun || workflowRun.userId !== session.user.id) {
+            return NextResponse.json(
+                { error: 'Workflow run not found' },
+                { status: 404 }
+            );
+        }
+
         // Fetch vulnerabilities from database if not provided
         let vulnData = vulnerabilities;
         let summaryData = summary;

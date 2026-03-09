@@ -9,7 +9,7 @@ import prisma from '@/lib/prisma';
 export async function GET(request) {
     try {
         const session = await auth();
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         
@@ -19,7 +19,17 @@ export async function GET(request) {
         if (!runId) {
             return NextResponse.json({ error: 'runId is required' }, { status: 400 });
         }
-        
+
+        // Verify the workflow run belongs to the authenticated user
+        const workflowRun = await prisma.workflowRun.findUnique({
+            where: { id: runId },
+            select: { userId: true },
+        });
+
+        if (!workflowRun || workflowRun.userId !== session.user.id) {
+            return NextResponse.json({ error: 'Workflow run not found' }, { status: 404 });
+        }
+
         const fixes = await prisma.codeFix.findMany({
             where: {
                 vulnerability: {

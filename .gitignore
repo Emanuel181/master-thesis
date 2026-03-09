@@ -61,4 +61,7 @@ git-info.txt
 large-scan.txt
 large-files.txt
 filter-result.txt
+audit-result.txt
+npm-audit-check.txt
+push-result.txt
 

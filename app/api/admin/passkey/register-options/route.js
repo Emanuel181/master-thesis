@@ -60,7 +60,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Passkey registration options error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to generate registration options' },
+            { error: 'Failed to generate registration options' },
             { status: 500 }
         );
     }
