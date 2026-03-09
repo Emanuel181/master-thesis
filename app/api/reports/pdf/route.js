@@ -47,7 +47,6 @@ export async function POST(request) {
         const session = await auth();
 
         if (!session?.user?.id) {
-            console.log('[PDF API] Unauthorized - no session');
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -56,14 +55,6 @@ export async function POST(request) {
 
         const body = await request.json();
         const { runId, projectName, vulnerabilities, summary } = body;
-
-        console.log('[PDF API] Request body:', {
-            runId,
-            projectName,
-            vulnerabilitiesCount: vulnerabilities?.length || 0,
-            summary,
-            vulnerabilitiesSample: vulnerabilities?.slice(0, 2),
-        });
 
         if (!runId) {
             return NextResponse.json(
@@ -230,11 +221,11 @@ export async function POST(request) {
 
     } catch (error) {
         console.error('Error generating PDF report:', error);
-        console.error('Error stack:', error.stack);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
         return NextResponse.json(
-            { error: 'Failed to generate PDF report', details: error.message, stack: error.stack },
+            {
+                error: 'Failed to generate PDF report',
+                ...(process.env.NODE_ENV === 'development' && { details: error.message, stack: error.stack }),
+            },
             { status: 500 }
         );
     }

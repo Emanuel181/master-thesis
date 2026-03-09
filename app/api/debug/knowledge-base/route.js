@@ -1,12 +1,25 @@
 /**
  * Debug API for Knowledge Base
  * GET /api/debug/knowledge-base
+ *
+ * SECURITY: Only available in development mode.
  */
 
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 
 export async function GET(request) {
+    // Block in production — debug endpoints must never be exposed
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         // Get all use cases with their PDFs and folders
         const useCases = await prisma.knowledgeBaseCategory.findMany({
@@ -71,7 +84,7 @@ export async function GET(request) {
         console.error('[Debug] Error:', error);
         return NextResponse.json({
             success: false,
-            error: error.message,
+            error: 'Internal server error',
         }, { status: 500 });
     }
 }

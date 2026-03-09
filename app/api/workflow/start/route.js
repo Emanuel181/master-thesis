@@ -96,15 +96,12 @@ export async function POST(request) {
 
     const session = await auth();
     if (!session?.user?.email) {
-      console.log('[workflow/start] Unauthorized - no session');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    console.log('[workflow/start] Request body:', JSON.stringify(body, null, 2));
 
     const validatedData = startWorkflowSchema.parse(body);
-    console.log('[workflow/start] Validation passed');
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -381,8 +378,7 @@ export async function POST(request) {
         return NextResponse.json(
           {
             error: "Failed to start workflow execution",
-            details: error.message,
-            awsError: error.name,
+            ...(process.env.NODE_ENV === 'development' && { details: error.message, awsError: error.name }),
           },
           { status: 500 }
         );
@@ -405,11 +401,10 @@ export async function POST(request) {
     console.error("[workflow/start] Error stack:", error.stack);
 
     if (error instanceof z.ZodError) {
-      console.error("[workflow/start] Validation errors:", error.errors);
       return NextResponse.json(
         {
           error: "Validation error",
-          details: error.errors,
+          details: error.errors.map(e => ({ path: e.path, message: e.message })),
         },
         { status: 400 }
       );
@@ -418,7 +413,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: "Internal server error",
-        details: error.message,
+        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
       },
       { status: 500 }
     );
@@ -731,6 +726,9 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Error fetching workflow status:", error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    return NextResponse.json({
+      error: "Internal server error",
+      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+    }, { status: 500 });
   }
 }

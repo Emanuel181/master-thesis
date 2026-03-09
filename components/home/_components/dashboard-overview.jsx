@@ -117,11 +117,16 @@ function DailyRecommendedBlog({ isDemoMode }) {
         )
     }
 
+    const Wrapper = isDemoMode ? 'div' : 'button'
+    const wrapperProps = isDemoMode
+        ? { className: "flex items-center gap-3 p-2.5 rounded-lg border bg-card text-left w-full cursor-default" }
+        : {
+            onClick: () => router.push(`/blog/${blog.slug}`),
+            className: "group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-150 text-left w-full"
+          }
+
     return (
-        <button
-            onClick={() => router.push(`/blog/${blog.slug}`)}
-            className="group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-150 text-left w-full"
-        >
+        <Wrapper {...wrapperProps}>
             <div
                 className="shrink-0 w-10 h-10 rounded-md"
                 style={{ background: blog.gradient || 'linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)' }}
@@ -139,8 +144,10 @@ function DailyRecommendedBlog({ isDemoMode }) {
                 </p>
                 <p className="text-[10px] text-muted-foreground truncate mt-0.5">{blog.excerpt}</p>
             </div>
-            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-        </button>
+            {!isDemoMode && (
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            )}
+        </Wrapper>
     )
 }
 
