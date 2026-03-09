@@ -16,6 +16,7 @@ import prisma from "@/lib/prisma";
 import { getS3ObjectStream } from "@/lib/s3-env";
 import { verifyUnlockToken } from "@/lib/user-passkey";
 import { isDemoRequest } from "@/lib/demo-mode";
+import { rateLimit } from "@/lib/rate-limit";
 import archiver from "archiver";
 import { PassThrough } from "stream";
 
@@ -27,6 +28,12 @@ export async function POST(request) {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Rate limit zip downloads
+        const rl = await rateLimit(session.user.id, { limit: 20, windowMs: 60 * 60 * 1000, keyPrefix: 'pdfs:download-zip' });
+        if (!rl.allowed) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
         }
 
         // ── Biometric token ──
@@ -125,9 +132,15 @@ export async function POST(request) {
             },
         });
 
-        const zipName = pdfs.length === 1
+        const rawName = pdfs.length === 1
             ? (pdfs[0].title || pdfs[0].originalName || "document").replace(/\.pdf$/i, "") + ".zip"
             : "knowledge-base-documents.zip";
+
+        // Sanitize filename: strip quotes, newlines, and non-ASCII to prevent header injection
+        const zipName = rawName
+            .replace(/["\r\n\\]/g, "")
+            .replace(/[^\x20-\x7E]/g, "_")
+            .slice(0, 200) || "documents.zip";
 
         return new Response(readable, {
             status: 200,
