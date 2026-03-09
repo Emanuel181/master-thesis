@@ -256,7 +256,7 @@ function HTMLContentPreview({ content }) {
                           'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span'],
             ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel']
           })
-        : content;
+        : '';
 
     return (
         <div
