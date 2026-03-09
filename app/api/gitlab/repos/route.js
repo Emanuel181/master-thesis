@@ -43,7 +43,7 @@ export const GET = createApiHandler(
         const isDev = process.env.NODE_ENV === 'development';
 
         // Get the user from database (prefer id; email is mutable)
-        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
 
         if (!user) {
             return ApiErrors.unauthorized(requestId);
@@ -104,7 +104,7 @@ export const GET = createApiHandler(
 
                 // Handle 401 Unauthorized by attempting refresh
                 if (response.status === 401 && gitlabAccount?.refresh_token) {
-                    console.log('[gitlab/repos] 401 received, attempting token refresh...');
+                    if (isDev) console.log('[gitlab/repos] 401 received, attempting token refresh...');
                     const newTokens = await refreshGitLabToken(gitlabAccount.refresh_token);
 
                     if (newTokens?.access_token) {
@@ -119,7 +119,7 @@ export const GET = createApiHandler(
                             }
                         });
 
-                        console.log('[gitlab/repos] token refreshed successfully');
+                        if (isDev) console.log('[gitlab/repos] token refreshed successfully');
 
                         // Update current token and retry request
                         currentToken = newTokens.access_token;
@@ -189,7 +189,7 @@ export const GET = createApiHandler(
             return errorResponse('Failed to fetch repositories', {
                 status: 502,
                 requestId,
-                details: err?.message || 'Unknown error'
+                ...(isDev && { details: err?.message || 'Unknown error' }),
             });
         }
     },

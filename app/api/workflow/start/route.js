@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { vectorizeAndWait } from "@/lib/vectorization";
+import { rateLimit } from "@/lib/rate-limit";
 
 // AWS SDK imports
 import { SFNClient, StartExecutionCommand, DescribeExecutionCommand, GetExecutionHistoryCommand } from "@aws-sdk/client-sfn";
@@ -98,6 +99,12 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limit workflow starts — expensive AWS operation
+    const rl = await rateLimit(session.user.id, { limit: 5, windowMs: 60 * 60 * 1000, keyPrefix: 'workflow:start' });
+    if (!rl.allowed) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
+    }
+
     const body = await request.json();
 
     const validatedData = startWorkflowSchema.parse(body);
@@ -134,13 +141,7 @@ export async function POST(request) {
     }
 
     // SECURITY: Log document selection for audit trail
-    const totalSelectedDocs = useCases.reduce((sum, uc) => sum + uc.pdfs.length, 0);
-    console.log(`[workflow/start] Security Audit: Using ${totalSelectedDocs} explicitly selected documents for analysis`);
-    console.log(`[workflow/start] Selected document IDs:`, validatedData.selectedDocuments);
-
-    // Log agent configuration for debugging
-    const reviewerConfig = validatedData.agentConfigurations?.reviewer;
-    console.log(`[workflow/start] Reviewer config:`, reviewerConfig);
+    const totalSelectedDocs = validatedData.selectedDocuments.length;
 
     // Check if documents need vectorization — all documents MUST be vectorized for RAG
     const documentsToVectorize = [];
@@ -155,9 +156,7 @@ export async function POST(request) {
     // Trigger vectorization for any un-vectorized documents
     let ragEnabled = true;
     if (documentsToVectorize.length > 0) {
-      console.log(`[workflow/start] ${documentsToVectorize.length} document(s) need vectorization before RAG can work`);
       const docNames = documentsToVectorize.map(d => d.title).join(', ');
-      console.log(`[workflow/start] Un-vectorized documents: ${docNames}`);
 
       try {
         // BLOCKING: wait for vectorization to finish before launching the workflow,
@@ -170,14 +169,15 @@ export async function POST(request) {
           console.warn('[workflow/start] Vectorization skipped (Bedrock KB not configured). Documents will be used as raw context.');
           ragEnabled = false;
         } else {
-          console.log(`[workflow/start] Vectorization complete for ${documentsToVectorize.length} document(s)`);
+          // Vectorization complete
+          ragEnabled = true;
         }
       } catch (error) {
         console.error("[workflow/start] Vectorization failed:", error);
         return NextResponse.json(
           {
             error: "Failed to vectorize selected documents",
-            details: `Could not vectorize: ${docNames}. ${error.message}`,
+            ...(process.env.NODE_ENV === 'development' && { details: `Could not vectorize: ${docNames}. ${error.message}` }),
           },
           { status: 500 }
         );
@@ -247,7 +247,6 @@ export async function POST(request) {
             });
 
             await s3Client.send(uploadCommand);
-            console.log(`[workflow/start] Uploaded code to S3: ${s3Key}`);
 
             // Replace with S3 reference
             codeReference = {
@@ -317,12 +316,8 @@ export async function POST(request) {
           name: `run-${workflowRun.id}-${Date.now()}`,
         });
 
-        console.log('[workflow/start] Starting Step Functions execution...');
-        console.log('[workflow/start] State Machine ARN:', process.env.STEP_FUNCTIONS_ARN);
-
         const execution = await sfnClient.send(command);
 
-        console.log('[workflow/start] Execution started:', execution.executionArn);
 
         // Update workflow run with execution ARN and status
         try {
@@ -336,7 +331,6 @@ export async function POST(request) {
           });
         } catch (dbError) {
           // If sfnExecutionArn field doesn't exist, try without it
-          console.log('[workflow/start] Note: sfnExecutionArn field may not exist, updating without it');
           await prisma.workflowRun.update({
             where: { id: workflowRun.id },
             data: {
@@ -442,7 +436,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "Invalid runId format" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -612,7 +606,7 @@ export async function GET(request) {
             workflowRun.status = 'failed';
           }
         } catch (sfnErr) {
-          console.log('[workflow GET] SFN check error:', sfnErr.message);
+          console.warn('[workflow GET] SFN status check failed:', sfnErr.message);
         }
       }
 

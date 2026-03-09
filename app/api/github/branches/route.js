@@ -16,7 +16,7 @@ export const GET = createApiHandler(
             return ApiErrors.badRequest('owner and repo are required', requestId);
         }
 
-        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
         if (!user) return ApiErrors.unauthorized(requestId);
 
         const githubAccount = await prisma.account.findFirst({

@@ -45,7 +45,7 @@ export const GET = createApiHandler(
         const { owner, repo, ref, shape } = query;
 
         // Get the user (prefer id)
-        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
 
         if (!user) {
             return ApiErrors.unauthorized(requestId);

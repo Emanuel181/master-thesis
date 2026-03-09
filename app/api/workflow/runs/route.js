@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/workflow/runs
@@ -13,6 +14,11 @@ export async function GET(request) {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const rl = await rateLimit(session.user.id, { limit: 60, windowMs: 60_000, keyPrefix: 'workflow:runs:get' });
+        if (!rl.allowed) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
         }
 
         const { searchParams } = new URL(request.url);
@@ -71,6 +77,11 @@ export async function DELETE(request) {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const rl = await rateLimit(session.user.id, { limit: 20, windowMs: 60_000, keyPrefix: 'workflow:runs:delete' });
+        if (!rl.allowed) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
         }
 
         const { runId } = await request.json();

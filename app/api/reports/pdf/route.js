@@ -14,6 +14,7 @@ import { generateSecurityReportPDF } from '@/lib/pdf-report-generator';
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
 import { prisma } from '@/lib/prisma';
 import { verifyUnlockToken } from '@/lib/user-passkey';
+import { rateLimit } from '@/lib/rate-limit';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -42,14 +43,21 @@ function getLogoBytes() {
 
 export async function POST(request) {
     try {
-        console.log('[PDF API] Request received');
-
         const session = await auth();
 
         if (!session?.user?.id) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Rate limit PDF generation — expensive operation
+        const rl = await rateLimit(session.user.id, { limit: 10, windowMs: 60 * 60 * 1000, keyPrefix: 'reports:pdf' });
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded. Please try again later.' },
+                { status: 429 }
             );
         }
 
@@ -167,13 +175,6 @@ export async function POST(request) {
             };
         }
 
-        // Log data being passed to PDF generator
-        console.log('[PDF] Generating PDF with:', {
-            runId,
-            projectName: projectName || undefined,
-            vulnerabilityCount: vulnData?.length || 0,
-            summary: summaryData,
-        });
 
         // Generate the PDF
         let pdfBytes;
@@ -193,8 +194,6 @@ export async function POST(request) {
             throw pdfError;
         }
 
-        console.log('[PDF] PDF generated successfully, size:', pdfBytes?.length || 0);
-
         // Generate a NEW random password for every download
         const pdfPassword = generateRandomPdfPassword();
         let encryptedPdfBytes;
@@ -204,7 +203,6 @@ export async function POST(request) {
                 pdfPassword,       // user password (needed to open)
                 pdfPassword + 'OW' // owner password (for permissions)
             );
-            console.log('[PDF] PDF encrypted successfully, size:', encryptedPdfBytes?.length || 0);
         } catch (encryptError) {
             console.warn('[PDF] PDF encryption failed, returning unencrypted:', encryptError.message);
             // Fallback: return unencrypted PDF if encryption fails

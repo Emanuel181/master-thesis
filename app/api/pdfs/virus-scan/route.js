@@ -44,7 +44,7 @@ export const POST = createApiHandler(
             return { status: 'skipped', reason: 'VirusTotal API key not configured' };
         }
 
-        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
         if (!user) return ApiErrors.unauthorized(requestId);
 
         // Fetch the PDF and verify ownership
@@ -118,7 +118,7 @@ export const POST = createApiHandler(
                 status: 502,
                 code: 'VIRUS_SCAN_FAILED',
                 requestId,
-                details: err.message,
+                ...(process.env.NODE_ENV === 'development' && { details: err.message }),
             });
         }
     },
@@ -147,7 +147,7 @@ export const GET = createApiHandler(
             });
         }
 
-        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
         if (!user) return ApiErrors.unauthorized(requestId);
 
         const pdf = await prisma.pdf.findFirst({
