@@ -14,7 +14,7 @@ export async function POST(request) {
         return NextResponse.json({ options });
     } catch (err) {
         console.error('[UserPasskey] auth-options error:', err);
-        return NextResponse.json({ error: err.message || 'Failed to generate auth options' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to generate auth options' }, { status: 500 });
     }
 }
 

@@ -15,7 +15,7 @@ export async function POST(request) {
         return NextResponse.json(result);
     } catch (err) {
         console.error('[UserPasskey] register-verify error:', err);
-        return NextResponse.json({ error: err.message || 'Registration verification failed' }, { status: 400 });
+        return NextResponse.json({ error: 'Registration verification failed' }, { status: 400 });
     }
 }
 

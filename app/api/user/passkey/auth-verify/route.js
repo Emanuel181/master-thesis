@@ -15,7 +15,7 @@ export async function POST(request) {
         return NextResponse.json(result); // { verified: true, unlockToken: '...' }
     } catch (err) {
         console.error('[UserPasskey] auth-verify error:', err);
-        return NextResponse.json({ error: err.message || 'Authentication failed' }, { status: 400 });
+        return NextResponse.json({ error: 'Authentication failed' }, { status: 400 });
     }
 }
 

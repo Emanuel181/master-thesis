@@ -41,7 +41,7 @@ export async function POST(request) {
                 return NextResponse.json({ error: "Token/user mismatch" }, { status: 403 });
             }
         } catch (err) {
-            return NextResponse.json({ error: err.message || "Invalid biometric token" }, { status: 403 });
+            return NextResponse.json({ error: "Invalid biometric token" }, { status: 403 });
         }
 
         // ── Body ──
