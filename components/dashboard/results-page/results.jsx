@@ -524,6 +524,35 @@ const columns = [
         maxSize: 300,
     },
     {
+        accessorKey: "source",
+        header: "Source",
+        cell: ({ row }) => {
+            const source = row.original.source || row.original.tool || 'reviewer'
+            const sourceLabels = {
+                semgrep: { label: 'Semgrep', color: 'bg-green-500/10 text-green-600 border-green-500/20' },
+                nuclei: { label: 'Nuclei', color: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
+                njsscan: { label: 'njsscan', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
+                bedrock: { label: 'AI Pentest', color: 'bg-red-500/10 text-red-600 border-red-500/20' },
+                pentester: { label: 'Tester', color: 'bg-red-500/10 text-red-600 border-red-500/20' },
+                tester: { label: 'Tester', color: 'bg-red-500/10 text-red-600 border-red-500/20' },
+                reviewer: { label: 'Reviewer', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+            }
+            const config = sourceLabels[source] || { label: source, color: 'bg-muted text-muted-foreground' }
+            return (
+                <Badge variant="outline" className={`px-1.5 text-[10px] font-medium ${config.color}`}>
+                    {config.label}
+                </Badge>
+            )
+        },
+        size: 110,
+        minSize: 80,
+        maxSize: 150,
+        filterFn: (row, id, value) => {
+            const source = row.original.source || row.original.tool || 'reviewer'
+            return value.includes(source)
+        },
+    },
+    {
         id: "actions",
         cell: () => (
             <DropdownMenu>
@@ -599,6 +628,127 @@ function DraggableRow({ row }) {
                 </TableRow>
             )}
         </React.Fragment>
+    )
+}
+
+/**
+ * PentesterResultsView — shows pentester findings grouped by scanning tool
+ */
+function PentesterResultsView({ vulnerabilities = [] }) {
+    const pentesterSources = new Set(['semgrep', 'nuclei', 'njsscan', 'bedrock', 'pentester', 'tester'])
+    const pentesterFindings = vulnerabilities.filter(v =>
+        pentesterSources.has(v.source || v.tool)
+    )
+
+    const toolGroups = React.useMemo(() => {
+        const groups = {}
+        pentesterFindings.forEach(v => {
+            const tool = v.source || v.tool || 'unknown'
+            if (!groups[tool]) groups[tool] = { findings: [], critical: 0, high: 0, medium: 0, low: 0 }
+            groups[tool].findings.push(v)
+            const sev = (v.severity || '').toLowerCase()
+            if (sev === 'critical') groups[tool].critical++
+            else if (sev === 'high') groups[tool].high++
+            else if (sev === 'medium') groups[tool].medium++
+            else groups[tool].low++
+        })
+        return groups
+    }, [pentesterFindings])
+
+    const toolMeta = {
+        semgrep: { label: 'Semgrep (SAST)', desc: 'Rule-based static analysis — OWASP, Node.js, React, TypeScript', icon: '🔍' },
+        njsscan: { label: 'njsscan (SAST)', desc: 'Node.js & JavaScript specific security scanner', icon: '🟢' },
+        nuclei: { label: 'Nuclei (DAST)', desc: 'Dynamic endpoint scanning with 9000+ templates', icon: '🎯' },
+        bedrock: { label: 'AI Pentest (Bedrock Claude)', desc: 'LLM-powered penetration reasoning & exploit chain analysis', icon: '🤖' },
+        pentester: { label: 'Pentester Agent', desc: 'Combined penetration testing results', icon: '🛡️' },
+    }
+
+    if (pentesterFindings.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-4 text-2xl">
+                    🛡️
+                </div>
+                <p className="text-base font-medium">No tester findings yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Security testing results will appear here once the EC2 tester agent completes its scan.
+                </p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4 p-4">
+            {/* Summary bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-lg border bg-card p-3">
+                    <p className="text-xs text-muted-foreground">Total Findings</p>
+                    <p className="text-2xl font-bold">{pentesterFindings.length}</p>
+                </div>
+                <div className="rounded-lg border bg-card p-3">
+                    <p className="text-xs text-muted-foreground text-severity-critical">Critical</p>
+                    <p className="text-2xl font-bold text-severity-critical">
+                        {pentesterFindings.filter(v => (v.severity || '').toLowerCase() === 'critical').length}
+                    </p>
+                </div>
+                <div className="rounded-lg border bg-card p-3">
+                    <p className="text-xs text-muted-foreground text-severity-high">High</p>
+                    <p className="text-2xl font-bold text-severity-high">
+                        {pentesterFindings.filter(v => (v.severity || '').toLowerCase() === 'high').length}
+                    </p>
+                </div>
+                <div className="rounded-lg border bg-card p-3">
+                    <p className="text-xs text-muted-foreground">Tools Used</p>
+                    <p className="text-2xl font-bold">{Object.keys(toolGroups).length}</p>
+                </div>
+            </div>
+
+            {/* Per-tool breakdown */}
+            {Object.entries(toolGroups).map(([tool, group]) => {
+                const meta = toolMeta[tool] || { label: tool, desc: '', icon: '🔧' }
+                return (
+                    <div key={tool} className="rounded-lg border bg-card">
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl">{meta.icon}</span>
+                                <div>
+                                    <p className="font-medium text-sm">{meta.label}</p>
+                                    <p className="text-xs text-muted-foreground">{meta.desc}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {group.critical > 0 && <Badge variant="outline" className="text-severity-critical border-severity-critical/30">{group.critical} Critical</Badge>}
+                                {group.high > 0 && <Badge variant="outline" className="text-severity-high border-severity-high/30">{group.high} High</Badge>}
+                                {group.medium > 0 && <Badge variant="outline" className="text-severity-medium border-severity-medium/30">{group.medium} Medium</Badge>}
+                                {group.low > 0 && <Badge variant="outline" className="text-muted-foreground">{group.low} Low</Badge>}
+                                <Badge variant="secondary">{group.findings.length} total</Badge>
+                            </div>
+                        </div>
+                        <div className="divide-y">
+                            {group.findings.slice(0, 10).map((finding, idx) => (
+                                <div key={finding.id || idx} className="flex items-start gap-3 p-3 text-sm">
+                                    <Badge variant="outline" className={`shrink-0 px-2 py-0.5 ${severityColors[finding.severity] || ''}`}>
+                                        {finding.severity}
+                                    </Badge>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-medium truncate">{finding.title}</p>
+                                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                            {finding.fileName && <code className="bg-muted px-1 rounded mr-2">{finding.fileName}</code>}
+                                            {finding.details || finding.explanation || ''}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                            {group.findings.length > 10 && (
+                                <div className="p-3 text-center text-xs text-muted-foreground">
+                                    + {group.findings.length - 10} more findings from {meta.label}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
     )
 }
 
@@ -921,6 +1071,9 @@ export function DataTable({
                     <TabsTrigger value="fixes">
                         Fixes
                     </TabsTrigger>
+                    <TabsTrigger value="pentester">
+                        Tester <Badge variant="secondary" className="bg-red-500/10 text-red-600">{mounted ? data.filter(d => new Set(['semgrep', 'nuclei', 'njsscan', 'bedrock', 'pentester', 'tester']).has(d.source || d.tool)).length : 0}</Badge>
+                    </TabsTrigger>
                     <TabsTrigger value="files">
                         Files
                     </TabsTrigger>
@@ -998,6 +1151,10 @@ export function DataTable({
                 className="relative flex flex-col h-full overflow-hidden mt-0"
             >
                 <FixReview runId={runId} />
+            </TabsContent>
+
+            <TabsContent value="pentester" className="mt-0">
+                <PentesterResultsView vulnerabilities={data} />
             </TabsContent>
 
             <TabsContent

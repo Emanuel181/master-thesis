@@ -16,3 +16,19 @@ existing_s3_bucket = "your-existing-documents-bucket"
 
 # Bedrock model to use for agents
 bedrock_model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+
+# ─── Pentester EC2 Agent ──────────────────────────────────
+# Instance type: t3.large (2 vCPU, 8GB) is good for most scans
+# Use m5.xlarge (4 vCPU, 16GB) for large codebases
+pentester_instance_type = "t3.large"
+
+# VPC and subnet for the pentester instance
+# Must have internet access (for Bedrock API, Nuclei DAST, tool updates)
+# Use a PUBLIC subnet with an Internet Gateway route
+pentester_vpc_id    = "vpc-xxxxxxxxx"
+pentester_subnet_id = "subnet-xxxxxxxxx"
+
+# SSH access (optional — SSM Session Manager works without SSH)
+# pentester_key_pair_name    = "your-key-pair"
+# pentester_allowed_ssh_cidr = "your.ip.address/32"
+

@@ -9,8 +9,13 @@
  */
 
 import prisma from '@/lib/prisma';
-import { uploadTextToS3 } from '@/lib/s3';
-import { getDefaultPromptsMap } from '@/lib/default-prompts';
+import { uploadTextToS3, generatePromptS3Key } from '@/lib/s3';
+import {
+    getDefaultPromptsMap,
+    getAllDefaultPrompts,
+    getDefaultPromptMetadataUpdates,
+    getEffectiveDefaultKeys,
+} from '@/lib/default-prompts';
 import { createApiHandler } from '@/lib/api-handler';
 
 /**
@@ -21,20 +26,40 @@ export const POST = createApiHandler(
     async (request, { session }) => {
         const userId = session.user.id;
 
+        console.log(`[reset-defaults] Starting reset for user ${userId}`);
+
         // Get the map of default prompts by defaultKey
         const defaultPromptsMap = getDefaultPromptsMap();
 
-        // Get all default prompts for the user (only those with isDefault=true and a defaultKey)
-        const userDefaultPrompts = await prisma.prompt.findMany({
-            where: {
-                userId,
-                isDefault: true,
-                defaultKey: { not: null },
-            },
+        let allPrompts = await prisma.prompt.findMany({
+            where: { userId },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
         });
 
+        const metadataUpdates = getDefaultPromptMetadataUpdates(allPrompts);
+        if (metadataUpdates.length > 0) {
+            await prisma.$transaction(
+                metadataUpdates.map(update =>
+                    prisma.prompt.update({
+                        where: { id: update.id },
+                        data: {
+                            isDefault: update.isDefault,
+                            defaultKey: update.defaultKey,
+                        },
+                    })
+                )
+            );
+
+            allPrompts = await prisma.prompt.findMany({
+                where: { userId },
+                orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+            });
+        }
+
+        const userDefaultPrompts = allPrompts.filter(prompt => prompt.isDefault && prompt.defaultKey);
+        console.log(`[reset-defaults] Found ${userDefaultPrompts.length} default prompts for user`);
+
         let promptsReset = 0;
-        const resetPrompts = [];
 
         // Update each default prompt back to its original content
         for (const prompt of userDefaultPrompts) {
@@ -45,47 +70,79 @@ export const POST = createApiHandler(
                 continue;
             }
 
+            // Normalize text for comparison: trim and unify line endings
+            const normalizedDbText = (prompt.text || '').replace(/\r\n/g, '\n').trim();
+            const normalizedOriginalText = (originalData.text || '').replace(/\r\n/g, '\n').trim();
+            const normalizedDbTitle = (prompt.title || '').trim();
+            const normalizedOriginalTitle = (originalData.title || '').trim();
+
             // Check if the prompt has been modified
-            const isModified = prompt.title !== originalData.title || prompt.text !== originalData.text;
+            const isModified = normalizedDbTitle !== normalizedOriginalTitle || normalizedDbText !== normalizedOriginalText;
 
             if (!isModified) {
-                // Prompt hasn't been changed, skip it
                 continue;
             }
 
+            console.log(`[reset-defaults] Prompt "${prompt.defaultKey}" is modified, resetting...`);
+
             try {
-                // Update S3 with original text
                 if (prompt.s3Key) {
-                    await uploadTextToS3(prompt.s3Key, originalData.text);
+                    try {
+                        await uploadTextToS3(prompt.s3Key, originalData.text);
+                    } catch (s3Error) {
+                        console.error(`[reset-defaults] S3 upload failed for "${prompt.defaultKey}", continuing with DB update:`, s3Error.message);
+                    }
                 }
 
-                // Update database with original title and text
-                const updatedPrompt = await prisma.prompt.update({
+                await prisma.prompt.update({
                     where: { id: prompt.id },
                     data: {
                         title: originalData.title,
                         text: originalData.text,
+                        isDefault: true,
+                        defaultKey: prompt.defaultKey,
                     },
                 });
 
-                resetPrompts.push({
-                    id: updatedPrompt.id,
-                    agent: updatedPrompt.agent,
-                    title: updatedPrompt.title,
-                    text: updatedPrompt.text,
-                    order: updatedPrompt.order,
-                    isDefault: updatedPrompt.isDefault,
-                    defaultKey: updatedPrompt.defaultKey,
-                });
-
+                console.log(`[reset-defaults] Reset prompt "${prompt.defaultKey}" (${prompt.id})`);
                 promptsReset++;
             } catch (error) {
                 console.error(`Failed to reset prompt "${prompt.title}" (${prompt.id}):`, error);
             }
         }
 
+        // --- Create any missing default prompts ---
+        const existingDefaultKeys = getEffectiveDefaultKeys(allPrompts);
+        const allDefaults = getAllDefaultPrompts();
+        let promptsCreated = 0;
+
+        for (const promptData of allDefaults) {
+            if (existingDefaultKeys.has(promptData.defaultKey)) continue;
+
+            try {
+                const s3Key = generatePromptS3Key(userId, promptData.agent);
+                await uploadTextToS3(s3Key, promptData.text);
+
+                await prisma.prompt.create({
+                    data: {
+                        agent: promptData.agent,
+                        title: promptData.title,
+                        text: promptData.text,
+                        order: promptData.order,
+                        isDefault: true,
+                        defaultKey: promptData.defaultKey,
+                        userId,
+                        s3Key,
+                    },
+                });
+                promptsCreated++;
+            } catch (error) {
+                console.error(`Failed to create missing default prompt "${promptData.title}":`, error);
+            }
+        }
+
         // Get all prompts for the user to return in response (grouped by agent)
-        const allPrompts = await prisma.prompt.findMany({
+        allPrompts = await prisma.prompt.findMany({
             where: { userId },
             orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
         });
@@ -112,10 +169,11 @@ export const POST = createApiHandler(
 
         return {
             success: true,
-            message: promptsReset > 0
-                ? `Reset ${promptsReset} default prompt(s) to original content.`
-                : 'No default prompts needed to be reset.',
+            message: promptsReset > 0 || promptsCreated > 0
+                ? `Reset ${promptsReset} prompt(s) to original content. Created ${promptsCreated} new default prompt(s).`
+                : 'All default prompts are up to date.',
             promptsReset,
+            promptsCreated,
             prompts: grouped,
         };
     },
@@ -123,8 +181,8 @@ export const POST = createApiHandler(
         requireAuth: true,
         requireProductionMode: true,
         rateLimit: {
-            limit: 10,
-            windowMs: 60 * 60 * 1000, // 10 requests per hour
+            limit: 30,
+            windowMs: 60 * 60 * 1000, // 30 requests per hour
             keyPrefix: 'prompts:reset',
         },
     }

@@ -90,7 +90,7 @@ resource "aws_sfn_state_machine" "run_workflow" {
                 BooleanEquals = true
                 Next          = "ExecuteImplementer"
               }]
-              Default = "CheckTesterEnabled"
+              Default = "ExecuteTester"
             }
             
             ExecuteImplementer = {
@@ -102,33 +102,33 @@ resource "aws_sfn_state_machine" "run_workflow" {
                 "reviewerOutput.$" = "$.reviewerOutput"
               }
               ResultPath = "$.implementerOutput"
-              Next       = "CheckTesterEnabled"
+              Next       = "ExecuteTester"
               TimeoutSeconds = 900
-            }
-            
-            CheckTesterEnabled = {
-              Type = "Choice"
-              Choices = [{
-                Variable      = "$$.Map.Item.Value.enableTester"
-                BooleanEquals = true
-                Next          = "ExecuteTester"
-              }]
-              Default = "ExecuteReporter"
             }
             
             ExecuteTester = {
               Type     = "Task"
-              Resource = aws_lambda_function.agent_tester.arn
+              Resource = "arn:aws:states:::sqs:sendMessage.waitForTaskToken"
               Parameters = {
-                "runId.$"             = "$.runId"
-                "useCase.$"           = "$$.Map.Item.Value"
-                "implementerOutput.$" = "$.implementerOutput"
+                QueueUrl = aws_sqs_queue.pentester_jobs.url
+                MessageBody = {
+                  "taskToken.$"         = "$$.Task.Token"
+                  "runId.$"             = "$.runId"
+                  "useCase.$"           = "$$.Map.Item.Value"
+                  "reviewerOutput.$"    = "$.reviewerOutput"
+                  "implementerOutput.$" = "$.implementerOutput"
+                }
               }
-              ResultPath = "$.testerOutput"
-              Next       = "ExecuteReporter"
-              TimeoutSeconds = 1800
+              ResultPath     = "$.testerOutput"
+              Next           = "ExecuteReporter"
+              TimeoutSeconds = 3600
+              Catch = [{
+                ErrorEquals = ["States.ALL"]
+                ResultPath  = "$.testerError"
+                Next        = "ExecuteReporter"
+              }]
             }
-            
+
             ExecuteReporter = {
               Type     = "Task"
               Resource = aws_lambda_function.agent_reporter.arn

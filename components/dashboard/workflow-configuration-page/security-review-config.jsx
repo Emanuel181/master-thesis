@@ -39,7 +39,6 @@ import {
     FileText,
     ScanSearch,
     Wrench,
-    BugPlay,
     FileText as FileTextIcon,
     AlertTriangle,
     CheckCircle,
@@ -48,6 +47,7 @@ import {
     RefreshCw,
     ArrowRight,
     Database,
+    Shield,
 } from "lucide-react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
@@ -84,11 +84,17 @@ const AGENTS = [
     {
         id: 'tester',
         title: 'Security Tester',
-        icon: BugPlay,
-        color: 'text-agent-tester',
-        bgColor: 'bg-agent-tester/10',
-        description: 'Validates proposed fixes and tests for regressions',
-        required: false,
+        icon: Shield,
+        color: 'text-red-500',
+        bgColor: 'bg-red-500/10',
+        description: 'Runs Nuclei, Semgrep, njsscan & AI-powered penetration testing on EC2',
+        required: true,
+        constraints: [
+            'Runs SAST with Semgrep and njsscan',
+            'Runs DAST with Nuclei (if target URL provided)',
+            'AI-powered exploit analysis via Bedrock Claude',
+            'Results are merged and deduplicated',
+        ]
     },
     {
         id: 'report',
@@ -141,7 +147,7 @@ export function SecurityReviewConfig({
     const [agentConfigs, setAgentConfigs] = useState({
         reviewer: { enabled: true, modelId: '', promptId: '' },
         implementation: { enabled: false, modelId: '', promptId: '' },
-        tester: { enabled: false, modelId: '', promptId: '' },
+        tester: { enabled: true, modelId: '', promptId: '' },
         report: { enabled: false, modelId: '', promptId: '' },
     })
 
@@ -177,7 +183,7 @@ export function SecurityReviewConfig({
                 setAgentConfigs(prev => ({
                     reviewer: { ...prev.reviewer, ...config.reviewer, enabled: true },
                     implementation: { ...prev.implementation, ...config.implementer },
-                    tester: { ...prev.tester, ...config.tester },
+                    tester: { ...prev.tester, ...config.tester, enabled: true },
                     report: { ...prev.report, ...config.reporter },
                 }))
             }
@@ -421,7 +427,7 @@ export function SecurityReviewConfig({
                     promptId: agentConfigs.implementation.promptId,
                 },
                 tester: {
-                    enabled: agentConfigs.tester.enabled,
+                    enabled: true, // Tester (EC2 pentester) always runs
                     modelId: agentConfigs.tester.modelId,
                     customPrompt: agentConfigs.tester.promptId
                         ? getPromptTextById('tester', agentConfigs.tester.promptId)

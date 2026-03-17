@@ -42,7 +42,7 @@ const startWorkflowSchema = z.object({
       promptId: z.string().optional(),
     }).optional(),
     tester: z.object({
-      enabled: z.boolean().default(false),
+      enabled: z.boolean().default(true),
       modelId: z.string().optional(),
       customPrompt: z.string().optional(),
       promptId: z.string().optional(),
@@ -288,7 +288,7 @@ export async function POST(request) {
           implementerModel: validatedData.agentConfigurations?.implementer?.modelId,
           implementerPrompt: validatedData.agentConfigurations?.implementer?.customPrompt,
           implementerPromptId: validatedData.agentConfigurations?.implementer?.promptId,
-          enableTester: validatedData.agentConfigurations?.tester?.enabled ?? false,
+          enableTester: true, // Tester (EC2 pentester) always runs
           testerModel: validatedData.agentConfigurations?.tester?.modelId,
           testerPrompt: validatedData.agentConfigurations?.tester?.customPrompt,
           testerPromptId: validatedData.agentConfigurations?.tester?.promptId,

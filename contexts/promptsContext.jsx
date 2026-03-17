@@ -329,10 +329,13 @@ export function PromptsProvider({ children }) {
                 body: JSON.stringify({ ids }),
             });
 
-            const data = await response.json().catch(() => null);
-            if (!response.ok || !data) {
-                return { success: false, error: data?.error || 'Failed to delete prompts' };
+            const jsonResponse = await response.json().catch(() => null);
+            if (!response.ok || !jsonResponse) {
+                return { success: false, error: jsonResponse?.error || jsonResponse?.data?.error || 'Failed to delete prompts' };
             }
+
+            // Unwrap the standardized API response envelope: { success, data: { ... } }
+            const data = jsonResponse.data || jsonResponse;
 
             const deleted = new Set(data.deletedIds || []);
             setPrompts(prev => {
@@ -456,20 +459,44 @@ export function PromptsProvider({ children }) {
                 headers: { 'Content-Type': 'application/json' },
             });
 
-            const data = await response.json();
+            const jsonResponse = await response.json().catch(() => null);
 
-            if (!response.ok || !data.success) {
-                console.error('[Prompts] Failed to reset prompts:', data);
-                return { success: false, error: data.error || 'Failed to reset prompts' };
+            // Handle rate limiting
+            if (response.status === 429) {
+                return { success: false, error: 'Too many reset attempts. Please wait a few minutes and try again.' };
             }
 
-            // Update local state with the updated prompts
-            if (data.prompts) {
-                setPrompts(data.prompts);
-                // Don't clear selections - user's custom prompts are still there
+            // Handle non-OK or missing/invalid response
+            if (!response.ok || !jsonResponse?.success) {
+                console.error('[Prompts] Failed to reset prompts:', response.status, jsonResponse);
+                const inner = jsonResponse?.data || jsonResponse;
+                return { success: false, error: inner?.error || `Failed to reset prompts (${response.status})` };
             }
+
+            // Unwrap the standardized API response envelope: { success, data: { ... } }
+            const data = jsonResponse.data || jsonResponse;
 
             console.log(`[Prompts] Reset complete: ${data.promptsReset} prompts restored to defaults`);
+
+            // Always re-fetch prompts from the server after reset to guarantee
+            // the UI reflects the actual DB state (bypasses fetchInProgress guard)
+            try {
+                const refreshResponse = await fetch('/api/prompts');
+                if (refreshResponse.ok) {
+                    const refreshJson = await refreshResponse.json();
+                    const freshPrompts = refreshJson.data || refreshJson;
+                    if (freshPrompts && typeof freshPrompts === 'object') {
+                        setPrompts(freshPrompts);
+                    }
+                }
+            } catch (refreshErr) {
+                console.error('[Prompts] Error re-fetching after reset:', refreshErr);
+                // Fall back to the prompts returned by the reset endpoint
+                if (data.prompts) {
+                    setPrompts(data.prompts);
+                }
+            }
+
             return {
                 success: true,
                 message: data.message,

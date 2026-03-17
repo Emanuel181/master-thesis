@@ -162,6 +162,13 @@ resource "aws_iam_role_policy" "step_functions" {
       {
         Effect = "Allow"
         Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = aws_sqs_queue.pentester_jobs.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogDelivery",
           "logs:GetLogDelivery",
           "logs:UpdateLogDelivery",

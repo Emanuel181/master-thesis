@@ -129,6 +129,16 @@ output "aurora_secret_arn" {
   value       = aws_secretsmanager_secret.aurora_credentials.arn
 }
 
+output "agent_artifacts_bucket" {
+  description = "S3 bucket for agent artifacts"
+  value       = aws_s3_bucket.agent_artifacts.id
+}
+
+output "aws_region" {
+  description = "AWS region"
+  value       = var.aws_region
+}
+
 output "opensearch_collection_endpoint" {
   description = "OpenSearch Serverless collection endpoint"
   value       = aws_opensearchserverless_collection.rag_vectors.collection_endpoint
