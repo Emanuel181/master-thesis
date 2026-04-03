@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -204,17 +205,16 @@ export function AccessibilityWidget() {
             !isDragging && "hover:shadow-xl hover:scale-105 transition-all duration-200",
             "cursor-grab active:cursor-grabbing",
             "flex items-center justify-center",
-            "focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2",
+            "focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2",
             "a11y-widget-button",
             "touch-none" // Prevent default touch behavior while dragging
           )}
           style={{ 
             ...buttonStyle, 
             zIndex: 2147483647,
-            background: "linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)"
+            background: "linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%)"
           }}
-          aria-label="Open accessibility menu"
-          title={isMobile ? "Accessibility options (touch and drag to move)" : "Accessibility options (drag to move)"}
+          aria-label={isMobile ? "Accessibility options (touch and drag to move)" : "Accessibility options (drag to move)"}
         >
           <PersonStanding className="w-7 h-7 text-white" strokeWidth={2.5} />
         </button>
@@ -232,14 +232,14 @@ export function AccessibilityWidget() {
       {/* Sidebar Panel */}
       <div
         className={cn(
-          "fixed top-0 left-0 h-full w-full sm:w-[400px] bg-background border-r border-border shadow-2xl",
+          "fixed top-0 left-0 h-full w-full sm:w-96 bg-background border-r border-border shadow-2xl",
           "transform transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ zIndex: 2147483647 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-accent)]">
+        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary to-accent">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg">
               <Accessibility className="w-5 h-5 text-white" />
@@ -400,7 +400,7 @@ export function AccessibilityWidget() {
                         size="sm"
                         onClick={() => updateSetting("textAlign", value)}
                         className={cn(
-                          settings.textAlign === value && "bg-[var(--brand-accent)] text-white border-[var(--brand-accent)]"
+                          settings.textAlign === value && "bg-accent text-white border-accent"
                         )}
                       >
                         {Icon ? <Icon className="w-4 h-4" /> : label}
@@ -428,7 +428,7 @@ export function AccessibilityWidget() {
                         onClick={() => updateSetting("contrastMode", value)}
                         className={cn(
                           "justify-start gap-2",
-                          settings.contrastMode === value && "bg-[var(--brand-accent)] text-white border-[var(--brand-accent)]"
+                          settings.contrastMode === value && "bg-accent text-white border-accent"
                         )}
                       >
                         <Icon className="w-4 h-4" />
@@ -538,22 +538,20 @@ export function AccessibilityNavButton({ className }) {
   const { openPanel } = useAccessibility();
 
   return (
-    <button
-      onClick={openPanel}
-      className={cn(
-        "flex items-center justify-center w-9 h-9 rounded-full",
-        "bg-gradient-to-br from-[var(--brand-accent)]/20 to-[var(--brand-primary)]/20",
-        "hover:from-[var(--brand-accent)]/30 hover:to-[var(--brand-primary)]/30",
-        "border border-[var(--brand-accent)]/30",
-        "transition-all duration-200",
-        "focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2",
-        className
-      )}
-      aria-label="Open accessibility menu"
-      title="Accessibility options"
-    >
-      <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={openPanel}
+          className={className}
+          aria-label="Open accessibility menu"
+        >
+          <PersonStanding className="h-5 w-5" strokeWidth={2} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Accessibility options</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -562,7 +560,7 @@ function SettingGroup({ title, icon: Icon, children }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        {Icon && <Icon className="w-4 h-4 text-[var(--brand-accent)]" />}
+        {Icon && <Icon className="w-4 h-4 text-accent" />}
         <h3 className="text-sm font-medium">{title}</h3>
       </div>
       <div className="pl-6 space-y-2">{children}</div>
@@ -574,7 +572,7 @@ function ToggleSetting({ label, description, icon: Icon, checked, onCheckedChang
   return (
     <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
       <div className="flex items-center gap-3">
-        {Icon && <Icon className="w-4 h-4 text-[var(--brand-accent)]" />}
+        {Icon && <Icon className="w-4 h-4 text-accent" />}
         <div>
           <Label className="text-sm font-medium cursor-pointer">{label}</Label>
           {description && (

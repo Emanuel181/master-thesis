@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { ChevronDown } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
@@ -24,14 +24,15 @@ export function CollapsibleSection({
         <Card
             className={cn(
                 className,
-                "transition-all duration-200",
+                "overflow-hidden transition-all duration-200",
                 !isOpen && "cursor-pointer hover:bg-muted/30"
             )}
+            style={{ padding: 0, gap: 0 }}
             onClick={!isOpen ? () => setIsOpen(true) : undefined}
         >
-            <CardHeader
+            <div
                 className={cn(
-                    "pb-3 cursor-pointer select-none transition-colors rounded-t-lg",
+                    "px-6 py-4 cursor-pointer select-none transition-colors",
                     isOpen ? "hover:bg-muted/50" : ""
                 )}
                 onClick={isOpen ? () => setIsOpen(false) : undefined}
@@ -65,7 +66,7 @@ export function CollapsibleSection({
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </motion.div>
                 </div>
-            </CardHeader>
+            </div>
             <AnimatePresence initial={false}>
                 {isOpen && (
                     <motion.div
@@ -75,7 +76,7 @@ export function CollapsibleSection({
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                         style={{ overflow: "hidden" }}
                     >
-                        <CardContent className="pt-0">{children}</CardContent>
+                        <CardContent className="pt-2 pb-6 px-6">{children}</CardContent>
                     </motion.div>
                 )}
             </AnimatePresence>

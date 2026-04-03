@@ -178,15 +178,18 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
     useEffect(() => {
         if (!isHydrated) return;
         try {
+            // Strip file content before persisting to avoid blowing localStorage quota.
+            // Content will be re-fetched on demand when a tab is activated.
+            const lightTabs = openTabs.map(({ content, ...rest }) => rest);
             const state = {
-                openTabs,
+                openTabs: lightTabs,
                 activeTabId,
                 tabGroups,
                 activeGroupId,
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (err) {
-            console.error("Error saving editor tabs to localStorage:", err);
+        } catch {
+            try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
         }
     }, [openTabs, activeTabId, tabGroups, activeGroupId, isHydrated, STORAGE_KEY]);
 
@@ -369,6 +372,31 @@ export function useEditorTabs({ currentRepo, setCode, setSelectedFile, setViewMo
         // Check if tab already exists
         const existingTab = openTabs.find(tab => tab.id === tabId);
         if (existingTab) {
+            // If the tab was restored from localStorage without content, re-fetch it
+            if (existingTab.content === undefined || existingTab.content === null) {
+                if (loadingPathsRef.current.has(node.path)) return;
+                loadingPathsRef.current.add(node.path);
+                setLoadingFilePath(node.path);
+                try {
+                    let fileContent;
+                    if (isDemoMode && projectStructure) {
+                        fileContent = node.content ?? node._orig?.content ?? findFileContentInStructure(projectStructure, node.path);
+                        if (fileContent == null) throw new Error('File content not found in demo project');
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    } else {
+                        const fileWithContent = await apiFetchFileContent(
+                            currentRepo.owner, currentRepo.repo, node.path, currentRepo.provider
+                        );
+                        fileContent = fileWithContent.content;
+                    }
+                    setOpenTabs(prev => prev.map(t => t.id === tabId ? { ...t, content: fileContent } : t));
+                } catch (err) {
+                    toast.error(`Failed to load file: ${err.message || 'Unknown error'}`);
+                } finally {
+                    loadingPathsRef.current.delete(node.path);
+                    setLoadingFilePath(null);
+                }
+            }
             setActiveTabId(existingTab.id);
             return;
         }

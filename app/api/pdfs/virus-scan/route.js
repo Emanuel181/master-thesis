@@ -118,7 +118,6 @@ export const POST = createApiHandler(
                 status: 502,
                 code: 'VIRUS_SCAN_FAILED',
                 requestId,
-                ...(process.env.NODE_ENV === 'development' && { details: err.message }),
             });
         }
     },

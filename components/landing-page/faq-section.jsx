@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -63,6 +63,11 @@ export function FAQSection() {
   const [isOpen, setIsOpen] = useState(false);
   const [formStatus, setFormStatus] = useState("idle");
   const [formData, setFormData] = useState({ email: "", question: "" });
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,7 +101,7 @@ export function FAQSection() {
   };
 
   return (
-    <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 md:px-8">
+    <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
@@ -121,22 +126,27 @@ export function FAQSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            {faqItems.map((item, index) => (
-              <AccordionItem
-                key={index}
-                value={`item-${index}`}
-                className="border border-border/50 rounded-xl px-6 bg-card/50 backdrop-blur-sm data-[state=open]:bg-card data-[state=open]:border-[var(--brand-accent)]/30 transition-all duration-200"
-              >
-                <AccordionTrigger className="text-left font-semibold text-foreground hover:no-underline py-5 [&[data-state=open]]:text-[var(--brand-accent)]">
-                  {item.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
-                  {item.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          {isMounted && (
+            <Accordion type="single" collapsible className="w-full space-y-4">
+              {faqItems.map((item, index) => {
+                const itemId = `item-${index}`;
+                return (
+                  <AccordionItem
+                    key={itemId}
+                    value={itemId}
+                    className="border border-border/60 rounded-xl px-6 bg-muted/40 backdrop-blur-sm data-[state=open]:bg-muted/60 data-[state=open]:border-accent/30 transition-all duration-200"
+                  >
+                    <AccordionTrigger className="text-left font-semibold text-foreground hover:no-underline py-5 [&[data-state=open]]:text-accent">
+                      {item.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                      {item.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          )}
         </motion.div>
 
         {/* Contact CTA */}
@@ -150,11 +160,12 @@ export function FAQSection() {
           <p className="text-muted-foreground mb-4">
             Still have questions?
           </p>
+          {isMounted && (
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <button
                 type="button"
-                className="text-[var(--brand-accent)] hover:text-[var(--brand-accent)]/80 font-medium"
+                className="text-accent hover:text-accent/80 font-medium"
               >
                 Ask them here →
               </button>
@@ -232,6 +243,15 @@ export function FAQSection() {
               )}
             </DialogContent>
           </Dialog>
+          )}
+          {!isMounted && (
+            <button
+              type="button"
+              className="text-accent hover:text-accent/80 font-medium"
+            >
+              Ask them here →
+            </button>
+          )}
         </motion.div>
       </div>
     </section>

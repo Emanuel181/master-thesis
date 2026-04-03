@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RefreshCw, ScanSearch, Wrench, BugPlay, FileText, Check } from "lucide-react"
 
 const AGENT_CONFIG = {
@@ -38,7 +39,7 @@ export function PromptCard({
     const visiblePrompts = promptsArray.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
 
     return (
-        <Card className="transition-shadow duration-200 hover:shadow-md">
+        <Card className="transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                     <AgentIcon className={`w-5 h-5 ${config.color}`} />
@@ -50,16 +51,20 @@ export function PromptCard({
                         </Badge>
                     )}
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={onRefresh}
-                    title={`Refresh ${agent} prompts`}
-                    disabled={isRefreshing}
-                >
-                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={onRefresh}
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Refresh {agent} prompts</TooltipContent>
+                </Tooltip>
             </CardHeader>
             <CardContent>
                 {promptsArray.length === 0 ? (
@@ -112,7 +117,7 @@ export function PromptCard({
                             )
                         })}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between pt-2 border-t mt-2">
+                            <div className="flex items-center justify-between pt-2 mt-2">
                                 <Button
                                     variant="ghost"
                                     size="sm"

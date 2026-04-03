@@ -17,8 +17,8 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const skip = parseInt(searchParams.get("skip") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10") || 10, 1), 100);
+    const skip = Math.max(parseInt(searchParams.get("skip") || "0") || 0, 0);
 
     // Get total count
     const total = await prisma.savedArticle.count({

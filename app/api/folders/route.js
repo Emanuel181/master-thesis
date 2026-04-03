@@ -150,35 +150,39 @@ export const POST = createApiHandler(
             }
         }
 
-        // Get the max order in the target location
-        const maxOrderResult = await prisma.folder.aggregate({
-            where: {
-                useCaseId,
-                parentId: parentId || null,
-            },
-            _max: { order: true },
-        });
+        // Compute the new order and create the folder atomically so two
+        // concurrent requests cannot derive the same order value.
+        const folder = await prisma.$transaction(async (tx) => {
+            // Get the max order in the target location
+            const maxOrderResult = await tx.folder.aggregate({
+                where: {
+                    useCaseId,
+                    parentId: parentId || null,
+                },
+                _max: { order: true },
+            });
 
-        const maxPdfOrderResult = await prisma.pdf.aggregate({
-            where: {
-                useCaseId,
-                folderId: parentId || null,
-            },
-            _max: { order: true },
-        });
+            const maxPdfOrderResult = await tx.pdf.aggregate({
+                where: {
+                    useCaseId,
+                    folderId: parentId || null,
+                },
+                _max: { order: true },
+            });
 
-        const newOrder = Math.max(
-            (maxOrderResult._max.order || 0) + 1,
-            (maxPdfOrderResult._max.order || 0) + 1
-        );
+            const newOrder = Math.max(
+                (maxOrderResult._max.order || 0) + 1,
+                (maxPdfOrderResult._max.order || 0) + 1
+            );
 
-        const folder = await prisma.folder.create({
-            data: {
-                name,
-                useCaseId,
-                parentId: parentId || null,
-                order: newOrder,
-            },
+            return tx.folder.create({
+                data: {
+                    name,
+                    useCaseId,
+                    parentId: parentId || null,
+                    order: newOrder,
+                },
+            });
         });
 
         return { folder };

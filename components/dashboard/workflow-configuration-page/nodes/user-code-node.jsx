@@ -15,7 +15,7 @@ export function UserCodeNode({ data }) {
                 {/* Animated gradient border shimmer */}
                 <div className="absolute inset-0 pointer-events-none"
                      style={{
-                         background: 'linear-gradient(90deg, transparent, rgba(var(--brand-accent-rgb),0.08), transparent)',
+                         background: 'linear-gradient(90deg, transparent, hsl(var(--accent)/0.08), transparent)',
                          backgroundSize: '200% 100%',
                          animation: 'shimmer 3s ease-in-out infinite'
                      }} />

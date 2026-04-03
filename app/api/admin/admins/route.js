@@ -52,15 +52,24 @@ export const GET = createAdminApiHandler(
             orderBy: { createdAt: 'desc' }
         });
 
-        // Get passkey count for each admin in parallel
-        const adminsWithPasskeys = await Promise.all(
-            admins.map(async (admin) => {
-                const passkeyCount = await prisma.adminPasskey.count({
-                    where: { email: admin.email.toLowerCase() }
-                });
-                return { ...admin, passkeyCount };
-            })
-        );
+        // Get passkey counts for all admins in a single query
+        const passkeyStats = await prisma.adminPasskey.groupBy({
+            by: ['email'],
+            _count: true,
+            where: {
+                email: { in: admins.map(a => a.email.toLowerCase()) }
+            }
+        });
+
+        const passkeyCountMap = passkeyStats.reduce((acc, { email, _count }) => {
+            acc[email] = _count;
+            return acc;
+        }, {});
+
+        const adminsWithPasskeys = admins.map(admin => ({
+            ...admin,
+            passkeyCount: passkeyCountMap[admin.email.toLowerCase()] || 0,
+        }));
 
         return { admins: adminsWithPasskeys };
     },

@@ -5,6 +5,14 @@
   "main": "index.js",
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.700.0",
-    "@aws-sdk/client-bedrock-agent-runtime": "^3.700.0"
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.700.0",
+    "tree-sitter": "^0.22.4",
+    "tree-sitter-javascript": "^0.23.0",
+    "tree-sitter-typescript": "^0.23.0",
+    "tree-sitter-python": "^0.23.0",
+    "tree-sitter-java": "^0.23.0",
+    "tree-sitter-go": "^0.23.0",
+    "tree-sitter-c": "^0.23.0",
+    "tree-sitter-cpp": "^0.23.0"
   }
 }

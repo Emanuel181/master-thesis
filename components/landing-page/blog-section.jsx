@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from "@/components/ui/card";
+import { sanitizeImageUrl } from "@/lib/utils";
 import { 
   ArrowRight, 
   Calendar, 
@@ -63,22 +64,18 @@ const BlogCard = ({ post }) => {
 
   return (
     <div className="h-full w-full max-w-sm">
-      <Card className="h-full pt-0 overflow-hidden group bg-card dark:bg-card/50 backdrop-blur-sm border-border/50 dark:border-[rgba(var(--brand-accent-rgb),0.15)] hover:shadow-xl hover:shadow-[rgba(var(--brand-accent-rgb),0.1)] dark:hover:shadow-[rgba(var(--brand-accent-rgb),0.15)] transition-all duration-300 hover:border-[rgba(var(--brand-accent-rgb),0.3)] dark:hover:border-[rgba(var(--brand-accent-rgb),0.4)]">
+      <Card className="h-full pt-0 overflow-hidden group bg-card dark:bg-card/50 backdrop-blur-sm border-border/50 dark:border-accent/15 hover:shadow-xl hover:shadow-accent/10 dark:hover:shadow-accent/15 transition-all duration-300 hover:border-accent/30 dark:hover:border-accent/40">
         <CardContent className="px-0 pt-0">
           <div className="relative overflow-hidden aspect-video rounded-t-xl">
             {/* Background - either gradient or cover image */}
             {post.coverType === "image" && post.coverImage ? (
               <div
                 className="absolute inset-0 w-full h-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${post.coverImage})` }}
+                style={{ backgroundImage: `url(${sanitizeImageUrl(post.coverImage)})` }}
               />
             ) : (
               <motion.div
-                className="absolute inset-0 w-full h-full bg-[length:400%_400%]"
-                style={{
-                  backgroundColor: 'var(--brand-dark)',
-                  backgroundImage: post.gradient || "linear-gradient(45deg, hsl(220,60%,10%), hsl(180,70%,25%), hsl(200,80%,30%), hsl(170,60%,35%), hsl(190,70%,20%))",
-                }}
+                className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary via-accent/50 to-primary/80"
                 animate={{
                   backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
                 }}
@@ -97,20 +94,19 @@ const BlogCard = ({ post }) => {
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
               }}
             />
-            
+
             {/* Icon in center */}
             <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="p-5 rounded-full bg-[rgba(var(--brand-accent-rgb),0.15)] backdrop-blur-sm group-hover:scale-110 group-hover:bg-[rgba(var(--brand-accent-rgb),0.25)] transition-all duration-300">
+              <div className="p-5 rounded-full bg-accent/15 backdrop-blur-sm group-hover:scale-110 group-hover:bg-accent/25 transition-all duration-300">
                 <Icon
-                  className="w-10 h-10"
-                  style={{ color: post.iconColor || "var(--brand-light)" }}
+                  className="w-10 h-10 text-accent-foreground"
                 />
               </div>
             </div>
-            
+
             {/* Category Badge */}
-            <Badge 
-              className="absolute top-3 left-3 z-10 bg-[rgba(var(--brand-primary-rgb),0.7)] text-[var(--brand-light)] border-0 backdrop-blur-sm text-xs"
+            <Badge
+              className="absolute top-3 left-3 z-10 bg-primary/70 text-primary-foreground border-0 backdrop-blur-sm text-xs"
             >
               {post.category}
             </Badge>
@@ -127,7 +123,7 @@ const BlogCard = ({ post }) => {
               {post.readTime}
             </span>
           </div>
-          <CardTitle className="text-lg leading-tight text-card-foreground group-hover:text-[var(--brand-accent)] transition-colors line-clamp-2">
+          <CardTitle className="text-lg leading-tight text-card-foreground group-hover:text-accent transition-colors line-clamp-2">
             {post.title}
           </CardTitle>
           <CardDescription className="line-clamp-2 mt-2 text-muted-foreground">
@@ -135,9 +131,9 @@ const BlogCard = ({ post }) => {
           </CardDescription>
         </CardHeader>
         <CardFooter className="gap-3 pt-2 bg-card dark:bg-transparent">
-          <Button 
+          <Button
             asChild
-            className="flex-1 bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-[var(--brand-primary)]"
+            className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
           >
             <Link href={`/blog/${post.slug}`}>
               Read article
@@ -160,30 +156,30 @@ const PaginationDots = ({ currentPage, totalPages, onPageChange }) => {
         size="icon"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 0}
-        className="h-9 w-9 rounded-full hover:bg-[rgba(var(--brand-accent-rgb),0.1)] text-foreground"
+        className="h-9 w-9 rounded-full hover:bg-accent/10 text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      
+
       {Array.from({ length: totalPages }).map((_, index) => (
         <button
           key={index}
           onClick={() => onPageChange(index)}
           className={`h-2.5 rounded-full transition-all duration-300 ${
             currentPage === index
-              ? "bg-[var(--brand-accent)] w-8"
+              ? "bg-accent w-8"
               : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2.5"
           }`}
           aria-label={`Go to page ${index + 1}`}
         />
       ))}
-      
+
       <Button
         variant="ghost"
         size="icon"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages - 1}
-        className="h-9 w-9 rounded-full hover:bg-[rgba(var(--brand-accent-rgb),0.1)] text-foreground"
+        className="h-9 w-9 rounded-full hover:bg-accent/10 text-foreground"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
@@ -205,7 +201,7 @@ const EmptyState = () => (
 // Loading state component
 const LoadingState = () => (
   <div className="flex items-center justify-center py-16">
-    <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-accent)]" />
+    <Loader2 className="w-8 h-8 animate-spin text-accent" />
   </div>
 );
 
@@ -251,7 +247,7 @@ export function BlogSection() {
   }
 
   return (
-    <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
+    <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 lg:px-12">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -261,7 +257,7 @@ export function BlogSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12 sm:mb-16"
         >
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Security knowledge hub
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -312,7 +308,7 @@ export function BlogSection() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-full font-medium border-[rgba(var(--brand-accent-rgb),0.3)] hover:bg-[rgba(var(--brand-accent-rgb),0.1)] hover:border-[rgba(var(--brand-accent-rgb),0.5)] text-foreground px-8"
+              className="rounded-full font-medium border-accent/30 hover:bg-accent/10 hover:text-accent hover:border-accent/50 text-foreground px-8"
             >
               <Link href="/blog" className="flex items-center gap-2">
                 View all articles

@@ -96,7 +96,7 @@ const LinkMain = ({
             <Button
               type="button"
               onClick={setLink}
-              title="Apply link"
+              aria-label="Apply link"
               disabled={!url && !isActive}
               data-style="ghost">
               <CornerDownLeftIcon className="tiptap-button-icon" />
@@ -109,7 +109,7 @@ const LinkMain = ({
             <Button
               type="button"
               onClick={openLink}
-              title="Open in new window"
+              aria-label="Open in new window"
               disabled={!url && !isActive}
               data-style="ghost">
               <ExternalLinkIcon className="tiptap-button-icon" />
@@ -118,7 +118,7 @@ const LinkMain = ({
             <Button
               type="button"
               onClick={removeLink}
-              title="Remove link"
+              aria-label="Remove link"
               disabled={!url && !isActive}
               data-style="ghost">
               <TrashIcon className="tiptap-button-icon" />

@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAccessibility } from "@/contexts/accessibilityContext";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeImageUrl } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
@@ -679,7 +679,7 @@ function ListenButton({ text, className }) {
         disabled={isLoading}
         className={cn(
           "h-8 px-2 sm:px-3 gap-1.5 transition-all",
-          isPlaying && !isPaused && "text-[var(--brand-accent)] bg-[rgba(var(--brand-accent-rgb),0.1)]"
+          isPlaying && !isPaused && "text-accent bg-accent/10"
         )}
         title={isPlaying ? (isPaused ? "Resume" : "Pause") : "Listen to article"}
       >
@@ -764,7 +764,7 @@ function ListenButton({ text, className }) {
                     className={cn(
                       "flex-1 px-2 py-1.5 text-xs rounded-md transition-colors",
                       speed === option.value
-                        ? "bg-[var(--brand-accent)] text-white"
+                        ? "bg-accent text-white"
                         : "bg-muted hover:bg-muted/80"
                     )}
                   >
@@ -880,15 +880,15 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
           right: 'max(2rem, calc((100vw - 80rem) / 2 + 1rem))'
         }}
       >
-        <div className="rounded-2xl border border-zinc-200/80 dark:border-[rgba(var(--brand-accent-rgb),0.2)] bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/80 dark:to-[rgba(var(--brand-primary-rgb),0.2)] overflow-hidden shadow-sm backdrop-blur-sm">
+        <div className="rounded-2xl border border-zinc-200/80 dark:border-accent/20 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/80 dark:to-primary/20 overflow-hidden shadow-sm backdrop-blur-sm">
           {/* Header - always visible, clickable to toggle */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full p-4 flex items-center justify-between hover:bg-white/50 dark:hover:bg-zinc-800/30 transition-all duration-150 cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[rgba(var(--brand-accent-rgb),0.1)] dark:bg-[rgba(var(--brand-accent-rgb),0.15)]">
-                <List className="w-4 h-4 text-[var(--brand-accent)]" />
+              <div className="p-2 rounded-lg bg-accent/10 dark:bg-accent/15">
+                <List className="w-4 h-4 text-accent" />
               </div>
               <div className="text-left">
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -924,7 +924,7 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
                           style={{ marginLeft: `${indentPx}px` }}
                         >
                           <div
-                            className={`absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--brand-accent)] rounded-full transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`}
+                            className={`absolute left-0 top-0 bottom-0 w-0.5 bg-accent rounded-full transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0'}`}
                           />
                           <a
                             href={`#${heading.id}`}
@@ -933,9 +933,9 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
                               group/item flex items-center gap-2 py-2 px-3 rounded-lg transition-all duration-200
                               ${heading.level === 2 ? 'text-sm font-medium' : 'text-xs'}
                               ${isActive 
-                                ? "text-[var(--brand-accent)] bg-[rgba(var(--brand-accent-rgb),0.1)] dark:bg-[rgba(var(--brand-accent-rgb),0.15)]" 
+                                ? "text-accent bg-accent/10 dark:bg-accent/15" 
                                 : heading.level === 2 
-                                  ? "text-zinc-700 dark:text-zinc-300 hover:text-[var(--brand-accent)] hover:bg-[rgba(var(--brand-accent-rgb),0.08)] dark:hover:bg-[rgba(var(--brand-accent-rgb),0.1)]" 
+                                  ? "text-zinc-700 dark:text-zinc-300 hover:text-accent hover:bg-accent/[8] dark:hover:bg-accent/10" 
                                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
                               }
                             `}
@@ -943,13 +943,13 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
                             {heading.level === 2 ? (
                               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200 ${
                                 isActive 
-                                  ? "bg-[var(--brand-accent)] scale-125" 
-                                  : "bg-zinc-400 dark:bg-zinc-600 group-hover/item:bg-[var(--brand-accent)]"
+                                  ? "bg-accent scale-125" 
+                                  : "bg-zinc-400 dark:bg-zinc-600 group-hover/item:bg-accent"
                               }`} />
                             ) : (
                               <span className={`w-1 h-1 rounded-full flex-shrink-0 transition-all duration-200 ${
                                 isActive 
-                                  ? "bg-[var(--brand-accent)]" 
+                                  ? "bg-accent" 
                                   : "bg-zinc-300 dark:bg-zinc-600 group-hover/item:bg-zinc-400 dark:group-hover/item:bg-zinc-500"
                               }`} />
                             )}
@@ -980,7 +980,7 @@ function StickyTableOfContents({ headings, scrollRef, contentRef, progress, read
                 </div>
                 <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-300 ${progress >= 100 ? 'bg-green-500' : 'bg-[var(--brand-accent)]'}`}
+                    className={`h-full rounded-full transition-all duration-300 ${progress >= 100 ? 'bg-green-500' : 'bg-accent'}`}
                     style={{ width: `${Math.min(100, progress)}%` }}
                   />
                 </div>
@@ -1021,12 +1021,12 @@ function MobileTableOfContents({ headings, scrollRef, progress, readTime }) {
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="hidden sm:block xl:hidden mb-6 sm:mb-8 rounded-xl sm:rounded-2xl border border-zinc-200/80 dark:border-[rgba(var(--brand-accent-rgb),0.2)] bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/80 dark:to-[rgba(var(--brand-primary-rgb),0.2)] overflow-hidden shadow-sm backdrop-blur-sm"
+      className="hidden sm:block xl:hidden mb-6 sm:mb-8 rounded-xl sm:rounded-2xl border border-zinc-200/80 dark:border-accent/20 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/80 dark:to-primary/20 overflow-hidden shadow-sm backdrop-blur-sm"
     >
       <CollapsibleTrigger className="flex items-center justify-between w-full p-3 sm:p-4 hover:bg-white/50 dark:hover:bg-zinc-800/30 transition-all duration-200 cursor-pointer group">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="p-1.5 sm:p-2 rounded-lg bg-[rgba(var(--brand-accent-rgb),0.1)] dark:bg-[rgba(var(--brand-accent-rgb),0.15)] group-hover:bg-[rgba(var(--brand-accent-rgb),0.15)] dark:group-hover:bg-[rgba(var(--brand-accent-rgb),0.25)] transition-colors">
-            <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-accent)]" />
+          <div className="p-1.5 sm:p-2 rounded-lg bg-accent/10 dark:bg-accent/15 group-hover:bg-accent/15 dark:group-hover:bg-[hsl(var(--accent)/0.25)] transition-colors">
+            <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
           </div>
           <div>
             <p className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 text-left">
@@ -1041,7 +1041,7 @@ function MobileTableOfContents({ headings, scrollRef, progress, readTime }) {
           {/* Progress indicator */}
           <div className="w-12 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[var(--brand-accent)] rounded-full transition-all duration-300"
+              className="h-full bg-accent rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -1075,16 +1075,16 @@ function MobileTableOfContents({ headings, scrollRef, progress, readTime }) {
                         className={`
                           group/item flex items-center gap-2 text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg transition-all duration-200
                           ${isActive
-                            ? "text-[var(--brand-accent)] bg-[rgba(var(--brand-accent-rgb),0.1)] font-medium"
+                            ? "text-accent bg-accent/10 font-medium"
                             : heading.level === 2 
-                              ? "text-zinc-800 dark:text-zinc-200 font-medium hover:text-[var(--brand-accent)] dark:hover:text-white hover:bg-[rgba(var(--brand-accent-rgb),0.08)] dark:hover:bg-[rgba(var(--brand-accent-rgb),0.15)]" 
+                              ? "text-zinc-800 dark:text-zinc-200 font-medium hover:text-accent dark:hover:text-white hover:bg-accent/[8] dark:hover:bg-accent/15" 
                               : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
                           }
                         `}
                       >
                         {heading.level === 2 && (
                           <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${
-                            isActive ? "bg-[var(--brand-accent)]" : "bg-[var(--brand-accent)] opacity-60 group-hover/item:opacity-100"
+                            isActive ? "bg-accent" : "bg-accent opacity-60 group-hover/item:opacity-100"
                           }`} />
                         )}
                         <span className="line-clamp-1">{heading.text}</span>
@@ -1209,7 +1209,7 @@ function MobileReadingDock({ headings, scrollRef, contentRef, newsletterRef, pro
         {/* Progress bar at top of dock */}
         <div className="h-1 bg-muted/50">
           <div
-            className="h-full bg-[var(--brand-accent)] transition-all duration-300 ease-out"
+            className="h-full bg-accent transition-all duration-300 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -1221,8 +1221,8 @@ function MobileReadingDock({ headings, scrollRef, contentRef, newsletterRef, pro
         >
           {/* Current section info */}
           <div className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
-            <div className="w-7 h-7 rounded-full bg-[rgba(var(--brand-accent-rgb),0.15)] flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] font-bold text-[var(--brand-accent)]">
+            <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-bold text-accent">
                 {currentSection}/{totalSections}
               </span>
             </div>
@@ -1245,7 +1245,7 @@ function MobileReadingDock({ headings, scrollRef, contentRef, newsletterRef, pro
             <p className="text-[10px] text-muted-foreground">
               {remainingTime > 0 ? `${remainingTime} min left` : 'Complete'}
             </p>
-            <p className="text-xs font-bold text-[var(--brand-accent)]">
+            <p className="text-xs font-bold text-accent">
               {Math.round(progress)}%
             </p>
           </div>
@@ -1271,7 +1271,7 @@ function MobileReadingDock({ headings, scrollRef, contentRef, newsletterRef, pro
                           className={`
                             flex items-center gap-2 py-1.5 px-2.5 rounded-lg transition-all duration-200
                             ${isActive
-                              ? "text-[var(--brand-accent)] bg-[rgba(var(--brand-accent-rgb),0.12)] font-medium"
+                              ? "text-accent bg-accent/[12] font-medium"
                               : "text-foreground hover:bg-muted/80 active:bg-muted"
                             }
                           `}
@@ -1279,7 +1279,7 @@ function MobileReadingDock({ headings, scrollRef, contentRef, newsletterRef, pro
                           {heading.level === 2 ? (
                             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ${
                               isActive 
-                                ? "bg-[var(--brand-accent)] text-white" 
+                                ? "bg-accent text-white" 
                                 : "bg-muted text-muted-foreground"
                             }`}>
                               {heading.sectionNum}
@@ -1287,7 +1287,7 @@ function MobileReadingDock({ headings, scrollRef, contentRef, newsletterRef, pro
                           ) : (
                             <span className={`w-1 h-1 rounded-full flex-shrink-0 ml-2 ${
                               isActive 
-                                ? "bg-[var(--brand-accent)]" 
+                                ? "bg-accent" 
                                 : "bg-muted-foreground/40"
                             }`} />
                           )}
@@ -1542,7 +1542,7 @@ const createMarkdownComponents = (fontSize) => ({
     return (
       <a
         href={href}
-        className="text-[var(--brand-accent)] underline underline-offset-4 hover:text-[var(--brand-accent)]/80 transition-colors"
+        className="text-accent underline underline-offset-4 hover:text-accent/80 transition-colors"
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -1553,7 +1553,7 @@ const createMarkdownComponents = (fontSize) => ({
 
   blockquote({ children }) {
     return (
-      <blockquote className="my-6 border-l-2 border-[var(--brand-accent)] pl-6 italic text-zinc-600 dark:text-zinc-400">
+      <blockquote className="my-6 border-l-2 border-accent pl-6 italic text-zinc-600 dark:text-zinc-400">
         {children}
       </blockquote>
     );
@@ -1589,7 +1589,7 @@ function RelatedPostCard({ post }) {
 
   return (
     <Card
-      className="group overflow-hidden cursor-pointer hover:shadow-lg hover:border-[var(--brand-accent)]/30 transition-all duration-300"
+      className="group overflow-hidden cursor-pointer hover:shadow-lg hover:border-accent/30 transition-all duration-300"
       onClick={() => router.push(`/blog/${post.slug}`)}
     >
       <CardContent className="p-0">
@@ -1598,13 +1598,13 @@ function RelatedPostCard({ post }) {
           {post.coverType === "image" && post.coverImage ? (
             <div
               className="absolute inset-0 transition-transform duration-300 group-hover:scale-105 bg-cover bg-center"
-              style={{ backgroundImage: `url(${post.coverImage})` }}
+              style={{ backgroundImage: `url(${sanitizeImageUrl(post.coverImage)})` }}
             />
           ) : (
             <div
               className="absolute inset-0 transition-transform duration-300 group-hover:scale-105"
               style={{
-                background: post.gradient || `linear-gradient(135deg, rgba(var(--brand-accent-rgb), 0.2) 0%, rgba(var(--brand-primary-rgb), 0.4) 100%)`,
+                background: post.gradient || `linear-gradient(135deg, hsl(var(--accent)/0.2) 0%, hsl(var(--primary)/0.4) 100%)`,
               }}
             />
           )}
@@ -1620,7 +1620,7 @@ function RelatedPostCard({ post }) {
           <Badge variant="secondary" className="text-xs">
             {post.category}
           </Badge>
-          <h3 className="font-semibold line-clamp-2 group-hover:text-[var(--brand-accent)] transition-colors">
+          <h3 className="font-semibold line-clamp-2 group-hover:text-accent transition-colors">
             {post.title}
           </h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -1669,7 +1669,7 @@ function NewsletterCTA() {
   };
 
   return (
-    <div className="mt-8 sm:mt-12 p-4 sm:p-6 md:p-8 rounded-2xl bg-gradient-to-br from-[rgba(var(--brand-accent-rgb),0.1)] to-[rgba(var(--brand-primary-rgb),0.15)] border border-[rgba(var(--brand-accent-rgb),0.2)]">
+    <div className="mt-8 sm:mt-12 p-4 sm:p-6 md:p-8 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/15 border border-accent/20">
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="text-center sm:text-left">
           <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
@@ -1711,7 +1711,7 @@ function AuthorBio({ author }) {
   return (
     <div className="mt-8 sm:mt-12 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
-        <Avatar className="w-14 h-14 sm:w-16 sm:h-16 ring-2 ring-[var(--brand-accent)]/20">
+        <Avatar className="w-14 h-14 sm:w-16 sm:h-16 ring-2 ring-accent/20">
           <AvatarImage
             src={isVulnIQAuthor ? "/favicon.png" : "/placeholder.svg"}
             alt={author}
@@ -1724,7 +1724,7 @@ function AuthorBio({ author }) {
           <h3 className="font-semibold text-foreground">{author}</h3>
           {isVulnIQAuthor ? (
             <>
-              <p className="text-sm text-[var(--brand-accent)] mb-2">@vulniqsecurity</p>
+              <p className="text-sm text-accent mb-2">@vulniqsecurity</p>
               <p className="text-sm text-muted-foreground">
                 VulnIQ helps developers identify and fix security vulnerabilities in their code.
                 Our team shares insights on application security, secure coding practices, and vulnerability management.
@@ -1753,7 +1753,7 @@ function Breadcrumbs({ category }) {
         Blog
       </Link>
       <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-      <span className="text-[var(--brand-accent)] truncate max-w-[100px] sm:max-w-none">{category}</span>
+      <span className="text-accent truncate max-w-[100px] sm:max-w-none">{category}</span>
     </nav>
   );
 }
@@ -1973,7 +1973,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
     return extractHeadings(post.content || "");
   }, [post.isUserSubmitted, post.contentJson, post.content]);
 
-  const markdownComponents = createMarkdownComponents(fontSize);
+  const markdownComponents = React.useMemo(() => createMarkdownComponents(fontSize), [fontSize]);
   // Use consistent URL for SSR - actual URL will be the same since it's based on slug
   const currentUrl = `https://vulniq.org/blog/${post.slug}`;
 
@@ -2009,16 +2009,16 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
                   {post.coverType === "image" && post.coverImage ? (
                     <div
                       className="absolute inset-0 w-full h-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${post.coverImage})` }}
+                      style={{ backgroundImage: `url(${sanitizeImageUrl(post.coverImage)})` }}
                     />
                   ) : (
                     <div
                       className="absolute inset-0 w-full h-full"
                       style={{
                         background: post.gradient || `linear-gradient(135deg, 
-                          rgba(var(--brand-accent-rgb), 0.3) 0%, 
-                          rgba(var(--brand-primary-rgb), 0.5) 50%,
-                          rgba(var(--brand-accent-rgb), 0.3) 100%)`,
+                          hsl(var(--accent)/0.3) 0%, 
+                          hsl(var(--primary)/0.5) 50%,
+                          hsl(var(--accent)/0.3) 100%)`,
                       }}
                     />
                   )}
@@ -2072,7 +2072,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
                                   src={post.author === "VulnIQ security" ? "/favicon.png" : "/placeholder.svg"}
                                   alt={post.author}
                                 />
-                                <AvatarFallback className="text-xs bg-[var(--brand-primary)]">
+                                <AvatarFallback className="text-xs bg-primary">
                                   {post.author === "VulnIQ security" ? "VQ" : post.author?.split(" ").map(n => n[0]).join("").slice(0, 2) || "AU"}
                                 </AvatarFallback>
                               </Avatar>
@@ -2116,7 +2116,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
                         size="sm"
                         onClick={toggleBookmark}
                         disabled={isBookmarkLoading}
-                        className={`h-8 px-2 sm:px-3 ${isBookmarked ? "text-[var(--brand-accent)]" : ""}`}
+                        className={`h-8 px-2 sm:px-3 ${isBookmarked ? "text-accent" : ""}`}
                       >
                         {isBookmarkLoading ? (
                           <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin sm:mr-1.5" />
@@ -2147,7 +2147,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
                 {/* Blog Content in styled container */}
                 <div
                   ref={contentRef}
-                  className="prose-content rounded-2xl border border-zinc-200 dark:border-zinc-800 dark:border-[rgba(var(--brand-accent-rgb),0.15)] bg-white dark:bg-zinc-900/50 dark:bg-[rgba(var(--brand-primary-rgb),0.3)] p-6 md:p-8 lg:p-10 shadow-sm backdrop-blur-sm"
+                  className="prose-content rounded-2xl border border-zinc-200 dark:border-zinc-800 dark:border-accent/15 bg-white dark:bg-zinc-900/50 dark:bg-primary/30 p-6 md:p-8 lg:p-10 shadow-sm backdrop-blur-sm"
                 >
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
@@ -2182,7 +2182,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 px-2 sm:px-3 gap-1.5 border-border/50 hover:border-[var(--brand-accent)] hover:bg-[rgba(var(--brand-accent-rgb),0.1)] hover:text-[var(--brand-accent)] transition-all"
+                      className="h-8 px-2 sm:px-3 gap-1.5 border-border/50 hover:border-accent hover:bg-accent/10 hover:text-accent transition-all"
                       onClick={() => {
                         navigator.clipboard.writeText(window.location.href);
                         toast.success("Link copied!");
@@ -2194,7 +2194,7 @@ export default function BlogPostContent({ post, relatedPosts, isAuthenticated })
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 px-2 sm:px-3 gap-1.5 border-border/50 hover:border-[var(--brand-accent)] hover:bg-[rgba(var(--brand-accent-rgb),0.1)] hover:text-[var(--brand-accent)] transition-all"
+                      className="h-8 px-2 sm:px-3 gap-1.5 border-border/50 hover:border-accent hover:bg-accent/10 hover:text-accent transition-all"
                       onClick={() => {
                         if (navigator.share) {
                           navigator.share({

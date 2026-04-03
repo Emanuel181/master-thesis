@@ -26,12 +26,12 @@ export function NavLogo({ isAboveColoredSection }) {
                     priority
                     fetchPriority="high"
                 />
-                <div className="absolute -inset-1 bg-[var(--brand-accent)]/20 rounded-xl blur-sm -z-10 opacity-0 group-hover:opacity-100 transition-opacity md:hidden" />
+                <div className="absolute -inset-1 bg-accent/20 rounded-xl blur-sm -z-10 opacity-0 group-hover:opacity-100 transition-opacity md:hidden" />
             </div>
             <span
                 className={cn(
                     "text-xs xs:text-sm font-semibold md:hidden transition-colors duration-500 ease-out",
-                    isAboveColoredSection ? "text-[#1fb6cf]" : "text-foreground"
+                    isAboveColoredSection ? "text-accent" : "text-foreground"
                 )}
             >
                 VulnIQ

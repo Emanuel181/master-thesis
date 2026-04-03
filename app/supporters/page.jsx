@@ -110,7 +110,7 @@ function MessageForm() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsSuccess(false)}
-                    className="text-[var(--brand-accent)] hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10"
+                    className="text-accent hover:text-accent hover:bg-accent/10"
                 >
                     Send another message
                 </Button>
@@ -131,7 +131,7 @@ function MessageForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-background/50 border-border/50 focus:border-[var(--brand-accent)] focus:ring-[var(--brand-accent)]/20"
+                    className="bg-background/50 border-border/50 focus:border-accent focus:ring-accent/20"
                 />
             </div>
             <div className="space-y-2">
@@ -144,7 +144,7 @@ function MessageForm() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}
-                    className="bg-background/50 border-border/50 focus:border-[var(--brand-accent)] focus:ring-[var(--brand-accent)]/20 resize-none"
+                    className="bg-background/50 border-border/50 focus:border-accent focus:ring-accent/20 resize-none"
                 />
             </div>
             {error && (
@@ -153,7 +153,7 @@ function MessageForm() {
             <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white"
+                className="w-full bg-accent hover:bg-accent/90 text-white"
             >
                 {isSubmitting ? (
                     <>
@@ -226,7 +226,7 @@ export default function SupportersPage() {
     }, [supporters.length]);
 
     return (
-        <div className="landing-page h-screen flex flex-col bg-background font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
+        <div className="landing-page h-screen flex flex-col bg-background font-sans selection:bg-accent/20 overflow-hidden">
             {/* Background effects - matching landing page */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -243,7 +243,7 @@ export default function SupportersPage() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-accent/10 hover:text-accent">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 <span className="sm:hidden">Back</span>
@@ -252,11 +252,11 @@ export default function SupportersPage() {
                         </Button>
                         <button
                             onClick={openPanel}
-                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-accent/10 hover:bg-accent/20 border border-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                             aria-label="Open accessibility menu"
                             title="Accessibility options"
                         >
-                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                            <PersonStanding className="w-5 h-5 text-accent" strokeWidth={2} />
                         </button>
                         <ThemeToggle />
                     </div>
@@ -277,14 +277,14 @@ export default function SupportersPage() {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                            className="mx-auto mb-4 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand-accent)]/20 to-[var(--brand-primary)]/20"
+                            className="mx-auto mb-4 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent/20 to-primary/20"
                         >
-                            <Heart className="h-8 w-8 sm:h-10 sm:w-10 text-[var(--brand-accent)]" />
+                            <Heart className="h-8 w-8 sm:h-10 sm:w-10 text-accent" />
                         </motion.div>
 
                         <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight mb-3 sm:mb-4">
                             People who{' '}
-                            <span className="bg-gradient-to-r from-[var(--brand-accent)] via-[var(--brand-primary)] to-pink-500 bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-accent via-primary to-pink-500 bg-clip-text text-transparent">
                                 supported
                             </span>
                         </h1>
@@ -297,7 +297,7 @@ export default function SupportersPage() {
                     {/* Loading State */}
                     {loading && (
                         <div className="flex flex-col items-center justify-center py-12 sm:py-20 gap-4">
-                            <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
+                            <Loader2 className="h-8 w-8 animate-spin text-accent" />
                             <p className="text-sm text-muted-foreground">Loading supporters...</p>
                         </div>
                     )}
@@ -409,7 +409,7 @@ export default function SupportersPage() {
                                         size="icon"
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
-                                        className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 disabled:opacity-50"
+                                        className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-accent/10 hover:text-accent hover:border-accent/50 disabled:opacity-50"
                                     >
                                         <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                                         <span className="sr-only">Previous page</span>
@@ -439,8 +439,8 @@ export default function SupportersPage() {
                                                     onClick={() => setCurrentPage(page)}
                                                     className={`h-8 w-8 sm:h-10 sm:w-10 text-xs sm:text-sm ${
                                                         currentPage === page 
-                                                            ? 'bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white' 
-                                                            : 'hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50'
+                                                            ? 'bg-accent hover:bg-accent/90 text-white' 
+                                                            : 'hover:bg-accent/10 hover:text-accent hover:border-accent/50'
                                                     }`}
                                                 >
                                                     {page}
@@ -454,7 +454,7 @@ export default function SupportersPage() {
                                         size="icon"
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
-                                        className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 disabled:opacity-50"
+                                        className="h-8 w-8 sm:h-10 sm:w-10 hover:bg-accent/10 hover:text-accent hover:border-accent/50 disabled:opacity-50"
                                     >
                                         <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                                         <span className="sr-only">Next page</span>
@@ -478,7 +478,7 @@ export default function SupportersPage() {
                         transition={{ delay: 0.5 }}
                         className="mt-12 sm:mt-20 px-2"
                     >
-                        <Card className="max-w-2xl mx-auto border-[var(--brand-accent)]/20 bg-gradient-to-br from-[var(--brand-accent)]/5 to-transparent">
+                        <Card className="max-w-2xl mx-auto border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
                             <CardContent className="p-4 sm:pt-6 sm:p-6 text-center">
                                 <h3 className="text-xl sm:text-2xl font-semibold tracking-tight mb-2">
                                     Want to support VulnIQ?

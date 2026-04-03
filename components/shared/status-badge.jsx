@@ -48,7 +48,7 @@ export function StatusBadge({
             )}
             <span className={cn(
                 "truncate",
-                size === "sm" ? "max-w-[60px]" : "max-w-none"
+                size === "sm" ? "max-w-15" : "max-w-none"
             )}>
                 {statusConfig.label}
             </span>

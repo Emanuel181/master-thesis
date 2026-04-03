@@ -7,7 +7,7 @@
  */
 
 import prisma from '@/lib/prisma';
-import { uploadTextToS3, generatePromptS3Key } from '@/lib/s3';
+import { uploadTextToS3, generatePromptS3Key, deleteFromS3 } from '@/lib/s3';
 import { createApiHandler } from '@/lib/api-handler';
 import { createPromptSchema, VALID_AGENTS } from '@/lib/validators/prompts.js';
 import { getAllDefaultPrompts, getDefaultPromptMetadataUpdates, getEffectiveDefaultKeys } from '@/lib/default-prompts';
@@ -54,9 +54,9 @@ export const GET = createApiHandler(
         const missingDefaults = allDefaults.filter(d => !existingDefaultKeys.has(d.defaultKey));
 
         if (missingDefaults.length > 0) {
-            for (const promptData of missingDefaults) {
+            await Promise.all(missingDefaults.map(async (promptData) => {
+                const s3Key = generatePromptS3Key(userId, promptData.agent);
                 try {
-                    const s3Key = generatePromptS3Key(userId, promptData.agent);
                     await uploadTextToS3(s3Key, promptData.text);
                     await prisma.prompt.create({
                         data: {
@@ -71,9 +71,11 @@ export const GET = createApiHandler(
                         },
                     });
                 } catch (err) {
+                    // Clean up orphaned S3 object if DB write failed
+                    deleteFromS3(s3Key).catch(() => {});
                     console.error(`Failed to auto-seed prompt "${promptData.title}":`, err);
                 }
-            }
+            }));
 
             // Re-fetch after seeding
             prompts = await prisma.prompt.findMany({
@@ -125,15 +127,22 @@ export const POST = createApiHandler(
         const s3Key = generatePromptS3Key(userId, agent);
         await uploadTextToS3(s3Key, text);
 
-        const prompt = await prisma.prompt.create({
-            data: {
-                agent,
-                title: title || 'Untitled',
-                text,
-                userId,
-                s3Key,
-            },
-        });
+        let prompt;
+        try {
+            prompt = await prisma.prompt.create({
+                data: {
+                    agent,
+                    title: title || 'Untitled',
+                    text,
+                    userId,
+                    s3Key,
+                },
+            });
+        } catch (dbError) {
+            // Clean up orphaned S3 object
+            deleteFromS3(s3Key).catch(() => {});
+            throw dbError;
+        }
 
         return {
             id: prompt.id,

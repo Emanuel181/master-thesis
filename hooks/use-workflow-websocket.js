@@ -169,7 +169,6 @@ export function useWorkflowWebSocket({
         }
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-            console.log('[WebSocket] Already connected');
             return;
         }
 
@@ -181,7 +180,6 @@ export function useWorkflowWebSocket({
             wsRef.current = ws;
 
             ws.onopen = () => {
-                console.log('[WebSocket] Connected');
                 updateStatus(WS_STATE.CONNECTED);
                 reconnectAttemptRef.current = 0;
                 setError(null);
@@ -214,7 +212,6 @@ export function useWorkflowWebSocket({
             };
 
             ws.onclose = (closeEvent) => {
-                console.log('[WebSocket] Closed:', closeEvent.code, closeEvent.reason);
 
                 // Clear heartbeat
                 if (heartbeatIntervalRef.current) {
@@ -227,8 +224,6 @@ export function useWorkflowWebSocket({
 
                     const delay = getBackoffDelay(reconnectAttemptRef.current);
                     reconnectAttemptRef.current++;
-
-                    console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`);
 
                     // Schedule reconnection - this will re-trigger the effect
                     reconnectTimeoutRef.current = setTimeout(() => {

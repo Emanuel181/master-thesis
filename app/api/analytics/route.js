@@ -44,39 +44,12 @@ export const GET = createApiHandler(
         const { startDate, endDate, days } = getDateRange(range);
         const userId = session.user.id;
 
-        // Fetch vulnerabilities within date range
-        const vulnerabilities = await prisma.vulnerability.findMany({
-            where: {
-                workflowRun: {
-                    userId,
-                },
-                createdAt: {
-                    gte: startDate,
-                    lte: endDate,
-                },
-            },
-            select: {
-                id: true,
-                severity: true,
-                type: true,
-                title: true,
-                fileName: true,
-                resolved: true,
-                confidence: true,
-                createdAt: true,
-                cweId: true,
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-
-        // Fetch workflow runs within date range
+        // Fetch the user's workflow runs in the date range.
+        // Prisma groupBy does not support relation filters, so we need explicit run IDs.
         const workflowRuns = await prisma.workflowRun.findMany({
             where: {
                 userId,
-                startedAt: {
-                    gte: startDate,
-                    lte: endDate,
-                },
+                startedAt: { gte: startDate, lte: endDate },
             },
             select: {
                 id: true,
@@ -87,78 +60,144 @@ export const GET = createApiHandler(
                 completedUseCases: true,
             },
             orderBy: { startedAt: 'desc' },
+            take: 1000,
         });
+        const userRunIds = workflowRuns.map(r => r.id);
 
-        // Calculate severity counts
-        const severityCounts = {
-            Critical: 0,
-            High: 0,
-            Medium: 0,
-            Low: 0,
+        // All vulnerability queries filter by these run IDs + date window
+        const vulnWhere = {
+            workflowRunId: { in: userRunIds },
+            createdAt: { gte: startDate, lte: endDate },
         };
 
-        const openVulns = vulnerabilities.filter(v => !v.resolved);
-        openVulns.forEach(v => {
-            if (severityCounts.hasOwnProperty(v.severity)) {
-                severityCounts[v.severity]++;
-            }
-        });
+        // Run all independent vulnerability queries in parallel
+        const [
+            totalVulns,
+            resolvedCount,
+            severityRows,
+            typeRows,
+            cweRows,
+            confidenceAgg,
+            topFilesRows,
+            recentVulns,
+            vulnDates,
+        ] = await Promise.all([
+            // Total vulnerability count
+            prisma.vulnerability.count({ where: vulnWhere }),
 
-        // Calculate type distribution
+            // Resolved count (used for resolution rate and open count)
+            prisma.vulnerability.count({ where: { ...vulnWhere, resolved: true } }),
+
+            // Severity distribution — only open (unresolved) vulnerabilities
+            prisma.vulnerability.groupBy({
+                by: ['severity'],
+                _count: true,
+                where: { ...vulnWhere, resolved: false },
+            }),
+
+            // Type distribution
+            prisma.vulnerability.groupBy({
+                by: ['type'],
+                _count: true,
+                where: vulnWhere,
+            }),
+
+            // CWE distribution
+            prisma.vulnerability.groupBy({
+                by: ['cweId'],
+                _count: true,
+                where: vulnWhere,
+            }),
+
+            // Average confidence score
+            prisma.vulnerability.aggregate({
+                _avg: { confidence: true },
+                where: vulnWhere,
+            }),
+
+            // Top 5 most affected files
+            prisma.vulnerability.groupBy({
+                by: ['fileName'],
+                _count: true,
+                where: { ...vulnWhere, fileName: { not: null } },
+                orderBy: { _count: { fileName: 'desc' } },
+                take: 5,
+            }),
+
+            // 10 most recent vulnerabilities (for the recent list)
+            prisma.vulnerability.findMany({
+                where: vulnWhere,
+                select: {
+                    id: true,
+                    title: true,
+                    severity: true,
+                    type: true,
+                    fileName: true,
+                    resolved: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+            }),
+
+            // Lightweight date-only fetch for trend calculation
+            prisma.vulnerability.findMany({
+                where: vulnWhere,
+                select: { createdAt: true },
+                orderBy: { createdAt: 'desc' },
+                take: 5000,
+            }),
+        ]);
+
+        // Build severity counts from groupBy rows (open vulns only)
+        const severityCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+        for (const row of severityRows) {
+            if (Object.prototype.hasOwnProperty.call(severityCounts, row.severity)) {
+                severityCounts[row.severity] = row._count;
+            }
+        }
+
+        // Build type counts from groupBy rows
         const typeCounts = {};
-        vulnerabilities.forEach(v => {
-            if (v.type) {
-                typeCounts[v.type] = (typeCounts[v.type] || 0) + 1;
-            }
-        });
+        for (const row of typeRows) {
+            if (row.type) typeCounts[row.type] = row._count;
+        }
 
-        // Calculate CWE distribution
+        // Build CWE counts from groupBy rows
         const cweCounts = {};
-        vulnerabilities.forEach(v => {
-            if (v.cweId) {
-                cweCounts[v.cweId] = (cweCounts[v.cweId] || 0) + 1;
-            }
-        });
+        for (const row of cweRows) {
+            if (row.cweId) cweCounts[row.cweId] = row._count;
+        }
 
-        // Calculate daily trend data
-        const trendData = calculateTrend(vulnerabilities, days);
-
-        // Calculate resolution rate
-        const totalVulns = vulnerabilities.length;
-        const resolvedVulns = vulnerabilities.filter(v => v.resolved).length;
+        // Derived counts
+        const openVulnerabilitiesCount = totalVulns - resolvedCount;
         const resolutionRate = totalVulns > 0
-            ? Math.round((resolvedVulns / totalVulns) * 100)
+            ? Math.round((resolvedCount / totalVulns) * 100)
             : 100;
 
-        // Calculate average confidence (only from vulns that have a confidence value)
-        const vulnsWithConfidence = vulnerabilities.filter(v => v.confidence != null);
-        const avgConfidence = vulnsWithConfidence.length > 0
-            ? vulnsWithConfidence.reduce((sum, v) => sum + v.confidence, 0) / vulnsWithConfidence.length
-            : null;
+        // Average confidence (already computed by the DB; may be null)
+        const avgConfidence = confidenceAgg._avg.confidence;
 
-        // Calculate scan success rate
+        // Top affected files
+        const topAffectedFiles = topFilesRows.map(row => ({
+            file: row.fileName,
+            count: row._count,
+        }));
+
+        // Daily trend (calculateTrend only reads .createdAt, so vulnDates works directly)
+        const trendData = calculateTrend(vulnDates, days);
+
+        // Scan success rate
         const completedRuns = workflowRuns.filter(r => r.status === 'completed').length;
         const scanSuccessRate = workflowRuns.length > 0
             ? Math.round((completedRuns / workflowRuns.length) * 100)
             : 100;
 
-        // Get most affected files
-        const fileCounts = {};
-        vulnerabilities.forEach(v => {
-            if (v.fileName) {
-                fileCounts[v.fileName] = (fileCounts[v.fileName] || 0) + 1;
-            }
-        });
-        const topAffectedFiles = Object.entries(fileCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([file, count]) => ({ file, count }));
-
         return {
             summary: {
                 totalVulnerabilities: totalVulns,
-                openVulnerabilities: openVulns.length,
-                resolvedVulnerabilities: resolvedVulns,
+                openVulnerabilities: openVulnerabilitiesCount,
+                resolvedVulnerabilities: resolvedCount,
                 severityCounts,
                 typeCounts,
                 cweCounts,
@@ -174,15 +213,7 @@ export const GET = createApiHandler(
                 endDate: endDate.toISOString(),
             },
             topAffectedFiles,
-            recentVulnerabilities: vulnerabilities.slice(0, 10).map(v => ({
-                id: v.id,
-                title: v.title,
-                severity: v.severity,
-                type: v.type,
-                fileName: v.fileName,
-                resolved: v.resolved,
-                createdAt: v.createdAt,
-            })),
+            recentVulnerabilities: recentVulns,
             workflowRuns: workflowRuns.slice(0, 10).map(r => ({
                 id: r.id,
                 status: r.status,

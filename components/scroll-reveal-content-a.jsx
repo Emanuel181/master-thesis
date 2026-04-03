@@ -8,7 +8,7 @@ import { useMotionValueEvent, useScroll } from "motion/react"
 export const centralColumnStyle = "w-[90%] max-w-[1340px] mx-auto"
 export const pageYPadding = "py-10 md:py-12 lg:py-20 xl:py-30 2xl:py-40"
 const defaultTitleClass = "text-2xl md:text-3xl font-semibold mb-2 text-foreground"
-const defaultDescriptionClass = "text-base md:text-lg font-medium mb-2 text-foreground max-w-[400px] leading-[130%]"
+const defaultDescriptionClass = "text-base md:text-lg font-medium mb-2 text-foreground max-w-md leading-[130%]"
 const imageClass =
   "absolute top-0 right-0 ml-auto w-auto h-full object-cover rounded-2xl transition-opacity duration-300"
 

@@ -93,7 +93,7 @@ export function Footer({ onScrollToTop }) {
     };
 
     return (
-        <footer ref={ref} className="relative pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 md:px-8 bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] w-full pb-safe overflow-hidden">
+        <footer ref={ref} className="relative pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 md:px-8 bg-background w-full pb-safe overflow-hidden">
             {/* Hex Grid Background - hidden on mobile for performance */}
             <HexGridBackground className="z-0 opacity-60 hidden md:block" />
             
@@ -104,9 +104,9 @@ export function Footer({ onScrollToTop }) {
                 animate={isInView ? "visible" : "hidden"}
             >
                 {/* Main footer card */}
-                <div className="relative rounded-2xl sm:rounded-3xl border border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]/50 dark:hover:border-[var(--brand-accent)]/50 bg-[var(--brand-light)]/95 dark:bg-[var(--brand-primary)]/40 backdrop-blur-sm overflow-hidden transition-[border-color] duration-500 ease-in-out">
+                <div className="relative rounded-2xl sm:rounded-3xl border border-border hover:border-accent/50 bg-card/95 backdrop-blur-sm overflow-hidden transition-[border-color] duration-500 ease-in-out shadow-sm">
                     {/* Decorative top accent */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 sm:w-1/2 md:w-1/3 h-px bg-gradient-to-r from-transparent via-[var(--brand-accent)]/50 to-transparent" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 sm:w-1/2 md:w-1/3 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
                     <div className="px-6 sm:px-8 md:px-10 lg:px-12 xl:px-16 py-8 sm:py-10 md:py-12 lg:py-16">
                         <div className="grid grid-cols-1 gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
@@ -118,9 +118,9 @@ export function Footer({ onScrollToTop }) {
                     >
                         <div className="flex items-center gap-2.5">
                             <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" width={32} height={32} loading="eager" />
-                            <span className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-base sm:text-lg tracking-tight">VulnIQ</span>
+                            <span className="font-semibold text-foreground text-base sm:text-lg tracking-tight">VulnIQ</span>
                         </div>
-                        <p className="text-sm leading-relaxed text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                        <p className="text-sm leading-relaxed text-muted-foreground">
                             Autonomous security remediation powered by retrieval-augmented generation.
                         </p>
                         {/* Product Hunt Card */}
@@ -143,12 +143,12 @@ export function Footer({ onScrollToTop }) {
 
                     {/* Column 2: Resources */}
                     <motion.div variants={itemVariants} className="space-y-4">
-                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Resources</h4>
+                        <h4 className="font-semibold text-foreground text-sm">Resources</h4>
                         <div className="flex flex-col gap-2.5" onMouseLeave={() => setHoveredResource(null)}>
                             <button
                                 onClick={() => setFeedbackOpen(true)}
                                 onMouseEnter={() => setHoveredResource('feedback')}
-                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline text-left transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'feedback' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-2 text-sm text-accent hover:underline text-left transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'feedback' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <MessageSquare className="w-4 h-4" />
                                 Have a feedback?
@@ -156,7 +156,7 @@ export function Footer({ onScrollToTop }) {
                             <Link
                                 href="/changelog"
                                 onMouseEnter={() => setHoveredResource('changelog')}
-                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'changelog' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'changelog' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <FileText className="w-4 h-4" />
                                 Changelog
@@ -164,7 +164,7 @@ export function Footer({ onScrollToTop }) {
                             <Link
                                 href="/site-map"
                                 onMouseEnter={() => setHoveredResource('sitemap')}
-                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'sitemap' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'sitemap' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <Map className="w-4 h-4" />
                                 Sitemap
@@ -172,7 +172,7 @@ export function Footer({ onScrollToTop }) {
                             <Link
                                 href="/supporters"
                                 onMouseEnter={() => setHoveredResource('supporters')}
-                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'supporters' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'supporters' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <Heart className="w-4 h-4" />
                                 Supporters
@@ -182,7 +182,7 @@ export function Footer({ onScrollToTop }) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onMouseEnter={() => setHoveredResource('thesis')}
-                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-accent)] hover:underline transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'thesis' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-2 text-sm text-accent hover:underline transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'thesis' ? 'opacity-30' : 'opacity-100'}`}
                                 whileHover={{ x: 2 }}
                             >
                                 <FileText className="w-4 h-4" />
@@ -194,7 +194,7 @@ export function Footer({ onScrollToTop }) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onMouseEnter={() => setHoveredResource('status')}
-                                className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-primary)] dark:hover:text-[var(--brand-light)] transition-all duration-200 ${hoveredResource && hoveredResource !== 'status' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'status' ? 'opacity-30' : 'opacity-100'}`}
                                 whileHover={{ x: 2 }}
                             >
                                 <span className="relative flex h-2.5 w-2.5">
@@ -219,18 +219,18 @@ export function Footer({ onScrollToTop }) {
 
                     {/* Column 3: About */}
                     <motion.div variants={itemVariants} className="space-y-4" onMouseLeave={() => setHoveredThesis(null)}>
-                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Master thesis</h4>
-                        <div className="space-y-1.5 text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                        <h4 className="font-semibold text-foreground text-sm">Master thesis</h4>
+                        <div className="space-y-1.5 text-sm text-muted-foreground">
                             <p
                                 onMouseEnter={() => setHoveredThesis('name')}
-                                className={`font-medium text-[var(--brand-primary)] dark:text-[var(--brand-light)] transition-opacity duration-200 ${hoveredThesis && hoveredThesis !== 'name' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`font-medium text-foreground transition-opacity duration-200 ${hoveredThesis && hoveredThesis !== 'name' ? 'opacity-30' : 'opacity-100'}`}
                             >Emanuel Rusu</p>
                             <a
                                 href="https://www.uvt.ro/en/" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onMouseEnter={() => setHoveredThesis('university')}
-                                className={`inline-flex items-center gap-1 hover:text-[var(--brand-primary)] dark:hover:text-white transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'university' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-1 hover:text-foreground transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'university' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 West University of Timișoara
                                 <ExternalLink className="w-3 h-3" />
@@ -244,7 +244,7 @@ export function Footer({ onScrollToTop }) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onMouseEnter={() => setHoveredThesis('msc')}
-                                className={`inline-flex items-center gap-1 hover:text-[var(--brand-primary)] dark:hover:text-white transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'msc' ? 'opacity-30' : 'opacity-100'}`}
+                                className={`inline-flex items-center gap-1 hover:text-foreground transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'msc' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 MSc Cybersecurity
                                 <ExternalLink className="w-3 h-3" />
@@ -255,7 +255,7 @@ export function Footer({ onScrollToTop }) {
                             target="_blank"
                             rel="noopener noreferrer"
                             onMouseEnter={() => setHoveredThesis('linkedin')}
-                            className={`inline-flex items-center gap-2 text-sm text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[#0077b5] transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'linkedin' ? 'opacity-30' : 'opacity-100'}`}
+                            className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0077b5] transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'linkedin' ? 'opacity-30' : 'opacity-100'}`}
                             whileHover={{ x: 2 }}
                         >
                             <Linkedin className="w-4 h-4" />
@@ -266,8 +266,8 @@ export function Footer({ onScrollToTop }) {
 
                     {/* Column 4: Newsletter */}
                     <motion.div variants={itemVariants} className="space-y-4 sm:col-span-2 lg:col-span-1">
-                        <h4 className="font-semibold text-[var(--brand-primary)] dark:text-[var(--brand-light)] text-sm">Stay updated</h4>
-                        <p className="text-sm text-[var(--brand-primary)]/70 dark:text-[var(--brand-light)]/70">
+                        <h4 className="font-semibold text-foreground text-sm">Stay updated</h4>
+                        <p className="text-sm text-muted-foreground">
                             Get notified about new features and research updates.
                         </p>
                         <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
@@ -276,14 +276,14 @@ export function Footer({ onScrollToTop }) {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Enter your email address"
-                                className="w-full px-4 py-3 text-sm rounded-lg bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20 text-[var(--brand-primary)] dark:text-[var(--brand-light)] placeholder:text-[var(--brand-primary)]/40 dark:placeholder:text-[var(--brand-light)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]/40 focus:border-[var(--brand-accent)]/60 transition-all min-h-[44px]"
+                                className="w-full px-4 py-3 text-sm rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60 transition-all min-h-[44px]"
                                 disabled={status === "loading" || status === "success"}
                             />
                             <div className="flex gap-2">
                                 <Button
                                     type="submit"
                                     disabled={status === "loading" || status === "success"}
-                                    className="w-full min-h-[44px] whitespace-nowrap text-white dark:bg-white dark:text-[var(--brand-primary)] dark:hover:bg-white/90"
+                                    className="w-full min-h-[44px] whitespace-nowrap"
                                     aria-label={status === "loading" ? "Subscribing..." : status === "success" ? "Subscribed successfully" : "Subscribe to newsletter"}
                                 >
                                     <span>Subscribe</span>
@@ -321,7 +321,7 @@ export function Footer({ onScrollToTop }) {
 
                 {/* Bottom Bar - inside card */}
                 <motion.div
-                    className="border-t border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 mt-8 sm:mt-10 md:mt-12 lg:mt-16 pt-6 sm:pt-8 flex flex-col gap-4"
+                    className="border-t border-border mt-8 sm:mt-10 md:mt-12 lg:mt-16 pt-6 sm:pt-8 flex flex-col gap-4"
                     initial={{ opacity: 0 }}
                     animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                     transition={{ delay: 0.5 }}
@@ -332,7 +332,7 @@ export function Footer({ onScrollToTop }) {
                             variant="outline"
                             size="sm"
                             onClick={() => onScrollToTop ? onScrollToTop() : window.scrollTo({ top: 0, behavior: 'smooth' })}
-                            className="text-xs bg-[var(--brand-white)] dark:bg-[var(--brand-primary)] border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20"
+                            className="text-xs"
                         >
                             <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
                             Back to top
@@ -345,7 +345,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="Twitter"
                         >
                             <Twitter className="w-5 h-5" />
@@ -354,7 +354,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="GitHub"
                         >
                             <Github className="w-5 h-5" />
@@ -363,7 +363,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="LinkedIn"
                         >
                             <Linkedin className="w-5 h-5" />
@@ -372,57 +372,51 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-[var(--brand-primary)]/5 dark:bg-[var(--brand-light)]/5 hover:bg-[var(--brand-accent)]/10 dark:hover:bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60 hover:text-[var(--brand-accent)] transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="Instagram"
                         >
                             <Instagram className="w-5 h-5" />
                         </a>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
-                            © 2026 VulnIQ. All rights reserved.
-                        </p>
-                        <span className="hidden sm:inline text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30 text-xs">•</span>
-                        <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
-                            🇷🇴 Made in RO, Timișoara
-                        </p>
-                        <div className="flex items-center justify-center sm:justify-start gap-2">
-                            <Link
-                                href="/privacy"
-                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1"
-                            >
-                                Privacy Policy
-                            </Link>
-                            <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30 text-xs">•</span>
-                            <Link
-                                href="/terms"
-                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1"
-                            >
-                                Terms & Conditions
-                            </Link>
-                            <span className="text-[var(--brand-primary)]/30 dark:text-[var(--brand-light)]/30 text-xs">•</span>
-                            <Link
-                                href="/security"
-                                className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50 hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors py-1"
-                            >
-                                Vulnerability Disclosure Policy
-                            </Link>
-                        </div>
-                    </div>
-                    <p className="text-xs text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/50">
-                        Open beta • Research project •{" "}
-                        <a 
-                            href="https://info.uvt.ro/en/" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="hover:text-[var(--brand-primary)] dark:hover:text-white transition-colors underline underline-offset-2 inline-flex items-center gap-1"
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
+                        <span className="text-xs text-muted-foreground">© 2026 VulnIQ. All rights reserved.</span>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
+                        <span className="text-xs text-muted-foreground">🇷🇴 Made in RO, Timișoara</span>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
+                        <Link
+                            href="/privacy"
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            Faculty of Computer Science
-                            <ExternalLink className="w-3 h-3" />
-                        </a>
-                    </p>
+                            Privacy Policy
+                        </Link>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
+                        <Link
+                            href="/terms"
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Terms & Conditions
+                        </Link>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
+                        <Link
+                            href="/security"
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Vulnerability Disclosure Policy
+                        </Link>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
+                        <span className="text-xs text-muted-foreground">
+                            Open beta • Research project •{" "}
+                            <a
+                                href="https://info.uvt.ro/en/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-foreground transition-colors underline underline-offset-2 inline-flex items-center gap-1"
+                            >
+                                Faculty of Computer Science
+                                <ExternalLink className="w-3 h-3" />
+                            </a>
+                        </span>
                     </div>
                 </motion.div>
                     </div>

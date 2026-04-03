@@ -554,7 +554,7 @@ const columns = [
     },
     {
         id: "actions",
-        cell: () => (
+        cell: ({ row }) => (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
@@ -566,9 +566,23 @@ const columns = [
                         <span className="sr-only">Open menu</span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem>
                         Fix this
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={() => {
+                            window.dispatchEvent(new CustomEvent("navigate-to-code-graph", {
+                                detail: {
+                                    vulnId: row.original.id,
+                                    fileName: row.original.fileName,
+                                    lineNumber: row.original.lineNumber,
+                                    graphNodeIds: row.original.graphNodeIds,
+                                }
+                            }));
+                        }}
+                    >
+                        View in Graph
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -1214,9 +1228,13 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
     React.useEffect(() => {
         if (demoMode) return
         if (!propRunId && typeof window !== 'undefined') {
-            const storedRunId = localStorage.getItem('vulniq_current_run_id')
-            if (storedRunId) {
-                setRunId(storedRunId)
+            try {
+                const storedRunId = localStorage.getItem('vulniq_current_run_id')
+                if (storedRunId) {
+                    setRunId(storedRunId)
+                }
+            } catch {
+                // localStorage not available
             }
         }
     }, [propRunId, demoMode])
@@ -1589,7 +1607,7 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35 }}
                     >
-                    <Card className="h-full hover:shadow-md transition-shadow duration-200">
+                    <Card className="h-full">
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -1706,7 +1724,7 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, delay: 0.08 }}
                     >
-                    <Card className="h-full hover:shadow-md transition-shadow duration-200">
+                    <Card className="h-full">
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -1764,8 +1782,8 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
                                             initial={{ opacity: 0, y: 8 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3, delay: 0.12 + i * 0.05 }}
-                                            className="flex flex-col items-start rounded-md border bg-card p-3 border-l-[3px]"
-                                            style={{ borderLeftColor: `hsl(${borderColor})` }}
+                                            className="flex flex-col items-start rounded-md border-l-2 bg-card/50 p-3"
+                                            style={{ borderLeftColor: borderColor }}
                                         >
                                             <p className="text-[11px] text-muted-foreground">{stat.severity}</p>
                                             <p className={`text-xl font-bold tabular-nums ${stat.color}`}>

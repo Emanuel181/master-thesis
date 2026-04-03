@@ -70,7 +70,7 @@ export default function GlobalError({
             <button
               onClick={handleCopyError}
               className="p-1 hover:bg-zinc-700/50 rounded transition-colors"
-              title="Copy error details"
+              aria-label="Copy error details"
             >
               {copied ? (
                 <Check className="h-3.5 w-3.5 text-green-400" />

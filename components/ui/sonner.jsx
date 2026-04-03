@@ -1,14 +1,8 @@
 "use client"
 
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from "lucide-react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner";
+import { CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, SpinnerIcon } from "@phosphor-icons/react"
 
 const Toaster = ({
   ...props
@@ -20,11 +14,21 @@ const Toaster = ({
       theme={theme}
       className="toaster group"
       icons={{
-        success: <CircleCheckIcon className="size-4 text-green-500 animate-in zoom-in-75 duration-200" />,
-        info: <InfoIcon className="size-4 text-blue-500" />,
-        warning: <TriangleAlertIcon className="size-4 text-yellow-500" />,
-        error: <OctagonXIcon className="size-4 text-red-500 animate-in shake duration-300" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+        success: (
+          <CheckCircleIcon className="size-4" />
+        ),
+        info: (
+          <InfoIcon className="size-4" />
+        ),
+        warning: (
+          <WarningIcon className="size-4" />
+        ),
+        error: (
+          <XCircleIcon className="size-4" />
+        ),
+        loading: (
+          <SpinnerIcon className="size-4 animate-spin" />
+        ),
       }}
       style={
         {
@@ -34,6 +38,11 @@ const Toaster = ({
           "--border-radius": "var(--radius)"
         }
       }
+      toastOptions={{
+        classNames: {
+          toast: "cn-toast",
+        },
+      }}
       {...props} />
   );
 }

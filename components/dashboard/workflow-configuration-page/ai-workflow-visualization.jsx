@@ -10,6 +10,7 @@ import {
     Background,
 } from "reactflow";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     ScanSearch,
     Wrench,
@@ -101,18 +102,18 @@ export function AIWorkflowVisualization({
     }, [isDarkMode]);
 
     const edgeColors = React.useMemo(() => ({
-        amber: "#facc15",
+        amber: primaryColor,
         cyan: primaryColor,
         indigo: primaryColor,
         blue: primaryColor,
         green: primaryColor,
-        orange: isDarkMode ? "#fb923c" : "#f97316",
-    }), [isDarkMode, primaryColor]);
+        orange: primaryColor,
+    }), [primaryColor]);
 
     const GRID_START_X = 30;
     const COL_WIDTH = 380;
     const ROW_1_Y = 0;
-    const ROW_2_Y = 380;
+    const ROW_2_Y = 320;
 
     // Default positions for all nodes
     const defaultPositions = React.useMemo(() => ({
@@ -327,65 +328,94 @@ export function AIWorkflowVisualization({
 
     const initialEdges = React.useMemo(
         () => [
-            // --- 1. Knowledge Base Flow (goes down then right to Reviewer) ---
+            // --- 1. Knowledge Base Flow (dashed, cyan) ---
             {
                 id: "e_kb_reviewer",
                 source: "knowledgeBase",
                 target: "reviewer",
                 targetHandle: "kb-in",
-                type: "smoothstep",
+                type: "animated",
                 animated: true,
+                label: "KB context",
+                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.cyan, strokeWidth: 2, strokeDasharray: "5,5" },
+                data: { duration: "4s", radius: 4 },
             },
 
-            // --- 2. Vertical Downward Connections (Prompt -> Agent) ---
+            // --- 2. Prompt → Agent (vertical, primary color, solid) ---
             {
                 id: "e_reviewerPrompt_reviewer",
                 source: "reviewerPrompt",
                 target: "reviewer",
                 targetHandle: "prompt-in",
-                type: "default",
-                animated: false,
-                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+                type: "animated",
+                label: "Prompt",
+                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
+                style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
+                data: { duration: "2s", radius: 4 },
             },
             {
                 id: "e_implementationPrompt_implementation",
                 source: "implementationPrompt",
                 target: "implementation",
                 targetHandle: "prompt-in",
-                type: "default",
-                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+                type: "animated",
+                label: "Prompt",
+                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
+                style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
+                data: { duration: "2s", radius: 4 },
             },
             {
                 id: "e_testerPrompt_tester",
                 source: "testerPrompt",
                 target: "tester",
                 targetHandle: "prompt-in",
-                type: "default",
-                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+                type: "animated",
+                label: "Prompt",
+                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
+                style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
+                data: { duration: "2s", radius: 4 },
             },
             {
                 id: "e_reportPrompt_report",
                 source: "reportPrompt",
                 target: "report",
                 targetHandle: "prompt-in",
-                type: "default",
-                style: { stroke: edgeColors.indigo, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo },
+                type: "animated",
+                label: "Prompt",
+                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
+                style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
+                data: { duration: "2s", radius: 4 },
             },
 
-            // --- 3. Horizontal Workflow Flow (Left to Right) ---
+            // --- 3. Horizontal Code Flow (thick, primary, animated) ---
             {
                 id: "e_userCode_reviewer",
                 source: "userCode",
                 target: "reviewer",
                 targetHandle: "flow-in",
                 type: "animated",
+                animated: true,
+                label: "Code",
+                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.amber, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.amber },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.amber, width: 20, height: 20 },
             },
             {
                 id: "e_reviewer_implementation",
@@ -393,8 +423,13 @@ export function AIWorkflowVisualization({
                 target: "implementation",
                 targetHandle: "flow-in",
                 type: "animated",
+                animated: true,
+                label: "Review",
+                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.blue, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.blue },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.blue, width: 20, height: 20 },
             },
             {
                 id: "e_implementation_tester",
@@ -402,8 +437,13 @@ export function AIWorkflowVisualization({
                 target: "tester",
                 targetHandle: "flow-in",
                 type: "animated",
+                animated: true,
+                label: "Changes",
+                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.green, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.green },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.green, width: 20, height: 20 },
             },
             {
                 id: "e_tester_report",
@@ -411,11 +451,16 @@ export function AIWorkflowVisualization({
                 target: "report",
                 targetHandle: "flow-in",
                 type: "animated",
+                animated: true,
+                label: "Results",
+                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
+                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
+                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.orange, strokeWidth: 3 },
-                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.orange },
+                markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.orange, width: 20, height: 20 },
             },
         ],
-        [edgeColors]
+        [edgeColors, primaryColor]
     );
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -515,13 +560,23 @@ export function AIWorkflowVisualization({
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {/* Zoom controls */}
                         <div className="flex items-center gap-1 bg-background/50 rounded-md p-0.5">
-                            <Button type="button" size="icon" variant="ghost" onClick={handleZoomOut} className="h-7 w-7 sm:h-8 sm:w-8" title="Zoom out">
-                                <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button type="button" size="icon" variant="ghost" onClick={handleZoomOut} className="h-7 w-7 sm:h-8 sm:w-8" aria-label="Zoom out">
+                                        <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Zoom out</TooltipContent>
+                            </Tooltip>
                             <div className="w-px h-4 bg-border" />
-                            <Button type="button" size="icon" variant="ghost" onClick={handleZoomIn} className="h-7 w-7 sm:h-8 sm:w-8" title="Zoom in">
-                                <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button type="button" size="icon" variant="ghost" onClick={handleZoomIn} className="h-7 w-7 sm:h-8 sm:w-8" aria-label="Zoom in">
+                                        <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Zoom in</TooltipContent>
+                            </Tooltip>
                         </div>
 
                         {/* Divider */}
@@ -529,17 +584,21 @@ export function AIWorkflowVisualization({
 
                         {/* Layout controls */}
                         <div className="flex items-center gap-1">
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant={hasPositionChanges ? "default" : "ghost"}
-                                onClick={handleSavePositions}
-                                className={`h-7 sm:h-8 text-xs px-2 sm:px-3 ${hasPositionChanges ? '' : 'text-muted-foreground'}`}
-                                title="Save current layout"
-                            >
-                                <Save className="w-3.5 h-3.5 sm:mr-1.5" />
-                                <span className="hidden sm:inline">Save layout</span>
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={hasPositionChanges ? "default" : "ghost"}
+                                        onClick={handleSavePositions}
+                                        className={`h-7 sm:h-8 text-xs px-2 sm:px-3 ${hasPositionChanges ? '' : 'text-muted-foreground'}`}
+                                    >
+                                        <Save className="w-3.5 h-3.5 sm:mr-1.5" />
+                                        <span className="hidden sm:inline">Save layout</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Save current layout</TooltipContent>
+                            </Tooltip>
                             <Button
                                 type="button"
                                 size="icon"
@@ -629,30 +688,34 @@ export function AIWorkflowVisualization({
                     </p>
                 </div>
 
-                {/* Edge legend */}
-                <div className="hidden sm:flex items-center gap-4 px-4 py-1.5 border-b bg-muted/20 text-[10px] text-muted-foreground">
-                    <span className="font-medium text-foreground/70">Legend:</span>
-                    <div className="flex items-center gap-1.5">
-                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.amber }} />
-                        <span>Code flow</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.cyan }} />
-                        <span>Knowledge base</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.indigo }} />
-                        <span>Prompt input</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: edgeColors.blue }} />
-                        <span>Agent pipeline</span>
-                    </div>
+                {/* Legend */}
+                <div className="hidden sm:flex items-center gap-4 px-4 py-2 border-b bg-muted/20 text-[10px] text-muted-foreground flex-wrap">
+                    <span className="font-semibold text-foreground/60 uppercase tracking-wider text-[9px]">Legend:</span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-6 border-t-2 border-primary" />
+                        Code flow
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-6 border-t-2 border-dashed border-primary" style={{ borderStyle: 'dashed' }} />
+                        Prompt instruction
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-6 border-t-2" style={{ borderStyle: 'dashed', borderColor: 'hsl(var(--primary)/0.5)' }} />
+                        KB context
+                    </span>
+                    <span className="flex items-center gap-1.5 ml-auto">
+                        <span className="inline-block w-3 h-3 rounded-sm bg-primary/10 border border-dashed border-primary/60" />
+                        Prompt node
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-3 h-3 rounded-sm bg-muted border border-border" />
+                        Agent node
+                    </span>
                 </div>
 
                 {/* ReactFlow container - responsive height */}
                 <div
-                    className="h-[400px] sm:h-[500px] md:h-[600px] lg:h-[800px] relative"
+                    className="h-96 sm:h-[32rem] md:h-[38rem] lg:h-[50rem] relative overflow-hidden"
                 >
                     <ReactFlow
                         nodes={nodes}

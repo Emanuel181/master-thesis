@@ -49,14 +49,17 @@ export function RealTimeResults({ runId, userId }) {
           break;
 
         case 'usecase_finished':
-          setUseCasesProcessed(prev => prev + 1);
+          setUseCasesProcessed(prev => {
+            const updated = prev + 1;
+            // Update progress using the fresh count
+            if (totalUseCases > 0) {
+              setProgress(Math.min(90, 10 + (updated / totalUseCases) * 80));
+            }
+            return updated;
+          });
           // Extract vulnerabilities from the event
           if (event.detail?.vulnerabilities) {
             setVulnerabilities(prev => [...prev, ...event.detail.vulnerabilities]);
-          }
-          // Update progress based on use cases processed
-          if (totalUseCases > 0) {
-            setProgress(Math.min(90, 10 + (useCasesProcessed / totalUseCases) * 80));
           }
           break;
 
@@ -70,7 +73,7 @@ export function RealTimeResults({ runId, userId }) {
           break;
       }
     });
-  }, [events, totalUseCases, useCasesProcessed]);
+  }, [events, totalUseCases]);
 
 
   const getSeverityIcon = (severity) => {
@@ -294,7 +297,7 @@ export function RealTimeResults({ runId, userId }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[500px] w-full">
+          <ScrollArea className="h-[32rem] w-full">
             {vulnerabilities.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 {runStatus === 'completed' ? (

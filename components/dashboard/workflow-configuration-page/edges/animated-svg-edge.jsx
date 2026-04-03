@@ -34,6 +34,7 @@ export function AnimatedSVGEdge({
 
     const circleColor = style.stroke || "#3b82f6";
     const duration = data?.duration || "3s";
+    const radius = data?.radius || 6;
 
     return (
         <>
@@ -50,7 +51,7 @@ export function AnimatedSVGEdge({
                     </textPath>
                 </text>
             )}
-            <circle r="6" fill={circleColor} opacity="0.8">
+            <circle r={radius} fill={circleColor} opacity="0.8">
                 <animateMotion dur={duration} repeatCount="indefinite" path={edgePath} />
             </circle>
         </>

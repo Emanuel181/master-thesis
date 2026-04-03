@@ -51,7 +51,7 @@ export function MobileMenu({ isOpen, onClose, isAuthenticated }) {
 function ProductSection({ onClose }) {
     return (
         <div className="mb-4">
-            <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+            <div className="text-[11px] font-bold text-accent uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                 <Sparkles className="w-3 h-3" />
                 Product
             </div>
@@ -60,22 +60,22 @@ function ProductSection({ onClose }) {
                     href="/#features"
                     onClick={onClose}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
+                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-accent/10 to-primary/5 border border-accent/20 hover:border-accent/40 transition-all"
                 >
-                    <Zap className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
+                    <Zap className="w-5 h-5 text-accent mb-1.5" />
                     <span className="text-xs font-medium text-foreground">Features</span>
                 </MotionLink>
                 <MotionLink
                     href="/#use-cases"
                     onClick={onClose}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20 hover:border-[var(--brand-accent)]/40 transition-all"
+                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-accent/10 to-primary/5 border border-accent/20 hover:border-accent/40 transition-all"
                 >
-                    <Shield className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
+                    <Shield className="w-5 h-5 text-accent mb-1.5" />
                     <span className="text-xs font-medium text-foreground">Use cases</span>
                 </MotionLink>
-                <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[var(--brand-accent)]/10 to-[var(--brand-primary)]/5 border border-[var(--brand-accent)]/20">
-                    <GitBranch className="w-5 h-5 text-[var(--brand-accent)] mb-1.5" />
+                <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-accent/10 to-primary/5 border border-accent/20">
+                    <GitBranch className="w-5 h-5 text-accent mb-1.5" />
                     <span className="text-xs font-medium text-foreground">Integrations</span>
                 </div>
             </div>
@@ -97,7 +97,7 @@ function ResourcesSection({ onClose }) {
 
     return (
         <div className="mb-4">
-            <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+            <div className="text-[11px] font-bold text-accent uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                 <Rss className="w-3 h-3" />
                 Resources
             </div>
@@ -110,8 +110,8 @@ function ResourcesSection({ onClose }) {
                         whileTap={{ scale: 0.98 }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all duration-150 group select-none"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
-                            <item.icon className="w-4 h-4 text-[var(--brand-accent)]" />
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                            <item.icon className="w-4 h-4 text-accent" />
                         </div>
                         <div>
                             <span className="text-sm font-medium text-foreground">{item.title}</span>
@@ -131,8 +131,8 @@ function ResourcesSection({ onClose }) {
                         whileTap={{ scale: 0.98 }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all duration-150 group select-none"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-accent)]/10 flex items-center justify-center group-hover:bg-[var(--brand-accent)]/20 transition-colors">
-                            <item.icon className="w-4 h-4 text-[var(--brand-accent)]" />
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                            <item.icon className="w-4 h-4 text-accent" />
                         </div>
                         <div>
                             <div className="flex items-center gap-1">
@@ -156,7 +156,7 @@ function CompanySection({ onClose }) {
 
     return (
         <div className="pt-3 border-t border-border/30">
-            <div className="text-[11px] font-bold text-[var(--brand-accent)] uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+            <div className="text-[11px] font-bold text-accent uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                 <Building2 className="w-3 h-3" />
                 Company
             </div>
@@ -191,7 +191,7 @@ function BottomActions({ onClose, isAuthenticated }) {
                 href="/demo"
                 onClick={onClose}
                 whileTap={{ scale: 0.95 }}
-                className="flex-1 px-4 py-3 text-sm font-medium text-center text-[var(--brand-accent)] border border-[var(--brand-accent)]/40 rounded-xl hover:bg-[var(--brand-accent)]/10 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 text-sm font-medium text-center text-accent border border-accent/40 rounded-xl hover:bg-accent/10 transition-colors flex items-center justify-center gap-2"
             >
                 <Sparkles className="w-4 h-4" />
                 Try demo
@@ -200,7 +200,7 @@ function BottomActions({ onClose, isAuthenticated }) {
                 href={isAuthenticated ? "/dashboard" : "/login"}
                 onClick={onClose}
                 whileTap={{ scale: 0.95 }}
-                className="flex-1 px-4 py-3 text-sm font-medium text-center text-white bg-gradient-to-r from-[var(--brand-accent)] to-[var(--brand-primary)] rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-[var(--brand-accent)]/20"
+                className="flex-1 px-4 py-3 text-sm font-medium text-center text-white bg-gradient-to-r from-accent to-primary rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
             >
                 {isAuthenticated ? (
                     <>

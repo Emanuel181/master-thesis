@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Eye, Edit, Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react"
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -88,69 +89,89 @@ export function SortablePromptItem({
                 </div>
                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
                     {!isFirst && (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 hover:bg-accent"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onMoveUp(prompt.id)
-                            }}
-                            title="Move up"
-                        >
-                            <ChevronUp className="h-3 w-3 text-muted-foreground" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:bg-accent"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onMoveUp(prompt.id)
+                                    }}
+                                >
+                                    <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Move up</TooltipContent>
+                        </Tooltip>
                     )}
                     {!isLast && (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 hover:bg-accent"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onMoveDown(prompt.id)
-                            }}
-                            title="Move down"
-                        >
-                            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:bg-accent"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onMoveDown(prompt.id)
+                                    }}
+                                >
+                                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Move down</TooltipContent>
+                        </Tooltip>
                     )}
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 hover:bg-accent"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setViewFullTextPrompt(prompt)
-                        }}
-                        title="View"
-                    >
-                        <Eye className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 hover:bg-accent"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            openEditDialog(agent, prompt)
-                        }}
-                        title="Edit"
-                    >
-                        <Edit className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setDeleteDialog({ type: 'single', agent, id: prompt.id })
-                        }}
-                        title="Delete"
-                    >
-                        <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 hover:bg-accent"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setViewFullTextPrompt(prompt)
+                                }}
+                            >
+                                <Eye className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 hover:bg-accent"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    openEditDialog(agent, prompt)
+                                }}
+                            >
+                                <Edit className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setDeleteDialog({ type: 'single', agent, id: prompt.id })
+                                }}
+                            >
+                                <Trash2 className="h-3 w-3" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete</TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
         </div>

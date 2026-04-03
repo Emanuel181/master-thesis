@@ -2,64 +2,83 @@
 
 import * as React from "react"
 import { OTPInput, OTPInputContext } from "input-otp"
-import { Dot } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { MinusIcon } from "@phosphor-icons/react"
 
-const InputOTP = React.forwardRef(({ className, containerClassName, ...props }, ref) => (
-  <OTPInput
-    ref={ref}
-    containerClassName={cn("flex items-center gap-2 has-[:disabled]:opacity-50", containerClassName)}
-    className={cn("disabled:cursor-not-allowed", className)}
-    inputMode="numeric" // Show numeric keyboard on mobile
-    pattern="[0-9]*" // Only allow numbers
-    autoComplete="one-time-code" // Enable browser OTP autofill
-    {...props} />
-))
-InputOTP.displayName = "InputOTP"
+function InputOTP({
+  className,
+  containerClassName,
+  ...props
+}) {
+  return (
+    <OTPInput
+      data-slot="input-otp"
+      containerClassName={cn(
+        "cn-input-otp flex items-center has-disabled:opacity-50",
+        containerClassName
+      )}
+      spellCheck={false}
+      className={cn("disabled:cursor-not-allowed", className)}
+      {...props} />
+  );
+}
 
-const InputOTPGroup = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("flex items-center", className)} {...props} />
-))
-InputOTPGroup.displayName = "InputOTPGroup"
+function InputOTPGroup({
+  className,
+  ...props
+}) {
+  return (
+    <div
+      data-slot="input-otp-group"
+      className={cn(
+        "flex items-center rounded-4xl has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props} />
+  );
+}
 
-const InputOTPSlot = React.forwardRef(({ index, className, ...props }, ref) => {
+function InputOTPSlot({
+  index,
+  className,
+  ...props
+}) {
   const inputOTPContext = React.useContext(OTPInputContext)
-  const slot = inputOTPContext.slots[index]
-  const { char, hasFakeCaret, isActive } = slot || {}
+  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
 
   return (
     <div
-      ref={ref}
+      data-slot="input-otp-slot"
+      data-active={isActive}
       className={cn(
-        "relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm font-semibold transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-        "group-hover:border-accent-foreground/20 group-focus-within:border-accent-foreground/20",
-        "outline outline-0 outline-accent-foreground/20",
-        isActive && "z-10 ring-2 ring-ring ring-offset-background",
+        "relative flex size-9 items-center justify-center border-y border-r border-input bg-input/30 text-sm transition-all outline-none first:rounded-l-4xl first:border-l last:rounded-r-4xl aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-[3px] data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40",
         className
       )}
       {...props}>
-      {/* Display the character clearly - not masked */}
-      {char !== null && char !== undefined && (
-        <span className="text-foreground">{char}</span>
-      )}
+      {char}
       {hasFakeCaret && (
         <div
           className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div
-            className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
         </div>
       )}
     </div>
   );
-})
-InputOTPSlot.displayName = "InputOTPSlot"
+}
 
-const InputOTPSeparator = React.forwardRef(({ ...props }, ref) => (
-  <div ref={ref} role="separator" {...props}>
-    <Dot />
-  </div>
-))
-InputOTPSeparator.displayName = "InputOTPSeparator"
+function InputOTPSeparator({
+  ...props
+}) {
+  return (
+    <div
+      data-slot="input-otp-separator"
+      className="flex items-center [&_svg:not([class*='size-'])]:size-4"
+      role="separator"
+      {...props}>
+      <MinusIcon />
+    </div>
+  );
+}
 
 export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }

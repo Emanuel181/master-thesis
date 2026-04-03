@@ -53,7 +53,7 @@ const ERROR_MESSAGES = {
     OAuthAccountNotLinked: {
         title: "Account Already Exists",
         description: "An account with this email already exists but is linked to a different sign-in provider.",
-        details: "To sign in, please use the same provider you originally used to create your account.",
+        details: "To sign in, please use the provider you originally used to create your account. Look for the clock icon ⏱️ on the sign-in button you last used.",
         icon: Mail,
     },
     OAuthSignin: {
@@ -412,7 +412,7 @@ function LoginFormInner({ className, ...props }) {
                             <Button
                                 type="submit"
                                 disabled={isLoading !== null || !email || !turnstileToken}
-                                className="text-white dark:text-[var(--brand-primary)]"
+                                className="text-white dark:text-primary"
                             >
                                 {isLoading === "nodemailer" ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -452,9 +452,23 @@ function LoginFormInner({ className, ...props }) {
                     </DialogHeader>
                     <div className="py-4 text-sm text-muted-foreground">
                         <p>{currentError?.details}</p>
-                        {currentError?.code === "OAuthAccountNotLinked" && (
-                            <div className="mt-4 rounded-md bg-muted p-3 text-xs">
-                                <strong>Tip:</strong> Try signing in with the provider you originally used to create your account.
+                        {(currentError?.code === "OAuthAccountNotLinked" || currentError?.code === "CrossEmailBlocked") && (
+                            <div className="mt-4 rounded-md bg-muted/50 border border-border p-4 space-y-2">
+                                <div className="flex items-start gap-2">
+                                    <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                    <div className="text-xs space-y-1">
+                                        <p className="font-medium text-foreground">Look for the clock icon</p>
+                                        <p>The sign-in button you last used successfully will be highlighted with a clock icon.</p>
+                                    </div>
+                                </div>
+                                <div className="text-xs pl-6">
+                                    <p className="font-medium text-foreground mb-1">Common scenarios:</p>
+                                    <ul className="list-disc list-inside space-y-1">
+                                        <li>If you signed up with GitHub, use GitHub to sign in</li>
+                                        <li>If you signed up with email, use email to sign in</li>
+                                        <li>If you signed up with Google, use Google to sign in</li>
+                                    </ul>
+                                </div>
                             </div>
                         )}
                     </div>

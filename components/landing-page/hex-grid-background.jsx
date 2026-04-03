@@ -82,7 +82,7 @@ export function HexGridBackground({ className = "" }) {
     const breathe = Math.sin(time * 0.001 + hex.phase) * 0.1 + 0.9;
     
     // Create gradient stroke along the hexagon perimeter
-    // Using brand colors: cyan (#1fb6cf) fading to transparent
+    // Using brand colors: indigo (#7850ff) fading to transparent
     const baseAlpha = 0.1 * breathe;
     
     // Draw each edge with gradient
@@ -98,9 +98,9 @@ export function HexGridBackground({ className = "" }) {
       const alpha1 = baseAlpha * (0.3 + Math.sin(edgeProgress * Math.PI * 2) * 0.7);
       const alpha2 = baseAlpha * (0.3 + Math.sin((edgeProgress + 0.5) * Math.PI * 2) * 0.7);
       
-      gradient.addColorStop(0, `rgba(31, 182, 207, ${alpha1})`);
-      gradient.addColorStop(0.5, `rgba(31, 182, 207, ${baseAlpha * 0.5})`);
-      gradient.addColorStop(1, `rgba(31, 182, 207, ${alpha2})`);
+      gradient.addColorStop(0, `rgba(120, 80, 255, ${alpha1})`);
+      gradient.addColorStop(0.5, `rgba(120, 80, 255, ${baseAlpha * 0.5})`);
+      gradient.addColorStop(1, `rgba(120, 80, 255, ${alpha2})`);
       
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
@@ -116,7 +116,7 @@ export function HexGridBackground({ className = "" }) {
       
       // Draw full hexagon with glow
       ctx.save();
-      ctx.shadowColor = `rgba(31, 182, 207, ${intensity * 0.6})`;
+      ctx.shadowColor = `rgba(120, 80, 255, ${intensity * 0.6})`;
       ctx.shadowBlur = 20 + intensity * 15;
       
       ctx.beginPath();
@@ -136,10 +136,10 @@ export function HexGridBackground({ className = "" }) {
         hex.x + gx, hex.y + gy
       );
       
-      // Brand color gradient: cyan to teal
-      glowGradient.addColorStop(0, `rgba(31, 182, 207, ${intensity * 0.8})`);
-      glowGradient.addColorStop(0.5, `rgba(20, 150, 180, ${intensity * 0.5})`);
-      glowGradient.addColorStop(1, `rgba(31, 182, 207, ${intensity * 0.8})`);
+      // Brand color gradient: indigo to purple
+      glowGradient.addColorStop(0, `rgba(120, 80, 255, ${intensity * 0.8})`);
+      glowGradient.addColorStop(0.5, `rgba(100, 60, 220, ${intensity * 0.5})`);
+      glowGradient.addColorStop(1, `rgba(120, 80, 255, ${intensity * 0.8})`);
       
       ctx.strokeStyle = glowGradient;
       ctx.lineWidth = 1.5 + intensity * 2;
@@ -158,8 +158,8 @@ export function HexGridBackground({ className = "" }) {
         hex.x, hex.y, 0,
         hex.x, hex.y, HEX_SIZE * 0.8
       );
-      fillGradient.addColorStop(0, `rgba(31, 182, 207, ${intensity * 0.08})`);
-      fillGradient.addColorStop(1, `rgba(31, 182, 207, 0)`);
+      fillGradient.addColorStop(0, `rgba(120, 80, 255, ${intensity * 0.08})`);
+      fillGradient.addColorStop(1, `rgba(120, 80, 255, 0)`);
       ctx.fillStyle = fillGradient;
       ctx.fill();
     }

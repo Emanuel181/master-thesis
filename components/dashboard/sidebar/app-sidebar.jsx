@@ -14,6 +14,7 @@ import {
     FileEdit,
     Heart,
     Users,
+    GitBranch,
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -56,6 +57,9 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
     const isDemo = pathname?.startsWith('/demo')
     const { data: session, status } = useSession()
     const [isAdmin, setIsAdmin] = React.useState(false)
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => { setMounted(true) }, [])
 
     // Check if user is admin
     React.useEffect(() => {
@@ -90,7 +94,7 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
     // Save user name to localStorage when session is loaded
     React.useEffect(() => {
         if (session?.user?.name) {
-            localStorage.setItem("vulniq-user-name", session.user.name)
+            try { localStorage.setItem("vulniq-user-name", session.user.name) } catch { /* ignore */ }
         }
     }, [session])
 
@@ -122,6 +126,11 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
             icon: FileText,
         },
         {
+            title: "Code Graph",
+            url: "/dashboard?active=Code Graph",
+            icon: GitBranch,
+        },
+        {
             title: "Write article",
             url: "/dashboard?active=Write article",
             icon: PenLine,
@@ -136,8 +145,8 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
             <SidebarContent>
                 <NavMain items={navMain} onNavigate={onNavigate} activeComponent={activeComponent} />
 
-                {/* Admin Section - Only visible to admin users */}
-                {isAdmin && (
+                {/* Admin Section - Only visible to admin users, only after mount to avoid hydration mismatch */}
+                {mounted && isAdmin && (
                     <SidebarGroup>
                         <SidebarGroupLabel className="flex items-center gap-2">
                             <ShieldCheck className="size-4" />
@@ -175,9 +184,9 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
                 )}
             </SidebarContent>
             <SidebarFooter>
-                {status === "loading" && !isDemo ? (
+                {mounted && status === "loading" && !isDemo ? (
                     <div className="p-4 text-sm text-muted-foreground">Loading...</div>
-                ) : (session?.user || isDemo) ? (
+                ) : mounted && (session?.user || isDemo) ? (
                     <>
                         <SidebarMenu>
                             <SidebarMenuItem>

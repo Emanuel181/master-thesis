@@ -28,7 +28,7 @@ export default function CardDemo() {
 
                     <div className="flex flex-wrap gap-3 pt-2 justify-center lg:justify-start">
                         {["OpenAI", "Anthropic", "Google Gemini", "Llama"].map((model) => (
-                            <span key={model} className="px-3 py-1.5 text-sm rounded-md bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border border-[var(--brand-accent)]/20 font-medium">
+                            <span key={model} className="px-3 py-1.5 text-sm rounded-md bg-accent/10 text-accent border border-accent/20 font-medium">
                 {model}
               </span>
                         ))}
@@ -132,7 +132,7 @@ const Skeleton = () => {
                 </Container>
             </div>
 
-            <div className="h-40 w-px absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-gradient-to-b from-transparent via-[var(--brand-accent)] to-transparent animate-move">
+            <div className="h-40 w-px absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-gradient-to-b from-transparent via-violet-500 to-transparent animate-move">
                 <div className="w-10 h-32 top-1/2 -translate-y-1/2 absolute -left-10">
                     <Sparkles />
                 </div>
@@ -179,7 +179,7 @@ const Sparkles = () => {
                         borderRadius: "50%",
                         zIndex: 1,
                     }}
-                    className="inline-block bg-[var(--brand-accent)]"
+                    className="inline-block bg-violet-500"
                 ></motion.span>
             ))}
         </div>
@@ -190,7 +190,7 @@ export const Card = ({ className, children }) => {
     return (
         <div
             className={cn(
-                "max-w-sm w-full mx-auto p-8 rounded-xl border border-[var(--brand-primary)]/20 bg-card dark:bg-[var(--brand-primary)]/40 shadow-lg group hover:shadow-xl transition-all duration-300 hover:border-[var(--brand-accent)]/30",
+                "max-w-sm w-full mx-auto p-8 rounded-xl border border-border bg-card shadow-lg group hover:shadow-xl transition-all duration-300 hover:border-accent/30",
                 className
             )}
         >
@@ -236,7 +236,7 @@ export const CardSkeletonContainer = ({
                 "h-[15rem] md:h-[20rem] rounded-xl z-40 flex items-center justify-center",
                 className,
                 showGradient &&
-                "bg-[var(--brand-light)]/20 dark:bg-[var(--brand-dark)]/50 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"
+                "bg-muted/30 dark:bg-muted/30 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"
             )}
         >
             {children}
@@ -248,8 +248,8 @@ const Container = ({ className, children }) => {
     return (
         <div
             className={cn(
-                `h-16 w-16 rounded-full flex items-center justify-center bg-card dark:bg-[var(--brand-primary)]/80
-    shadow-sm border border-border/50 dark:border-[var(--brand-accent)]/20
+                `h-16 w-16 rounded-full flex items-center justify-center bg-muted/50 dark:bg-muted/50
+    shadow-sm border border-border
     `,
                 className
             )}

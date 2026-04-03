@@ -10,7 +10,7 @@ import { Octokit } from '@octokit/rest';
 export async function POST(request) {
     try {
         const session = await auth();
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         
@@ -43,6 +43,14 @@ export async function POST(request) {
                 { error: 'No accepted fixes found' },
                 { status: 400 }
             );
+        }
+
+        // Verify ownership: all fixes must belong to the authenticated user
+        const unauthorized = fixes.some(
+            fix => fix.vulnerability?.workflowRun?.userId !== session.user.id
+        );
+        if (unauthorized) {
+            return NextResponse.json({ error: 'Fix not found' }, { status: 404 });
         }
         
         // Get user's GitHub token
@@ -146,7 +154,7 @@ export async function POST(request) {
         } catch (githubError) {
             console.error('GitHub API error:', githubError);
             return NextResponse.json(
-                { error: `GitHub error: ${githubError.message}` },
+                { error: 'Failed to create pull request via GitHub' },
                 { status: 500 }
             );
         }

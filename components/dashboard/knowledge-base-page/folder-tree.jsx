@@ -309,7 +309,6 @@ const FolderTree = forwardRef(function FolderTree({
     const fetchFolders = useCallback(async () => {
         if (!useCaseId) return;
 
-        console.log('[FolderTree] Fetching folders for use case:', useCaseId);
         setIsLoading(true);
         try {
             // Demo mode - use mock data from DEMO_DOCUMENTS
@@ -357,27 +356,11 @@ const FolderTree = forwardRef(function FolderTree({
             if (!response.ok) throw new Error("Failed to fetch folders");
 
             const data = await response.json();
-            console.log('[FolderTree] API response:', data);
-            
+
             const folders = data.data?.folders || data.folders || [];
-            console.log('[FolderTree] Extracted folders:', folders);
-            console.log('[FolderTree] Folders count:', folders.length);
-            
-            // Count PDFs in the tree for debugging
-            const countPdfs = (items) => {
-                let count = 0;
-                items.forEach(item => {
-                    if (item.type === 'pdf') count++;
-                    if (item.children) count += countPdfs(item.children);
-                });
-                return count;
-            };
-            console.log('[FolderTree] Total PDFs in tree:', countPdfs(folders));
-            console.log('[FolderTree] Root level items:', folders.map(f => ({ id: f.id, name: f.name || f.title, type: f.type })));
-            
+
             setTreeData(folders);
         } catch (error) {
-            console.error("Error fetching folders:", error);
             toast.error("Failed to load folders");
         } finally {
             setIsLoading(false);
@@ -588,7 +571,6 @@ const FolderTree = forwardRef(function FolderTree({
             fetchFolders();
             onRefresh?.();
         } catch (error) {
-            console.error("Error creating folder:", error);
             toast.error(error.message || "Failed to create folder");
         }
     };
@@ -644,7 +626,6 @@ const FolderTree = forwardRef(function FolderTree({
             fetchFolders();
             onRefresh?.();
         } catch (error) {
-            console.error("Error renaming:", error);
             toast.error("Failed to rename");
         }
     };
@@ -688,7 +669,6 @@ const FolderTree = forwardRef(function FolderTree({
             fetchFolders();
             onRefresh?.();
         } catch (error) {
-            console.error("Error deleting:", error);
             toast.error("Failed to delete");
         }
     };
@@ -761,7 +741,6 @@ const FolderTree = forwardRef(function FolderTree({
 
             fetchFolders();
         } catch (error) {
-            console.error("Error reordering:", error);
             toast.error("Failed to reorder items");
         }
     };
@@ -858,14 +837,18 @@ const FolderTree = forwardRef(function FolderTree({
                 return null;
             };
 
-            const deletePromises = Array.from(selectedItems).map(async (id) => {
-                const itemType = findItemType(treeData, id);
-                const endpoint = itemType === "folder" ? `/api/folders/${id}` : `/api/pdfs/${id}`;
-                const response = await fetch(endpoint, { method: "DELETE" });
-                if (!response.ok) throw new Error(`Failed to delete ${id}`);
-            });
+            const items = Array.from(selectedItems);
+            const BATCH_SIZE = 5;
 
-            await Promise.all(deletePromises);
+            for (let i = 0; i < items.length; i += BATCH_SIZE) {
+                const batch = items.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(async (id) => {
+                    const itemType = findItemType(treeData, id);
+                    const endpoint = itemType === "folder" ? `/api/folders/${id}` : `/api/pdfs/${id}`;
+                    const response = await fetch(endpoint, { method: "DELETE" });
+                    if (!response.ok) throw new Error(`Failed to delete ${id}`);
+                }));
+            }
 
             toast.success(`${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} deleted successfully`);
             setSelectedItems(new Set());
@@ -873,7 +856,6 @@ const FolderTree = forwardRef(function FolderTree({
             fetchFolders();
             onRefresh?.();
         } catch (error) {
-            console.error("Error bulk deleting:", error);
             toast.error("Failed to delete some items");
         }
     };

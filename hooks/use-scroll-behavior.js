@@ -22,8 +22,9 @@ export function useScrollBehavior() {
             // Check multiple sections that have colored backgrounds
             const sections = [
                 document.getElementById('about'),      // Lamp section
-                document.getElementById('blog'),       // Blog section  
+                document.getElementById('blog'),       // Blog section
                 document.getElementById('connect'),    // CTA section
+                document.getElementById('faq'),        // FAQ section
                 document.querySelector('[data-hover-panels]'), // Hover expand panels
             ]
 
@@ -71,12 +72,12 @@ export function useScrollBehavior() {
      */
     const getNavbarClasses = () => {
         if (isAboveColoredSection) {
-            return 'bg-background/95 dark:bg-background/90 border-[#1fb6cf]/50 shadow-xl shadow-black/20'
+            return 'bg-background/95 border-accent/50 shadow-xl shadow-black/20'
         }
         if (isScrolled) {
-            return 'bg-[#1fb6cf]/10 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/30 shadow-xl shadow-[#1fb6cf]/10'
+            return 'bg-accent/10 border-accent/30 shadow-xl shadow-accent/10'
         }
-        return 'bg-[#1fb6cf]/5 dark:bg-[#1fb6cf]/5 border-[#1fb6cf]/20 shadow-md shadow-[#1fb6cf]/5'
+        return 'bg-accent/5 border-accent/20 shadow-md shadow-accent/5'
     }
 
     return {

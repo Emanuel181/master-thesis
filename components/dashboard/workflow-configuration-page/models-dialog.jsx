@@ -108,8 +108,8 @@ function ModelsDialogInner({ isOpen, onOpenChange, codeType, onCodeTypeChange })
 
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange} modal={false}>
-            <DrawerContent>
-                <div className="mx-auto w-full max-w-7xl">
+            <DrawerContent className="overflow-hidden">
+                <div className="mx-auto w-full max-w-[95vw]">
                     <DrawerHeader className="pb-2">
                         <div className="flex items-center justify-between">
                             <div>
@@ -143,7 +143,7 @@ function ModelsDialogInner({ isOpen, onOpenChange, codeType, onCodeTypeChange })
 
                     <div className="p-4 pt-0">
                         <Tabs defaultValue="workflow" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
+                            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 mb-4">
                                 <TabsTrigger value="workflow" className="text-xs sm:text-sm px-2 py-2 gap-1.5">
                                     <span>Workflow</span>
                                 </TabsTrigger>
@@ -240,7 +240,7 @@ function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
     }, [dialog])
 
     return (
-        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
+        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-4" data-vaul-no-drag>
             <div className="space-y-4 pr-4">
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
@@ -300,9 +300,9 @@ function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
 function AgentsTab({ dialog }) {
 
     return (
-        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-1" data-vaul-no-drag>
+        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-4" data-vaul-no-drag>
             <div className="pr-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
                     <div>
                         <h3 className="text-lg font-semibold">Agent configuration</h3>
                         <p className="text-sm text-muted-foreground">Select AI models for each agent. Changes are auto-saved.</p>
@@ -328,7 +328,7 @@ function AgentsTab({ dialog }) {
                         )}
                     </Button>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                     {AGENTS.map(agent => (
                         <AgentCard
                             key={agent.id}
@@ -395,8 +395,9 @@ function PromptsTab({ dialog }) {
     }, [dialog])
 
     return (
-        <div className="space-y-4 bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
-            <div className="flex items-center justify-between">
+        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-4" data-vaul-no-drag>
+            <div className="pr-4">
+            <div className="flex items-center justify-between mb-4">
                 <div className="text-sm text-muted-foreground">
                     Configure the prompts used by each AI agent. Select one prompt per agent.
                 </div>
@@ -478,7 +479,8 @@ function PromptsTab({ dialog }) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+            </div>
+        </ScrollArea>
     )
 }
 
@@ -663,7 +665,8 @@ function KnowledgeBaseTab({ dialog, codeType }) {
     }, [useCaseGroups, dialog.useCases])
 
     return (
-        <div className="space-y-4">
+        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-4" data-vaul-no-drag>
+            <div className="pr-4 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="text-sm text-muted-foreground">
                     <p className="font-medium text-foreground mb-1">Hierarchical Knowledge Base Selection</p>
@@ -689,7 +692,6 @@ function KnowledgeBaseTab({ dialog, codeType }) {
                 </div>
             </div>
 
-            <ScrollArea className="h-[400px] bg-muted/30 rounded-lg p-3" data-vaul-no-drag>
                 <div className="space-y-2">
                     {Object.entries(groupedUseCases).map(([groupId, group]) => {
                         const isExpanded = expandedGroups.has(groupId)
@@ -800,8 +802,8 @@ function KnowledgeBaseTab({ dialog, codeType }) {
                         </div>
                     )}
                 </div>
-            </ScrollArea>
-        </div>
+            </div>
+        </ScrollArea>
     )
 }
 

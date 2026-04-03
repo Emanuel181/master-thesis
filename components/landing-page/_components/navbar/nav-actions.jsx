@@ -34,7 +34,7 @@ export function NavActions({
                 asChild
                 variant="outline"
                 size="sm"
-                className="hidden md:flex rounded-full text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 border-[var(--brand-accent)]/50 text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10 hover:border-[var(--brand-accent)]"
+                className="hidden md:flex rounded-full text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 border-accent/50 text-accent hover:bg-accent/10 hover:border-accent"
             >
                 <Link href="/demo" aria-label="View Demo">
                     Demo
@@ -45,7 +45,7 @@ export function NavActions({
                 <Button
                     asChild
                     size="sm"
-                    className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-white shadow-md shadow-[var(--brand-accent)]/20"
+                    className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target bg-accent hover:bg-accent/90 text-white shadow-md shadow-accent/20"
                 >
                     <Link href="/dashboard" className="flex items-center gap-1 xs:gap-1.5 sm:gap-2" aria-label="Go to Dashboard">
                         <LayoutDashboard className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
@@ -56,7 +56,7 @@ export function NavActions({
                 <Button
                     asChild
                     size="sm"
-                    className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target text-white dark:text-[var(--brand-primary)] shadow-md shadow-[var(--brand-accent)]/20"
+                    className="rounded-xl md:rounded-full text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 md:px-5 h-7 xs:h-8 sm:h-9 touch-target shadow-md shadow-accent/20"
                 >
                     <Link href="/login" className="flex items-center gap-1 sm:gap-1.5" aria-label="Get started - Sign in or create an account">
                         <span className="sm:hidden">Go</span>

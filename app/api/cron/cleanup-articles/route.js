@@ -118,8 +118,15 @@ export async function POST(request) {
         }
       } catch (deleteError) {
         console.error(`Failed to delete article ${article.id}:`, deleteError);
-        errors.push({ articleId: article.id, error: deleteError.message });
+        errors.push({ articleId: article.id, error: "Deletion failed" });
       }
+    }
+
+    // Clean up expired rate limit entries
+    try {
+      await prisma.$executeRaw`DELETE FROM "RateLimit" WHERE "resetAt" < NOW() - INTERVAL '1 hour'`;
+    } catch (e) {
+      // Non-critical, continue
     }
 
     return NextResponse.json({

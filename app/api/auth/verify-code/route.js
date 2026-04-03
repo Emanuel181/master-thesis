@@ -77,11 +77,6 @@ export async function POST(req) {
         // Hash the code the same way NextAuth does
         const hashedCode = hashToken(normalizedCode)
 
-        // GDPR: Log only hashed identifiers, never PII
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[verify-code] Checking token. RequestId: ${requestId}, emailHash: ${emailHash}`);
-        }
-
         // Find the valid verification token in the database
         const verificationToken = await prisma.verificationToken.findFirst({
             where: {
@@ -91,25 +86,14 @@ export async function POST(req) {
         })
 
         if (!verificationToken) {
-            // Token doesn't exist at all - log without PII
-            if (process.env.NODE_ENV === 'development') {
-                console.log(`[verify-code] No token found. RequestId: ${requestId}`);
-            }
             return errorResponse("Invalid code. Please check and try again.", { status: 400, requestId });
         }
 
         // Check if token has expired
         if (new Date() > verificationToken.expires) {
-            if (process.env.NODE_ENV === 'development') {
-                console.log(`[verify-code] Token expired. RequestId: ${requestId}`);
-            }
             return errorResponse("Code has expired. Please request a new one.", { status: 400, requestId });
         }
 
-        // Token is valid - log without PII
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[verify-code] Token valid. RequestId: ${requestId}`);
-        }
         return successResponse({ success: true }, { requestId });
 
     } catch (error) {

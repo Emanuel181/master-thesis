@@ -12,7 +12,7 @@ const CSP = [
   "font-src 'self' data: https://website-widgets.pages.dev",
   "connect-src 'self' https:",
   "worker-src 'self' blob:",
-  "frame-src 'self' blob: https://challenges.cloudflare.com https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com https://*.s3.us-west-2.amazonaws.com https://*.s3.eu-west-1.amazonaws.com https://*.s3.eu-central-1.amazonaws.com",
+  "frame-src 'self' blob: https://challenges.cloudflare.com https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -40,12 +40,44 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Target modern browsers only - avoids legacy polyfills
   transpilePackages: [],
+  webpack: (config, { isServer }) => {
+    // web-tree-sitter uses dynamic import("module") for Node.js detection.
+    // In browser bundles, "module" doesn't exist. Tell webpack to provide an empty fallback.
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        module: false,
+        fs: false,
+        path: false,
+      };
+    }
+    return config;
+  },
+  turbopack: {
+    resolveAlias: {
+      // web-tree-sitter uses Node.js built-ins conditionally — provide empty fallbacks for browser
+      module: { browser: './lib/empty-module.js' },
+      'fs/promises': { browser: './lib/empty-module.js' },
+      fs: { browser: './lib/empty-module.js' },
+      path: { browser: './lib/empty-module.js' },
+    },
+  },
   // Configure allowed image domains
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'media.licdn.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
         pathname: '/**',
       },
     ],

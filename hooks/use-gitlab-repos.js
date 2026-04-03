@@ -79,15 +79,15 @@ export function useGitLabRepos() {
     /**
      * Fetch repositories from GitLab API
      */
-    const fetchRepos = useCallback(async (allowRefresh = false) => {
+    const fetchRepos = useCallback(async (allowRefresh = false, signal = undefined) => {
         if (!allowRefresh && fetchOnceRef.current) return
         if (allowRefresh) fetchOnceRef.current = false
 
         fetchOnceRef.current = true
         setIsLoading(true)
-        
+
         try {
-            const response = await fetch('/api/gitlab/repos')
+            const response = await fetch('/api/gitlab/repos', { signal })
             const jsonResponse = await response.json()
 
             if (response.ok) {
@@ -113,6 +113,7 @@ export function useGitLabRepos() {
                 fetchOnceRef.current = false
             }
         } catch (err) {
+            if (err.name === 'AbortError') return
             console.error("Error fetching gitlab repos:", err)
             fetchOnceRef.current = false
         } finally {
@@ -171,12 +172,14 @@ export function useGitLabRepos() {
     useEffect(() => {
         if (isDemoMode) return
         if (status === "authenticated" && session) {
+            const controller = new AbortController()
             ;(async () => {
                 const linked = await refreshLinkedProviders()
                 if (linked?.gitlabLinked) {
-                    fetchRepos()
+                    fetchRepos(false, controller.signal)
                 }
             })()
+            return () => controller.abort()
         }
     }, [isDemoMode, status, session, refreshLinkedProviders, fetchRepos])
 
@@ -208,7 +211,7 @@ export function useGitLabRepos() {
     }, [isDemoMode, fetchRepos])
 
     /**
-     * Connect to GitLab (demo mode: fake connection, real mode: OAuth)
+     * Connect to GitLab (demo mode: fake connection, real mode: OAuth linking)
      */
     const connect = useCallback(async () => {
         if (isDemoMode) {
@@ -219,7 +222,13 @@ export function useGitLabRepos() {
             setIsLoading(false)
             toast.success("Connected to GitLab!")
         } else {
-            signIn("gitlab", { callbackUrl: "/dashboard" })
+            // Link GitLab account to existing session instead of signing in again
+            // This prevents the "Account Already Exists" error when user is already logged in
+            const currentPath = window.location.pathname
+            signIn("gitlab", {
+                callbackUrl: currentPath || "/dashboard",
+                redirect: true
+            })
         }
     }, [isDemoMode])
 

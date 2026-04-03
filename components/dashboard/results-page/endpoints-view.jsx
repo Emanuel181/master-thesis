@@ -55,7 +55,7 @@ function EndpointRow({ endpoint, onClick }) {
             className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors group"
         >
             {/* Method */}
-            <Badge className={`${methodColor} font-mono text-xs min-w-[60px] justify-center`}>
+            <Badge className={`${methodColor} font-mono text-xs min-w-15 justify-center`}>
                 {endpoint.method}
             </Badge>
 
@@ -332,12 +332,12 @@ export function EndpointsView({ endpoints: initialEndpoints = [] }) {
                     <div className="w-[40px]"></div>
                 </div>
 
-                <ScrollArea className="h-[500px]">
+                <ScrollArea className="h-[32rem]">
                     {filteredEndpoints.map((endpoint, index) => (
                         <EndpointRow
                             key={`${endpoint.method}-${endpoint.path}-${index}`}
                             endpoint={endpoint}
-                            onClick={(e) => console.log('Endpoint clicked:', e)}
+                            onClick={() => {}}
                         />
                     ))}
                     {filteredEndpoints.length === 0 && (

@@ -16,7 +16,7 @@ export function CurrentProjectCard({
     className,
 }) {
     return (
-        <Card className={`flex flex-col card-hover-lift shrink-0 ${className || ''}`}>
+        <Card className={`flex flex-col shrink-0 ${className || ''}`}>
             <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">

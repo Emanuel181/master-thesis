@@ -24,7 +24,7 @@ export async function GET() {
     return NextResponse.json({ session: masked })
   } catch (err) {
     console.error('[debug/session] error', err)
-    return NextResponse.json({ error: err.message || 'error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
 

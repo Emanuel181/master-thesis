@@ -31,34 +31,35 @@ import { toast } from "sonner";
 import { NotificationProvider, NotificationCenter } from "@/components/ui/notification-center"
 import { CommandPaletteProvider, useCommandPalette } from "@/components/ui/command"
 import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog"
-import { Button } from "@/components/ui/button"
-import { Keyboard, PersonStanding } from "lucide-react"
+import { Search } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAccessibility } from "@/contexts/accessibilityContext"
+import { AccessibilityNavButton } from "@/components/accessibility-widget"
 
 // Header buttons component that can use the command palette context
 function HeaderButtons() {
-    const { setOpen } = useCommandPalette()
     const { openPanel } = useAccessibility()
 
     return (
-        <div className="flex items-center gap-2">
-            <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setOpen(true)}
-                title="Command palette (Ctrl+K)"
-            >
-                <Keyboard className="h-5 w-5" />
-            </Button>
+        <div className="flex items-center gap-1 sm:gap-2">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
+                        aria-label="Open quick actions"
+                        className="inline-flex items-center gap-2 h-8 sm:h-9 px-2.5 sm:px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer w-40 sm:w-52 md:w-64"
+                    >
+                        <Search className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1 text-left text-xs truncate">Search actions...</span>
+                        <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                            Ctrl⇧K
+                        </kbd>
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent>Quick actions (Ctrl+Shift+K)</TooltipContent>
+            </Tooltip>
             <NotificationCenter />
-            <Button
-                variant="outline"
-                size="icon"
-                onClick={openPanel}
-                title="Accessibility options"
-            >
-                <PersonStanding className="h-5 w-5" />
-            </Button>
+            <AccessibilityNavButton />
             <CustomizationDialog showEditorTabs={false} />
             <ThemeToggle />
         </div>
@@ -67,7 +68,7 @@ function HeaderButtons() {
 
 export default function ProfilePage() {
     const { settings, mounted } = useSettings()
-    const { data: session } = useSession()
+    const { data: session, update: updateSession } = useSession()
     const router = useRouter()
     const { setForceHideFloating } = useAccessibility()
 
@@ -179,8 +180,8 @@ export default function ProfilePage() {
 
             toast.success('Profile image uploaded successfully!');
 
-            // Refresh the page to update the session and UI
-            window.location.reload();
+            // Force session refresh so the new image appears immediately
+            await updateSession();
         } catch (error) {
             // Only log detailed errors in development to prevent information leakage
             if (process.env.NODE_ENV === 'development') {

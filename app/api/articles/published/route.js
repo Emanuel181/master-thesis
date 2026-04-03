@@ -11,8 +11,8 @@ export async function GET(request) {
   
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit")) || 50;
-    const offset = parseInt(searchParams.get("offset")) || 0;
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit")) || 50, 1), 100);
+    const offset = Math.max(parseInt(searchParams.get("offset")) || 0, 0);
     const category = searchParams.get("category");
 
     // Build where clause
@@ -43,9 +43,6 @@ export async function GET(request) {
         coverType: true,
         readTime: true,
         publishedAt: true,
-        contentMarkdown: true,
-        content: true,
-        contentJson: true,
         featured: true,
         showInMoreArticles: true,
         featuredOrder: true,
@@ -88,8 +85,6 @@ export async function GET(request) {
       featured: article.featured || false,
       showInMoreArticles: article.showInMoreArticles !== false, // Default to true
       featuredOrder: article.featuredOrder || 0,
-      content: article.contentMarkdown || article.content || "",
-      contentJson: article.contentJson,
       isUserSubmitted: true, // Flag to identify user-submitted articles
     }));
 
@@ -98,7 +93,12 @@ export async function GET(request) {
       total,
       limit,
       offset,
-    }, { requestId });
+    }, {
+      requestId,
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error("Error fetching published articles:", error);
     return errorResponse("Failed to fetch published articles", { status: 500, code: "INTERNAL_ERROR", requestId });

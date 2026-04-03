@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RefreshCw, Trash2, MessageSquare, RotateCcw } from "lucide-react"
 import { PromptList } from "./prompt-list"
 import { AddPromptDialog } from "./prompt-dialogs"
@@ -51,7 +52,7 @@ export function PromptPanel({
     className,
 }) {
     return (
-        <Card className={`flex flex-col overflow-hidden transition-shadow hover:shadow-md flex-1 min-h-[420px] ${className || ''}`}>
+        <Card className={`flex flex-col overflow-hidden flex-1 min-h-[420px] ${className || ''}`}>
             <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                 <div className="flex items-center justify-between gap-2">
                     <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base">
@@ -59,38 +60,54 @@ export function PromptPanel({
                         <span className="truncate">Agent prompts</span>
                     </CardTitle>
                     <div className="flex gap-1 flex-shrink-0">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                            onClick={onResetToDefaults}
-                            disabled={isResetting || isRefreshing}
-                            title="Revert edited default prompts back to their original content (custom prompts are not affected)"
-                        >
-                            <RotateCcw className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`} />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                            onClick={onRefresh}
-                            disabled={isRefreshing}
-                            title="Refresh prompts"
-                        >
-                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span tabIndex={0}>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                        onClick={onResetToDefaults}
+                                        disabled={isResetting || isRefreshing}
+                                    >
+                                        <RotateCcw className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`} />
+                                    </Button>
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Revert edited default prompts back to their original content (custom prompts are not affected)</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span tabIndex={0}>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                        onClick={onRefresh}
+                                        disabled={isRefreshing}
+                                    >
+                                        <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                    </Button>
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Refresh prompts</TooltipContent>
+                        </Tooltip>
                         {selectedPrompts.size > 0 && (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs gap-1"
-                                onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
-                                title="Delete selected prompts"
-                            >
-                                <Trash2 className="h-3 w-3" />
-                                <span className="hidden xs:inline">Delete ({selectedPrompts.size})</span>
-                                <span className="xs:hidden">×{selectedPrompts.size}</span>
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs gap-1"
+                                        onClick={() => setDeleteDialog({ type: 'selected', count: selectedPrompts.size })}
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                        <span className="hidden xs:inline">Delete ({selectedPrompts.size})</span>
+                                        <span className="xs:hidden">×{selectedPrompts.size}</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete selected prompts</TooltipContent>
+                            </Tooltip>
                         )}
                     </div>
                 </div>

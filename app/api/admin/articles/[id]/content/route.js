@@ -89,9 +89,6 @@ export async function PUT(request, { params }) {
       },
     });
 
-    // SECURITY: Audit log for content modifications
-    console.log(`[Admin Audit] Article ${id} content modified by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
-
     return NextResponse.json({
       success: true,
       article: updatedArticle,

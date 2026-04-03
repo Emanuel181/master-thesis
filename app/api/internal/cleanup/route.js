@@ -78,7 +78,7 @@ export async function POST(request) {
             const rateLimitsCleaned = await cleanupExpiredRateLimits();
             results.tasks.rateLimits = { success: true, cleaned: rateLimitsCleaned };
         } catch (error) {
-            results.tasks.rateLimits = { success: false, error: error.message };
+            results.tasks.rateLimits = { success: false, error: "Operation failed" };
         }
         
         // 2. Clean up old audit logs (retain 2 years for GDPR)
@@ -86,7 +86,7 @@ export async function POST(request) {
             const auditLogsCleaned = await cleanupOldAuditLogs(730); // 2 years
             results.tasks.auditLogs = { success: true, cleaned: auditLogsCleaned };
         } catch (error) {
-            results.tasks.auditLogs = { success: false, error: error.message };
+            results.tasks.auditLogs = { success: false, error: "Operation failed" };
         }
         
         // 3. Clean up expired sessions
@@ -98,7 +98,7 @@ export async function POST(request) {
             });
             results.tasks.sessions = { success: true, cleaned: sessionResult.count };
         } catch (error) {
-            results.tasks.sessions = { success: false, error: error.message };
+            results.tasks.sessions = { success: false, error: "Operation failed" };
         }
         
         // 4. Clean up expired verification tokens
@@ -110,7 +110,7 @@ export async function POST(request) {
             });
             results.tasks.verificationTokens = { success: true, cleaned: tokenResult.count };
         } catch (error) {
-            results.tasks.verificationTokens = { success: false, error: error.message };
+            results.tasks.verificationTokens = { success: false, error: "Operation failed" };
         }
         
         // 5. Process GDPR deletion requests (soft-deleted users older than 30 days)
@@ -138,7 +138,7 @@ export async function POST(request) {
                 results.tasks.gdprDeletions = { success: true, cleaned: 0 };
             }
         } catch (error) {
-            results.tasks.gdprDeletions = { success: false, error: error.message };
+            results.tasks.gdprDeletions = { success: false, error: "Operation failed" };
         }
         
         // 6. Clean up stale circuit breaker records (inactive for 7+ days)
@@ -153,7 +153,7 @@ export async function POST(request) {
             `;
             results.tasks.circuitBreakers = { success: true, cleaned: circuitResult };
         } catch (error) {
-            results.tasks.circuitBreakers = { success: false, error: error.message };
+            results.tasks.circuitBreakers = { success: false, error: "Operation failed" };
         }
         
         results.completedAt = new Date().toISOString();
@@ -167,7 +167,7 @@ export async function POST(request) {
         console.error('[cleanup] Fatal error:', error);
         results.completedAt = new Date().toISOString();
         results.success = false;
-        results.error = error.message;
+        results.error = "Internal server error";
         
         return NextResponse.json(results, { status: 500 });
     }

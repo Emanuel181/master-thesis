@@ -189,7 +189,6 @@ export const GET = createApiHandler(
             return errorResponse('Failed to fetch repositories', {
                 status: 502,
                 requestId,
-                ...(isDev && { details: err?.message || 'Unknown error' }),
             });
         }
     },

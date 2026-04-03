@@ -22,9 +22,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 export async function POST(request) {
     try {
         const { email, response, deviceName } = await request.json();
-        
-        console.log('[Register-Verify] Received request for:', email);
-        
+
         if (!email || !response) {
             return NextResponse.json({ error: 'Email and response are required' }, { status: 400 });
         }
@@ -33,8 +31,7 @@ export async function POST(request) {
         
         // Get request origin for WebAuthn configuration
         const requestOrigin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/');
-        console.log('[Register-Verify] Request origin:', requestOrigin);
-        
+
         // Verify email is a registered admin in database
         const adminAccount = await prisma.adminAccount.findUnique({
             where: { email: normalizedEmail },
@@ -45,9 +42,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
         
-        console.log('[Register-Verify] Calling verifyPasskeyRegistration...');
         const result = await verifyPasskeyRegistration(normalizedEmail, response, deviceName, requestOrigin);
-        console.log('[Register-Verify] Result:', result);
         if (result.verified) {
             // Grant admin session after successful passkey registration
             const sessionToken = grantSession(normalizedEmail);

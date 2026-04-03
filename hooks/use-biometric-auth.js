@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 /**
@@ -17,6 +18,8 @@ import { toast } from "sonner";
  *   const token = await authenticate();  // prompts biometric, returns unlockToken
  */
 export function useBiometricAuth() {
+    const pathname = usePathname();
+    const isDemo = pathname?.startsWith('/demo');
     const [hasPasskey, setHasPasskey] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [checked, setChecked] = useState(false);
@@ -28,8 +31,9 @@ export function useBiometricAuth() {
     const ceremonyInProgress = useRef(false);
     const pendingPromise = useRef(null);
 
-    // Check passkey status on mount
+    // Check passkey status on mount (skip in demo mode — no auth session)
     useEffect(() => {
+        if (isDemo) { setChecked(true); return; }
         let cancelled = false;
         (async () => {
             try {
@@ -46,7 +50,7 @@ export function useBiometricAuth() {
             }
         })();
         return () => { cancelled = true; };
-    }, []);
+    }, [isDemo]);
 
     /**
      * Authenticate the user with biometrics.

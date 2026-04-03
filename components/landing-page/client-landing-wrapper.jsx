@@ -26,32 +26,32 @@ const FloatingNavbar = dynamic(
 
 const LampDemo = dynamic(
   () => import('@/components/landing-page/vulniq-lamp').then(mod => mod.LampDemo),
-  { loading: () => <div className="min-h-[400px]" /> }
+  { loading: () => <div className="min-h-96" /> }
 );
 
 const CTASection = dynamic(
   () => import('@/components/landing-page/cta-section').then(mod => mod.CTASection),
-  { loading: () => <div className="min-h-[300px]" /> }
+  { loading: () => <div className="min-h-80" /> }
 );
 
 const FAQSection = dynamic(
   () => import('@/components/landing-page/faq-section').then(mod => mod.FAQSection),
-  { loading: () => <div className="min-h-[400px]" /> }
+  { loading: () => <div className="min-h-96" /> }
 );
 
 const BlogSection = dynamic(
   () => import('@/components/landing-page/blog-section').then(mod => mod.BlogSection),
-  { loading: () => <div className="min-h-[400px]" /> }
+  { loading: () => <div className="min-h-96" /> }
 );
 
 const UseCasesScrollReveal = dynamic(
   () => import('@/components/landing-page/use-cases-scroll-reveal'),
-  { loading: () => <div className="min-h-[100vh]" /> }
+  { loading: () => <div className="min-h-screen" /> }
 );
 
 const HoverExpandPanels = dynamic(
   () => import('@/components/ui/hover-expand-panels'),
-  { ssr: false, loading: () => <div className="min-h-[400px]" /> }
+  { ssr: false, loading: () => <div className="min-h-96" /> }
 );
 
 const FlipWordsDemo = dynamic(
@@ -210,7 +210,7 @@ export function ClientLandingWrapper({ children }) {
   }, []);
 
   return (
-    <div className="landing-page min-h-screen bg-[var(--brand-white)] dark:bg-[var(--brand-dark)] text-[var(--brand-primary)] dark:text-[var(--brand-light)] font-sans selection:bg-[var(--brand-accent)]/20 flex flex-col relative w-full">
+    <div className="landing-page min-h-screen bg-background text-foreground font-sans selection:bg-accent/20 flex flex-col relative w-full">
         {/* Background effects */}
         <div className="fixed inset-0 mesh-gradient pointer-events-none" />
         <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -253,7 +253,7 @@ export function ClientLandingWrapper({ children }) {
           )}
 
           {/* Interactive sections */}
-          <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8 w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
+          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-24 w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
             <FlipWordsDemo />
           </div>
 
@@ -265,7 +265,7 @@ export function ClientLandingWrapper({ children }) {
             <UseCasesScrollReveal />
           </div>
 
-          <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
+          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-24 w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12">
             <HoverExpandPanels defaultActive={0} activeGrow={7} />
           </div>
 

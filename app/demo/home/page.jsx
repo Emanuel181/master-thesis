@@ -29,6 +29,7 @@ export default function DemoHomePage() {
             'Code inspection': '/demo/code-input',
             'Knowledge base': '/demo/knowledge-base',
             'Results': '/demo/results',
+            'Code Graph': '/demo/code-graph',
             'Profile': '/demo/profile',
             'Write article': '/demo/write-article',
         };

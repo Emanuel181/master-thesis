@@ -155,12 +155,12 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName, isDemo =
     const effectiveSize = getEffectiveSize();
 
     // Shared resize handle style
-    const handleCls = "absolute z-50 opacity-0 hover:opacity-100 transition-opacity";
+    const handleCls = "absolute z-50 transition-colors bg-transparent hover:bg-primary/20";
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="flex flex-col p-0 gap-0 overflow-visible"
+                className="flex flex-col p-0 gap-0 overflow-visible border border-border/80 shadow-2xl ring-1 ring-white/10"
                 style={{
                     width: effectiveSize.w,
                     height: effectiveSize.h,
@@ -171,23 +171,29 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName, isDemo =
             >
                 {/* ── Resize handles ──────────────────────────────── */}
                 {/* Right */}
-                <div className={`${handleCls} top-0 -right-1 w-2 h-full cursor-e-resize`}
-                     onMouseDown={(e) => handleResizeStart("e", e)} />
+                <div className={`${handleCls} top-4 -right-1 w-2 h-[calc(100%-2rem)] cursor-e-resize rounded-full`}
+                     onMouseDown={(e) => handleResizeStart("e", e)}>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-border/60" />
+                </div>
                 {/* Left */}
-                <div className={`${handleCls} top-0 -left-1 w-2 h-full cursor-w-resize`}
-                     onMouseDown={(e) => handleResizeStart("w", e)} />
+                <div className={`${handleCls} top-4 -left-1 w-2 h-[calc(100%-2rem)] cursor-w-resize rounded-full`}
+                     onMouseDown={(e) => handleResizeStart("w", e)}>
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-border/60" />
+                </div>
                 {/* Bottom */}
-                <div className={`${handleCls} -bottom-1 left-0 h-2 w-full cursor-s-resize`}
-                     onMouseDown={(e) => handleResizeStart("s", e)} />
+                <div className={`${handleCls} -bottom-1 left-4 h-2 w-[calc(100%-2rem)] cursor-s-resize rounded-full`}
+                     onMouseDown={(e) => handleResizeStart("s", e)}>
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-8 rounded-full bg-border/60" />
+                </div>
                 {/* Top */}
-                <div className={`${handleCls} -top-1 left-0 h-2 w-full cursor-n-resize`}
+                <div className={`${handleCls} -top-1 left-4 h-2 w-[calc(100%-2rem)] cursor-n-resize rounded-full`}
                      onMouseDown={(e) => handleResizeStart("n", e)} />
                 {/* Corners */}
                 <div className={`${handleCls} -top-1 -right-1 w-3 h-3 cursor-ne-resize`}
                      onMouseDown={(e) => handleResizeStart("ne", e)} />
                 <div className={`${handleCls} -top-1 -left-1 w-3 h-3 cursor-nw-resize`}
                      onMouseDown={(e) => handleResizeStart("nw", e)} />
-                <div className={`${handleCls} -bottom-1 -right-1 w-3 h-3 cursor-se-resize`}
+                <div className={`${handleCls} -bottom-1 -right-1 w-4 h-4 cursor-se-resize`}
                      onMouseDown={(e) => handleResizeStart("se", e)} />
                 <div className={`${handleCls} -bottom-1 -left-1 w-3 h-3 cursor-sw-resize`}
                      onMouseDown={(e) => handleResizeStart("sw", e)} />
@@ -292,12 +298,13 @@ export function PdfViewerDialog({ open, onOpenChange, pdfUrl, fileName, isDemo =
 
                 {/* Bottom-right resize grip indicator */}
                 <div
-                    className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-50 flex items-end justify-end pr-0.5 pb-0.5 opacity-40 hover:opacity-80 transition-opacity"
+                    className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize z-50 flex items-end justify-end pr-1 pb-1 opacity-60 hover:opacity-100 transition-opacity"
                     onMouseDown={(e) => handleResizeStart("se", e)}
                 >
-                    <svg width="10" height="10" viewBox="0 0 10 10" className="text-muted-foreground">
-                        <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" strokeWidth="1.5" />
-                        <line x1="9" y1="5" x2="5" y2="9" stroke="currentColor" strokeWidth="1.5" />
+                    <svg width="12" height="12" viewBox="0 0 12 12" className="text-muted-foreground">
+                        <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="11" y1="5" x2="5" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="11" y1="9" x2="9" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                 </div>
             </DialogContent>

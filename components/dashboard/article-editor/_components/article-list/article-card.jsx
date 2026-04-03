@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+import { cn, sanitizeImageUrl } from "@/lib/utils"
 
 /**
  * Truncate excerpt text
@@ -61,7 +61,7 @@ export function ArticleCard({
     return (
         <Card
             className={cn(
-                "cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 overflow-hidden group",
+                "cursor-pointer transition-all duration-200 hover:border-primary/30 overflow-hidden group",
                 isSelected && "ring-2 ring-primary shadow-md border-primary"
             )}
             onClick={() => onSelect(article)}
@@ -72,7 +72,7 @@ export function ArticleCard({
                     className="h-1 w-full"
                     style={{
                         background: article.gradient || undefined,
-                        backgroundImage: article.coverImage && !article.gradient ? `url(${article.coverImage})` : undefined,
+                        backgroundImage: article.coverImage && !article.gradient ? `url(${sanitizeImageUrl(article.coverImage)})` : undefined,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                     }}

@@ -228,10 +228,6 @@ export function ImportDialog({
                                             </Button>
                                         )}
                                     </div>
-                                    <Label className="flex items-center gap-2 text-xs">
-                                        <GitLabIcon className="h-3.5 w-3.5" />
-                                        GitLab
-                                    </Label>
                                     <ScrollArea className="h-48 border rounded-md">
                                         <div className="p-2">
                                             {isLoadingRepos ? (

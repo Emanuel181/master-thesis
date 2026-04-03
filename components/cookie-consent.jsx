@@ -98,8 +98,8 @@ export function CookieConsentBanner() {
             <Card className="mx-auto max-w-4xl border-border bg-card/95 dark:bg-card/90 backdrop-blur-lg shadow-2xl dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
                 <CardContent className="p-4 md:p-6">
                     <div className="flex items-start gap-4">
-                        <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-accent)]/10 dark:bg-[var(--brand-accent)]/20">
-                            <Cookie className="h-6 w-6 text-[var(--brand-accent)]" />
+                        <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 dark:bg-accent/20">
+                            <Cookie className="h-6 w-6 text-accent" />
                         </div>
                         
                         <div className="flex-1 space-y-4">
@@ -108,7 +108,7 @@ export function CookieConsentBanner() {
                                     id="cookie-consent-title" 
                                     className="text-lg font-semibold flex items-center gap-2 text-foreground"
                                 >
-                                    <Cookie className="h-5 w-5 md:hidden text-[var(--brand-accent)]" />
+                                    <Cookie className="h-5 w-5 md:hidden text-accent" />
                                     Cookie Preferences
                                 </h2>
                                 <p 
@@ -126,9 +126,9 @@ export function CookieConsentBanner() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <Shield className="h-4 w-4 text-[var(--brand-accent)]" />
+                                                <Shield className="h-4 w-4 text-accent" />
                                                 <span className="font-medium text-sm text-foreground">Essential Cookies</span>
-                                                <span className="text-xs bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] px-2 py-0.5 rounded font-medium">Required</span>
+                                                <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded font-medium">Required</span>
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-1">
                                                 Required for authentication, security, and basic site functionality.
@@ -138,7 +138,7 @@ export function CookieConsentBanner() {
                                             type="checkbox"
                                             checked={true}
                                             disabled
-                                            className="h-4 w-4 accent-[var(--brand-accent)]"
+                                            className="h-4 w-4 accent-accent"
                                             aria-label="Essential cookies (required)"
                                         />
                                     </div>
@@ -157,7 +157,7 @@ export function CookieConsentBanner() {
                                             type="checkbox"
                                             checked={consent.analytics}
                                             onChange={(e) => setConsent({ ...consent, analytics: e.target.checked })}
-                                            className="h-4 w-4 cursor-pointer accent-[var(--brand-accent)]"
+                                            className="h-4 w-4 cursor-pointer accent-accent"
                                             aria-label="Analytics cookies"
                                         />
                                     </div>
@@ -176,7 +176,7 @@ export function CookieConsentBanner() {
                                             type="checkbox"
                                             checked={consent.marketing}
                                             onChange={(e) => setConsent({ ...consent, marketing: e.target.checked })}
-                                            className="h-4 w-4 cursor-pointer accent-[var(--brand-accent)]"
+                                            className="h-4 w-4 cursor-pointer accent-accent"
                                             aria-label="Marketing cookies"
                                         />
                                     </div>
@@ -188,7 +188,7 @@ export function CookieConsentBanner() {
                                     <>
                                         <Button
                                             onClick={handleSavePreferences}
-                                            className="flex-1 bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-[var(--brand-primary)] font-medium"
+                                            className="flex-1 bg-accent hover:bg-accent/90 text-primary font-medium"
                                         >
                                             Save Preferences
                                         </Button>
@@ -204,7 +204,7 @@ export function CookieConsentBanner() {
                                     <>
                                         <Button
                                             onClick={handleAcceptAll}
-                                            className="flex-1 bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 text-[var(--brand-primary)] font-medium"
+                                            className="flex-1 bg-accent hover:bg-accent/90 text-primary font-medium"
                                         >
                                             Accept All
                                         </Button>
@@ -228,11 +228,11 @@ export function CookieConsentBanner() {
 
                             <p className="text-xs text-muted-foreground">
                                 By continuing to use this site, you agree to our{' '}
-                                <a href="/privacy" className="underline hover:text-[var(--brand-accent)] transition-colors">
+                                <a href="/privacy" className="underline hover:text-accent transition-colors">
                                     Privacy Policy
                                 </a>
                                 {' '}and{' '}
-                                <a href="/terms" className="underline hover:text-[var(--brand-accent)] transition-colors">
+                                <a href="/terms" className="underline hover:text-accent transition-colors">
                                     Terms of Service
                                 </a>.
                             </p>

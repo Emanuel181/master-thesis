@@ -468,7 +468,7 @@ export function EditorTabs({
 
             {/* New Group Dialog */}
             <Dialog open={newGroupDialogOpen} onOpenChange={setNewGroupDialogOpen}>
-                <DialogContent className="sm:max-w-[300px]">
+                <DialogContent className="sm:max-w-xs">
                     <DialogHeader>
                         <DialogTitle>Create Tab Group</DialogTitle>
                     </DialogHeader>

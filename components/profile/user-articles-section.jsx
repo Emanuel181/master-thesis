@@ -164,11 +164,61 @@ export function UserArticlesSection() {
     }
 
     useEffect(() => {
-        fetchArticles(currentPage)
+        const controller = new AbortController()
+
+        const fetchArticlesEffect = async (page = 1) => {
+            // Only use mock data on demo routes
+            if (isDemo) {
+                setUseMockData(true)
+                const start = (page - 1) * ITEMS_PER_PAGE
+                const paginatedMock = MOCK_ARTICLES.slice(start, start + ITEMS_PER_PAGE)
+                setArticles(paginatedMock)
+                setTotalCount(MOCK_ARTICLES.length)
+                setStats({
+                    published: MOCK_ARTICLES.filter(a => a.status === 'PUBLISHED').length,
+                    drafts: MOCK_ARTICLES.filter(a => a.status === 'DRAFT').length
+                })
+                setIsLoading(false)
+                return
+            }
+
+            if (!session?.user) {
+                setIsLoading(false)
+                return
+            }
+
+            setIsLoading(true)
+            try {
+                const skip = (page - 1) * ITEMS_PER_PAGE
+                const response = await fetch(
+                    `/api/articles?limit=${ITEMS_PER_PAGE}&skip=${skip}`,
+                    { signal: controller.signal }
+                )
+                if (response.ok) {
+                    const data = await response.json()
+                    setUseMockData(false)
+                    setArticles(data.articles || [])
+                    setTotalCount(data.total || 0)
+                    setStats({
+                        published: data.publishedCount || 0,
+                        drafts: data.draftCount || 0
+                    })
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Failed to fetch articles:', error)
+                }
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchArticlesEffect(currentPage)
+        return () => controller.abort()
     }, [session, currentPage, isDemo])
 
     return (
-        <Card className="border-border/50 transition-shadow hover:shadow-md">
+        <Card className="border-border/50">
             <CardHeader className="pb-3 px-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -188,15 +238,6 @@ export function UserArticlesSection() {
                             </div>
                         </div>
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(isDemo ? '/demo/write-article' : '/dashboard?tab=write')}
-                        className="gap-1.5 w-full sm:w-auto"
-                    >
-                        <PenLine className="h-3.5 w-3.5" />
-                        Write article
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
@@ -216,7 +257,7 @@ export function UserArticlesSection() {
                         <Button
                             size="sm"
                             className="mt-4 gap-1.5"
-                            onClick={() => router.push(isDemo ? '/demo/write-article' : '/dashboard?tab=write')}
+                            onClick={() => router.push(isDemo ? '/demo/write-article' : '/dashboard?active=Write article')}
                         >
                             <PenLine className="h-3.5 w-3.5" />
                             Create your first article
@@ -250,14 +291,14 @@ export function UserArticlesSection() {
                                                 <div
                                                     className="w-full h-full"
                                                     style={{
-                                                        background: article.gradient || 'linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)'
+                                                        background: article.gradient || 'linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%)'
                                                     }}
                                                 />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-1 sm:gap-2">
-                                                <h4 className="font-medium text-xs sm:text-sm line-clamp-1 group-hover:text-[var(--brand-accent)] transition-colors">
+                                                <h4 className="font-medium text-xs sm:text-sm line-clamp-1 group-hover:text-accent transition-colors">
                                                     {article.title || 'Untitled Article'}
                                                 </h4>
                                                 <Badge

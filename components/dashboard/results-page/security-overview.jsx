@@ -203,7 +203,7 @@ function VulnerabilityRow({ vulnerability, onClick }) {
             className="flex items-start gap-4 py-4 px-4 hover:bg-muted/50 cursor-pointer border-b last:border-b-0"
         >
             {/* CVSS Score with colored dot */}
-            <div className="flex items-center gap-2 min-w-[60px]">
+            <div className="flex items-center gap-2 min-w-15">
                 <span className={`w-2.5 h-2.5 rounded-full ${colors.bg}`} />
                 <span className={`font-semibold ${colors.text}`}>
                     {cvssScore != null ? cvssScore.toFixed(1) : '—'}
@@ -504,7 +504,7 @@ export function SecurityOverview({
                             </div>
 
                             {/* Vulnerabilities List */}
-                            <ScrollArea className="h-[400px]">
+                            <ScrollArea className="h-96">
                                 {filteredVulns.map((vuln) => (
                                     <VulnerabilityRow
                                         key={vuln.id}
@@ -570,7 +570,7 @@ export function SecurityOverview({
                                 <div className="flex-1">Title</div>
                                 <div className="min-w-[140px] text-right">Type</div>
                             </div>
-                            <ScrollArea className="h-[500px]">
+                            <ScrollArea className="h-[32rem]">
                                 {filteredVulns.map((vuln) => (
                                     <VulnerabilityRow
                                         key={vuln.id}
@@ -601,7 +601,7 @@ export function SecurityOverview({
                                         <div className="w-[120px] text-center">Vulnerabilities</div>
                                         <div className="w-[120px] text-center">Duration</div>
                                     </div>
-                                    <ScrollArea className="h-[400px]">
+                                    <ScrollArea className="h-96">
                                         {[...workflowRuns]
                                             .sort((a, b) => new Date(b.completedAt || b.startedAt) - new Date(a.completedAt || a.startedAt))
                                             .map((run, i) => (
@@ -648,7 +648,6 @@ export function SecurityOverview({
                 open={detailOpen}
                 onOpenChange={setDetailOpen}
                 onOpenFile={(vuln) => {
-                    console.log('Open file:', vuln.fileName);
                 }}
             />
         </div>

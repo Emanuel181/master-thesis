@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ArrowUpDown } from "lucide-react"
 
 /**
@@ -13,16 +14,20 @@ import { ArrowUpDown } from "lucide-react"
  */
 export function SwapButton({ onClick, title, className, rotate = false, onHoverChange }) {
     return (
-        <Button
-            variant="outline"
-            size="icon"
-            onClick={onClick}
-            onMouseEnter={() => onHoverChange?.(true)}
-            onMouseLeave={() => onHoverChange?.(false)}
-            className={`h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-accent ${className || ''}`}
-            title={title}
-        >
-            <ArrowUpDown className={`h-4 w-4 ${rotate ? 'rotate-90' : ''}`} />
-        </Button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onClick}
+                    onMouseEnter={() => onHoverChange?.(true)}
+                    onMouseLeave={() => onHoverChange?.(false)}
+                    className={`h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-accent ${className || ''}`}
+                >
+                    <ArrowUpDown className={`h-4 w-4 ${rotate ? 'rotate-90' : ''}`} />
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>{title}</TooltipContent>
+        </Tooltip>
     )
 }

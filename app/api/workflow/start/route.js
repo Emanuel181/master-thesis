@@ -177,7 +177,6 @@ export async function POST(request) {
         return NextResponse.json(
           {
             error: "Failed to vectorize selected documents",
-            ...(process.env.NODE_ENV === 'development' && { details: `Could not vectorize: ${docNames}. ${error.message}` }),
           },
           { status: 500 }
         );
@@ -371,7 +370,6 @@ export async function POST(request) {
         return NextResponse.json(
           {
             error: "Failed to start workflow execution",
-            ...(process.env.NODE_ENV === 'development' && { details: error.message, awsError: error.name }),
           },
           { status: 500 }
         );
@@ -395,10 +393,7 @@ export async function POST(request) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          error: "Validation error",
-          details: error.errors.map(e => ({ path: e.path, message: e.message })),
-        },
+        { error: "Validation error" },
         { status: 400 }
       );
     }
@@ -406,7 +401,6 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: "Internal server error",
-        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
       },
       { status: 500 }
     );
@@ -721,7 +715,6 @@ export async function GET(request) {
     console.error("Error fetching workflow status:", error);
     return NextResponse.json({
       error: "Internal server error",
-      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
     }, { status: 500 });
   }
 }

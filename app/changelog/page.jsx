@@ -537,7 +537,7 @@ const changelogData = [
         changes: [
             {
                 category: "Editor",
-                icon: <Code2 className="w-4 h-4 text-[var(--brand-accent)]" />,
+                icon: <Code2 className="w-4 h-4 text-accent" />,
                 items: [
                     "Launched the core Code Editor interface.",
                     "Features: Code formatting, language selection, and Use Case selection.",
@@ -553,7 +553,7 @@ export default function ChangelogPage() {
     const { openPanel } = useAccessibility();
     
     return (
-        <div className="landing-page h-screen flex flex-col bg-background text-foreground font-sans selection:bg-[var(--brand-accent)]/20 overflow-hidden">
+        <div className="landing-page h-screen flex flex-col bg-background text-foreground font-sans selection:bg-accent/20 overflow-hidden">
              {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -571,7 +571,7 @@ export default function ChangelogPage() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-accent/10 hover:text-accent">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 <span className="sm:hidden">Back</span>
@@ -580,11 +580,11 @@ export default function ChangelogPage() {
                         </Button>
                         <button
                             onClick={openPanel}
-                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-accent/10 hover:bg-accent/20 border border-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                             aria-label="Open accessibility menu"
                             title="Accessibility options"
                         >
-                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                            <PersonStanding className="w-5 h-5 text-accent" strokeWidth={2} />
                         </button>
                         <ThemeToggle />
                     </div>
@@ -637,7 +637,7 @@ export default function ChangelogPage() {
                                     <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-border" />
                                     )}
                                     {/* Timeline dot */}
-                                    <div className="hidden md:block absolute top-2 left-0 -translate-x-1/2 size-3 bg-[var(--brand-accent)] rounded-full z-10" />
+                                    <div className="hidden md:block absolute top-2 left-0 -translate-x-1/2 size-3 bg-accent rounded-full z-10" />
 
                                     <div className="space-y-6">
                                         <div className="relative z-10 flex flex-col gap-2">
@@ -649,7 +649,7 @@ export default function ChangelogPage() {
                                             <div className="flex flex-wrap gap-2">
                                                 <span className={`h-6 w-fit px-2 text-xs font-medium rounded-full border flex items-center justify-center ${
                                                     release.type === 'major' 
-                                                        ? 'bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30' 
+                                                        ? 'bg-accent/10 text-accent border-accent/30' 
                                                         : release.type === 'minor'
                                                         ? 'bg-blue-500/10 text-blue-500 border-blue-500/30'
                                                         : 'bg-muted text-muted-foreground border-border'

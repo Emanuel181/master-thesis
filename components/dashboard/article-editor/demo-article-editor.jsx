@@ -25,9 +25,11 @@ import {
   Save,
   Filter,
   Check,
+  Smile,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CollapsibleSection } from "./_components/article-form/collapsible-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -209,13 +211,17 @@ export function DemoArticleEditor() {
 
   // Load from localStorage after mount to avoid hydration mismatch
   useEffect(() => {
-    const stored = localStorage.getItem("demo-articles");
-    if (stored) {
-      try {
-        setArticles(JSON.parse(stored));
-      } catch {
-        // Keep default articles
+    try {
+      const stored = localStorage.getItem("demo-articles");
+      if (stored) {
+        try {
+          setArticles(JSON.parse(stored));
+        } catch {
+          // Keep default articles
+        }
       }
+    } catch {
+      // localStorage not available
     }
   }, []);
 
@@ -253,7 +259,7 @@ export function DemoArticleEditor() {
   // Persist articles to localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("demo-articles", JSON.stringify(articles));
+      try { localStorage.setItem("demo-articles", JSON.stringify(articles)); } catch { /* ignore */ }
     }
   }, [articles]);
 
@@ -643,7 +649,7 @@ export function DemoArticleEditor() {
                               <Card
                                 key={article.id}
                                 className={cn(
-                                  "cursor-pointer transition-all hover:shadow-md",
+                                  "cursor-pointer transition-all",
                                   isSelected && "ring-2 ring-primary shadow-md"
                                 )}
                                 onClick={() => handleSelectArticle(article)}
@@ -766,7 +772,7 @@ export function DemoArticleEditor() {
                   <span className="truncate">{selectedArticle ? "Edit Article" : "Write article"}</span>
                 </CardTitle>
                 {selectedArticle && (
-                  <CardDescription className="truncate max-w-full sm:max-w-[300px]">{selectedArticle.title || "Untitled"}</CardDescription>
+                  <CardDescription className="truncate max-w-full sm:max-w-xs">{selectedArticle.title || "Untitled"}</CardDescription>
                 )}
               </div>
               {/* Desktop: Actions inline */}
@@ -823,12 +829,12 @@ export function DemoArticleEditor() {
               <ScrollArea className="h-full">
                 <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
                   {/* Cover Section Card */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Cover</CardTitle>
-                      <CardDescription className="text-xs">Choose a gradient or upload an image</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <CollapsibleSection
+                    title="Cover"
+                    description="Choose a gradient or upload an image"
+                    icon={Palette}
+                  >
+                    <div className="space-y-4">
                       {/* Cover Preview with Icon */}
                       <div
                         className="relative h-36 rounded-xl overflow-hidden shadow-sm ring-1 ring-border/50"
@@ -964,16 +970,16 @@ export function DemoArticleEditor() {
                           </div>
                         </TabsContent>
                       </Tabs>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CollapsibleSection>
 
                   {/* Icon Selection Card */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Article Icon</CardTitle>
-                      <CardDescription className="text-xs">Select an icon to display on your article cover</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <CollapsibleSection
+                    title="Article Icon"
+                    description="Select an icon to display on your article cover"
+                    icon={Smile}
+                  >
+                    <div className="space-y-4">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -1122,16 +1128,16 @@ export function DemoArticleEditor() {
                           </div>
                         </>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CollapsibleSection>
 
                   {/* Article Details Card */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Article Details</CardTitle>
-                      <CardDescription className="text-xs">Title, excerpt, and category</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <CollapsibleSection
+                    title="Article Details"
+                    description="Title, excerpt, and category"
+                    icon={FileText}
+                  >
+                    <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Title</Label>
                         <Input
@@ -1167,16 +1173,16 @@ export function DemoArticleEditor() {
                           </SelectContent>
                         </Select>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CollapsibleSection>
 
                   {/* Content Editor Card */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Content</CardTitle>
-                      <CardDescription className="text-xs">Write your article content</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <CollapsibleSection
+                    title="Content"
+                    description="Write your article content"
+                    icon={PenLine}
+                  >
+                    <div className="space-y-4">
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription className="text-xs">
@@ -1197,8 +1203,8 @@ export function DemoArticleEditor() {
                           Estimated read time: <span className="font-medium">{selectedArticle.readTime}</span>
                         </p>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CollapsibleSection>
                 </div>
               </ScrollArea>
             </CardContent>
@@ -1209,7 +1215,7 @@ export function DemoArticleEditor() {
               <FileText className="h-12 w-12 text-muted-foreground" />
             </div>
             <h3 className="font-semibold text-lg mb-1">No article selected</h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-[300px]">
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
               Select an article from the sidebar to edit, or create a new one to get started.
             </p>
             <div className="flex items-center gap-3">

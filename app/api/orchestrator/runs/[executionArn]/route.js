@@ -41,7 +41,6 @@ export const GET = createApiHandler(async (request, { params }) => {
     return NextResponse.json(
       {
         error: 'Failed to get run status',
-        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
       },
       { status: 500 }
     );

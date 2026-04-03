@@ -87,7 +87,7 @@ export function UseCaseSelector({ onSelectionChange }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[400px] w-full pr-4">
+        <ScrollArea className="h-96 w-full pr-4">
           <div className="space-y-3">
             {groups.map((group) => (
               <div

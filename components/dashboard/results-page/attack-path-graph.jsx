@@ -52,7 +52,7 @@ function FlowNode({ node, index, isLast }) {
             {/* Node Card */}
             <div
                 className={cn(
-                    "relative flex flex-col gap-1 rounded-lg border p-3 min-w-[180px] max-w-[240px] transition-all duration-200 hover:shadow-md hover:scale-[1.02]",
+                    "relative flex flex-col gap-1 rounded-lg border p-3 min-w-[180px] max-w-[240px] transition-all duration-200 hover:scale-[1.02]",
                     colors.bg,
                     colors.border
                 )}

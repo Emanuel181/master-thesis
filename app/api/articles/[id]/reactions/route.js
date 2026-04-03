@@ -10,25 +10,24 @@ import {
 // GET /api/articles/[id]/reactions - Get reactions for an article
 export async function GET(request, { params }) {
   const requestId = generateRequestId();
-  
+
   try {
     const { id } = await params;
+    const session = await auth();
 
-    const [reactions, counts] = await Promise.all([
-      prisma.articleReaction.findMany({
-        where: { articleId: id },
-        select: {
-          id: true,
-          userId: true,
-          type: true,
-          createdAt: true,
-        },
-      }),
+    const [counts, userReaction] = await Promise.all([
       prisma.articleReaction.groupBy({
         by: ["type"],
         where: { articleId: id },
         _count: true,
       }),
+      // Only look up current user's reaction if authenticated
+      session?.user?.id
+        ? prisma.articleReaction.findUnique({
+            where: { articleId_userId: { articleId: id, userId: session.user.id } },
+            select: { type: true },
+          })
+        : null,
     ]);
 
     const countByType = counts.reduce((acc, { type, _count }) => {
@@ -36,10 +35,12 @@ export async function GET(request, { params }) {
       return acc;
     }, {});
 
+    const total = counts.reduce((sum, { _count }) => sum + _count, 0);
+
     return successResponse({
-      reactions,
       counts: countByType,
-      total: reactions.length,
+      total,
+      userReaction: userReaction?.type || null,
     }, { requestId });
   } catch (error) {
     console.error("Error fetching reactions:", error);

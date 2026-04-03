@@ -18,9 +18,6 @@ import {
     ArrowRight,
     Clock,
     Code,
-    FileText,
-    Settings2,
-    BookOpen,
     Zap,
     AlertTriangle,
     CheckCircle2,
@@ -129,7 +126,7 @@ function DailyRecommendedBlog({ isDemoMode }) {
         <Wrapper {...wrapperProps}>
             <div
                 className="shrink-0 w-10 h-10 rounded-md"
-                style={{ background: blog.gradient || 'linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%)' }}
+                style={{ background: blog.gradient || 'linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%)' }}
             />
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -161,13 +158,6 @@ export function WelcomeBanner({ userName, onNavigate, onNewScan }) {
     const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
     const firstName = userName?.split(" ")[0] || userName
 
-    const quickActions = [
-        { label: "Code inspection", icon: Code, page: "Code inspection" },
-        { label: "Configure workflow", icon: Settings2, page: "Workflow configuration" },
-        { label: "Knowledge base", icon: BookOpen, page: "Knowledge base" },
-        { label: "Write article", icon: FileText, page: "Write article" },
-    ]
-
     return (
         <Card>
             <CardContent className="p-3 sm:p-4 md:p-5">
@@ -191,27 +181,8 @@ export function WelcomeBanner({ userName, onNavigate, onNewScan }) {
                 </div>
 
                 {/* Daily recommended blog */}
-                <div className="mb-3">
+                <div>
                     <DailyRecommendedBlog isDemoMode={isDemoMode} />
-                </div>
-
-                {/* Quick action buttons */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {quickActions.map((action) => {
-                        const Icon = action.icon
-                        return (
-                            <button
-                                key={action.page}
-                                onClick={() => onNavigate({ title: action.page })}
-                                className="group flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-lg border bg-card hover:bg-accent hover:text-accent-foreground transition-colors text-center"
-                            >
-                                <div className="w-8 h-8 rounded-md bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                                    <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="text-[10px] sm:text-xs font-medium truncate w-full">{action.label}</span>
-                            </button>
-                        )
-                    })}
                 </div>
             </CardContent>
         </Card>
@@ -244,8 +215,8 @@ export function SecurityStatsCards({ stats, isLoading }) {
             value: stats.totalScans,
             icon: Activity,
             description: stats.totalScans === 1 ? "workflow run" : "workflow runs",
-            color: "text-primary",
-            bg: "bg-primary/10",
+            color: "text-muted-foreground",
+            bg: "bg-muted",
         },
         {
             label: "Findings",
@@ -690,21 +661,22 @@ export function useDashboardOverview() {
             const runsData = runsRes.ok ? await runsRes.json() : { runs: [] }
 
             // Fetch analytics summary
-            const analyticsRes = await fetch("/api/analytics?dateRange=30d")
+            const analyticsRes = await fetch("/api/analytics?range=30d")
             const analyticsData = analyticsRes.ok ? await analyticsRes.json() : {}
 
-            const vulnerabilities = analyticsData.vulnerabilities || []
-            const openVulns = vulnerabilities.filter((v) => !v.resolved)
-            const resolvedVulns = vulnerabilities.filter((v) => v.resolved)
-            const criticals = openVulns.filter((v) => v.severity === "Critical")
+            const summary = analyticsData.data?.summary ?? analyticsData.summary ?? {}
+            const recentVulns = analyticsData.data?.recentVulnerabilities ?? analyticsData.recentVulnerabilities ?? []
+            const openVulns = recentVulns.filter((v) => !v.resolved)
+            const resolvedVulns = recentVulns.filter((v) => v.resolved)
+            const criticals = recentVulns.filter((v) => !v.resolved && v.severity === "Critical")
 
             setData({
                 stats: {
-                    totalScans: analyticsData.scansCount ?? (runsData.runs?.length || 0),
-                    totalVulnerabilities: vulnerabilities.length,
-                    openVulnerabilities: openVulns.length,
-                    resolvedVulnerabilities: resolvedVulns.length,
-                    criticalCount: criticals.length,
+                    totalScans: summary.totalScans ?? (runsData.runs?.length || 0),
+                    totalVulnerabilities: summary.totalVulnerabilities ?? 0,
+                    openVulnerabilities: summary.openVulnerabilities ?? openVulns.length,
+                    resolvedVulnerabilities: summary.resolvedVulnerabilities ?? resolvedVulns.length,
+                    criticalCount: summary.severityCounts?.Critical ?? criticals.length,
                 },
                 recentRuns: runsData.runs || [],
                 topVulnerabilities: openVulns,

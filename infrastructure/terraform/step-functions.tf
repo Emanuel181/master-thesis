@@ -69,11 +69,12 @@ resource "aws_sfn_state_machine" "run_workflow" {
               Type     = "Task"
               Resource = aws_lambda_function.agent_reviewer.arn
               Parameters = {
-                "runId.$"   = "$.runId"
-                "useCase.$" = "$$.Map.Item.Value"
+                "runId.$"           = "$.runId"
+                "useCase.$"         = "$$.Map.Item.Value"
+                "knowledgeBaseId.$" = "$$.Map.Item.Value.knowledgeBaseId"
               }
               ResultPath = "$.reviewerOutput"
-              Next       = "CheckImplementerEnabled"
+              Next       = "CheckFixerEnabled"
               TimeoutSeconds = 900
               Retry = [{
                 ErrorEquals     = ["States.TaskFailed"]
@@ -82,7 +83,35 @@ resource "aws_sfn_state_machine" "run_workflow" {
                 BackoffRate     = 2.0
               }]
             }
-            
+
+            CheckFixerEnabled = {
+              Type = "Choice"
+              Choices = [{
+                Variable      = "$$.Map.Item.Value.enableFixer"
+                BooleanEquals = true
+                Next          = "ExecuteFixer"
+              }]
+              Default = "CheckImplementerEnabled"
+            }
+
+            ExecuteFixer = {
+              Type     = "Task"
+              Resource = aws_lambda_function.agent_fixer.arn
+              Parameters = {
+                "runId.$"          = "$.runId"
+                "useCase.$"        = "$$.Map.Item.Value"
+                "reviewerOutput.$" = "$.reviewerOutput"
+              }
+              ResultPath = "$.fixerOutput"
+              Next       = "CheckImplementerEnabled"
+              TimeoutSeconds = 900
+              Catch = [{
+                ErrorEquals     = ["States.ALL"]
+                ResultPath      = "$.fixerError"
+                Next            = "CheckImplementerEnabled"
+              }]
+            }
+
             CheckImplementerEnabled = {
               Type = "Choice"
               Choices = [{
@@ -107,26 +136,108 @@ resource "aws_sfn_state_machine" "run_workflow" {
             }
             
             ExecuteTester = {
-              Type     = "Task"
-              Resource = "arn:aws:states:::sqs:sendMessage.waitForTaskToken"
-              Parameters = {
-                QueueUrl = aws_sqs_queue.pentester_jobs.url
-                MessageBody = {
-                  "taskToken.$"         = "$$.Task.Token"
-                  "runId.$"             = "$.runId"
-                  "useCase.$"           = "$$.Map.Item.Value"
-                  "reviewerOutput.$"    = "$.reviewerOutput"
-                  "implementerOutput.$" = "$.implementerOutput"
+              Type = "Parallel"
+              Branches = [
+                {
+                  # EC2-based pentester (existing)
+                  StartAt = "EC2Pentester"
+                  States = {
+                    EC2Pentester = {
+                      Type     = "Task"
+                      Resource = "arn:aws:states:::sqs:sendMessage.waitForTaskToken"
+                      Parameters = {
+                        QueueUrl = aws_sqs_queue.pentester_jobs.url
+                        MessageBody = {
+                          "taskToken.$"         = "$$.Task.Token"
+                          "runId.$"             = "$.runId"
+                          "useCase.$"           = "$$.Map.Item.Value"
+                          "reviewerOutput.$"    = "$.reviewerOutput"
+                          "implementerOutput.$" = "$.implementerOutput"
+                        }
+                      }
+                      ResultPath     = "$.ec2PentestOutput"
+                      TimeoutSeconds = 3600
+                      End            = true
+                      Catch = [{
+                        ErrorEquals = ["States.ALL"]
+                        ResultPath  = "$.ec2PentestError"
+                        Next        = "EC2PentestFailed"
+                      }]
+                    }
+                    EC2PentestFailed = {
+                      Type = "Pass"
+                      Result = { status = "failed", message = "EC2 pentest failed" }
+                      End = true
+                    }
+                  }
+                },
+                {
+                  # Autonomous pentest infrastructure (new)
+                  StartAt = "CheckPentestEnabled"
+                  States = {
+                    CheckPentestEnabled = {
+                      Type = "Choice"
+                      Choices = [{
+                        Variable = "$$.Map.Item.Value.testerModel"
+                        IsPresent = true
+                        Next = "ExecuteAutonomousPentest"
+                      }]
+                      Default = "SkipAutonomousPentest"
+                    }
+                    ExecuteAutonomousPentest = {
+                      Type     = "Task"
+                      Resource = aws_lambda_function.agent_tester_pentest.arn
+                      Parameters = {
+                        "runId.$"             = "$.runId"
+                        "userId.$"            = "$.userId"
+                        "useCase.$"           = "$$.Map.Item.Value"
+                        "code.$"              = "$$.Map.Item.Value.code"
+                        "codeType.$"          = "$$.Map.Item.Value.codeType"
+                        "testerPrompt.$"      = "$$.Map.Item.Value.testerPrompt"
+                        "testerModel.$"       = "$$.Map.Item.Value.testerModel"
+                        "reviewerOutput.$"    = "$.reviewerOutput"
+                        "fixerOutput.$"       = "$.fixerOutput"
+                      }
+                      ResultPath     = "$.autonomousPentestOutput"
+                      TimeoutSeconds = 900
+                      End            = true
+                      Catch = [{
+                        ErrorEquals = ["States.ALL"]
+                        ResultPath  = "$.autonomousPentestError"
+                        Next        = "AutonomousPentestFailed"
+                      }]
+                    }
+                    SkipAutonomousPentest = {
+                      Type = "Pass"
+                      Result = { status = "skipped", message = "Autonomous pentest not configured" }
+                      End = true
+                    }
+                    AutonomousPentestFailed = {
+                      Type = "Pass"
+                      Result = { status = "failed", message = "Autonomous pentest failed" }
+                      End = true
+                    }
+                  }
                 }
-              }
-              ResultPath     = "$.testerOutput"
-              Next           = "ExecuteReporter"
-              TimeoutSeconds = 3600
+              ]
+              ResultPath = "$.testerOutputs"
+              Next       = "MergeTesterResults"
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.testerError"
                 Next        = "ExecuteReporter"
               }]
+            }
+
+            MergeTesterResults = {
+              Type = "Pass"
+              Parameters = {
+                "ec2Results.$"        = "$.testerOutputs[0]"
+                "autonomousResults.$" = "$.testerOutputs[1]"
+                "combinedStatus"      = "completed"
+              }
+              ResultPath = "$.testerOutput"
+              Next       = "ExecuteReporter"
             }
 
             ExecuteReporter = {

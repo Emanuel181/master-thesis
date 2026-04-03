@@ -27,9 +27,9 @@ export function HeroScrollWrapper({ children }) {
   const horizontalMargin = useTransform(smoothProgress, [0, 0.25], [0, 20]);
   const borderRadius = useTransform(smoothProgress, [0, 0.25], [0, 20]);
   const borderColor = useTransform(
-    smoothProgress, 
-    [0, 0.15], 
-    ['rgba(31, 182, 207, 0)', 'rgba(31, 182, 207, 0.5)']
+    smoothProgress,
+    [0, 0.15],
+    ['rgba(120, 80, 255, 0)', 'rgba(120, 80, 255, 0.35)']
   );
 
   return (

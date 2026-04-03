@@ -102,41 +102,34 @@ export async function POST(request) {
     }
 
     // Save vulnerabilities
-    const created = await Promise.all(
-      vulnerabilities.map((vuln) =>
-        prisma.vulnerability.create({
-          data: {
-            workflowRunId: runId,
-            useCaseId: vuln.useCaseId || workflowRun.id,
-            title: vuln.title || "",
-            severity: vuln.severity || "",
-            type: vuln.type || "",
-            details: vuln.details || vuln.explanation || "",
-            fileName: vuln.fileName || "",
-            lineNumber: vuln.lineNumber || null,
-            vulnerableCode: vuln.vulnerableCode || "",
-            explanation: vuln.explanation || "",
-            bestPractices: vuln.bestPractices || "",
-            exploitExamples: vuln.exploitExamples || "",
-            attackPath: vuln.attackPath || "",
-            cweId: vuln.cweId || null,
-            documentReferences: vuln.documentReferences || null,
-          },
-        })
-      )
-    );
+    const created = await prisma.vulnerability.createMany({
+      data: vulnerabilities.map((vuln) => ({
+        workflowRunId: runId,
+        useCaseId: vuln.useCaseId || workflowRun.id,
+        title: vuln.title || "",
+        severity: vuln.severity || "",
+        type: vuln.type || "",
+        details: vuln.details || vuln.explanation || "",
+        fileName: vuln.fileName || "",
+        lineNumber: vuln.lineNumber || null,
+        vulnerableCode: vuln.vulnerableCode || "",
+        explanation: vuln.explanation || "",
+        bestPractices: vuln.bestPractices || "",
+        exploitExamples: vuln.exploitExamples || "",
+        attackPath: vuln.attackPath || "",
+        cweId: vuln.cweId || null,
+        documentReferences: vuln.documentReferences || null,
+      })),
+    });
 
     return NextResponse.json({
       success: true,
-      count: created.length,
+      count: created.count,
     });
   } catch (error) {
     console.error("Error saving vulnerabilities:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

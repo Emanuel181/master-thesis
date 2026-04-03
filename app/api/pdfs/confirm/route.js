@@ -151,17 +151,30 @@ export const POST = createApiHandler(
         const url = await getPresignedDownloadUrl(env, s3Key);
 
         // Save PDF record to database
-        const pdf = await prisma.pdf.create({
-            data: {
-                url: '',
-                title: fileName,
-                size: fileSize,
-                s3Key,
-                useCaseId,
-                folderId: folderId || null,
-                order: newOrder,
-            },
-        });
+        let pdf;
+        try {
+            pdf = await prisma.pdf.create({
+                data: {
+                    url: '',
+                    title: fileName,
+                    size: fileSize,
+                    s3Key,
+                    useCaseId,
+                    folderId: folderId || null,
+                    order: newOrder,
+                },
+            });
+        } catch (createError) {
+            // Handle duplicate s3Key (race condition: concurrent confirms)
+            if (createError.code === 'P2002') {
+                const existing = await prisma.pdf.findFirst({ where: { s3Key } });
+                if (existing) {
+                    const url = await getPresignedDownloadUrl(env, existing.s3Key);
+                    return { pdf: { ...existing, url } };
+                }
+            }
+            throw createError;
+        }
 
         // ── Record scan result and trigger vectorization ─────────────────────
         // Security scanning happened BEFORE S3 upload (via /api/pdfs/pre-scan).

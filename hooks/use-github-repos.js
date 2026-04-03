@@ -19,7 +19,7 @@ export function useGitHubRepos() {
     const { data: session, status } = useSession()
     const { currentRepo, clearProject } = useProject()
     const pathname = usePathname()
-    
+
     // Demo mode detection
     const isDemoMode = pathname?.startsWith('/demo')
 
@@ -28,11 +28,11 @@ export function useGitHubRepos() {
     const [isLoading, setIsLoading] = useState(false)
     const [isConnected, setIsConnected] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
-    
+
     // Search and pagination
     const [searchTerm, setSearchTerm] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
-    
+
     // Prevent double-fetch in React 18 dev mode
     const fetchOnceRef = useRef(false)
 
@@ -79,35 +79,30 @@ export function useGitHubRepos() {
     /**
      * Fetch repositories from GitHub API
      */
-    const fetchRepos = useCallback(async (allowRefresh = false) => {
+    const fetchRepos = useCallback(async (allowRefresh = false, signal = undefined) => {
         if (!allowRefresh && fetchOnceRef.current) return
         if (allowRefresh) fetchOnceRef.current = false
 
         fetchOnceRef.current = true
         setIsLoading(true)
-        
-        try {
-            console.log('[GitHub Home] Fetching repositories...')
-            const response = await fetch('/api/github/repos')
-            const jsonResponse = await response.json()
 
-            console.log('[GitHub Home] API response:', response.status, jsonResponse)
+        try {
+            const response = await fetch('/api/github/repos', { signal })
+            const jsonResponse = await response.json()
 
             if (response.ok) {
                 // Handle wrapped response from createApiHandler
                 const reposData = jsonResponse.data || jsonResponse
-                console.log('[GitHub Home] Extracted repos data:', reposData)
-                
+
                 if (!Array.isArray(reposData)) {
                     console.error('[GitHub Home] Repos data is not an array:', reposData)
                     toast.error('Invalid response format from GitHub API')
                     fetchOnceRef.current = false
                     return
                 }
-                
+
                 const dataWithProvider = reposData.map(r => ({ ...r, provider: 'github' }))
                 setRepos(dataWithProvider)
-                console.log('[GitHub Home] Loaded', dataWithProvider.length, 'repositories')
             } else {
                 console.error('[GitHub Home] fetch failed', jsonResponse)
                 const errorMsg = jsonResponse?.error || jsonResponse?.debug?.message || 'Failed to load repositories'
@@ -115,6 +110,7 @@ export function useGitHubRepos() {
                 fetchOnceRef.current = false
             }
         } catch (err) {
+            if (err.name === 'AbortError') return
             console.error("[GitHub Home] Error fetching repos:", err)
             toast.error('Failed to connect to GitHub API')
             fetchOnceRef.current = false
@@ -130,39 +126,32 @@ export function useGitHubRepos() {
         if (isDemoMode) {
             return { githubLinked: true }
         }
-        console.log('[GitHub Home] Refreshing linked providers...')
         try {
-            const res = await fetch('/api/providers/linked', { 
+            const res = await fetch('/api/providers/linked', {
                 cache: 'no-store',
                 headers: {
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache'
                 }
             })
-            console.log('[GitHub Home] Response status:', res.status, res.ok)
-            
+
             if (!res.ok) {
-                console.log('[GitHub Home] Response not OK, returning null')
                 return null
             }
 
             const response = await res.json()
-            console.log('[GitHub Home] Full response object:', JSON.stringify(response, null, 2))
-            
+
             // Handle wrapped response from createApiHandler
             // The response could be: { success: true, data: { providers: [...] } }
             // Or just: { providers: [...] }
             let providers = []
-            
+
             if (response.success && response.data && Array.isArray(response.data.providers)) {
                 providers = response.data.providers
-                console.log('[GitHub Home] Extracted providers from response.data.providers:', providers)
             } else if (Array.isArray(response.providers)) {
                 providers = response.providers
-                console.log('[GitHub Home] Extracted providers from response.providers:', providers)
             } else if (response.data && Array.isArray(response.data)) {
                 providers = response.data
-                console.log('[GitHub Home] Extracted providers from response.data (array):', providers)
             } else {
                 console.error('[GitHub Home] Could not find providers array in response:', response)
             }
@@ -170,11 +159,9 @@ export function useGitHubRepos() {
             const linked = new Set(providers)
             const githubLinked = linked.has('github')
 
-            console.log('[GitHub Home] GitHub linked:', githubLinked)
-            console.log('[GitHub Home] All linked providers:', Array.from(linked))
             setIsConnected(githubLinked)
             if (!githubLinked) setRepos([])
-            
+
             return { githubLinked }
         } catch (err) {
             console.error('[GitHub Home] Error refreshing linked providers:', err)
@@ -186,15 +173,14 @@ export function useGitHubRepos() {
     useEffect(() => {
         if (isDemoMode) return
         if (status === "authenticated" && session) {
+            const controller = new AbortController()
             ;(async () => {
-                console.log('[GitHub Home] Checking if should fetch repos...')
                 const linked = await refreshLinkedProviders()
-                console.log('[GitHub Home] Linked result:', linked, 'Current repos count:', repos.length)
                 if (linked?.githubLinked) {
-                    console.log('[GitHub Home] GitHub is linked, fetching repos...')
-                    fetchRepos()
+                    fetchRepos(false, controller.signal)
                 }
             })()
+            return () => controller.abort()
         }
     }, [isDemoMode, status, session, refreshLinkedProviders, fetchRepos])
 
@@ -202,11 +188,11 @@ export function useGitHubRepos() {
     useEffect(() => {
         if (isDemoMode) return
         if (status !== 'authenticated') return
-        
+
         const interval = setInterval(() => {
             refreshLinkedProviders()
         }, 30000)
-        
+
         return () => clearInterval(interval)
     }, [isDemoMode, status, refreshLinkedProviders])
 
@@ -226,7 +212,7 @@ export function useGitHubRepos() {
     }, [isDemoMode, fetchRepos])
 
     /**
-     * Connect to GitHub (demo mode: fake connection, real mode: OAuth)
+     * Connect to GitHub (demo mode: fake connection, real mode: OAuth linking)
      */
     const connect = useCallback(async () => {
         if (isDemoMode) {
@@ -237,7 +223,13 @@ export function useGitHubRepos() {
             setIsLoading(false)
             toast.success("Connected to GitHub!")
         } else {
-            signIn("github", { callbackUrl: "/dashboard" })
+            // Link GitHub account to existing session instead of signing in again
+            // This prevents the "Account Already Exists" error when user is already logged in
+            const currentPath = window.location.pathname
+            signIn("github", {
+                callbackUrl: currentPath || "/dashboard",
+                redirect: true
+            })
         }
     }, [isDemoMode])
 
@@ -246,7 +238,7 @@ export function useGitHubRepos() {
      */
     const disconnect = useCallback(async () => {
         const isCurrentProjectFromGitHub = currentRepo && currentRepo.provider === 'github'
-        
+
         if (isDemoMode) {
             setIsConnected(false)
             setRepos([])
@@ -258,23 +250,23 @@ export function useGitHubRepos() {
             }
             return
         }
-        
+
         try {
             await fetch('/api/auth/disconnect?provider=github', { method: 'POST' })
         } catch (err) {
             console.error('Error disconnecting GitHub:', err)
         }
-        
+
         setIsConnected(false)
         setRepos([])
-        
+
         if (isCurrentProjectFromGitHub) {
             clearProject()
             toast.success("Disconnected from GitHub! Project unloaded.")
         } else {
             toast.success("Disconnected from GitHub!")
         }
-        
+
         await refreshLinkedProviders()
     }, [isDemoMode, currentRepo, clearProject, refreshLinkedProviders])
 
@@ -308,20 +300,20 @@ export function useGitHubRepos() {
         isRefreshing,
         searchTerm,
         currentPage,
-        
+
         // Computed
         filteredRepos,
         paginatedRepos,
         totalPages,
         totalCount: filteredRepos.length,
-        
+
         // Actions
         setSearchTerm,
         setCurrentPage,
         connect,
         disconnect,
         refresh,
-        
+
         // Auth status
         status,
         isDemoMode,

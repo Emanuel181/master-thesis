@@ -70,23 +70,30 @@ export function AccessibilityProvider({ children }) {
     const root = document.documentElement;
     const body = document.body;
 
+    // Sanitize numeric values to prevent CSS injection
+    const safeFontSize = Math.min(Math.max(Number(settings.fontSize) || 100, 50), 200);
+    const safeLineHeight = Math.min(Math.max(Number(settings.lineHeight) || 100, 50), 300);
+    const safeLetterSpacing = Math.min(Math.max(Number(settings.letterSpacing) || 0, -5), 20);
+    const safeWordSpacing = Math.min(Math.max(Number(settings.wordSpacing) || 0, -5), 50);
+    const safeSaturation = Math.min(Math.max(Number(settings.saturation) || 100, 0), 200);
+
     // Font size
-    root.style.setProperty("--a11y-font-scale", settings.fontSize / 100);
+    root.style.setProperty("--a11y-font-scale", safeFontSize / 100);
 
     // Line height
-    root.style.setProperty("--a11y-line-height", (settings.lineHeight / 100) * 1.6);
+    root.style.setProperty("--a11y-line-height", (safeLineHeight / 100) * 1.6);
 
     // Letter spacing
-    root.style.setProperty("--a11y-letter-spacing", `${settings.letterSpacing}px`);
+    root.style.setProperty("--a11y-letter-spacing", `${safeLetterSpacing}px`);
 
     // Word spacing
-    root.style.setProperty("--a11y-word-spacing", `${settings.wordSpacing}px`);
+    root.style.setProperty("--a11y-word-spacing", `${safeWordSpacing}px`);
 
     // Toggle a11y-scaled class when any font setting differs from default
-    const hasScaling = settings.fontSize !== 100 || 
-                       settings.lineHeight !== 100 || 
-                       settings.letterSpacing !== 0 || 
-                       settings.wordSpacing !== 0;
+    const hasScaling = safeFontSize !== 100 ||
+                       safeLineHeight !== 100 ||
+                       safeLetterSpacing !== 0 ||
+                       safeWordSpacing !== 0;
     body.classList.toggle("a11y-scaled", hasScaling);
 
     // Classes
@@ -107,15 +114,19 @@ export function AccessibilityProvider({ children }) {
       "a11y-contrast-monochrome"
     );
     if (settings.contrastMode !== "none") {
-      body.classList.add(`a11y-contrast-${settings.contrastMode}`);
+      const validContrasts = ["dark", "light", "high", "monochrome"];
+      if (validContrasts.includes(settings.contrastMode)) {
+        body.classList.add(`a11y-contrast-${settings.contrastMode}`);
+      }
     }
 
     // Saturation
-    root.style.setProperty("--a11y-saturation", `${settings.saturation}%`);
+    root.style.setProperty("--a11y-saturation", `${safeSaturation}%`);
 
     // Text alignment
     body.classList.remove("a11y-text-left", "a11y-text-center", "a11y-text-right");
-    if (settings.textAlign !== "default") {
+    const validAligns = ["left", "center", "right"];
+    if (settings.textAlign !== "default" && validAligns.includes(settings.textAlign)) {
       body.classList.add(`a11y-text-${settings.textAlign}`);
     }
 

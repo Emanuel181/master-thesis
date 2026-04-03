@@ -195,14 +195,14 @@ export function OnboardingProvider({ children, steps = defaultSteps }) {
     }, [currentStep])
 
     const skipOnboarding = React.useCallback(() => {
-        localStorage.setItem(ONBOARDING_STORAGE_KEY, "true")
+        try { localStorage.setItem(ONBOARDING_STORAGE_KEY, "true") } catch { /* ignore */ }
         setHasCompleted(true)
         setIsOpen(false)
         setCurrentStep(0)
     }, [])
 
     const completeOnboarding = React.useCallback(() => {
-        localStorage.setItem(ONBOARDING_STORAGE_KEY, "true")
+        try { localStorage.setItem(ONBOARDING_STORAGE_KEY, "true") } catch { /* ignore */ }
         setHasCompleted(true)
         setIsOpen(false)
         setCurrentStep(0)

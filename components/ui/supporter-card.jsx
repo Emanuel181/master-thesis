@@ -38,11 +38,11 @@ export function SupporterCard({ supporter, className }) {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className={cn("w-full h-full", className)}
         >
-            <div className="group relative h-full flex flex-col rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 transition-all duration-300 hover:border-[var(--brand-accent)]/30 hover:shadow-lg hover:shadow-[var(--brand-accent)]/5">
+            <div className="group relative h-full flex flex-col rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
                 {/* Header Section - Fixed Height */}
                 <div className="flex flex-col items-center text-center">
                     {/* Avatar - Using Next.js Image for better mobile support */}
-                    <div className="relative h-20 w-20 rounded-xl ring-2 ring-border/50 group-hover:ring-[var(--brand-accent)]/30 transition-all shadow-lg overflow-hidden">
+                    <div className="relative h-20 w-20 rounded-xl ring-2 ring-border/50 group-hover:ring-accent/30 transition-all shadow-lg overflow-hidden">
                         {supporter.avatarUrl && !imageError ? (
                             <Image
                                 src={supporter.avatarUrl}
@@ -82,8 +82,8 @@ export function SupporterCard({ supporter, className }) {
                     {supporter.contributionBio && (
                         <div className="space-y-2">
                             <div className="flex items-center gap-1.5">
-                                <Quote className="h-3 w-3 text-[var(--brand-accent)]" />
-                                <span className="text-xs font-medium uppercase tracking-wider text-[var(--brand-accent)]">
+                                <Quote className="h-3 w-3 text-accent" />
+                                <span className="text-xs font-medium uppercase tracking-wider text-accent">
                                     Contribution
                                 </span>
                             </div>
@@ -92,7 +92,7 @@ export function SupporterCard({ supporter, className }) {
                                 {contribution.isTruncated && (
                                     <button
                                         onClick={() => setShowFullContribution(!showFullContribution)}
-                                        className="ml-1 text-xs text-[var(--brand-accent)] hover:underline"
+                                        className="ml-1 text-xs text-accent hover:underline"
                                     >
                                         {showFullContribution ? 'Show less' : 'Read more'}
                                     </button>
@@ -115,7 +115,7 @@ export function SupporterCard({ supporter, className }) {
                                 {bio.isTruncated && (
                                     <button
                                         onClick={() => setShowFullBio(!showFullBio)}
-                                        className="ml-1 text-xs text-[var(--brand-accent)] hover:underline not-italic"
+                                        className="ml-1 text-xs text-accent hover:underline not-italic"
                                     >
                                         {showFullBio ? 'Show less' : 'Read more'}
                                     </button>
@@ -168,7 +168,7 @@ export function SupporterCard({ supporter, className }) {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="gap-2 text-muted-foreground hover:text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/10"
+                                        className="gap-2 text-muted-foreground hover:text-accent hover:bg-accent/10"
                                         asChild
                                     >
                                         <a

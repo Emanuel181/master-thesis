@@ -115,14 +115,19 @@ export async function POST(request) {
                     confidence: v.confidence,
                 }));
 
-                // Calculate summary from database
+                // Calculate summary from database in a single pass
                 if (!summaryData) {
+                    const counts = dbVulns.reduce((acc, v) => {
+                        const sev = v.severity?.toLowerCase();
+                        if (sev === 'critical') acc.criticalCount++;
+                        else if (sev === 'high') acc.highCount++;
+                        else if (sev === 'medium') acc.mediumCount++;
+                        else if (sev === 'low') acc.lowCount++;
+                        return acc;
+                    }, { criticalCount: 0, highCount: 0, mediumCount: 0, lowCount: 0 });
                     summaryData = {
                         totalVulnerabilities: dbVulns.length,
-                        criticalCount: dbVulns.filter(v => v.severity?.toLowerCase() === 'critical').length,
-                        highCount: dbVulns.filter(v => v.severity?.toLowerCase() === 'high').length,
-                        mediumCount: dbVulns.filter(v => v.severity?.toLowerCase() === 'medium').length,
-                        lowCount: dbVulns.filter(v => v.severity?.toLowerCase() === 'low').length,
+                        ...counts,
                     };
                 }
             } catch (dbError) {
@@ -235,7 +240,6 @@ export async function POST(request) {
         return NextResponse.json(
             {
                 error: 'Failed to generate PDF report',
-                ...(process.env.NODE_ENV === 'development' && { details: error.message, stack: error.stack }),
             },
             { status: 500 }
         );

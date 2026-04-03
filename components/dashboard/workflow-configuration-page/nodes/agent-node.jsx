@@ -129,6 +129,9 @@ export function AgentNode({ data }) {
                 isConfigured ? `ring-2 ${configuredRingMap[data.iconBg] || 'ring-emerald-500/20'} shadow-md` : 'opacity-90'
             }`}>
                 <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-center gap-1 mb-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-foreground/50 bg-muted px-1.5 py-0.5 rounded-sm">Agent</span>
+                    </div>
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                         <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />

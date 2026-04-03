@@ -10,6 +10,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 
@@ -227,12 +228,22 @@ export default function ProjectTree({
                         <SheetTitle className="flex items-center justify-between">
                             <span className="text-sm font-semibold">Project Files</span>
                             <div className="flex items-center gap-1">
-                                <button onClick={handleExpandAll} className="p-1.5 hover:bg-accent rounded-md" title="Expand All">
-                                    <FolderOpen className="h-4 w-4" />
-                                </button>
-                                <button onClick={handleCollapseAll} className="p-1.5 hover:bg-accent rounded-md" title="Collapse All">
-                                    <FolderClosed className="h-4 w-4" />
-                                </button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button onClick={handleExpandAll} className="p-1.5 hover:bg-accent rounded-md" aria-label="Expand all">
+                                            <FolderOpen className="h-4 w-4" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Expand all</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button onClick={handleCollapseAll} className="p-1.5 hover:bg-accent rounded-md" aria-label="Collapse all">
+                                            <FolderClosed className="h-4 w-4" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Collapse all</TooltipContent>
+                                </Tooltip>
                                 {additionalButtons}
                             </div>
                         </SheetTitle>
@@ -295,12 +306,22 @@ export default function ProjectTree({
                     <>
                         <span className="text-sm font-semibold truncate">Project</span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={handleExpandAll} className="p-1 hover:bg-accent rounded-md" title="Expand All">
-                                <FolderOpen className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={handleCollapseAll} className="p-1 hover:bg-accent rounded-md" title="Collapse All">
-                                <FolderClosed className="h-3.5 w-3.5" />
-                            </button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button onClick={handleExpandAll} className="p-1 hover:bg-accent rounded-md" aria-label="Expand all">
+                                        <FolderOpen className="h-3.5 w-3.5" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Expand all</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button onClick={handleCollapseAll} className="p-1 hover:bg-accent rounded-md" aria-label="Collapse all">
+                                        <FolderClosed className="h-3.5 w-3.5" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Collapse all</TooltipContent>
+                            </Tooltip>
                             {additionalButtons}
                         </div>
                     </>
@@ -333,13 +354,11 @@ export default function ProjectTree({
             <div
                 onMouseDown={startResize}
                 className={cn(
-                    "absolute -right-[7px] top-0 h-full w-[14px] cursor-col-resize z-50 flex items-center justify-center group/handle hover:bg-primary/5 transition-colors",
-                    isDragging && "bg-primary/10"
+                    "absolute -right-[7px] top-0 h-full w-[14px] cursor-col-resize z-50 flex items-center justify-center group transition-colors"
                 )}
             >
                 <div className={cn(
-                    "w-1 h-16 rounded-full bg-border group-hover/handle:bg-primary/50 transition-colors",
-                    isDragging && "bg-primary"
+                    "w-1 h-16 rounded-full bg-border group-hover:bg-primary transition-colors",
                 )} />
             </div>
         </div>

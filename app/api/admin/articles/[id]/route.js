@@ -154,9 +154,6 @@ export const PATCH = createAdminApiHandler(
             data: updateData,
         });
 
-        // Audit log
-        console.log(`[Admin Audit] Article ${id} modified (PATCH) by ${adminEmail} (master admin) at ${new Date().toISOString()}`);
-
         return { article };
     },
     {
@@ -199,9 +196,6 @@ export const PUT = createAdminApiHandler(
             where: { id },
             data: updateData,
         });
-
-        // Audit log
-        console.log(`[Admin Audit] Article ${id} fully updated by ${adminEmail} (master admin) at ${new Date().toISOString()}`);
 
         return { article };
     },

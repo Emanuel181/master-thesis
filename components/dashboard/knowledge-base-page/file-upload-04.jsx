@@ -1,7 +1,7 @@
 "use client";
 
 import { File, FileSpreadsheet, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,14 @@ export default function FileUpload04() {
   });
   const [showDummy, setShowDummy] = useState(true);
   const fileInputRef = useRef(null);
+  const intervalRef = useRef(null);
+
+  // Clean up interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const validFileTypes = [
     "text/csv",
@@ -29,11 +37,12 @@ export default function FileUpload04() {
     if (validFileTypes.includes(file.type)) {
       setUploadState({ file, progress: 0, uploading: true });
 
-      const interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         setUploadState((prev) => {
           const newProgress = prev.progress + 5;
           if (newProgress >= 100) {
-            clearInterval(interval);
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
             return { ...prev, progress: 100, uploading: false };
           }
           return { ...prev, progress: newProgress };
@@ -57,6 +66,10 @@ export default function FileUpload04() {
   };
 
   const resetFile = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     setUploadState({ file: null, progress: 0, uploading: false });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";

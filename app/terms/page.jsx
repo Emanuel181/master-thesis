@@ -58,7 +58,7 @@ export default function TermsPage() {
     useScrollRestoration(scrollRef);
 
     return (
-        <div className="landing-page h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
+        <div className="landing-page h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-accent/20">
             {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -76,7 +76,7 @@ export default function TermsPage() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-accent/10 hover:text-accent">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 <span className="sm:hidden">Back</span>
@@ -85,11 +85,11 @@ export default function TermsPage() {
                         </Button>
                         <button
                             onClick={openPanel}
-                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-accent/10 hover:bg-accent/20 border border-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                             aria-label="Open accessibility menu"
                             title="Accessibility ptions"
                         >
-                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                            <PersonStanding className="w-5 h-5 text-accent" strokeWidth={2} />
                         </button>
                         <ThemeToggle />
                     </div>
@@ -107,8 +107,8 @@ export default function TermsPage() {
                     >
                         {/* Title Section */}
                         <div id="terms-top" className="text-center mb-12">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--brand-accent)]/10 mb-6">
-                                <Scale className="w-8 h-8 text-[var(--brand-accent)]" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 mb-6">
+                                <Scale className="w-8 h-8 text-accent" />
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
                                 Terms & Conditions
@@ -133,7 +133,7 @@ export default function TermsPage() {
                                     href={`#${section.id}`}
                                     className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 py-1"
                                 >
-                                    <span className="text-[var(--brand-accent)]">{index + 1}.</span>
+                                    <span className="text-accent">{index + 1}.</span>
                                     {section.title}
                                 </a>
                             ))}
@@ -448,7 +448,7 @@ export default function TermsPage() {
                                 In the event of a dispute, you or VulnIQ must give the other a Notice of Dispute, which is a written statement that sets forth the name, address, and contact information of the party giving it, the facts giving rise to the dispute, and the relief requested.
                             </p>
                             <p>
-                                You must send any Notice of Dispute via email to: <a href="mailto:emanuel.rusu03@e-uvt.ro" className="text-[var(--brand-accent)] hover:underline">emanuel.rusu03@e-uvt.ro</a>. VulnIQ will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address.
+                                You must send any Notice of Dispute via email to: <a href="mailto:emanuel.rusu03@e-uvt.ro" className="text-accent hover:underline">emanuel.rusu03@e-uvt.ro</a>. VulnIQ will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address.
                             </p>
                             <p>
                                 You and VulnIQ will attempt to resolve any dispute through informal negotiation within sixty (60) days from the date the Notice of Dispute is sent. After sixty (60) days, you or VulnIQ may commence arbitration.
@@ -576,8 +576,8 @@ function Section({ id, title, icon: Icon, children }) {
             className="mb-10 scroll-mt-24"
         >
             <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-accent)]/10">
-                    <Icon className="h-4 w-4 text-[var(--brand-accent)]" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                    <Icon className="h-4 w-4 text-accent" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h2>
             </div>

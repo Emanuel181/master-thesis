@@ -37,7 +37,7 @@ export const FlipWords = ({
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className={cn(
-                    "inline-block text-[var(--brand-accent)]",
+                    "inline-block text-accent",
                     className
                 )}
                 key={currentWord}>

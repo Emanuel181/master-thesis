@@ -48,7 +48,7 @@ export function AddPromptDialog({
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="w-[95vw] !max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>New Prompt</DialogTitle>
                     <DialogDescription>
@@ -73,7 +73,8 @@ export function AddPromptDialog({
                             placeholder="Enter your prompt here..."
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            rows={6}
+                            rows={16}
+                            className="min-h-[320px] font-mono text-sm resize-y"
                         />
                     </div>
                 </div>
@@ -102,7 +103,7 @@ export function ViewPromptDialog({
 }) {
     return (
         <Dialog open={!!prompt} onOpenChange={() => onClose()}>
-            <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] p-4 sm:p-6">
+            <DialogContent className="w-[95vw] !max-w-4xl max-h-[85vh] p-4 sm:p-6">
                 <DialogHeader>
                     <DialogTitle className="text-base sm:text-lg">
                         {prompt?.title || "Untitled Prompt"}
@@ -113,7 +114,7 @@ export function ViewPromptDialog({
                 </DialogHeader>
                 {prompt && (
                     <div className="py-2 sm:py-4">
-                        <ScrollArea className="h-60 sm:h-80 rounded-md border p-3 sm:p-4">
+                        <ScrollArea className="h-[50vh] rounded-md border p-3 sm:p-4">
                             <pre className="whitespace-pre-wrap text-xs sm:text-sm font-mono leading-relaxed">
                                 {prompt.text}
                             </pre>
@@ -164,7 +165,7 @@ export function EditPromptDialog({
             onOpenChange(open)
             if (!open) setEditingData(null)
         }}>
-            <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogContent className="w-[95vw] !max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                     <DialogTitle className="text-base sm:text-lg">Edit Prompt</DialogTitle>
                     <DialogDescription className="text-xs sm:text-sm">
@@ -191,8 +192,8 @@ export function EditPromptDialog({
                                 value={editingData.text}
                                 onChange={(e) => setEditingData(prev => ({ ...prev, text: e.target.value }))}
                                 placeholder="Enter your prompt here..."
-                                rows={5}
-                                className="text-sm min-h-[120px] sm:min-h-[150px]"
+                                rows={16}
+                                className="text-sm font-mono min-h-[320px] resize-y"
                             />
                             <p className="text-[10px] sm:text-xs text-muted-foreground text-right">
                                 {editingData.text?.length || 0} characters

@@ -58,7 +58,6 @@ export function useOrchestrator() {
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
       addEvent({ type: 'connection', message: 'Connected to run updates' });
     };
 
@@ -87,7 +86,6 @@ export function useOrchestrator() {
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
       addEvent({ type: 'connection', message: 'Disconnected from run updates' });
     };
 

@@ -97,11 +97,13 @@ export function ProjectProvider({ children }) {
                 projectStructure,
                 currentRepo,
                 viewMode,
-                projectUnloaded, // Persist unloaded state to prevent auto-reload after refresh
+                projectUnloaded,
             };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (err) {
-            console.error("Error saving project state to localStorage:", err);
+            const json = JSON.stringify(state);
+            if (json.length > 4 * 1024 * 1024) return;
+            localStorage.setItem(STORAGE_KEY, json);
+        } catch {
+            try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
         }
     }, [projectStructure, currentRepo, viewMode, projectUnloaded, isHydrated, STORAGE_KEY]);
 

@@ -216,19 +216,21 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
                 throw new Error(error.error || 'Failed to update profile');
             }
 
-            const data = await response.json();
+            const responseData = await response.json();
+            // Handle wrapped response: { success: true, data: { user: {...} } }
+            const userData = responseData?.data?.user || responseData?.user;
 
             // Update local state with confirmed data from server
-            if (isMountedRef.current) {
+            if (isMountedRef.current && userData) {
                 setProfile(prev => ({
                     ...prev,
-                    firstName: data.user.firstName || prev.firstName,
-                    lastName: data.user.lastName || prev.lastName,
-                    phone: data.user.phone || prev.phone,
-                    jobTitle: data.user.jobTitle || prev.jobTitle,
-                    company: data.user.company || prev.company,
-                    bio: data.user.bio || prev.bio,
-                    location: data.user.location || prev.location,
+                    firstName: userData?.firstName ?? prev.firstName,
+                    lastName: userData?.lastName ?? prev.lastName,
+                    phone: userData?.phone ?? prev.phone,
+                    jobTitle: userData?.jobTitle ?? prev.jobTitle,
+                    company: userData?.company ?? prev.company,
+                    bio: userData?.bio ?? prev.bio,
+                    location: userData?.location ?? prev.location,
                 }));
             }
 
@@ -251,7 +253,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
 
     if (isLoading) {
         return (
-            <Card className="transition-shadow hover:shadow-md">
+            <Card>
                 <CardContent className="flex items-center justify-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     <span className="ml-2 text-muted-foreground">Loading profile...</span>
@@ -261,7 +263,7 @@ export default function ProfileContent({ isEditing, onSaveSuccess, onUpdateSavin
     }
 
     return (
-        <Card className="transition-shadow hover:shadow-md">
+        <Card>
             <CardHeader className="px-4 sm:px-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">

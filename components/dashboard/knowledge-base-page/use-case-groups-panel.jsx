@@ -1213,7 +1213,7 @@ export function UseCaseGroupsPanel({
 
             {/* Create Group Dialog */}
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Create Group</DialogTitle>
                         <DialogDescription>
@@ -1265,7 +1265,7 @@ export function UseCaseGroupsPanel({
 
             {/* Edit Group Dialog */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Edit Group</DialogTitle>
                         <DialogDescription>
@@ -1316,7 +1316,7 @@ export function UseCaseGroupsPanel({
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Delete Group</DialogTitle>
                         <DialogDescription>

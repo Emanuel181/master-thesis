@@ -157,14 +157,125 @@ const EXTENSION_ALIASES = {
     patch: "diff",
 };
 
+// Known folder names that exist in vscode-material-icon-theme.
+// Only these will attempt a specific folder icon fetch; all others use Lucide fallback.
+const KNOWN_FOLDER_ICONS = new Set([
+    "admin", "android", "angular", "animation", "ansible", "api", "apollo", "app",
+    "archive", "astro", "atom", "attachment", "audio", "aurelia", "aws", "azure-pipelines",
+    "backup", "base", "batch", "benchmark", "bibliography", "bicep", "blender", "bloc",
+    "bower", "buildkite", "cart", "changesets", "ci", "circleci", "class", "claude",
+    "client", "cline", "cloud-functions", "cloudflare", "cluster", "cobol", "command",
+    "components", "config", "connection", "console", "constant", "container", "content",
+    "context", "contract", "controller", "core", "coverage", "css", "cue", "cursor",
+    "custom", "cypress", "dal", "dart", "database", "debug", "decorators", "delta",
+    "desktop", "directive", "dist", "docker", "docs", "download", "drizzle", "dump",
+    "element", "enum", "environment", "error", "eslint", "event", "examples", "expo",
+    "export", "fastlane", "favicon", "features", "filter", "firebase", "firestore",
+    "flow", "flutter", "font", "forgejo", "form", "functions", "gamemaker", "gemini-ai",
+    "generator", "gh-workflows", "git", "gitea", "github", "gitlab", "global", "godot",
+    "gradle", "graphql", "guard", "gulp", "helm", "helper", "home", "hook", "husky",
+    "i18n", "images", "import", "include", "input", "intellij", "interceptor", "interface",
+    "ios", "java", "javascript", "jinja", "job", "json", "jupyter", "keys", "kubernetes",
+    "kusto", "layout", "lefthook", "less", "lib", "license", "link", "linux", "liquibase",
+    "log", "lottie", "lua", "luau", "macos", "mail", "mappings", "markdown", "mercurial",
+    "messages", "meta", "metro", "middleware", "migrations", "mjml", "mobile", "mock",
+    "mojo", "molecule", "moon", "netlify", "next", "nginx", "ngrx-store", "node", "nuxt",
+    "obsidian", "organism", "other", "packages", "pdf", "pdm", "php", "phpmailer", "pipe",
+    "plastic", "plugin", "policy", "powershell", "prisma", "private", "project", "prompts",
+    "proto", "public", "python", "pytorch", "quasar", "queue", "r", "react-components",
+    "redux-reducer", "repository", "resolver", "resource", "review", "robot", "routes",
+    "rules", "rust", "salt", "sandbox", "sass", "scala", "scons", "scripts", "secure",
+    "seeders", "server", "serverless", "shader", "shared", "simulations", "snapcraft",
+    "snippet", "src", "src-tauri", "stack", "stencil", "store", "storybook", "stylus",
+    "sublime", "supabase", "svelte", "svg", "syntax", "target", "taskfile", "tasks",
+    "television", "temp", "template", "terraform", "test", "theme", "toc", "tools",
+    "trash", "trigger", "turborepo", "typescript", "ui", "unity", "update", "upload",
+    "utils", "vercel", "verdaccio", "video", "views", "vm", "vscode", "vue",
+    "vue-directives", "vuepress", "vuex-store", "wakatime", "webpack", "windows",
+    "wordpress", "yarn", "zeabur",
+]);
+
 // ---------- HELPER: URL GENERATORS ----------
 const getFolderUrl = (name, open) => {
-    return `${BASE_ICON_URL}/folder-${name.toLowerCase()}${open ? "-open" : ""}.svg`;
+    const lower = name.toLowerCase();
+    if (!KNOWN_FOLDER_ICONS.has(lower)) return null;
+    return `${BASE_ICON_URL}/folder-${lower}${open ? "-open" : ""}.svg`;
 };
 
-const getGenericFolderUrl = (open) => {
-    return `${BASE_ICON_URL}/folder${open ? "-open" : ""}.svg`;
-};
+// Known file icon names that exist in vscode-material-icon-theme.
+// Used to validate that an icon URL will resolve before attempting to fetch it.
+const KNOWN_FILE_ICONS = new Set([
+    "3d", "abap", "abc", "actionscript", "ada", "adobe-illustrator", "adobe-photoshop",
+    "adobe-swc", "adonis", "advpl", "amplify", "android", "angular", "antlr", "apiblueprint",
+    "apollo", "applescript", "apps-script", "appveyor", "architecture", "arduino", "asciidoc",
+    "assembly", "astro", "astro-config", "astyle", "audio", "aurelia", "authors", "auto",
+    "autohotkey", "autoit", "azure", "azure-pipelines", "babel", "ballerina", "bashly",
+    "bashly-hook", "bazel", "bbx", "beancount", "bench-js", "bench-jsx", "bench-ts",
+    "bibliography", "bibtex-style", "bicep", "biome", "bitbucket", "bithound", "blender",
+    "blink", "blitz", "bower", "brainfuck", "browserlist", "bruno", "buck", "bucklescript",
+    "buildkite", "bun", "c", "c3", "cabal", "caddy", "cadence", "cairo", "cake", "capacitor",
+    "capnp", "cbx", "cds", "certificate", "changelog", "chess", "chromatic", "chrome",
+    "circleci", "citation", "clangd", "claude", "cline", "clojure", "cloudfoundry", "cmake",
+    "coala", "cobol", "coconut", "code-climate", "codecov", "codeowners", "coderabbit-ai",
+    "coffee", "coldfusion", "coloredpetrinets", "command", "commitizen", "commitlint",
+    "concourse", "conduct", "console", "contentlayer", "context", "contributing", "controller",
+    "copilot", "cpp", "craco", "credits", "crystal", "csharp", "css", "css-map", "cucumber",
+    "cuda", "cue", "cursor", "cypress", "d", "dart", "dart_generated", "database", "deepsource",
+    "denizenscript", "deno", "dependabot", "dependencies-update", "dhall", "diff", "dinophp",
+    "disc", "django", "dll", "docker", "doctex-installer", "document", "dotjs", "drawio",
+    "drizzle", "drone", "duc", "dune", "edge", "editorconfig", "ejs", "elixir", "elm", "email",
+    "ember", "epub", "erlang", "esbuild", "eslint", "excalidraw", "exe", "fastlane", "favicon",
+    "figma", "firebase", "flash", "flow", "font", "forth", "fortran", "foxpro", "freemarker",
+    "fsharp", "fusebox", "gamemaker", "garden", "gatsby", "gcp", "gemfile", "gemini",
+    "gemini-ai", "git", "github-actions-workflow", "github-sponsors", "gitlab", "gitpod",
+    "gleam", "gnuplot", "go", "go-mod", "go_gopher", "godot", "godot-assets", "google",
+    "gradle", "grafana-alloy", "grain", "graphcool", "graphql", "gridsome", "groovy", "grunt",
+    "gulp", "h", "hack", "hadolint", "haml", "handlebars", "happo", "hardhat", "harmonix",
+    "haskell", "haxe", "hcl", "helm", "heroku", "hex", "histoire", "hjson", "horusec", "hosts",
+    "hpp", "html", "http", "huff", "hurl", "husky", "i18n", "idris", "ifanr-cloud", "image",
+    "imba", "installation", "ionic", "istanbul", "jar", "java", "javaclass", "javascript",
+    "javascript-map", "jenkins", "jest", "jinja", "jsconfig", "json", "json_schema", "jsr",
+    "julia", "jupyter", "just", "karma", "kcl", "key", "keystatic", "kivy", "kl", "knip",
+    "kotlin", "kubernetes", "kusto", "label", "laravel", "latexmk", "lbx", "lean", "lefthook",
+    "lerna", "less", "liara", "lib", "license", "lighthouse", "lilypond", "lintstaged", "liquid",
+    "lisp", "livescript", "lock", "log", "lolcode", "lottie", "lua", "luau", "lynx", "lyric",
+    "macaulay2", "makefile", "markdoc", "markdoc-config", "markdown", "markdownlint", "markojs",
+    "mathematica", "matlab", "maven", "mdsvex", "mdx", "mercurial", "merlin", "mermaid", "meson",
+    "metro", "minecraft", "minecraft-fabric", "mint", "mjml", "mocha", "modernizr", "mojo",
+    "moon", "moonscript", "mxml", "nano-staged", "ndst", "nest", "netlify", "next", "nginx",
+    "ngrx-actions", "ngrx-effects", "ngrx-entity", "ngrx-reducer", "ngrx-selectors",
+    "ngrx-state", "nim", "nix", "nodejs", "nodejs_alt", "nodemon", "npm", "nuget", "nunjucks",
+    "nuxt", "nx", "objective-c", "objective-cpp", "ocaml", "odin", "onnx", "opa", "opam",
+    "openapi", "opentofu", "otne", "oxc", "packship", "palette", "panda", "parcel", "pascal",
+    "pawn", "payload", "pdf", "pdm", "percy", "perl", "php", "php-cs-fixer", "php_elephant",
+    "phpstan", "phpunit", "pinejs", "pipeline", "pkl", "plastic", "playwright", "plop",
+    "pm2-ecosystem", "pnpm", "poetry", "postcss", "posthtml", "powerpoint", "powershell",
+    "pre-commit", "prettier", "prisma", "processing", "prolog", "prompt", "proto", "protractor",
+    "pug", "puppet", "puppeteer", "purescript", "python", "python-misc", "pytorch", "qsharp",
+    "quarto", "quasar", "quokka", "qwik", "r", "racket", "raml", "razor", "rbxmk", "rc",
+    "react", "react_ts", "readme", "reason", "red", "redux-action", "redux-reducer",
+    "redux-selector", "redux-store", "regedit", "remark", "remix", "renovate", "replit",
+    "rescript", "rescript-interface", "restql", "riot", "roadmap", "roblox", "robot", "robots",
+    "rocket", "rojo", "rolldown", "rollup", "rome", "routing", "rspec", "rstack", "rubocop",
+    "ruby", "ruff", "rust", "salesforce", "salt", "san", "sas", "sass", "sbt", "scala",
+    "scheme", "scons", "screwdriver", "search", "semantic-release", "semgrep", "sentry",
+    "sequelize", "serverless", "settings", "shader", "shellcheck", "silverstripe", "simulink",
+    "siyuan", "sketch", "slim", "slint", "slug", "smarty", "sml", "snakemake", "snapcraft",
+    "snowpack", "snyk", "solidity", "sonarcloud", "spwn", "stackblitz", "stan", "steadybit",
+    "stencil", "stitches", "storybook", "stryker", "stylable", "stylelint", "stylus", "sublime",
+    "subtitles", "supabase", "svelte", "svg", "svgo", "svgr", "swagger", "sway", "swc", "swift",
+    "syncpack", "systemd", "table", "tailwindcss", "taskfile", "tauri", "taze", "tcl", "teal",
+    "templ", "template", "terraform", "test-js", "test-jsx", "test-ts", "tex", "textlint",
+    "tilt", "tldraw", "tobi", "tobimake", "toc", "todo", "toml", "toon", "travis", "tree",
+    "trigger", "tsconfig", "tsdoc", "tsil", "tune", "turborepo", "twig", "twine", "typedoc",
+    "typescript", "typescript-def", "typst", "umi", "uml", "unity", "unlicense", "unocss", "url",
+    "uv", "vagrant", "vala", "vanilla-extract", "varnish", "vedic", "velite", "velocity",
+    "vercel", "verdaccio", "verified", "verilog", "verse", "vfl", "video", "vim", "virtual",
+    "visualstudio", "vite", "vitest", "vlang", "vscode", "vue", "vue-config", "vuex-store",
+    "wakatime", "wallaby", "wally", "warp", "watchman", "webassembly", "webhint", "webpack",
+    "wepy", "werf", "windicss", "wolframlanguage", "word", "wrangler", "wxt", "xaml", "xmake",
+    "xml", "yaml", "yang", "yarn", "zeabur", "zig", "zip",
+]);
 
 const getFileUrl = (name) => {
     const lowerName = name.toLowerCase();
@@ -264,6 +375,7 @@ const getFileUrl = (name) => {
     if (!ext) return null;
 
     const iconName = EXTENSION_ALIASES[ext] || ext;
+    if (!KNOWN_FILE_ICONS.has(iconName)) return null;
     return `${BASE_ICON_URL}/${iconName}.svg`;
 };
 
@@ -286,21 +398,17 @@ const SmartFileIcon = React.memo(function SmartFileIcon({ name, isDir, isOpen })
     // Memoize URLs so they don't recompute on every render
     const closedSrc = useMemo(() => isDir ? getFolderUrl(name, false) : null, [name, isDir]);
     const openSrc = useMemo(() => isDir ? getFolderUrl(name, true) : null, [name, isDir]);
-    const genericClosedSrc = useMemo(() => isDir ? getGenericFolderUrl(false) : null, [isDir]);
-    const genericOpenSrc = useMemo(() => isDir ? getGenericFolderUrl(true) : null, [isDir]);
     const fileUrl = useMemo(() => !isDir ? getFileUrl(name) : null, [name, isDir]);
 
     // Determine initial error state from cache — avoids a render cycle
     const initialError = useMemo(() => {
         if (isDir) {
-            // For folders: if both specific AND generic URLs are failed, use Lucide
-            const closedFailed = isUrlFailed(closedSrc) && isUrlFailed(genericClosedSrc);
-            const openFailed = isUrlFailed(openSrc) && isUrlFailed(genericOpenSrc);
-            return closedFailed && openFailed;
+            // No whitelisted icon or known-bad — use Lucide
+            return (!closedSrc || isUrlFailed(closedSrc)) && (!openSrc || isUrlFailed(openSrc));
         }
         // For files: if URL is null or failed, use Lucide
         return !fileUrl || isUrlFailed(fileUrl);
-    }, [isDir, closedSrc, openSrc, genericClosedSrc, genericOpenSrc, fileUrl]);
+    }, [isDir, closedSrc, openSrc, fileUrl]);
 
     const [error, setError] = useState(initialError);
     const prevKeyRef = useRef(`${name}-${isDir}`);
@@ -314,10 +422,8 @@ const SmartFileIcon = React.memo(function SmartFileIcon({ name, isDir, isOpen })
             if (isDir) {
                 const newClosedSrc = getFolderUrl(name, false);
                 const newOpenSrc = getFolderUrl(name, true);
-                const newGenClosed = getGenericFolderUrl(false);
-                const newGenOpen = getGenericFolderUrl(true);
-                const allFailed = (isUrlFailed(newClosedSrc) && isUrlFailed(newGenClosed)) &&
-                                  (isUrlFailed(newOpenSrc) && isUrlFailed(newGenOpen));
+                const allFailed = (!newClosedSrc || isUrlFailed(newClosedSrc)) &&
+                                  (!newOpenSrc || isUrlFailed(newOpenSrc));
                 setError(allFailed);
             } else {
                 const newFileUrl = getFileUrl(name);
@@ -328,18 +434,8 @@ const SmartFileIcon = React.memo(function SmartFileIcon({ name, isDir, isOpen })
 
     // Stable error handlers
     const handleFolderError = useCallback((e) => {
-        const src = e.target.src;
-        markUrlFailed(src);
-        // If the specific folder icon failed, try the generic one
-        if (!src.endsWith("/folder.svg") && !src.endsWith("/folder-open.svg")) {
-            const isOpenImg = e.target.getAttribute("data-state") === "open";
-            const generic = getGenericFolderUrl(isOpenImg);
-            if (!isUrlFailed(generic)) {
-                e.target.src = generic;
-                return;
-            }
-        }
-        // Generic also failed — fall back to Lucide
+        markUrlFailed(e.target.src);
+        // Specific folder icon failed — fall back to Lucide directly (no generic fetch)
         setError(true);
     }, []);
 
@@ -355,18 +451,27 @@ const SmartFileIcon = React.memo(function SmartFileIcon({ name, isDir, isOpen })
     if (error) {
         if (isDir) {
             return isOpen ? (
-                <DefaultFolderOpen className="w-4 h-4 text-blue-500" />
+                <DefaultFolderOpen className="w-4 h-4 text-accent" />
             ) : (
-                <DefaultFolderIcon className="w-4 h-4 text-blue-500" />
+                <DefaultFolderIcon className="w-4 h-4 text-accent" />
             );
         }
         return <DefaultFileIcon className="w-4 h-4 text-muted-foreground" />;
     }
 
     if (isDir) {
-        // If the specific URL is already known-bad, start with generic directly
-        const actualClosedSrc = isUrlFailed(closedSrc) ? genericClosedSrc : closedSrc;
-        const actualOpenSrc = isUrlFailed(openSrc) ? genericOpenSrc : openSrc;
+        // If specific URL is null (not in whitelist) or known-bad, use Lucide directly
+        const actualClosedSrc = closedSrc && !isUrlFailed(closedSrc) ? closedSrc : null;
+        const actualOpenSrc = openSrc && !isUrlFailed(openSrc) ? openSrc : null;
+
+        // No specific icon available — use Lucide fallback immediately (no network request)
+        if (!actualClosedSrc && !actualOpenSrc) {
+            return isOpen ? (
+                <DefaultFolderOpen className="w-4 h-4 text-accent" />
+            ) : (
+                <DefaultFolderIcon className="w-4 h-4 text-accent" />
+            );
+        }
 
         return (
             <>
@@ -704,7 +809,7 @@ const TreeView = forwardRef(function TreeView({
             </div>
 
             {/* TREE - uses measured height to fill container, scrolls internally */}
-            <div ref={treeContainerRef} className="flex-1 min-h-0 overflow-hidden">
+            <div ref={treeContainerRef} className="flex-1 min-h-0 overflow-hidden scrollbar-on-hover">
                 <Tree
                     data={filtered}
                     width="100%"
@@ -715,7 +820,7 @@ const TreeView = forwardRef(function TreeView({
                     padding={4}
                     indent={20}
                     ref={instance => { treeRef.current = instance; }}
-                    className="h-full w-full [&>div]:scrollbar-thin [&>div]:overflow-auto"
+                    className="h-full w-full scrollbar-on-hover [&>div]:scrollbar-on-hover [&>div]:overflow-auto [&_*]:scrollbar-on-hover"
                     dndRootElement={null}
                     overscanCount={5}
                     initialOpenState="all"

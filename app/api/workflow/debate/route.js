@@ -114,6 +114,7 @@ export async function GET(request) {
                 { round: "asc" },
                 { createdAt: "asc" },
             ],
+            take: 500,
         });
 
         // Group by vulnerability if returning multiple

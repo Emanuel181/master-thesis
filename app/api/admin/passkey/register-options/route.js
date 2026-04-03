@@ -26,8 +26,7 @@ export async function POST(request) {
         
         // Get request origin for WebAuthn configuration
         const requestOrigin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/');
-        console.log('[Register Options] Request origin:', requestOrigin);
-        
+
         // Verify email is a registered admin in database
         const adminAccount = await prisma.adminAccount.findUnique({
             where: { email: normalizedEmail },

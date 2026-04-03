@@ -99,7 +99,12 @@ export function ImportFromUrlDialog({ open, onOpenChange, useCaseId, onSuccess }
             setStatus("uploading")
 
             if (!response.ok) {
-                const data = await response.json()
+                let data
+                try {
+                    data = await response.json()
+                } catch {
+                    data = {}
+                }
                 throw new Error(data.error || "Failed to import PDF")
             }
 

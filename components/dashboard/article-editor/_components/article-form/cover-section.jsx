@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn, sanitizeImageUrl } from "@/lib/utils"
 import { IconDisplay } from "./icon-display"
 import { CollapsibleSection } from "./collapsible-section"
 
@@ -49,7 +49,7 @@ export function CoverSection({
                             formState.coverType === "gradient"
                                 ? formState.gradient
                                 : formState.coverImage
-                                    ? `url(${formState.coverImage})`
+                                    ? `url(${sanitizeImageUrl(formState.coverImage)})`
                                     : undefined,
                         backgroundSize: formState.coverType === "gradient" ? "200% 200%" : "cover",
                         backgroundPosition: "center",

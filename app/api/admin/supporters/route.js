@@ -1,13 +1,19 @@
-import { readJsonBody } from "@/lib/api-security";
-import { requireAdmin } from "@/lib/admin-auth";
-import prisma from "@/lib/prisma";
-import { z } from "zod";
-import { 
-    successResponse, 
-    errorResponse, 
-    validationErrorResponse,
-    generateRequestId 
-} from "@/lib/api-handler";
+/**
+ * Admin Supporters API Routes
+ * ============================
+ *
+ * GET /api/admin/supporters - Get all supporters
+ * POST /api/admin/supporters - Create a new supporter
+ *
+ * Security features:
+ * - Uses createAdminApiHandler for consistent auth/validation
+ * - Zod validation on all inputs
+ * - Rate limiting enabled
+ */
+
+import { createAdminApiHandler } from '@/lib/admin-auth';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
 
 // Validation schema
 const supporterSchema = z.object({
@@ -28,16 +34,9 @@ const supporterSchema = z.object({
 /**
  * GET /api/admin/supporters
  * Get all supporters from database
- * Requires admin authentication
  */
-export async function GET() {
-    const requestId = generateRequestId();
-    
-    // Verify admin authentication
-    const adminCheck = await requireAdmin();
-    if (adminCheck.error) return adminCheck.error;
-
-    try {
+export const GET = createAdminApiHandler(
+    async (request, { requestId }) => {
         const supporters = await prisma.supporter.findMany({
             orderBy: [
                 { tier: 'asc' },
@@ -46,61 +45,41 @@ export async function GET() {
             ],
         });
 
-        return successResponse({ supporters }, { requestId });
-    } catch (error) {
-        console.error('[Admin Supporters GET Error]', error);
-        return errorResponse('Failed to fetch supporters', { status: 500, code: 'INTERNAL_ERROR', requestId });
+        return { supporters };
+    },
+    {
+        rateLimit: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'admin:supporters:list' },
     }
-}
+);
 
 /**
  * POST /api/admin/supporters
  * Create a new supporter in database
- * Requires admin authentication
  */
-export async function POST(request) {
-    const requestId = generateRequestId();
-    
-    // Verify admin authentication
-    const adminCheck = await requireAdmin();
-    if (adminCheck.error) return adminCheck.error;
-
-    try {
-        const bodyResult = await readJsonBody(request);
-        if (!bodyResult.ok) {
-            return errorResponse('Invalid request body', { status: 400, code: 'INVALID_JSON', requestId });
-        }
-
-        const validation = supporterSchema.safeParse(bodyResult.body);
-        if (!validation.success) {
-            return validationErrorResponse(validation.error, { requestId });
-        }
-
+export const POST = createAdminApiHandler(
+    async (request, { body, requestId }) => {
         const newSupporter = await prisma.supporter.create({
             data: {
-                name: validation.data.name,
-                avatarUrl: validation.data.avatarUrl || null,
-                occupation: validation.data.occupation,
-                company: validation.data.company || null,
-                companyUrl: validation.data.companyUrl || null,
-                contributionBio: validation.data.contributionBio,
-                personalBio: validation.data.personalBio || null,
-                linkedinUrl: validation.data.linkedinUrl || null,
-                websiteUrl: validation.data.websiteUrl || null,
-                tier: validation.data.tier,
-                featured: validation.data.featured,
-                order: validation.data.order,
+                name: body.name,
+                avatarUrl: body.avatarUrl || null,
+                occupation: body.occupation,
+                company: body.company || null,
+                companyUrl: body.companyUrl || null,
+                contributionBio: body.contributionBio,
+                personalBio: body.personalBio || null,
+                linkedinUrl: body.linkedinUrl || null,
+                websiteUrl: body.websiteUrl || null,
+                tier: body.tier,
+                featured: body.featured,
+                order: body.order,
                 visible: true,
             },
         });
 
-        return successResponse(
-            { supporter: newSupporter, message: 'Supporter created successfully' }, 
-            { status: 201, requestId }
-        );
-
-    } catch (error) {
-        console.error('[Admin Supporters POST Error]', error);
-        return errorResponse('Failed to create supporter', { status: 500, code: 'INTERNAL_ERROR', requestId });
+        return { supporter: newSupporter, message: 'Supporter created successfully' };
+    },
+    {
+        bodySchema: supporterSchema,
+        rateLimit: { limit: 30, windowMs: 60 * 1000, keyPrefix: 'admin:supporters:create' },
     }
-}
+);

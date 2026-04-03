@@ -103,7 +103,7 @@ export const InfiniteMovingCards = ({
       >
         {items.map((item) => (
           <li
-            className="relative w-[280px] sm:w-[350px] max-w-full shrink-0 rounded-2xl border border-[var(--brand-primary)]/20 bg-[var(--card)] px-5 sm:px-8 py-4 sm:py-6 md:w-[450px] dark:border-[var(--brand-accent)]/30 dark:bg-[var(--brand-primary)]/90 shadow-sm"
+            className="relative w-[280px] sm:w-[350px] max-w-full shrink-0 rounded-2xl border border-primary/20 bg-[var(--card)] px-5 sm:px-8 py-4 sm:py-6 md:w-[450px] dark:border-accent/30 dark:bg-primary/90 shadow-sm"
             key={item.name}
           >
             <blockquote>
@@ -111,15 +111,15 @@ export const InfiniteMovingCards = ({
                 aria-hidden="true"
                 className="user-select-none pointer-events-none absolute -top-0.5 -left-0.5 -z-1 h-[calc(100%_+_4px)] w-[calc(100%_+_4px)]"
               ></div>
-              <span className="relative z-20 text-xs sm:text-sm leading-[1.6] font-normal text-[var(--brand-primary)] dark:text-[var(--brand-light)]">
+              <span className="relative z-20 text-xs sm:text-sm leading-[1.6] font-normal text-primary dark:text-accent-foreground">
                 {item.quote}
               </span>
               <div className="relative z-20 mt-4 sm:mt-6 flex flex-row items-center">
                 <span className="flex flex-col gap-1">
-                  <span className="text-xs sm:text-sm leading-[1.6] font-semibold text-[var(--brand-primary)]/80 dark:text-[var(--brand-light)]/80">
+                  <span className="text-xs sm:text-sm leading-[1.6] font-semibold text-primary/80 dark:text-accent-foreground/80">
                     {item.name}
                   </span>
-                  <span className="text-xs sm:text-sm leading-[1.6] font-normal text-[var(--brand-primary)]/60 dark:text-[var(--brand-light)]/60">
+                  <span className="text-xs sm:text-sm leading-[1.6] font-normal text-primary/60 dark:text-accent-foreground/60">
                     {item.title}
                   </span>
                 </span>

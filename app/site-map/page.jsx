@@ -64,7 +64,7 @@ export default function SitemapPage() {
     });
 
     return (
-        <div className="landing-page h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-[var(--brand-accent)]/20">
+        <div className="landing-page h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-accent/20">
             {/* Background effects */}
             <div className="fixed inset-0 mesh-gradient pointer-events-none opacity-50" />
             <div className="fixed inset-0 dots-pattern opacity-30 pointer-events-none" />
@@ -82,7 +82,7 @@ export default function SitemapPage() {
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-accent/10 hover:text-accent">
                             <Link href="/">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 <span className="sm:hidden">Back</span>
@@ -91,11 +91,11 @@ export default function SitemapPage() {
                         </Button>
                         <button
                             onClick={openPanel}
-                            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
+                            className="flex items-center justify-center w-9 h-9 rounded-full bg-accent/10 hover:bg-accent/20 border border-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                             aria-label="Open accessibility menu"
                             title="Accessibility ptions"
                         >
-                            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
+                            <PersonStanding className="w-5 h-5 text-accent" strokeWidth={2} />
                         </button>
                         <ThemeToggle />
                     </div>
@@ -113,15 +113,15 @@ export default function SitemapPage() {
                     >
                         {/* Title Section */}
                         <div className="text-center mb-10">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--brand-accent)]/10 mb-6 ring-1 ring-[var(--brand-accent)]/20">
-                                <Map className="w-8 h-8 text-[var(--brand-accent)]" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 mb-6 ring-1 ring-accent/20">
+                                <Map className="w-8 h-8 text-accent" />
                             </div>
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
                                 XML Sitemap
                             </h1>
                             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                                 This sitemap helps search engines like Google crawl and index pages on this website.
-                                Learn more about <a href="https://www.sitemaps.org/" target="_blank" rel="noopener noreferrer" className="text-[var(--brand-accent)] hover:underline">XML Sitemaps</a>.
+                                Learn more about <a href="https://www.sitemaps.org/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">XML Sitemaps</a>.
                             </p>
                         </div>
 
@@ -172,7 +172,7 @@ export default function SitemapPage() {
                                                     href={`${BASE_URL}${page.url}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[var(--brand-accent)] hover:underline text-sm"
+                                                    className="text-accent hover:underline text-sm"
                                                 >
                                                     {BASE_URL}{page.url || '/'}
                                                 </a>

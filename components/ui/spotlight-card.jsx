@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const SpotlightCard = ({ 
   children, 
   className = '', 
-  spotlightColor = 'rgba(31, 182, 207, 0.25)' 
+  spotlightColor = 'rgba(255, 255, 255, 0.06)'
 }) => {
   const divRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -47,7 +47,7 @@ const SpotlightCard = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "relative rounded-3xl border border-[var(--brand-accent)]/20 bg-[var(--brand-primary)] overflow-hidden p-8",
+        "relative rounded-3xl border border-border bg-card overflow-hidden p-8",
         className
       )}
     >

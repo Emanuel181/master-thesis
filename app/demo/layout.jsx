@@ -22,7 +22,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CustomizationDialog } from "@/components/customization-dialog";
 import { useSettings } from "@/contexts/settingsContext";
 import { ProjectProvider, useProject } from "@/contexts/projectContext";
-import { useDemo } from "@/contexts/demoContext";
 
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
 import { Badge } from "@/components/ui/badge"
@@ -46,14 +45,14 @@ function QuickActionsTrigger() {
     return (
         <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
-            title="Quick actions (⌘K)"
+            title="Quick actions (Ctrl+Shift+K)"
             aria-label="Open quick actions"
             className="inline-flex items-center gap-2 h-8 sm:h-9 px-2.5 sm:px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer w-40 sm:w-52 md:w-64"
         >
             <Search className="h-3.5 w-3.5 shrink-0" />
             <span className="flex-1 text-left text-xs truncate">Search actions...</span>
             <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                ⌘K
+                Ctrl⇧K
             </kbd>
         </button>
     )
@@ -82,6 +81,7 @@ const routeToComponent = {
     'code-input': 'Code inspection',
     'knowledge-base': 'Knowledge base',
     'results': 'Results',
+    'code-graph': 'Code Graph',
     'profile': 'Profile',
     'write-article': 'Write article',
 };
@@ -90,7 +90,6 @@ const routeToComponent = {
 function DemoLayoutContent({ settings, mounted, children }) {
     const { projectStructure, setSelectedFile } = useProject();
     const { setForceHideFloating } = useAccessibility();
-    const { enableDemoMode } = useDemo();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -103,13 +102,6 @@ function DemoLayoutContent({ settings, mounted, children }) {
     const [codeType, setCodeType] = useState("JavaScript");
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
-
-    // Enable demo mode on mount
-    // NOTE: Project structure is NOT auto-loaded - user must import a repo from GitHub/GitLab
-    // This simulates real conditions where no project is shown until explicitly imported
-    useEffect(() => {
-        enableDemoMode();
-    }, [enableDemoMode]);
 
     // Update breadcrumbs when route changes
     useEffect(() => {
@@ -143,6 +135,18 @@ function DemoLayoutContent({ settings, mounted, children }) {
         return () => window.removeEventListener("open-workflow-config", handleOpenWorkflow);
     }, []);
 
+    // Listen for navigate-to-code-graph event (from Results page attack path links)
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.detail) {
+                sessionStorage.setItem("vulniq_graph_highlight", JSON.stringify(e.detail));
+            }
+            router.push('/demo/code-graph');
+        };
+        window.addEventListener("navigate-to-code-graph", handler);
+        return () => window.removeEventListener("navigate-to-code-graph", handler);
+    }, [router]);
+
     // Sidebar state based on sidebarMode setting
     const [sidebarOpen, setSidebarOpen] = useState(settings.sidebarMode !== 'icon')
 
@@ -174,6 +178,7 @@ function DemoLayoutContent({ settings, mounted, children }) {
             'Code inspection': '/demo/code-input',
             'Knowledge base': '/demo/knowledge-base',
             'Results': '/demo/results',
+            'Code Graph': '/demo/code-graph',
             'Profile': '/demo/profile',
             'Write article': '/demo/write-article',
         };
@@ -208,8 +213,10 @@ function DemoLayoutContent({ settings, mounted, children }) {
                             >
                                 <SidebarProvider
                                     className="h-screen overflow-hidden"
-                                    open={sidebarOpen}
-                                    onOpenChange={setSidebarOpen}
+                                    {...(mounted
+                                        ? { open: sidebarOpen, onOpenChange: setSidebarOpen }
+                                        : { defaultOpen: true }
+                                    )}
                                 >
                                     <AppSidebar onNavigate={handleNavigation} activeComponent={activeComponent} />
                                     <SidebarInset className="flex flex-col overflow-hidden">

@@ -19,7 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 function ListItem({ title, children, href, icon: Icon, external, ...props }) {
     const isInternal = href.startsWith('/') && !external
     const LinkComponent = isInternal ? Link : 'a'
-    
+
     return (
         <li {...props}>
             <NavigationMenuLink asChild>
@@ -28,18 +28,18 @@ function ListItem({ title, children, href, icon: Icon, external, ...props }) {
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
                     className={cn(
-                        "block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors",
-                        "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        "block select-none rounded-md p-3 no-underline outline-none transition-colors",
+                        "hover:bg-muted focus:bg-muted"
                     )}
                 >
                     <div className="flex items-center gap-2">
-                        {Icon && <Icon className="h-4 w-4 text-[var(--brand-accent)]" />}
-                        <div className="text-sm font-medium leading-none flex items-center gap-1">
+                        {Icon && <Icon className="h-4 w-4 text-accent shrink-0" />}
+                        <span className="text-sm font-medium leading-none flex items-center gap-1">
                             {title}
                             {external && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
-                        </div>
+                        </span>
                     </div>
-                    <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1.5">
+                    <p className="text-xs leading-snug text-muted-foreground line-clamp-2 mt-1.5 pl-6">
                         {children}
                     </p>
                 </LinkComponent>
@@ -57,7 +57,7 @@ export function NavMenu({ isAboveColoredSection }) {
     const triggerClassName = cn(
         "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
         isAboveColoredSection
-            ? "text-[#1fb6cf] hover:text-[#1fb6cf]"
+            ? "text-accent hover:text-accent"
             : "text-muted-foreground hover:text-foreground"
     )
 
@@ -75,10 +75,10 @@ export function NavMenu({ isAboveColoredSection }) {
                                 <li className="row-span-3">
                                     <NavigationMenuLink asChild>
                                         <Link
-                                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-[var(--brand-accent)]/20 to-[var(--brand-primary)]/20 p-4 no-underline outline-none focus:shadow-md transition-all hover:from-[var(--brand-accent)]/30 hover:to-[var(--brand-primary)]/30"
+                                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-accent/20 to-muted p-4 no-underline outline-none focus:shadow-md transition-all hover:from-accent/30 hover:to-muted/80"
                                             href="/#features"
                                         >
-                                            <Sparkles className="h-6 w-6 text-[var(--brand-accent)]" />
+                                            <Sparkles className="h-6 w-6 text-accent" />
                                             <div className="mb-2 mt-4 text-lg font-medium">VulnIQ</div>
                                             <p className="text-sm leading-tight text-muted-foreground">
                                                 AI-powered security code review with autonomous remediation.
@@ -93,12 +93,12 @@ export function NavMenu({ isAboveColoredSection }) {
                                     See how teams use VulnIQ for security.
                                 </ListItem>
                                 <li>
-                                    <div className="block select-none rounded-md p-3 leading-none no-underline outline-none">
+                                    <div className="block select-none rounded-md p-3 no-underline outline-none">
                                         <div className="flex items-center gap-2">
-                                            <GitBranch className="h-4 w-4 text-[var(--brand-accent)]" />
-                                            <div className="text-sm font-medium leading-none">Integrations</div>
+                                            <GitBranch className="h-4 w-4 text-accent shrink-0" />
+                                            <span className="text-sm font-medium leading-none">Integrations</span>
                                         </div>
-                                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1.5">
+                                        <p className="text-xs leading-snug text-muted-foreground line-clamp-2 mt-1.5 pl-6">
                                             Connect with GitHub, GitLab, and more.
                                         </p>
                                     </div>
@@ -117,17 +117,11 @@ export function NavMenu({ isAboveColoredSection }) {
                                 <li className="row-span-4">
                                     <NavigationMenuLink asChild>
                                         <Link
-                                            className="flex h-full w-full select-none flex-col justify-end rounded-md p-6 no-underline outline-none focus:shadow-md transition-all duration-200 overflow-hidden relative group"
+                                            className="flex h-full w-full select-none flex-col justify-end rounded-md p-6 no-underline outline-none focus:shadow-md transition-all duration-200 overflow-hidden relative group bg-gradient-to-br from-accent/15 via-muted to-accent/15"
                                             href="/blog"
-                                            style={{
-                                                background: `linear-gradient(135deg, 
-                                                    rgba(var(--brand-accent-rgb), 0.15) 0%, 
-                                                    rgba(var(--brand-primary-rgb), 0.3) 50%,
-                                                    rgba(var(--brand-accent-rgb), 0.15) 100%)`
-                                            }}
                                         >
                                             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
-                                            <Rss className="h-8 w-8 mb-3 text-[var(--brand-accent)] relative z-10 group-hover:scale-110 transition-transform" />
+                                            <Rss className="h-8 w-8 mb-3 text-accent relative z-10 group-hover:scale-110 transition-transform" />
                                             <div className="mb-1 text-lg font-medium relative z-10 text-foreground">Blog</div>
                                             <p className="text-sm leading-tight text-muted-foreground relative z-10">
                                                 Security insights and best practices.

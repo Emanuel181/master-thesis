@@ -414,7 +414,6 @@ export default function AdminUsersPage() {
         } catch (err) {
             if (err.name === 'NotAllowedError') {
                 // User cancelled - this is expected behavior, not an error
-                console.log('Passkey registration cancelled by user');
                 setVerifyError('Passkey registration was cancelled. Click the button to try again.');
             } else {
                 console.error('Passkey registration error:', err);
@@ -478,7 +477,6 @@ export default function AdminUsersPage() {
 
         } catch (err) {
             if (err.name === 'NotAllowedError') {
-                console.log('Passkey authentication cancelled or not available');
                 setVerifyError('Passkey not found on this device. You may need to reset your passkey if it was deleted or you\'re on a different device.');
             } else {
                 console.error('Passkey authentication error:', err);
@@ -571,7 +569,7 @@ export default function AdminUsersPage() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="text-center space-y-4">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-[var(--brand-accent)]" />
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-accent" />
                     <p className="text-muted-foreground">Checking session...</p>
                 </div>
             </div>
@@ -582,10 +580,10 @@ export default function AdminUsersPage() {
     if (verifyState !== VERIFY_STATE.VERIFIED) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background p-4">
-                <Card className="w-full max-w-md border-[var(--brand-accent)]/20">
+                <Card className="w-full max-w-md border-accent/20">
                     <CardHeader className="text-center space-y-3">
-                        <div className="mx-auto w-14 h-14 rounded-xl bg-[var(--brand-accent)]/10 flex items-center justify-center">
-                            <Shield className="h-7 w-7 text-[var(--brand-accent)]" />
+                        <div className="mx-auto w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center">
+                            <Shield className="h-7 w-7 text-accent" />
                         </div>
                         <CardTitle className="text-xl">Admin Verification</CardTitle>
                         <CardDescription>
@@ -625,7 +623,7 @@ export default function AdminUsersPage() {
                                         />
                                     </div>
                                 </div>
-                                <Button onClick={verifyEmail} disabled={isVerifying} className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90">
+                                <Button onClick={verifyEmail} disabled={isVerifying} className="w-full bg-accent hover:bg-accent/90">
                                     {isVerifying ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying...</> : 'Continue'}
                                 </Button>
                             </>
@@ -661,7 +659,7 @@ export default function AdminUsersPage() {
                                     </div>
                                 </div>
                                 <Button
-                                    className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                    className="w-full bg-accent hover:bg-accent/90"
                                     onClick={verifyPassword}
                                     disabled={isVerifying}
                                 >
@@ -712,7 +710,7 @@ export default function AdminUsersPage() {
                                         />
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={startPasskeySetup}
                                     >
                                         <KeyRound className="mr-2 h-4 w-4" />
@@ -745,7 +743,7 @@ export default function AdminUsersPage() {
                                         <p>Complete authentication with your registered passkey.</p>
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={startPasskeyAuth}
                                     >
                                         <KeyRound className="mr-2 h-4 w-4" />
@@ -791,7 +789,7 @@ export default function AdminUsersPage() {
                         {verifyState === VERIFY_STATE.PASSKEY_PROCESSING && (
                             <div className="space-y-4">
                                 <div className="flex flex-col items-center justify-center gap-3 py-8">
-                                    <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
+                                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
                                     <p className="text-sm text-muted-foreground">
                                         Complete the verification on your device...
                                     </p>
@@ -801,7 +799,7 @@ export default function AdminUsersPage() {
 
                         <Separator />
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <Shield className="h-4 w-4 text-[var(--brand-accent)] shrink-0" />
+                            <Shield className="h-4 w-4 text-accent shrink-0" />
                             <p><span className="font-medium text-foreground">Security Notice:</span> Only whitelisted admin emails can access this page.</p>
                         </div>
                     </CardContent>
@@ -823,10 +821,10 @@ export default function AdminUsersPage() {
                             <span className="font-semibold hidden sm:inline">VulnIQ</span>
                         </Link>
                         <Badge variant="outline" className={cn(
-                            "border-[var(--brand-accent)]/30",
+                            "border-accent/30",
                             isMasterAdmin 
                                 ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
-                                : "bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]"
+                                : "bg-accent/10 text-accent"
                         )}>
                             <ShieldCheck className="mr-1 h-3 w-3" />
                             {isMasterAdmin ? 'Master Admin' : 'Admin'}
@@ -878,7 +876,7 @@ export default function AdminUsersPage() {
                 {/* Messages */}
                 {successMessage && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                        <Alert className="bg-[var(--brand-accent)]/10 border-[var(--brand-accent)]/30 text-[var(--brand-accent)]">
+                        <Alert className="bg-accent/10 border-accent/30 text-accent">
                             <CheckCircle2 className="h-4 w-4" />
                             <AlertDescription>{successMessage}</AlertDescription>
                         </Alert>
@@ -900,8 +898,8 @@ export default function AdminUsersPage() {
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-[var(--brand-accent)]/10">
-                                <Users className="h-5 w-5 text-[var(--brand-accent)]" />
+                            <div className="p-2.5 rounded-xl bg-accent/10">
+                                <Users className="h-5 w-5 text-accent" />
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
@@ -912,7 +910,7 @@ export default function AdminUsersPage() {
                     <div className="flex gap-3">
                         <Card className="flex-1 min-w-[120px]">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10"><Users className="h-4 w-4 text-[var(--brand-accent)]" /></div>
+                                <div className="p-2 rounded-lg bg-accent/10"><Users className="h-4 w-4 text-accent" /></div>
                                 <div><p className="text-xl font-bold">{stats.totalUsers}</p><p className="text-xs text-muted-foreground">Total</p></div>
                             </CardContent>
                         </Card>
@@ -999,7 +997,7 @@ export default function AdminUsersPage() {
                                                         <div className="flex items-center gap-2">
                                                             <p className="font-medium truncate">{user.name || user.firstName || 'Unnamed'}</p>
                                                             {isCurrentAdmin && (
-                                                                <Badge variant="outline" className="text-xs bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] border-[var(--brand-accent)]/30">You</Badge>
+                                                                <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/30">You</Badge>
                                                             )}
                                                         </div>
                                                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -1082,7 +1080,7 @@ export default function AdminUsersPage() {
 
                 {/* Security Notice */}
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-muted/30">
-                    <ShieldCheck className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
+                    <ShieldCheck className="h-5 w-5 text-accent shrink-0" />
                     <p className="text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">Security Notice:</span> Your admin session expires after 30 minutes. Warnings are logged and users are notified.
                     </p>

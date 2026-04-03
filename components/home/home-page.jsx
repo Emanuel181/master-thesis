@@ -121,11 +121,13 @@ export function HomePage({ onNavigate }) {
                 switchDemoProject(repo.full_name)
                 // Mark the provider as connected so the code-input page doesn't clear the project
                 const provider = repo.provider || 'github'
-                if (provider === 'gitlab') {
-                    localStorage.setItem('vulniq_demo_gitlab_connected', 'true')
-                } else {
-                    localStorage.setItem('vulniq_demo_github_connected', 'true')
-                }
+                try {
+                    if (provider === 'gitlab') {
+                        localStorage.setItem('vulniq_demo_gitlab_connected', 'true')
+                    } else {
+                        localStorage.setItem('vulniq_demo_github_connected', 'true')
+                    }
+                } catch { /* quota exceeded */ }
             } else {
                 structure = await fetchRepoTree(owner, repoName, repo.provider)
             }

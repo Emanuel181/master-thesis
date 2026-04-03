@@ -16,7 +16,7 @@ const useCasesData = [
       icon: BookOpen,
       title: "Guided learning",
       subtitle: "Step-by-step remediation",
-      color: "from-cyan-500 to-blue-600",
+      color: "from-violet-500 to-indigo-600",
     },
   },
   {
@@ -27,7 +27,7 @@ const useCasesData = [
       icon: Rocket,
       title: "Move fast",
       subtitle: "Security at startup speed",
-      color: "from-emerald-500 to-teal-600",
+      color: "from-emerald-500 to-green-600",
     },
   },
   {
@@ -54,12 +54,12 @@ const useCasesData = [
   },
   {
     number: "05",
-    title: "Enterprise teams",
-    description: "Scale security across large codebases with specialized prompts and compliance tracking.",
+    title: "Teams of programmers",
+    description: "Integrate VulnIQ into your team workflow. Shared prompts, consistent fixes, and security reviews that scale with your codebase.",
     visual: {
       icon: Building2,
-      title: "Enterprise scale",
-      subtitle: "Secure the development",
+      title: "Team workflow",
+      subtitle: "Security at scale",
       color: "from-slate-500 to-zinc-700",
     },
   },
@@ -100,7 +100,7 @@ const PointItem = ({
         <div className="w-[30px] sm:w-[50px] flex items-start justify-center relative">
           <div className="h-full w-[2px] bg-foreground/10 absolute top-0 left-[50%] -translate-x-1/2" />
           <div
-            className="w-[2px] bg-[var(--brand-accent)] absolute top-0 left-[50%] -translate-x-1/2 transition-all duration-150"
+            className="w-[2px] bg-accent absolute top-0 left-[50%] -translate-x-1/2 transition-all duration-150"
             style={{ height: `${barHeightPercentage}%` }}
           />
         </div>
@@ -121,15 +121,19 @@ const VisualCard = ({ visual, isActive }) => {
       isActive ? "opacity-100" : "opacity-0"
     )}>
       <div className={cn(
-        "w-full h-full rounded-2xl bg-gradient-to-br flex flex-col items-center justify-center gap-6 p-8",
+        "w-full h-full rounded-2xl bg-gradient-to-br flex flex-col items-center justify-center gap-6 p-8 relative overflow-hidden",
         visual.color
       )}>
-        <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-          <Icon className="w-12 h-12 md:w-16 md:h-16 text-white" />
+        {/* Subtle radial highlight for depth */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: "radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.18), transparent 60%)"
+        }} />
+        <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur-sm">
+          <Icon className="w-12 h-12 md:w-16 md:h-16 text-white/90" />
         </div>
-        <div className="text-center">
+        <div className="text-center relative z-10">
           <h4 className="text-2xl md:text-3xl font-bold text-white mb-2">{visual.title}</h4>
-          <p className="text-white/80 text-lg">{visual.subtitle}</p>
+          <p className="text-white/70 text-lg">{visual.subtitle}</p>
         </div>
       </div>
     </div>
@@ -196,7 +200,7 @@ export function UseCasesScrollReveal({ className }) {
                   Who benefits from VulnIQ?
                 </h2>
                 <p className="text-muted-foreground text-xs sm:text-sm max-w-sm">
-                  From learners to enterprises, VulnIQ adapts to your workflow.
+                  From learners to teams, VulnIQ adapts to your workflow.
                 </p>
               </div>
 

@@ -11,6 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 
 /**
@@ -57,7 +58,7 @@ export function AgentCard({
     }
 
     return (
-        <Card className={`transition-all duration-200 hover:shadow-md ${
+        <Card className={`transition-all duration-200 ${
             status === "complete" ? 'border-emerald-500/30' : status === "partial" ? 'border-yellow-500/20' : ''
         }`}>
             <CardHeader className={`flex flex-row items-center justify-between pb-2 rounded-t-lg transition-colors duration-300 ${
@@ -66,22 +67,26 @@ export function AgentCard({
                 <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-medium">{title}</CardTitle>
                     <div className="flex items-center gap-1.5">
-                        <span
-                            className={`h-2.5 w-2.5 rounded-full shrink-0 transition-colors duration-300 ${
-                                status === "complete"
-                                    ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
-                                    : status === "partial"
-                                    ? "bg-yellow-500 shadow-sm shadow-yellow-500/50"
-                                    : "bg-muted-foreground/30"
-                            }`}
-                            title={
-                                status === "complete"
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    className={`h-2.5 w-2.5 rounded-full shrink-0 transition-colors duration-300 ${
+                                        status === "complete"
+                                            ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
+                                            : status === "partial"
+                                            ? "bg-yellow-500 shadow-sm shadow-yellow-500/50"
+                                            : "bg-muted-foreground/30"
+                                    }`}
+                                />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {status === "complete"
                                     ? "Fully configured"
                                     : status === "partial"
                                     ? "Partially configured"
-                                    : "Not configured"
-                            }
-                        />
+                                    : "Not configured"}
+                            </TooltipContent>
+                        </Tooltip>
                         <span className={`text-[10px] font-medium ${
                             status === "complete"
                                 ? "text-emerald-600 dark:text-emerald-400"
@@ -268,16 +273,20 @@ export function AgentCard({
                                         </div>
                                     </SelectContent>
                                 </Select>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0"
-                                    onClick={onRefresh}
-                                    disabled={isRefreshing}
-                                    title="Refresh prompts"
-                                >
-                                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 shrink-0"
+                                            onClick={onRefresh}
+                                            disabled={isRefreshing}
+                                        >
+                                            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Refresh prompts</TooltipContent>
+                                </Tooltip>
                             </div>
                         </div>
                     </div>

@@ -10,9 +10,9 @@ import { Loader2 } from "lucide-react"
 export function RepoCard({ repo, isImporting, importProgress, onImport, disabled }) {
     return (
         <div
-            className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg card-hover-lift ${
-                isImporting 
-                    ? 'bg-primary/5 border-primary/30 shadow-sm' 
+            className={`flex items-center justify-between gap-2 p-2 border border-border/50 rounded-lg ${
+                isImporting
+                    ? 'bg-primary/5 border-primary/30 shadow-sm'
                     : 'hover:border-primary/30'
             }`}
         >

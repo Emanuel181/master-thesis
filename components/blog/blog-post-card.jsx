@@ -15,7 +15,7 @@ export function BlogPostCard({
 }) {
   return (
     <a href={href} className="group block">
-      <div className="bg-card text-card-foreground overflow-hidden rounded-lg border transition-all duration-300 hover:shadow-lg hover:border-[var(--brand-accent)]/30">
+      <div className="bg-card text-card-foreground overflow-hidden rounded-lg border transition-all duration-300 hover:shadow-lg hover:border-accent/30">
         <div className="relative overflow-hidden">
           <img
             src={imageSrc}
@@ -23,13 +23,13 @@ export function BlogPostCard({
             className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {category && (
-            <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium rounded-md bg-[var(--brand-accent)]/90 text-white">
+            <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium rounded-md bg-accent/90 text-white">
               {category}
             </span>
           )}
         </div>
         <div className="grid gap-2 p-4">
-          <h3 className="text-lg leading-tight font-semibold group-hover:text-[var(--brand-accent)] transition-colors line-clamp-2">
+          <h3 className="text-lg leading-tight font-semibold group-hover:text-accent transition-colors line-clamp-2">
             {title}
           </h3>
           <p className="text-muted-foreground line-clamp-3 text-sm">{description}</p>

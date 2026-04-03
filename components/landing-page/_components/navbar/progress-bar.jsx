@@ -8,7 +8,7 @@ import { motion } from "framer-motion"
 export function ProgressBar({ scaleX }) {
     return (
         <motion.div
-            className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-accent)] to-transparent z-[110] origin-left"
+            className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent z-[110] origin-left"
             style={{ scaleX }}
         />
     )

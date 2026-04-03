@@ -138,6 +138,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
     const [useCaseGroups, setUseCaseGroups] = React.useState([]);
     
     const refreshGroups = React.useCallback(async () => {
+        if (isDemoMode) return;
         try {
             const response = await fetch('/api/use-case-groups');
             if (response.ok) {
@@ -260,6 +261,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
 
         // When a group is selected, automatically select it and all its use cases/PDFs in workflow configuration
         const selectGroupInWorkflow = async () => {
+            if (isDemoMode) return;
             try {
                 // 1. Set the selected group
                 localStorage.setItem('vulniq_selected_groups', JSON.stringify([codeType]));
@@ -299,8 +301,6 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
 
                     // 4. Save all PDF IDs to localStorage
                     localStorage.setItem('vulniq_selected_documents', JSON.stringify(allPdfIds));
-                    
-                    console.log(`Auto-selected group ${codeType} with ${useCases.length} use cases and ${allPdfIds.length} documents`);
                 }
             } catch (error) {
                 console.error('Error auto-selecting group in workflow:', error);

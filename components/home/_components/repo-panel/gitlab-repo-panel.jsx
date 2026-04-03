@@ -116,7 +116,7 @@ export function GitLabRepoPanel({
     const health = useConnectionHealth(isConnected, isDemoMode)
 
     return (
-        <Card className={`flex flex-col overflow-hidden card-hover-lift min-h-[420px] ${className || ''}`}>
+        <Card className={`flex flex-col overflow-hidden min-h-[420px] ${className || ''}`}>
             <CardHeader className="py-2 px-2.5 sm:py-3 sm:px-4 flex-shrink-0">
                 {isConnected && (
                     <div className="flex items-center gap-1.5 mb-1">
@@ -132,26 +132,36 @@ export function GitLabRepoPanel({
                     </CardTitle>
                     {isConnected && (
                         <div className="flex gap-1 flex-shrink-0">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                onClick={refresh}
-                                disabled={isRefreshing}
-                                title="Refresh repositories"
-                            >
-                                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs"
-                                onClick={disconnect}
-                                title="Disconnect from GitLab"
-                            >
-                                <span className="hidden xs:inline">Disconnect</span>
-                                <span className="xs:hidden">×</span>
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span tabIndex={0}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                            onClick={refresh}
+                                            disabled={isRefreshing}
+                                        >
+                                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Refresh repositories</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-xs"
+                                        onClick={disconnect}
+                                    >
+                                        <span className="hidden xs:inline">Disconnect</span>
+                                        <span className="xs:hidden">×</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Disconnect from GitLab</TooltipContent>
+                            </Tooltip>
                         </div>
                     )}
                 </div>

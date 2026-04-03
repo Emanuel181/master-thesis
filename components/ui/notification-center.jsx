@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
     Bell,
     BellOff,
     CheckCheck,
@@ -649,25 +654,29 @@ export function NotificationCenter() {
             setOpen(isOpen)
             if (isOpen) refreshNotifications?.()
         }}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="relative"
-                    title={doNotDisturb ? "Notifications (Do Not Disturb)" : "Notifications"}
-                >
-                    {doNotDisturb ? (
-                        <BellOff className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                        <Bell className="h-5 w-5" />
-                    )}
-                    {unreadCount > 0 && !doNotDisturb && (
-                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                            {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                    )}
-                </Button>
-            </PopoverTrigger>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="relative"
+                        >
+                            {doNotDisturb ? (
+                                <BellOff className="h-5 w-5 text-muted-foreground" />
+                            ) : (
+                                <Bell className="h-5 w-5" />
+                            )}
+                            {unreadCount > 0 && !doNotDisturb && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                    {unreadCount > 9 ? "9+" : unreadCount}
+                                </span>
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>{doNotDisturb ? "Notifications (Do Not Disturb)" : "Notifications"}</TooltipContent>
+            </Tooltip>
             <PopoverContent className="w-80 p-0" align="end">
                 <div className="flex items-center justify-between border-b px-3 py-2">
                     <h4 className="font-semibold text-sm flex items-center gap-2">
@@ -677,25 +686,35 @@ export function NotificationCenter() {
                         )}
                     </h4>
                     <div className="flex items-center gap-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={handleRefresh}
-                            disabled={isRefreshing}
-                            title="Refresh notifications"
-                        >
-                            <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => setShowSettings(!showSettings)}
-                            title="Notification Settings"
-                        >
-                            <Settings className="h-3 w-3" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span tabIndex={0}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={handleRefresh}
+                                        disabled={isRefreshing}
+                                    >
+                                        <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+                                    </Button>
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Refresh notifications</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => setShowSettings(!showSettings)}
+                                >
+                                    <Settings className="h-3 w-3" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Notification settings</TooltipContent>
+                        </Tooltip>
                         {unreadCount > 0 && (
                             <Button
                                 variant="ghost"
@@ -708,15 +727,19 @@ export function NotificationCenter() {
                             </Button>
                         )}
                         {notifications.length > 0 && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={clearAll}
-                                title="Clear all"
-                            >
-                                <Trash2 className="h-3 w-3" />
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={clearAll}
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Clear all</TooltipContent>
+                            </Tooltip>
                         )}
                     </div>
                 </div>

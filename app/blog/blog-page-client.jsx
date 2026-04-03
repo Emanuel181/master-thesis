@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { SearchIcon, ArrowRightIcon, CalendarDaysIcon, Clock, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
@@ -42,16 +42,16 @@ function FeaturedSection({ posts }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden rounded-xl shadow-lg lg:col-span-2 cursor-pointer group"
+        className="relative h-[350px] sm:h-96 md:h-[28rem] overflow-hidden rounded-xl shadow-lg lg:col-span-2 cursor-pointer group"
         onClick={() => router.push(`/blog/${featuredPost.slug}`)}
       >
         <div
           className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105"
           style={{
             background: featuredPost.gradient || `linear-gradient(135deg, 
-              rgba(var(--brand-accent-rgb), 0.3) 0%, 
-              rgba(var(--brand-primary-rgb), 0.5) 50%,
-              rgba(var(--brand-accent-rgb), 0.3) 100%)`,
+              hsl(var(--accent)/0.3) 0%, 
+              hsl(var(--primary)/0.5) 50%,
+              hsl(var(--accent)/0.3) 100%)`,
             backgroundSize: "400% 400%",
             animation: "gradientMove 8s ease infinite",
           }}
@@ -63,10 +63,10 @@ function FeaturedSection({ posts }) {
         </div>
 
         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 md:p-8 text-white">
-          <Badge className="mb-3 w-fit bg-[var(--brand-accent)] text-white border-0">
+          <Badge className="mb-3 w-fit bg-accent text-white border-0">
             {featuredPost.category}
           </Badge>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl leading-tight font-bold mb-3 group-hover:text-[var(--brand-accent)] transition-colors">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl leading-tight font-bold mb-3 group-hover:text-accent transition-colors">
             {featuredPost.title}
           </h2>
           <p className="text-white/80 text-sm md:text-base line-clamp-2 mb-4 max-w-2xl">
@@ -105,7 +105,7 @@ function FeaturedSection({ posts }) {
                 title={post.title}
                 href={`/blog/${post.slug}`}
                 category={post.category}
-                icon={<PostIcon className="w-6 h-6 text-[var(--brand-accent)]" />}
+                icon={<PostIcon className="w-6 h-6 text-accent" />}
               />
             );
           })}
@@ -137,7 +137,7 @@ function BlogGrid({ posts }) {
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
             <Card 
-              className="group h-full overflow-hidden shadow-none border-border/50 dark:border-[rgba(var(--brand-accent-rgb),0.15)] bg-card/80 dark:bg-card/50 backdrop-blur-sm hover:shadow-lg dark:hover:shadow-[0_8px_30px_rgba(var(--brand-accent-rgb),0.1)] hover:border-[rgba(var(--brand-accent-rgb),0.3)] transition-all duration-300 cursor-pointer"
+              className="group h-full overflow-hidden shadow-none border-border/50 dark:border-accent/15 bg-card/80 dark:bg-card/50 backdrop-blur-sm hover:shadow-lg dark:hover:shadow-[0_8px_30px_hsl(var(--accent)/0.1)] hover:border-accent/30 transition-all duration-300 cursor-pointer"
               onClick={() => router.push(`/blog/${post.slug}`)}
             >
               <CardContent className="space-y-3.5 p-0">
@@ -147,9 +147,9 @@ function BlogGrid({ posts }) {
                     className="h-48 w-full relative overflow-hidden transition-transform duration-300 group-hover:scale-105"
                     style={{
                       background: post.gradient || `linear-gradient(135deg, 
-                        rgba(var(--brand-accent-rgb), 0.2) 0%, 
-                        rgba(var(--brand-primary-rgb), 0.4) 50%,
-                        rgba(var(--brand-accent-rgb), 0.2) 100%)`,
+                        hsl(var(--accent)/0.2) 0%, 
+                        hsl(var(--primary)/0.4) 50%,
+                        hsl(var(--accent)/0.2) 100%)`,
                       backgroundSize: "400% 400%",
                       animation: "gradientMove 8s ease infinite",
                     }}
@@ -163,7 +163,7 @@ function BlogGrid({ posts }) {
                     
                     {/* Featured badge */}
                     {post.featured && (
-                      <Badge className="absolute top-3 right-3 bg-[var(--brand-accent)] text-[var(--brand-primary)] shadow-lg">
+                      <Badge className="absolute top-3 right-3 bg-accent text-primary shadow-lg">
                         Featured
                       </Badge>
                     )}
@@ -177,13 +177,13 @@ function BlogGrid({ posts }) {
                       <CalendarDaysIcon className="size-4" />
                       <span>{post.date}</span>
                     </div>
-                    <Badge className="bg-[rgba(var(--brand-accent-rgb),0.1)] text-[var(--brand-accent)] rounded-full border-0 text-xs hover:bg-[rgba(var(--brand-accent-rgb),0.2)]">
+                    <Badge className="bg-accent/10 text-accent rounded-full border-0 text-xs hover:bg-accent/20">
                       {post.category}
                     </Badge>
                   </div>
                   
                   {/* Title */}
-                  <h3 className="line-clamp-2 text-lg font-medium md:text-xl text-foreground group-hover:text-[var(--brand-accent)] transition-colors">
+                  <h3 className="line-clamp-2 text-lg font-medium md:text-xl text-foreground group-hover:text-accent transition-colors">
                     {post.title}
                   </h3>
                   
@@ -204,7 +204,7 @@ function BlogGrid({ posts }) {
                     <Button
                       size="icon"
                       variant="outline"
-                      className="group-hover:bg-[var(--brand-accent)] group-hover:text-white group-hover:border-[var(--brand-accent)] hover:border-[var(--brand-accent)] hover:bg-[var(--brand-accent)] hover:text-white transition-all"
+                      className="group-hover:bg-accent group-hover:text-white group-hover:border-accent hover:border-accent hover:bg-accent hover:text-white transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/blog/${post.slug}`);
@@ -276,7 +276,7 @@ function PaginationControls({ posts, currentPage, setCurrentPage, postsPerPage }
         size="sm"
         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
         disabled={currentPage === 1}
-        className="rounded-full px-4 gap-1 border-border/50 hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] disabled:opacity-50"
+        className="rounded-full px-4 gap-1 border-border/50 hover:border-accent hover:text-accent disabled:opacity-50"
       >
         <ChevronLeft className="w-4 h-4" />
         <span className="hidden sm:inline">Previous</span>
@@ -291,7 +291,7 @@ function PaginationControls({ posts, currentPage, setCurrentPage, postsPerPage }
             onClick={() => setCurrentPage(i + 1)}
             className={`w-8 h-8 rounded-full p-0 ${
               currentPage === i + 1 
-                ? 'bg-[var(--brand-accent)] text-white hover:bg-[var(--brand-accent)]/90' 
+                ? 'bg-accent text-white hover:bg-accent/90' 
                 : 'hover:bg-muted'
             }`}
           >
@@ -305,7 +305,7 @@ function PaginationControls({ posts, currentPage, setCurrentPage, postsPerPage }
         size="sm"
         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
         disabled={currentPage === totalPages}
-        className="rounded-full px-4 gap-1 border-border/50 hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] disabled:opacity-50"
+        className="rounded-full px-4 gap-1 border-border/50 hover:border-accent hover:text-accent disabled:opacity-50"
       >
         <span className="hidden sm:inline">Next</span>
         <ChevronRight className="w-4 h-4" />
@@ -320,28 +320,35 @@ export default function BlogPageClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [publishedArticles, setPublishedArticles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const scrollRef = useRef(null);
   
   // Restore scroll position when returning to this page
   useScrollRestoration(scrollRef);
   
   // Fetch published articles from database
-  useEffect(() => {
-    const fetchPublishedArticles = async () => {
-      try {
-        const response = await fetch("/api/articles/published");
-        if (response.ok) {
-          const data = await response.json();
-          setPublishedArticles(data.articles || []);
-        }
-      } catch (error) {
-        console.error("Error fetching published articles:", error);
-      } finally {
-        setIsLoading(false);
+  const fetchPublishedArticles = useCallback(async () => {
+    setIsLoading(true);
+    setFetchError(false);
+    try {
+      const response = await fetch("/api/articles/published");
+      if (response.ok) {
+        const data = await response.json();
+        setPublishedArticles(data.articles || []);
+      } else {
+        setFetchError(true);
       }
-    };
-    fetchPublishedArticles();
+    } catch (error) {
+      console.error("Error fetching published articles:", error);
+      setFetchError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchPublishedArticles();
+  }, [fetchPublishedArticles]);
 
   // Blog posts are now only from the database
   const blogPosts = useMemo(() => {
@@ -402,13 +409,13 @@ export default function BlogPageClient() {
         <section className="py-24 sm:py-28 lg:py-32">
           <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:space-y-12 lg:px-8">
             {/* Header */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="space-y-4"
             >
-              <p className="text-sm text-[var(--brand-accent)] font-medium">Blog</p>
+              <p className="text-sm text-accent font-medium">Blog</p>
 
               <p className="text-muted-foreground text-lg md:text-xl max-w-3xl">
                 Stay informed with the latest trends, best practices,
@@ -416,13 +423,32 @@ export default function BlogPageClient() {
               </p>
             </motion.div>
 
-            {/* Featured Section - Only show when not searching */}
-            {!searchQuery && (
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center py-24">
+                <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
+                <p className="text-muted-foreground">Loading articles...</p>
+              </div>
+            )}
+
+            {/* Error State */}
+            {!isLoading && fetchError && (
+              <div className="flex flex-col items-center justify-center py-24">
+                <p className="text-muted-foreground text-lg mb-4">Failed to load articles</p>
+                <Button variant="outline" onClick={fetchPublishedArticles} className="gap-2">
+                  <Loader2 className="h-4 w-4" />
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {/* Featured Section - Only show when not searching and loaded */}
+            {!isLoading && !fetchError && !searchQuery && (
               <FeaturedSection posts={blogPosts} />
             )}
 
             {/* Recent Posts Section */}
-            <div className="space-y-6">
+            {!isLoading && !fetchError && <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-foreground">
                   {searchQuery ? "Search Results" : "All Posts"}
@@ -443,7 +469,7 @@ export default function BlogPageClient() {
                     <TabsTrigger
                       key={category}
                       value={category}
-                      className="px-4 py-2 text-sm font-medium rounded-full border border-border/50 bg-transparent text-muted-foreground shadow-none transition-all duration-200 hover:text-foreground hover:border-[rgba(var(--brand-accent-rgb),0.4)] data-[state=active]:bg-[rgba(var(--brand-accent-rgb),0.1)] data-[state=active]:text-[var(--brand-accent)] data-[state=active]:border-[var(--brand-accent)]"
+                      className="px-4 py-2 text-sm font-medium rounded-full border border-border/50 bg-transparent text-muted-foreground shadow-none transition-all duration-200 hover:text-foreground hover:border-[hsl(var(--accent)/0.4)] data-[state=active]:bg-accent/10 data-[state=active]:text-accent data-[state=active]:border-accent"
                     >
                       {category}
                     </TabsTrigger>
@@ -458,7 +484,7 @@ export default function BlogPageClient() {
                     placeholder="Search articles..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-10 pl-10 pr-4 w-full rounded-full bg-muted/30 dark:bg-[rgba(var(--brand-accent-rgb),0.05)] border-border/50 text-foreground placeholder:text-muted-foreground focus:border-[var(--brand-accent)] focus:ring-1 focus:ring-[var(--brand-accent)] transition-all [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
+                    className="h-10 pl-10 pr-4 w-full rounded-full bg-muted/30 dark:bg-[hsl(var(--accent)/0.05)] border-border/50 text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-all [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                   />
                 </div>
               </motion.div>
@@ -487,10 +513,10 @@ export default function BlogPageClient() {
                 </TabsContent>
               ))}
             </Tabs>
-            </div>
+            </div>}
 
             {/* No Results */}
-            {filteredPosts.length === 0 && searchQuery.trim() && (
+            {!isLoading && !fetchError && filteredPosts.length === 0 && searchQuery.trim() && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -499,7 +525,7 @@ export default function BlogPageClient() {
                 <p className="text-muted-foreground text-lg">No articles found matching &ldquo;{searchQuery}&rdquo;</p>
                 <Button
                   variant="ghost" 
-                  className="mt-4 text-[var(--brand-accent)]"
+                  className="mt-4 text-accent"
                   onClick={() => setSearchQuery("")}
                 >
                   Clear search

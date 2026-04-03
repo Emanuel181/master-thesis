@@ -171,7 +171,7 @@ export function FileAnalysisView({
                         )}
                     </div>
                 </div>
-                <ScrollArea className="max-h-[400px]">
+                <ScrollArea className="max-h-96">
                     <div className="p-1">
                         {fileGroups.map(([fileName, vulns]) => (
                             <FileRow

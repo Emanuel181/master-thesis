@@ -76,7 +76,6 @@ async function fetchWithRetry(url, options, retryOptions, signal) {
 
             return response;
         } catch (error) {
-            clearTimeout?.(undefined); // Clear any pending timeout
 
             // Don't retry on abort
             if (error.name === 'AbortError') {

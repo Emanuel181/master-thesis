@@ -17,7 +17,10 @@ export function UseCasesProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fetchInProgress = useRef(false);
+  const mountedRef = useRef(true);
   const isDemoMode = pathname?.startsWith('/demo');
+
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
   const fetchUseCases = useCallback(async () => {
     // In demo mode, use demo data instead of fetching
@@ -74,7 +77,6 @@ export function UseCasesProvider({ children }) {
           errorData = { statusText: response.statusText };
         }
         
-        console.log('[UseCases] Fetch status:', response.status, 'Error:', errorData);
 
         // Handle authentication errors (401 Unauthorized or 404 User not found)
         if (response.status === 401 || (response.status === 404 && errorData.error === 'User not found')) {
@@ -89,11 +91,9 @@ export function UseCasesProvider({ children }) {
       }
       
       const jsonResponse = await response.json();
-      console.log('[UseCases] Fetch response:', jsonResponse);
-      
+
       // Handle wrapped response from createApiHandler
       const data = jsonResponse.data || jsonResponse;
-      console.log('[UseCases] Extracted data:', data);
       
       setUseCases(data.useCases || []);
     } catch (err) {
@@ -108,8 +108,8 @@ export function UseCasesProvider({ children }) {
   useEffect(() => {
     // Use requestIdleCallback for non-critical initial fetch
     const scheduleId = typeof requestIdleCallback !== 'undefined'
-      ? requestIdleCallback(() => fetchUseCases(), { timeout: 2000 })
-      : setTimeout(() => fetchUseCases(), 100);
+      ? requestIdleCallback(() => { if (mountedRef.current) fetchUseCases(); }, { timeout: 2000 })
+      : setTimeout(() => { if (mountedRef.current) fetchUseCases(); }, 100);
     
     return () => {
       if (typeof cancelIdleCallback !== 'undefined') {

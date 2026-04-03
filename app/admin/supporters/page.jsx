@@ -474,7 +474,6 @@ export default function AdminSupportersPage() {
         } catch (err) {
             if (err.name === 'NotAllowedError') {
                 // User cancelled - this is expected behavior, not an error
-                console.log('Passkey registration cancelled by user');
                 setVerifyError('Passkey registration was cancelled. Click the button to try again.');
             } else {
                 console.error('Passkey registration error:', err);
@@ -538,7 +537,6 @@ export default function AdminSupportersPage() {
 
         } catch (err) {
             if (err.name === 'NotAllowedError') {
-                console.log('Passkey authentication cancelled or not available');
                 setVerifyError('Passkey not found on this device. You may need to reset your passkey if it was deleted or you\'re on a different device.');
             } else {
                 console.error('Passkey authentication error:', err);
@@ -711,14 +709,14 @@ export default function AdminSupportersPage() {
     // Loading screen
     if (verifyState === VERIFY_STATE.LOADING) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-[var(--brand-accent)]/5">
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="flex flex-col items-center gap-4"
                 >
-                    <div className="p-4 rounded-full bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/20">
-                        <Loader2 className="h-8 w-8 text-[var(--brand-accent)] animate-spin" />
+                    <div className="p-4 rounded-full bg-accent/10 border border-accent/20">
+                        <Loader2 className="h-8 w-8 text-accent animate-spin" />
                     </div>
                     <p className="text-muted-foreground">Checking session...</p>
                 </motion.div>
@@ -729,17 +727,17 @@ export default function AdminSupportersPage() {
     // Verification screen (email entry and OTP)
     if (verifyState !== VERIFY_STATE.VERIFIED) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-[var(--brand-accent)]/5">
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full max-w-md"
                 >
-                    <Card className="border-[var(--brand-accent)]/20 shadow-xl shadow-[var(--brand-accent)]/5">
+                    <Card className="border-accent/20 shadow-xl shadow-accent/5">
                         <CardHeader className="text-center space-y-2">
                             <div className="flex justify-center mb-2">
-                                <div className="p-3 rounded-full bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/20">
-                                    <Shield className="h-8 w-8 text-[var(--brand-accent)]" />
+                                <div className="p-3 rounded-full bg-accent/10 border border-accent/20">
+                                    <Shield className="h-8 w-8 text-accent" />
                                 </div>
                             </div>
                             <CardTitle className="text-xl">Admin Access</CardTitle>
@@ -784,7 +782,7 @@ export default function AdminSupportersPage() {
                                         </div>
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={verifyEmail}
                                         disabled={isVerifying}
                                     >
@@ -833,7 +831,7 @@ export default function AdminSupportersPage() {
                                         </div>
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={verifyPassword}
                                         disabled={isVerifying}
                                     >
@@ -884,7 +882,7 @@ export default function AdminSupportersPage() {
                                             />
                                         </div>
                                         <Button
-                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            className="w-full bg-accent hover:bg-accent/90"
                                             onClick={startPasskeySetup}
                                         >
                                             <KeyRound className="mr-2 h-4 w-4" />
@@ -916,7 +914,7 @@ export default function AdminSupportersPage() {
                                             <p>Complete authentication with your registered passkey.</p>
                                         </div>
                                         <Button
-                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            className="w-full bg-accent hover:bg-accent/90"
                                             onClick={startPasskeyAuth}
                                         >
                                             <KeyRound className="mr-2 h-4 w-4" />
@@ -961,7 +959,7 @@ export default function AdminSupportersPage() {
                             {verifyState === VERIFY_STATE.PASSKEY_PROCESSING && (
                                 <div className="space-y-4">
                                     <div className="flex flex-col items-center justify-center gap-3 py-8">
-                                        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
+                                        <Loader2 className="h-8 w-8 animate-spin text-accent" />
                                         <p className="text-sm text-muted-foreground">
                                             Complete the verification on your device...
                                         </p>
@@ -980,7 +978,7 @@ export default function AdminSupportersPage() {
 
                             <Separator />
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <Shield className="h-4 w-4 text-[var(--brand-accent)] shrink-0" />
+                                <Shield className="h-4 w-4 text-accent shrink-0" />
                                 <p><span className="font-medium text-foreground">Security Notice:</span> Verification codes are only sent to whitelisted admin emails.</p>
                             </div>
                         </CardContent>
@@ -1009,10 +1007,10 @@ export default function AdminSupportersPage() {
                             <span className="hidden sm:inline-block">VulnIQ</span>
                         </Link>
                         <Badge variant="outline" className={cn(
-                            "border-[var(--brand-accent)]/30",
+                            "border-accent/30",
                             isMasterAdmin 
                                 ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
-                                : "bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]"
+                                : "bg-accent/10 text-accent"
                         )}>
                             <ShieldCheck className="mr-1 h-3 w-3" />
                             {isMasterAdmin ? 'Master Admin' : 'Admin'}
@@ -1051,7 +1049,7 @@ export default function AdminSupportersPage() {
                                         variant="outline"
                                         size="icon"
                                         onClick={openPanel}
-                                        className="text-[var(--brand-primary)] dark:text-[var(--brand-light)] hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300"
+                                        className="text-primary dark:text-[var(--brand-light)] hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all duration-300"
                                     >
                                         <PersonStanding className="h-5 w-5" />
                                         <span className="sr-only">Accessibility</span>
@@ -1067,7 +1065,7 @@ export default function AdminSupportersPage() {
                                         variant="outline"
                                         size="icon"
                                         onClick={handleLogout}
-                                        className="text-[var(--brand-primary)] dark:text-[var(--brand-light)] hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)] hover:border-[var(--brand-accent)]/50 transition-all duration-300"
+                                        className="text-primary dark:text-[var(--brand-light)] hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all duration-300"
                                     >
                                         <LogOut className="h-5 w-5" />
                                         <span className="sr-only">Logout</span>
@@ -1088,7 +1086,7 @@ export default function AdminSupportersPage() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
-                        <Alert className="bg-[var(--brand-accent)]/10 border-[var(--brand-accent)]/30 text-[var(--brand-accent)]">
+                        <Alert className="bg-accent/10 border-accent/30 text-accent">
                             <CheckCircle2 className="h-4 w-4" />
                             <AlertDescription>{successMessage}</AlertDescription>
                         </Alert>
@@ -1115,8 +1113,8 @@ export default function AdminSupportersPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
                     <div className="space-y-1">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10">
-                                <Users className="h-5 w-5 text-[var(--brand-accent)]" />
+                            <div className="p-2 rounded-lg bg-accent/10">
+                                <Users className="h-5 w-5 text-accent" />
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold tracking-tight">Manage Supporters</h1>
@@ -1131,7 +1129,7 @@ export default function AdminSupportersPage() {
                     </div>
                     <Button
                         onClick={() => { setEditingSupporter(null); setIsModalOpen(true); }}
-                        className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 shadow-sm"
+                        className="bg-accent hover:bg-accent/90 shadow-sm"
                     >
                         <Plus className="mr-2 h-4 w-4" />
                         Add Supporter
@@ -1172,7 +1170,7 @@ export default function AdminSupportersPage() {
                                     size="sm"
                                     onClick={() => setIsPreviewOpen(true)}
                                     disabled={supporters.length === 0}
-                                    className="border-[var(--brand-accent)] text-[var(--brand-accent)] hover:bg-[var(--brand-accent)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="border-accent text-accent hover:bg-accent hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Eye className="mr-2 h-4 w-4" />
                                     Preview
@@ -1332,7 +1330,7 @@ export default function AdminSupportersPage() {
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="h-9 w-9 border border-border shrink-0">
                                                             <AvatarImage src={supporter.avatarUrl} alt={supporter.name} />
-                                                            <AvatarFallback className="bg-[var(--brand-accent)]/10 text-[var(--brand-accent)] text-sm">
+                                                            <AvatarFallback className="bg-accent/10 text-accent text-sm">
                                                                 {supporter.name.charAt(0).toUpperCase()}
                                                             </AvatarFallback>
                                                         </Avatar>
@@ -1356,7 +1354,7 @@ export default function AdminSupportersPage() {
                                                             ) : supporter.name && supporter.name.length > 20 ? (
                                                                 <div className="flex items-center gap-1">
                                                                     <p
-                                                                        className="font-medium text-sm leading-none cursor-pointer hover:text-[var(--brand-accent)] transition-colors truncate flex-1"
+                                                                        className="font-medium text-sm leading-none cursor-pointer hover:text-accent transition-colors truncate flex-1"
                                                                         onClick={() => startEditing(supporter.id, 'name', supporter.name)}
                                                                     >
                                                                         {supporter.name}
@@ -1374,7 +1372,7 @@ export default function AdminSupportersPage() {
                                                                 </div>
                                                             ) : (
                                                                 <p
-                                                                    className="font-medium text-sm leading-none cursor-pointer hover:text-[var(--brand-accent)] transition-colors truncate"
+                                                                    className="font-medium text-sm leading-none cursor-pointer hover:text-accent transition-colors truncate"
                                                                     onClick={() => startEditing(supporter.id, 'name', supporter.name)}
                                                                 >
                                                                     {supporter.name}
@@ -1382,17 +1380,17 @@ export default function AdminSupportersPage() {
                                                             )}
                                                             <div className="flex items-center gap-1.5 mt-1.5">
                                                                 {supporter.linkedinUrl && (
-                                                                    <a href={supporter.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[var(--brand-accent)] transition-colors">
+                                                                    <a href={supporter.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
                                                                         <Linkedin className="h-3 w-3" />
                                                                     </a>
                                                                 )}
                                                                 {supporter.websiteUrl && (
-                                                                    <a href={supporter.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[var(--brand-accent)] transition-colors">
+                                                                    <a href={supporter.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
                                                                         <Globe className="h-3 w-3" />
                                                                     </a>
                                                                 )}
                                                                 {supporter.companyUrl && (
-                                                                    <a href={supporter.companyUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[var(--brand-accent)] transition-colors">
+                                                                    <a href={supporter.companyUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
                                                                         <Building2 className="h-3 w-3" />
                                                                     </a>
                                                                 )}
@@ -1422,7 +1420,7 @@ export default function AdminSupportersPage() {
                                                     ) : supporter.occupation && supporter.occupation.length > 25 ? (
                                                         <div className="flex items-center gap-1">
                                                             <p
-                                                                className="text-sm cursor-pointer hover:text-[var(--brand-accent)] transition-colors truncate flex-1"
+                                                                className="text-sm cursor-pointer hover:text-accent transition-colors truncate flex-1"
                                                                 onClick={() => startEditing(supporter.id, 'occupation', supporter.occupation)}
                                                             >
                                                                 {supporter.occupation}
@@ -1440,7 +1438,7 @@ export default function AdminSupportersPage() {
                                                         </div>
                                                     ) : (
                                                         <p
-                                                            className="text-sm cursor-pointer hover:text-[var(--brand-accent)] transition-colors truncate"
+                                                            className="text-sm cursor-pointer hover:text-accent transition-colors truncate"
                                                             onClick={() => startEditing(supporter.id, 'occupation', supporter.occupation)}
                                                         >
                                                             {supporter.occupation || '—'}
@@ -1469,7 +1467,7 @@ export default function AdminSupportersPage() {
                                                     ) : supporter.company && supporter.company.length > 20 ? (
                                                         <div className="flex items-center gap-1">
                                                             <p
-                                                                className="text-sm cursor-pointer hover:text-[var(--brand-accent)] transition-colors truncate flex-1"
+                                                                className="text-sm cursor-pointer hover:text-accent transition-colors truncate flex-1"
                                                                 onClick={() => startEditing(supporter.id, 'company', supporter.company)}
                                                             >
                                                                 {supporter.company}
@@ -1487,7 +1485,7 @@ export default function AdminSupportersPage() {
                                                         </div>
                                                     ) : (
                                                         <p
-                                                            className="text-sm cursor-pointer hover:text-[var(--brand-accent)] transition-colors truncate"
+                                                            className="text-sm cursor-pointer hover:text-accent transition-colors truncate"
                                                             onClick={() => startEditing(supporter.id, 'company', supporter.company)}
                                                         >
                                                             {supporter.company || '—'}
@@ -1621,7 +1619,7 @@ export default function AdminSupportersPage() {
                                                             </Button>
                                                         </div>
                                                     ) : supporter.linkedinUrl ? (
-                                                        <a href={supporter.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-[var(--brand-accent)] transition-colors">
+                                                        <a href={supporter.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-accent transition-colors">
                                                             <Linkedin className="h-4 w-4" />
                                                         </a>
                                                     ) : (
@@ -1654,7 +1652,7 @@ export default function AdminSupportersPage() {
                                                             </Button>
                                                         </div>
                                                     ) : supporter.websiteUrl ? (
-                                                        <a href={supporter.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-[var(--brand-accent)] transition-colors">
+                                                        <a href={supporter.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-accent transition-colors">
                                                             <Globe className="h-4 w-4" />
                                                         </a>
                                                     ) : (
@@ -1771,7 +1769,7 @@ export default function AdminSupportersPage() {
 
                 {/* Info box */}
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 bg-muted/30">
-                    <ShieldCheck className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
+                    <ShieldCheck className="h-5 w-5 text-accent shrink-0" />
                     <p className="text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">Security Notice:</span>{' '}
                         Your admin session expires after 30 minutes. All changes are applied immediately.
@@ -1809,7 +1807,7 @@ function PreviewModal({ open, onOpenChange, supporters }) {
             <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <DialogHeader className="px-6 pt-6 pb-4">
                     <DialogTitle className="flex items-center gap-2">
-                        <Eye className="h-5 w-5 text-[var(--brand-accent)]" />
+                        <Eye className="h-5 w-5 text-accent" />
                         Public Page Preview
                     </DialogTitle>
                     <DialogDescription>
@@ -1840,7 +1838,7 @@ function PreviewModal({ open, onOpenChange, supporters }) {
                         {/* All Supporters Section */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
-                                <Users className="h-5 w-5 text-[var(--brand-accent)]" />
+                                <Users className="h-5 w-5 text-accent" />
                                 <h3 className="text-lg font-semibold">All Supporters</h3>
                                 <Badge variant="secondary">{allSupporters.length}</Badge>
                             </div>
@@ -1934,7 +1932,7 @@ function SupporterModal({ open, onOpenChange, supporter, onSave, isSaving }) {
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
                 <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b">
                     <DialogTitle className="flex items-center gap-2">
-                        {supporter ? <Pencil className="h-5 w-5 text-[var(--brand-accent)]" /> : <Plus className="h-5 w-5 text-[var(--brand-accent)]" />}
+                        {supporter ? <Pencil className="h-5 w-5 text-accent" /> : <Plus className="h-5 w-5 text-accent" />}
                         {supporter ? 'Edit Supporter' : 'Add New Supporter'}
                     </DialogTitle>
                     <DialogDescription>
@@ -2146,7 +2144,7 @@ function SupporterModal({ open, onOpenChange, supporter, onSave, isSaving }) {
                         type="submit"
                         form="supporter-form"
                         disabled={isSaving}
-                        className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                        className="bg-accent hover:bg-accent/90"
                     >
                         {isSaving ? (
                             <>

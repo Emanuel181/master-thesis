@@ -55,8 +55,6 @@ export async function POST(request) {
             where: { email: normalizedEmail }
         });
         
-        console.log(`[Passkey Reset] Deleted ${deleteResult.count} passkeys for ${normalizedEmail}`);
-        
         return NextResponse.json({
             success: true,
             message: `Deleted ${deleteResult.count} passkey(s). You can now register a new passkey.`,

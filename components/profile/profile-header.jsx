@@ -97,13 +97,14 @@ export default function ProfileHeader({
 
     const rawImage = typeof displayUser?.image === 'string' ? displayUser.image : '';
     const isHttpsUrl = rawImage.startsWith('https://');
+    const isDataUri = rawImage.startsWith('data:');
     const isS3Key = rawImage.startsWith('users/');
 
     const imageSrc = useMemo(() => {
-        if (isHttpsUrl) return rawImage;
+        if (isHttpsUrl || isDataUri) return rawImage;
         if (isS3Key) return resolvedImageUrl;
         return '';
-    }, [isHttpsUrl, isS3Key, rawImage, resolvedImageUrl]);
+    }, [isHttpsUrl, isDataUri, isS3Key, rawImage, resolvedImageUrl]);
 
     useEffect(() => {
         if (!isS3Key) return;
@@ -200,9 +201,9 @@ export default function ProfileHeader({
 
     return (
         <>
-        <Card className="overflow-hidden transition-shadow hover:shadow-md">
+        <Card className="overflow-hidden" style={{ padding: 0 }}>
             {/* Compact gradient banner */}
-            <div className="h-16 sm:h-20 bg-gradient-to-r from-primary/80 via-primary/60 to-primary/40 relative">
+            <div className="h-16 sm:h-20 bg-gradient-to-r from-primary/80 via-primary/60 to-primary/40 relative w-full">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
                 <div className="absolute bottom-2 right-4 flex items-center gap-1.5 opacity-30">
                     <div className="h-1.5 w-1.5 rounded-full bg-white" />
@@ -232,9 +233,9 @@ export default function ProfileHeader({
                             "rounded-full p-0.5 transition-all bg-background",
                             isEditing
                                 ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                : "ring-3 ring-background shadow-lg"
+                                : "ring-3 ring-background"
                         )}>
-                            <Avatar className="h-16 w-16 sm:h-20 sm:w-20 hover:scale-100">
+                            <Avatar className="h-16 w-16 sm:h-20 sm:w-20 hover:scale-100" key={imageSrc || 'no-image'}>
                                 <AvatarImage
                                     src={imageSrc}
                                     alt="Profile"
@@ -360,7 +361,7 @@ export default function ProfileHeader({
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 10 }}
                                     >
-                                        <Button size="sm" onClick={onEdit} className="gap-1.5 transition-all hover:shadow-md">
+                                        <Button size="sm" onClick={onEdit} className="gap-1.5">
                                             <Pencil className="h-3.5 w-3.5" />
                                             Edit Profile
                                         </Button>

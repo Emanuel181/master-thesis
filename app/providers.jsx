@@ -8,18 +8,21 @@ import { AccessibilityProvider } from "@/contexts/accessibilityContext"
 import { AccessibilityWidget } from "@/components/accessibility-widget"
 import { DemoProvider } from "@/contexts/demoContext"
 import { KbSelectionProvider } from "@/contexts/kbSelectionContext"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
-export function Providers({ children }) {
+export function Providers({ children, session }) {
     return (
-            <SessionProvider>
+            <SessionProvider session={session}>
                 <DemoProvider>
                     <SettingsProvider>
                         <UseCasesProvider>
                             <PromptsProvider>
                                 <KbSelectionProvider>
                                     <AccessibilityProvider>
-                                        {children}
-                                        <AccessibilityWidget />
+                                        <TooltipProvider>
+                                            {children}
+                                            <AccessibilityWidget />
+                                        </TooltipProvider>
                                     </AccessibilityProvider>
                                 </KbSelectionProvider>
                             </PromptsProvider>

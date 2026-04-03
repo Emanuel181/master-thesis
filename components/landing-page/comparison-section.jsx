@@ -44,7 +44,7 @@ function ComparisonRow({ row, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-30px" }}
       transition={{ duration: 0.4, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr] gap-3 md:gap-0 py-4 sm:py-5 border-b border-[var(--brand-primary)]/10 dark:border-[var(--brand-accent)]/10 last:border-b-0"
+      className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr] gap-3 md:gap-0 py-5 border-b border-border/50 last:border-b-0"
     >
       {/* Feature label */}
       <div className="font-semibold text-sm sm:text-base text-foreground md:pr-6">
@@ -59,7 +59,7 @@ function ComparisonRow({ row, index }) {
 
       {/* VulnIQ */}
       <div className="flex items-start gap-2 md:px-4">
-        <CheckCircle2 className="h-4 w-4 mt-0.5 text-[var(--brand-accent)] shrink-0" />
+        <CheckCircle2 className="h-4 w-4 mt-0.5 text-accent shrink-0" />
         <span className="text-xs sm:text-sm text-foreground font-medium">{row.vulniq}</span>
       </div>
     </motion.div>
@@ -68,33 +68,36 @@ function ComparisonRow({ row, index }) {
 
 export function ComparisonSection() {
   return (
-    <section className="relative z-10 py-12 sm:py-16 md:py-20 lg:py-28 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 relative">
+    <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-12 relative">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-10 sm:mb-14 md:mb-16"
+          className="text-center mb-12 sm:mb-14 md:mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Why <span className="gradient-text">VulnIQ</span>?
+            Why <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">VulnIQ</span>?
           </h2>
-          <div className="accent-line-center w-12 sm:w-16 md:w-20 mx-auto mt-4 sm:mt-6" />
+          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mt-4">
+            See how agentic RAG compares to traditional static analysis tools.
+          </p>
+          <div className="h-0.5 bg-gradient-to-r from-transparent via-accent to-transparent w-16 sm:w-20 md:w-24 mx-auto mt-5 sm:mt-6" />
         </motion.div>
 
         {/* Comparison card */}
-        <div className="rounded-2xl border border-[var(--brand-primary)]/20 dark:border-[var(--brand-accent)]/20 bg-[var(--card)] dark:bg-[var(--brand-primary)]/60 p-4 sm:p-6 md:p-8 shadow-lg shadow-[var(--brand-accent)]/5">
+        <div className="rounded-2xl border border-border bg-card p-6 sm:p-7 md:p-8 shadow-lg shadow-black/10 dark:shadow-black/30">
           {/* Column headers (desktop only) */}
-          <div className="hidden md:grid grid-cols-[1fr_1fr_1fr] pb-4 mb-2 border-b-2 border-[var(--brand-accent)]/20">
+          <div className="hidden md:grid grid-cols-[1fr_1fr_1fr] pb-4 mb-2 border-b-2 border-accent/20">
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Feature
             </div>
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-4">
               Traditional scanners
             </div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-[var(--brand-accent)] px-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-accent px-4">
               VulnIQ
             </div>
           </div>

@@ -42,6 +42,9 @@ model User {
   bedrockDataSourceId String? // Each user gets their own Bedrock data source within the shared KB
   mfaConfig           MfaConfig?
   passkeys            UserPasskey[]
+  pentestSessions     PentestSession[]
+  notifications       Notification[]
+  articles            Article[]
 }
 
 model Account {
@@ -60,6 +63,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -68,6 +72,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -120,11 +126,12 @@ model KnowledgeBaseCategory {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   folders   Folder[]
-  user      User          @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   group     UseCaseGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   pdfs      Pdf[]
 
   @@index([groupId])
+  @@index([userId])
 }
 
 // Groups/Folders for organizing use cases
@@ -212,7 +219,7 @@ model Pdf {
   virusScanStatus     String                @default("pending") // pending, scanning, clean, malicious, error, skipped
   virusScannedAt      DateTime? // When the virus scan completed
   virusScanId         String? // VirusTotal analysis ID for polling
-  folder              Folder?               @relation(fields: [folderId], references: [id])
+  folder              Folder?               @relation(fields: [folderId], references: [id], onDelete: SetNull)
   useCase             KnowledgeBaseCategory @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
 
   @@index([useCaseId])
@@ -220,6 +227,7 @@ model Pdf {
   @@index([vectorized])
   @@index([embeddingStatus])
   @@index([virusScanStatus])
+  @@unique([s3Key])
 }
 
 model Prompt {
@@ -295,6 +303,7 @@ model Article {
   coverImage             String? // Optional cover image URL (S3 or external)
   coverType              String            @default("gradient") // "gradient" or "image"
   authorId               String
+  author                 User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorName             String // Cached author name for display
   authorEmail            String // Cached author email
   status                 String            @default("DRAFT") // DRAFT, PENDING_REVIEW, IN_REVIEW, PUBLISHED, REJECTED, SCHEDULED_FOR_DELETION
@@ -317,6 +326,8 @@ model Article {
   @@index([status])
   @@index([authorId])
   @@index([status, submittedAt])
+  @@index([status, scheduledForDeletionAt])
+  @@index([status, featured])
   @@index([slug])
   @@index([scheduledForDeletionAt])
   @@index([featured])
@@ -376,6 +387,7 @@ model SavedArticle {
 model Notification {
   id        String    @id @default(cuid())
   userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String // ARTICLE_APPROVED, ARTICLE_REJECTED, etc.
   title     String
   message   String
@@ -453,12 +465,15 @@ model WorkflowRun {
   completedUseCases Int                  @default(0)
   metadata          Json? // Stores code, codeType, and other workflow metadata
   pdfPassword       String? // Encrypted PDF password (regenerated on each download)
+  codeGraph         Json? // Code structure graph (nodes, edges, stats) for multi-step vulnerability detection
+  graphBuiltAt      DateTime? // When the code graph was last built
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   vulnerabilities   Vulnerability[]
   useCaseRuns       WorkflowUseCaseRun[]
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([status])
   @@index([startedAt])
 }
@@ -504,6 +519,7 @@ model Vulnerability {
   cweId              String? // CWE identifier
   // Document references from knowledge base (JSON array)
   documentReferences Json? // Array of {documentId, documentTitle, relevantExcerpt}
+  graphNodeIds       Json? // Code graph node IDs linked to this vulnerability
   // Structured analysis fields
   dataFlow           Json? // Array of {type: source|intermediate|sink, function, file, line, description}
   cvssAnalysis       Json? // Object of {metricKey: analysisText} for dynamic CVSS explanations
@@ -520,8 +536,10 @@ model Vulnerability {
   updatedAt          DateTime    @updatedAt
   workflowRun        WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
   fixes              CodeFix[]
+  debateRounds       DebateRound[]
 
   @@index([workflowRunId])
+  @@index([workflowRunId, severity])
   @@index([useCaseId])
   @@index([severity])
   @@index([resolved])
@@ -530,20 +548,22 @@ model Vulnerability {
 
 // Debate Round - Tracks multi-agent debate rounds for vulnerability validation
 model DebateRound {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   workflowRunId   String
   vulnerabilityId String?
-  round           Int      @default(1)
+  vulnerability   Vulnerability? @relation(fields: [vulnerabilityId], references: [id], onDelete: Cascade)
+  round           Int            @default(1)
   agentRole       String // advocate, skeptic, judge
   modelId         String?
-  argument        String   @db.Text
+  argument        String         @db.Text
   verdict         String? // confirmed, rejected, needs-review
   confidence      Float?
   citations       Json? // Array of {source, excerpt}
-  createdAt       DateTime @default(now())
+  createdAt       DateTime       @default(now())
 
   @@index([workflowRunId])
   @@index([vulnerabilityId])
+  @@index([workflowRunId, vulnerabilityId])
 }
 
 // Code Fix - Stores automated fixes for vulnerabilities
@@ -684,4 +704,96 @@ model UserPasskeyChallenge {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+// Pentesting Session - Tracks autonomous pentest runs
+model PentestSession {
+  id              String    @id @default(cuid())
+  userId          String
+  workflowRunId   String? // Link to existing WorkflowRun if part of workflow
+  status          String // "pending" | "recon" | "analysis" | "exploitation" | "reporting" | "completed" | "failed"
+  phase           String? // Current phase name
+  s3CodeKey       String // S3 key for uploaded code
+  s3ResultsPrefix String // S3 prefix for results
+  stepFunctionArn String? // ARN of Step Functions execution
+  executionArn    String? // Execution ARN for tracking
+  targetUrl       String? // Optional: URL of running application
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  error           String?   @db.Text
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  findings PentestFinding[]
+
+  @@index([userId, startedAt])
+  @@index([status])
+}
+
+// Pentesting Finding - Individual vulnerabilities discovered
+model PentestFinding {
+  id             String   @id @default(cuid())
+  sessionId      String
+  category       String // "injection" | "xss" | "ssrf" | "auth" | "authz" | "business_logic"
+  severity       String // "critical" | "high" | "medium" | "low" | "info"
+  title          String
+  description    String   @db.Text
+  affectedCode   String? // file:line or endpoint
+  proofOfConcept String   @db.Text
+  remediation    String   @db.Text
+  cvss           Float?
+  cwe            String?
+  owasp          String?
+  exploitSuccess Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  session PentestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, severity])
+  @@index([category])
+}
+
+// Code Fix Workflow Run - Tracks Reviewer → Fixer → Tester workflow
+model CodeFixWorkflowRun {
+  id        String  @id @default(cuid())
+  runId     String  @unique // VulnIQ workflow run ID
+  userId    String
+  useCaseId String? // Knowledge base used
+
+  // Review phase
+  reviewerKbId       String? // Knowledge base ID used by reviewer
+  reviewFindings     String?   @db.Text // JSON array of findings
+  reviewFilesScanned Int       @default(0)
+  reviewIssuesFound  Int       @default(0)
+  reviewCompletedAt  DateTime?
+
+  // Fix phase
+  fixerEnabled     Boolean   @default(false)
+  fixedBranch      String? // Git branch with fixes
+  fixedCodeS3Key   String? // S3 key for fixed code (non-Git)
+  fixesApplied     Int       @default(0)
+  fixesAttempted   Int       @default(0)
+  fixFailedCount   Int       @default(0)
+  commitSha        String? // Git commit SHA
+  repositoryUrl    String? // Repository URL
+  fixerCompletedAt DateTime?
+
+  // Test phase
+  pentestSessionId     String? // Link to PentestSession
+  pentestBranch        String? // Branch that was tested
+  pentestWorkflowId    String? // Temporal workflow ID
+  vulnerabilitiesFound Int       @default(0)
+  pentestReportS3Key   String? // S3 path to Shannon report
+  pentestCompletedAt   DateTime?
+
+  // Workflow status
+  status       String  @default("pending") // pending, reviewing, fixing, testing, complete, failed
+  currentPhase String? // Current phase name
+  error        String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([runId])
 }

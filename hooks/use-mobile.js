@@ -58,4 +58,3 @@ export function useBreakpoint() {
 
   return breakpoint
 }
-

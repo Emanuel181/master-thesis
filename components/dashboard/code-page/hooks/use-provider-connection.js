@@ -105,11 +105,9 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             setIsLoadingGithubRepos(false);
             return;
         }
-        console.log('[GitHub] Loading repositories...');
         setIsLoadingGithubRepos(true);
         try {
             const response = await fetch('/api/github/repos');
-            console.log('[GitHub] API response status:', response.status);
             if (response.ok) {
                 const jsonResponse = await response.json();
 
@@ -117,20 +115,16 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
                 const reposData = jsonResponse.data || jsonResponse;
 
                 if (!Array.isArray(reposData)) {
-                    console.error('[GitHub] Repos data is not an array:', reposData);
                     toast.error('Invalid response format from GitHub API');
                     return;
                 }
-                
-                console.log('[GitHub] Loaded', reposData.length, 'repositories');
+
                 setRepos(reposData);
             } else {
                 const error = await response.json().catch(() => ({ error: 'Failed to load repositories' }));
-                console.error('[GitHub] Failed to load repos:', error);
                 toast.error(error.error || 'Failed to load GitHub repositories');
             }
         } catch (error) {
-            console.error('[GitHub] Error loading repos:', error);
             toast.error('Failed to connect to GitHub API');
         } finally {
             setIsLoadingGithubRepos(false);
@@ -146,11 +140,9 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             setIsLoadingGitlabRepos(false);
             return;
         }
-        console.log('[GitLab] Loading repositories...');
         setIsLoadingGitlabRepos(true);
         try {
             const response = await fetch('/api/gitlab/repos');
-            console.log('[GitLab] API response status:', response.status);
             if (response.ok) {
                 const jsonResponse = await response.json();
                 
@@ -158,20 +150,16 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
                 const reposData = jsonResponse.data || jsonResponse;
                 
                 if (!Array.isArray(reposData)) {
-                    console.error('[GitLab] Repos data is not an array:', reposData);
                     toast.error('Invalid response format from GitLab API');
                     return;
                 }
-                
-                console.log('[GitLab] Loaded', reposData.length, 'repositories');
+
                 setGitlabRepos(reposData);
             } else {
                 const error = await response.json().catch(() => ({ error: 'Failed to load repositories' }));
-                console.error('[GitLab] Failed to load repos:', error);
                 toast.error(error.error || 'Failed to load GitLab repositories');
             }
         } catch (error) {
-            console.error('[GitLab] Error loading repos:', error);
             toast.error('Failed to connect to GitLab API');
         } finally {
             setIsLoadingGitlabRepos(false);
@@ -188,9 +176,8 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         if (isDemoMode) return;
         if (!sessionRef.current) return;
 
-        console.log('[Providers] Refreshing linked providers...');
         try {
-            const res = await fetch('/api/providers/linked', { 
+            const res = await fetch('/api/providers/linked', {
                 cache: 'no-store',
                 headers: {
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -199,7 +186,6 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             });
             
             if (!res.ok) {
-                console.log('[Providers] Response not OK:', res.status);
                 return;
             }
             
@@ -215,14 +201,12 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             } else if (response.data && Array.isArray(response.data)) {
                 providers = response.data;
             } else {
-                console.error('[Providers] Could not find providers array in response:', response);
+                // could not find providers array
             }
             
             const linked = new Set(providers);
             const githubLinked = linked.has('github');
             const gitlabLinked = linked.has('gitlab');
-            
-            console.log('[Providers] GitHub linked:', githubLinked, 'GitLab linked:', gitlabLinked);
 
             // Update connection state (repo loading is triggered reactively by effects below)
             setIsGithubConnected(githubLinked);
@@ -231,7 +215,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             if (!githubLinked) setRepos([]);
             if (!gitlabLinked) setGitlabRepos([]);
         } catch (err) {
-            console.error('[Providers] Error refreshing linked providers:', err);
+            // silently fail — UI already reflects disconnected state
         }
     }, [isDemoMode]);
 
@@ -248,7 +232,6 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         if (repos.length > 0) return;
         if (githubLoadingRef.current) return;
 
-        console.log('[Providers] GitHub connected with no repos — loading...');
         githubLoadingRef.current = true;
         loadRepos().finally(() => { githubLoadingRef.current = false; });
     }, [isDemoMode, status, isGithubConnected, repos.length, loadRepos]);
@@ -260,7 +243,6 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
         if (gitlabRepos.length > 0) return;
         if (gitlabLoadingRef.current) return;
 
-        console.log('[Providers] GitLab connected with no repos — loading...');
         gitlabLoadingRef.current = true;
         loadGitlabRepos().finally(() => { gitlabLoadingRef.current = false; });
     }, [isDemoMode, status, isGitlabConnected, gitlabRepos.length, loadGitlabRepos]);
@@ -336,7 +318,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             try {
                 await fetch('/api/auth/disconnect?provider=github', { method: 'POST' });
             } catch (err) {
-                console.error('Error disconnecting GitHub:', err);
+                // ignore disconnect errors
             }
         }
         
@@ -353,7 +335,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
                 const prefix = isDemoMode ? 'vulniq_demo_' : 'vulniq_';
                 localStorage.removeItem(`${prefix}code_state`);
             } catch (err) {
-                console.error('Error clearing code state from localStorage:', err);
+                // ignore storage errors
             }
             toast.success("Disconnected from GitHub! Project unloaded.");
         } else {
@@ -380,7 +362,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
             try {
                 await fetch('/api/auth/disconnect?provider=gitlab', { method: 'POST' });
             } catch (err) {
-                console.error('Error disconnecting GitLab:', err);
+                // ignore disconnect errors
             }
         }
         
@@ -397,7 +379,7 @@ export function useProviderConnection({ currentRepo, clearProject, closeAllTabs,
                 const prefix = isDemoMode ? 'vulniq_demo_' : 'vulniq_';
                 localStorage.removeItem(`${prefix}code_state`);
             } catch (err) {
-                console.error('Error clearing code state from localStorage:', err);
+                // ignore storage errors
             }
             toast.success("Disconnected from GitLab! Project unloaded.");
         } else {
@@ -500,7 +482,7 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
                 localStorage.removeItem('vulniq_editor_tabs');
                 localStorage.removeItem('vulniq_editor_language');
             } catch (err) {
-                console.error("Error clearing code state:", err);
+                // ignore storage errors
             }
             toast.success("Project switched successfully!");
         } catch (error) {
@@ -534,7 +516,7 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
                 localStorage.removeItem('vulniq_editor_tabs');
                 localStorage.removeItem('vulniq_editor_language');
             } catch (err) {
-                console.error("Error clearing code state:", err);
+                // ignore storage errors
             }
             toast.success("Project switched successfully!");
         } catch (error) {
@@ -568,7 +550,7 @@ export function useRepoImport({ setProjectStructure, setCurrentRepo, setViewMode
                 localStorage.removeItem('vulniq_editor_tabs');
                 localStorage.removeItem('vulniq_editor_language');
             } catch (err) {
-                console.error("Error clearing code state:", err);
+                // ignore storage errors
             }
             toast.success("Project switched successfully!");
         } catch (error) {

@@ -96,7 +96,7 @@ const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon, clas
                 className={cn("absolute z-50 pointer-events-none filter drop-shadow-xl", className)}
             >
                 <MousePointer2 className={cn('h-6 w-6 fill-current stroke-white',
-                    color === 'blue' ? 'text-[var(--brand-accent)]' :
+                    color === 'blue' ? 'text-accent' :
                         color === 'red' ? 'text-red-500' :
                             color === 'purple' ? 'text-purple-500' :
                                 color === 'orange' ? 'text-orange-500' :
@@ -106,7 +106,7 @@ const AgentPointer = ({ x, y, label, color = 'blue', isVisible, icon: Icon, clas
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 16 }}
                     className={cn('mt-2 px-3 py-1.5 rounded-full text-[10px] font-bold text-white whitespace-nowrap min-w-max flex items-center gap-2 shadow-lg backdrop-blur-md border border-white/10',
-                        color === 'blue' ? 'bg-[var(--brand-accent)]/90' :
+                        color === 'blue' ? 'bg-accent/90' :
                             color === 'red' ? 'bg-red-600/90' :
                                 color === 'purple' ? 'bg-purple-600/90' :
                                     color === 'orange' ? 'bg-orange-600/90' :
@@ -256,26 +256,36 @@ export const SecurityCodeDemo = () => {
                  '--line-height-mobile': '18px'
              }}
         >
-            <div className="rounded-xl bg-[var(--brand-primary)] shadow-2xl overflow-hidden ring-1 ring-[var(--brand-accent)]/20 relative backdrop-blur-sm min-h-[300px] h-auto sm:h-[450px] md:h-[550px] lg:h-[600px] flex flex-col">
+            <div className="rounded-xl shadow-2xl overflow-hidden ring-1 ring-white/10 relative min-h-[300px] h-auto sm:h-[450px] md:h-[550px] lg:h-[600px] flex flex-col" style={{ background: '#1e1e2e' }}>
 
-                {/* --- Window Header --- */}
-                <div className="flex items-center justify-between px-4 h-12 bg-[var(--brand-dark)]">
+                {/* --- Window Title Bar --- */}
+                <div className="flex items-center justify-between px-4 h-10 border-b border-white/5" style={{ background: '#181825' }}>
                     <div className="flex items-center gap-4">
                         <div className="flex space-x-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500/20" />
-                            <div className="w-3 h-3 rounded-full bg-amber-500/20" />
-                            <div className="w-3 h-3 rounded-full bg-emerald-500/20" />
+                            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1 bg-[var(--brand-primary)]/50 rounded text-xs text-slate-400">
-                            <FileCode size={12} className="text-[var(--brand-accent)]" />
-                            <span>auth_service.py</span>
-                        </div>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">VulnIQ — Security Analysis</span>
+                    <div className="w-16" />
+                </div>
+
+                {/* --- Tab Bar --- */}
+                <div className="flex items-center h-9 border-b border-white/5" style={{ background: '#181825' }}>
+                    <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-slate-300 border-r border-white/5 border-b-2 border-b-violet-500" style={{ background: '#1e1e2e' }}>
+                        <FileCode size={12} className="text-violet-400" />
+                        <span>auth_service.py</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-slate-500 border-r border-white/5">
+                        <FileCode size={12} className="text-slate-600" />
+                        <span>config.py</span>
                     </div>
                 </div>
 
                 {/* --- Editor Area --- */}
-                <div className="relative flex-1 font-mono text-[9px] xs:text-[10px] sm:text-[12px] overflow-hidden bg-[var(--brand-primary)]/90 flex">
-                    <div className="w-8 sm:w-12 flex flex-col items-end pr-2 sm:pr-3 pt-4 text-slate-400 bg-[var(--brand-primary)]/90 z-10 shrink-0 select-none border-r border-white/5" aria-hidden="true">
+                <div className="relative flex-1 font-mono text-[9px] xs:text-[10px] sm:text-[12px] overflow-hidden flex" style={{ background: '#1e1e2e' }}>
+                    <div className="w-8 sm:w-12 flex flex-col items-end pr-2 sm:pr-3 pt-4 text-slate-600 z-10 shrink-0 select-none border-r border-white/5" style={{ background: '#181825' }} aria-hidden="true">
                         {Array.from({ length: 24 }).map((_, i) => (
                             <div key={i} className="leading-[18px] sm:leading-[22px] h-[18px] sm:h-[22px]">{i + 1}</div>
                         ))}
@@ -292,13 +302,13 @@ export const SecurityCodeDemo = () => {
                                     exit={{ opacity: 0 }}
                                 >
                                     <motion.div
-                                        className="absolute left-0 right-0 h-[2px] bg-[var(--brand-accent)] shadow-[0_0_20px_rgba(var(--brand-accent-rgb),0.6)]"
+                                        className="absolute left-0 right-0 h-0.5 bg-violet-500 shadow-[0_0_20px_rgba(139,92,246,0.6)]"
                                         initial={{ top: 0 }}
                                         animate={{ top: '100%' }}
                                         transition={{ duration: TIMING.SCAN_DURATION / 1000, ease: 'linear' }}
                                     />
                                     <motion.div
-                                        className="absolute left-0 right-0 h-32 bg-gradient-to-b from-[var(--brand-accent)]/10 to-transparent"
+                                        className="absolute left-0 right-0 h-32 bg-gradient-to-b from-violet-500/10 to-transparent"
                                         initial={{ top: -128 }}
                                         animate={{ top: '100%' }}
                                         transition={{ duration: TIMING.SCAN_DURATION / 1000, ease: 'linear' }}
@@ -345,7 +355,7 @@ export const SecurityCodeDemo = () => {
                                         {codeContent.length > 0 && renderCode(codeContent)}
                                         {/* Cursor - simplified animation to avoid layout shifts */}
                                         {step === 1 && !typingFinished && (
-                                            <span className="inline-block w-2 h-4 align-middle bg-[var(--brand-accent)] ml-1 animate-pulse" aria-hidden="true" />
+                                            <span className="inline-block w-2 h-4 align-middle bg-violet-400 ml-1 animate-pulse" aria-hidden="true" />
                                         )}
                                     </motion.div>
                                 )}
@@ -361,9 +371,9 @@ export const SecurityCodeDemo = () => {
                             initial={{ height: 0 }}
                             animate={{ height: 160 }}
                             exit={{ height: 0 }}
-                            className="border-t border-slate-800 bg-[var(--brand-primary)] z-30 overflow-hidden flex flex-col"
+                            className="border-t border-white/5 z-30 overflow-hidden flex flex-col" style={{ background: '#11111b' }}
                         >
-                            <div className="flex items-center justify-between px-4 py-2 bg-[var(--brand-dark)] border-b border-slate-800">
+                            <div className="flex items-center justify-between px-4 py-2 border-b border-white/5" style={{ background: '#181825' }}>
                                 <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                                     <Terminal size={12} /> Security Test Suite
                                 </div>
@@ -389,25 +399,25 @@ export const SecurityCodeDemo = () => {
                 </AnimatePresence>
 
                 {/* --- Footer --- */}
-                <div className="h-8 bg-[var(--brand-dark)] border-t border-slate-800 flex items-center justify-between px-4 text-[10px] text-slate-400 font-medium z-40">
+                <div className="h-7 border-t border-white/5 flex items-center justify-between px-4 text-[10px] text-slate-500 font-medium z-40" style={{ background: '#181825' }}>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                        <div className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
                             <GitBranch size={10} />
                             <span>main</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <span className="text-slate-400 hidden sm:inline-block">Python</span>
+                        <span className="text-slate-500 hidden sm:inline-block">Python</span>
                         <span className="hidden sm:inline-block">UTF-8</span>
                         <span className="hidden sm:inline-block">Spaces: 4</span>
-                        <div className="w-[1px] h-3 bg-slate-700 mx-1 hidden sm:block" />
+                        <div className="w-[1px] h-3 bg-white/5 mx-1 hidden sm:block" />
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
                                 <Terminal size={10} />
                             </div>
                             <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer relative">
                                 <Bell size={10} />
-                                {step === 7 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />}
+                                {step === 7 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />}
                             </div>
                         </div>
                     </div>
@@ -424,7 +434,7 @@ export const SecurityCodeDemo = () => {
                             exit={{ opacity: 0, scale: 0.9 }}
                             className="absolute top-16 sm:top-20 right-2 sm:right-8 z-50"
                         >
-                            <div className="w-48 sm:w-64 rounded-lg border border-orange-500/20 bg-[var(--brand-primary)]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
+                            <div className="w-48 sm:w-64 rounded-lg border border-orange-500/20 shadow-2xl backdrop-blur-xl overflow-hidden" style={{ background: 'rgba(30,30,46,0.95)' }}>
                                 <div className="bg-orange-500/5 px-4 py-2 border-b border-orange-500/10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Database size={14} className="text-orange-400" />
@@ -459,9 +469,9 @@ export const SecurityCodeDemo = () => {
                             initial={{ opacity: 0, y: 10, x: 20 }}
                             animate={{ opacity: 1, y: 0, x: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute top-[180px] sm:top-[240px] right-2 sm:right-8 z-50"
+                            className="absolute top-[60px] sm:top-[72px] right-2 sm:right-8 z-50"
                         >
-                            <div className="w-56 sm:w-72 rounded-lg border border-red-500/30 bg-[var(--brand-primary)]/95 shadow-[0_0_30px_rgba(239,68,68,0.2)] backdrop-blur-xl">
+                            <div className="w-56 sm:w-72 rounded-lg border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.2)] backdrop-blur-xl" style={{ background: 'rgba(30,30,46,0.95)' }}>
                                 <div className="p-4">
                                     <div className="flex items-start gap-3 mb-2">
                                         <div className="p-2 rounded bg-red-500/10 text-red-500">
@@ -512,29 +522,29 @@ export const SecurityCodeDemo = () => {
                             exit={{ opacity: 0, x: 20 }}
                             className="absolute top-16 sm:top-20 right-2 sm:right-8 z-50"
                         >
-                            <div className="w-56 sm:w-72 rounded-lg border border-cyan-500/20 bg-[var(--brand-primary)]/95 shadow-2xl backdrop-blur-xl overflow-hidden">
-                                <div className="bg-cyan-950/30 px-4 py-2 border-b border-cyan-500/10 flex items-center justify-between">
+                            <div className="w-56 sm:w-72 rounded-lg border border-violet-500/20 shadow-2xl backdrop-blur-xl overflow-hidden" style={{ background: 'rgba(30,30,46,0.95)' }}>
+                                <div className="bg-violet-950/30 px-4 py-2 border-b border-violet-500/10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Zap size={14} className="text-cyan-400" />
-                                        <span className="text-xs font-bold text-cyan-200">Other Recommendations</span>
+                                        <Zap size={14} className="text-violet-400" />
+                                        <span className="text-xs font-bold text-violet-200">Other Recommendations</span>
                                     </div>
                                 </div>
                                 <div className="p-3 space-y-2">
-                                    <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex items-center justify-between group cursor-pointer hover:border-cyan-500/30 transition-colors">
+                                    <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex items-center justify-between group cursor-pointer hover:border-violet-500/30 transition-colors">
                                         <div className="flex items-center gap-2">
                                             <ShieldAlert size={12} className="text-amber-400" />
                                             <div className="text-[10px] text-slate-300">Missing Rate Limiting</div>
                                         </div>
-                                        <div className="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-[9px] font-bold border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-white transition-all">
+                                        <div className="px-2 py-1 rounded bg-violet-500/10 text-violet-400 text-[9px] font-bold border border-violet-500/20 group-hover:bg-violet-500 group-hover:text-white transition-all">
                                             ADD PATCH
                                         </div>
                                     </div>
-                                    <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex items-center justify-between group cursor-pointer hover:border-cyan-500/30 transition-colors">
+                                    <div className="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex items-center justify-between group cursor-pointer hover:border-violet-500/30 transition-colors">
                                         <div className="flex items-center gap-2">
                                             <Lock size={12} className="text-amber-400" />
                                             <div className="text-[10px] text-slate-300">Weak Input Validation</div>
                                         </div>
-                                        <div className="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-[9px] font-bold border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-white transition-all">
+                                        <div className="px-2 py-1 rounded bg-violet-500/10 text-violet-400 text-[9px] font-bold border border-violet-500/20 group-hover:bg-violet-500 group-hover:text-white transition-all">
                                             ADD PATCH
                                         </div>
                                     </div>
@@ -556,7 +566,7 @@ export const SecurityCodeDemo = () => {
                             <motion.div
                                 initial={{ scale: 0.9, y: 20 }}
                                 animate={{ scale: 1, y: 0 }}
-                                className="w-full max-w-[280px] sm:w-72 bg-[var(--brand-primary)] border border-orange-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10"
+                                className="w-full max-w-[280px] sm:w-72 border border-orange-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10" style={{ background: '#1e1e2e' }}
                             >
                                 <div className="relative h-20 bg-gradient-to-br from-orange-600 to-amber-800 flex items-center justify-center overflow-hidden">
                                     <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>

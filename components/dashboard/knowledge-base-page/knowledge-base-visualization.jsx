@@ -1364,7 +1364,7 @@ export default function KnowledgeBaseVisualization() {
         return (
             <div
                 key={doc.id}
-                className={`group relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 cursor-pointer ${isSelected ? 'bg-accent/10' : ''}`}
+                className={`group relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card transition-all duration-200 cursor-pointer ${isSelected ? 'bg-accent/10' : ''}`}
                 onClick={(e) => {
                     // Don't open viewer if click came from a button, checkbox, or label inside
                     const target = e.target;
@@ -1601,12 +1601,12 @@ export default function KnowledgeBaseVisualization() {
                     onMouseDown={(e) => { e.preventDefault(); setIsResizingGroups(true); }}
                     onTouchStart={(e) => { e.preventDefault(); setIsResizingGroups(true); }}
                     className={cn(
-                        "hidden md:flex items-center justify-center w-4 cursor-col-resize group shrink-0 transition-colors",
+                        "hidden md:flex items-center justify-center w-3 cursor-col-resize group shrink-0 transition-colors",
                         isResizingGroups && ""
                     )}
                 >
                     <div className={cn(
-                        "w-1 h-16 rounded-full bg-border group-hover:bg-primary/50 transition-colors",
+                        "w-0.5 h-8 rounded-full bg-border/50 group-hover:bg-primary/50 transition-colors",
                         isResizingGroups && "bg-primary"
                     )} />
                 </div>
@@ -1828,11 +1828,11 @@ export default function KnowledgeBaseVisualization() {
                 onMouseDown={handleResizeStart}
                 onTouchStart={handleResizeStart}
                 className={cn(
-                    "hidden md:flex items-center justify-center w-4 cursor-col-resize group shrink-0 transition-colors",
+                    "hidden md:flex items-center justify-center w-3 cursor-col-resize group shrink-0 transition-colors",
                 )}
             >
                 <div className={cn(
-                    "w-1 h-16 rounded-full bg-border group-hover:bg-primary/50 transition-colors",
+                    "w-0.5 h-8 rounded-full bg-border/50 group-hover:bg-primary/50 transition-colors",
                     isResizing && "bg-primary"
                 )} />
             </div>

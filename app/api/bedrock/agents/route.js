@@ -90,11 +90,6 @@ export async function GET(request) {
                     createdDate: agent.createdAt,
                     updatedDate: agent.updatedAt,
                     foundationModel: agent.foundationModel,
-                    instruction: agent.instruction,
-                    agentResourceRoleArn: agent.agentResourceRoleArn,
-                    customerEncryptionKeyArn: agent.customerEncryptionKeyArn,
-                    guardrailConfiguration: agent.guardrailConfiguration,
-                    idleSessionTTLInSeconds: agent.idleSessionTTLInSeconds,
                 });
             }
         }

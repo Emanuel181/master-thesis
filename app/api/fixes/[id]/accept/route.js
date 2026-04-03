@@ -9,12 +9,35 @@ import prisma from '@/lib/prisma';
 export async function POST(request, { params }) {
     try {
         const session = await auth();
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-        
+
         const { id } = params;
-        
+
+        // Verify ownership: fix → vulnerability → workflowRun must belong to user
+        const fix = await prisma.codeFix.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                vulnerability: {
+                    select: {
+                        workflowRun: {
+                            select: { userId: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!fix) {
+            return NextResponse.json({ error: 'Fix not found' }, { status: 404 });
+        }
+
+        if (fix.vulnerability?.workflowRun?.userId !== session.user.id) {
+            return NextResponse.json({ error: 'Fix not found' }, { status: 404 });
+        }
+
         await prisma.codeFix.update({
             where: { id },
             data: {
@@ -23,7 +46,7 @@ export async function POST(request, { params }) {
                 reviewedBy: session.user.id
             }
         });
-        
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error accepting fix:', error);

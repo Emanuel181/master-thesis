@@ -318,8 +318,7 @@ export default function AdminManagementPage() {
             });
 
             const optionsData = await optionsRes.json();
-            console.log('[Passkey Setup] Options response:', optionsData);
-            
+
             if (!optionsRes.ok) {
                 throw new Error(optionsData.error || 'Failed to get registration options');
             }
@@ -360,7 +359,6 @@ export default function AdminManagementPage() {
         } catch (err) {
             if (err.name === 'NotAllowedError') {
                 // User cancelled - this is expected behavior, not an error
-                console.log('Passkey registration cancelled by user');
                 setVerifyError('Passkey setup was cancelled. Click the button to try again.');
             } else {
                 console.error('Passkey registration error:', err);
@@ -422,7 +420,6 @@ export default function AdminManagementPage() {
         } catch (err) {
             if (err.name === 'NotAllowedError') {
                 // User cancelled or no passkey available - offer to reset
-                console.log('Passkey authentication cancelled or not available');
                 setVerifyError('Passkey not found on this device. You may need to reset your passkey if it was deleted or you\'re on a different device.');
             } else {
                 console.error('Passkey authentication error:', err);
@@ -594,7 +591,7 @@ export default function AdminManagementPage() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="text-center space-y-4">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-[var(--brand-accent)]" />
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-accent" />
                     <p className="text-muted-foreground">Checking session...</p>
                 </div>
             </div>
@@ -651,17 +648,17 @@ export default function AdminManagementPage() {
     // Login UI
     if (verifyState !== VERIFY_STATE.VERIFIED) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-[var(--brand-accent)]/5">
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full max-w-md"
                 >
-                    <Card className="border-[var(--brand-accent)]/20 shadow-xl shadow-[var(--brand-accent)]/5">
+                    <Card className="border-accent/20 shadow-xl shadow-accent/5">
                         <CardHeader className="text-center space-y-2">
                             <div className="flex justify-center mb-2">
-                                <div className="p-3 rounded-full bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/20">
-                                    <Crown className="h-8 w-8 text-[var(--brand-accent)]" />
+                                <div className="p-3 rounded-full bg-accent/10 border border-accent/20">
+                                    <Crown className="h-8 w-8 text-accent" />
                                 </div>
                             </div>
                             <CardTitle className="text-xl">Admin Management</CardTitle>
@@ -706,7 +703,7 @@ export default function AdminManagementPage() {
                                         </div>
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={verifyEmail}
                                         disabled={isVerifying}
                                     >
@@ -755,7 +752,7 @@ export default function AdminManagementPage() {
                                         </div>
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={verifyPassword}
                                         disabled={isVerifying}
                                     >
@@ -806,7 +803,7 @@ export default function AdminManagementPage() {
                                             />
                                         </div>
                                         <Button
-                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            className="w-full bg-accent hover:bg-accent/90"
                                             onClick={startPasskeySetup}
                                         >
                                             <KeyRound className="mr-2 h-4 w-4" />
@@ -838,7 +835,7 @@ export default function AdminManagementPage() {
                                             <p>Complete authentication with your registered passkey.</p>
                                         </div>
                                         <Button
-                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            className="w-full bg-accent hover:bg-accent/90"
                                             onClick={startPasskeyAuth}
                                         >
                                             <KeyRound className="mr-2 h-4 w-4" />
@@ -883,7 +880,7 @@ export default function AdminManagementPage() {
                             {verifyState === VERIFY_STATE.PASSKEY_PROCESSING && (
                                 <div className="space-y-4">
                                     <div className="flex flex-col items-center justify-center gap-3 py-8">
-                                        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
+                                        <Loader2 className="h-8 w-8 animate-spin text-accent" />
                                         <p className="text-sm text-muted-foreground">
                                             Complete the verification on your device...
                                         </p>
@@ -902,7 +899,7 @@ export default function AdminManagementPage() {
 
                             <Separator />
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <Shield className="h-4 w-4 text-[var(--brand-accent)] shrink-0" />
+                                <Shield className="h-4 w-4 text-accent shrink-0" />
                                 <p><span className="font-medium text-foreground">Access Restricted:</span> Only the master admin can manage admin accounts.</p>
                             </div>
                         </CardContent>
@@ -972,8 +969,8 @@ export default function AdminManagementPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
                         <div className="space-y-1">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10">
-                                    <Users className="h-5 w-5 text-[var(--brand-accent)]" />
+                                <div className="p-2 rounded-lg bg-accent/10">
+                                    <Users className="h-5 w-5 text-accent" />
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold tracking-tight">Admin Accounts</h1>
@@ -990,7 +987,7 @@ export default function AdminManagementPage() {
                             </Button>
                             <Button 
                                 onClick={() => setIsAddDialogOpen(true)}
-                                className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90 shadow-sm"
+                                className="bg-accent hover:bg-accent/90 shadow-sm"
                             >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Admin
@@ -1004,7 +1001,7 @@ export default function AdminManagementPage() {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                         >
-                            <Alert className="bg-[var(--brand-accent)]/10 border-[var(--brand-accent)]/30 text-[var(--brand-accent)]">
+                            <Alert className="bg-accent/10 border-accent/30 text-accent">
                                 <CheckCircle2 className="h-4 w-4" />
                                 <AlertDescription>{successMessage}</AlertDescription>
                             </Alert>

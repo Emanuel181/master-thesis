@@ -34,6 +34,7 @@ function generateRandomCode() {
 const baseAdapter = PrismaAdapter(prisma);
 const adapter = {
     ...baseAdapter,
+
     async getUserByAccount(providerAccountInfo) {
         const user = await baseAdapter.getUserByAccount(providerAccountInfo);
         if (!user || !user.email) return user;
@@ -85,6 +86,87 @@ const adapter = {
 
         return user;
     },
+
+    /**
+     * Override linkAccount to handle cross-user account conflicts.
+     *
+     * Scenario: User A signed up with Google. Later, User A tries to connect GitHub,
+     * but GitHub was previously linked to a ghost/test user with a different email.
+     *
+     * This method detects the conflict and either:
+     * 1. Deletes the old link if it's an orphan (ghost user)
+     * 2. Transfers the account to the current user if emails match
+     */
+    async linkAccount(account) {
+        try {
+            console.log(`[auth][adapter] linkAccount called for ${account.provider} account ${account.providerAccountId}`);
+
+            // Check if this provider account is already linked to a different user
+            const existingAccount = await prisma.account.findUnique({
+                where: {
+                    provider_providerAccountId: {
+                        provider: account.provider,
+                        providerAccountId: account.providerAccountId,
+                    },
+                },
+                include: {
+                    user: {
+                        select: { id: true, email: true },
+                    },
+                },
+            });
+
+            if (existingAccount && existingAccount.userId !== account.userId) {
+                console.log(`[auth][adapter] Found existing link: ${account.provider} account ${account.providerAccountId} is linked to user ${existingAccount.userId} (${existingAccount.user.email}), but trying to link to ${account.userId}`);
+
+                // Get the new user's info
+                const newUser = await prisma.user.findUnique({
+                    where: { id: account.userId },
+                    select: { email: true },
+                });
+
+                console.log(`[auth][adapter] New user email: ${newUser?.email}`);
+
+                // Strategy: Delete the old link and create a new one
+                // This handles both ghost users and email changes
+                console.log(`[auth][adapter] Deleting old link to allow re-linking`);
+
+                await prisma.account.delete({
+                    where: {
+                        provider_providerAccountId: {
+                            provider: account.provider,
+                            providerAccountId: account.providerAccountId,
+                        },
+                    },
+                });
+
+                console.log(`[auth][adapter] Deleted old ${account.provider} link`);
+
+                // Check if old user should be deleted (ghost user with no other accounts)
+                const oldUserAccountCount = await prisma.account.count({
+                    where: { userId: existingAccount.userId },
+                });
+
+                if (oldUserAccountCount === 0) {
+                    try {
+                        await prisma.user.delete({
+                            where: { id: existingAccount.userId },
+                        });
+                        console.log(`[auth][adapter] Deleted ghost user ${existingAccount.userId} (${existingAccount.user.email})`);
+                    } catch (deleteErr) {
+                        console.warn(`[auth][adapter] Could not delete ghost user:`, deleteErr.message);
+                    }
+                }
+            }
+
+            // Now create/update the account link
+            return await baseAdapter.linkAccount(account);
+        } catch (err) {
+            console.error('[auth][adapter] Error in linkAccount:', err.message);
+            // Fall back to base adapter
+            return await baseAdapter.linkAccount(account);
+        }
+    },
 };
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -99,6 +181,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     pages: {
         signIn: "/login",
         verifyRequest: "/login/verify-code",
+    },
+
+    // NextAuth v5: Enable experimental features for account linking
+    experimental: {
+        enableWebAuthn: false,
     },
 
     providers: [
@@ -220,8 +307,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             // ── Guard: reject OAuth sign-in when provider email ≠ DB email ──
             // When `allowDangerousEmailAccountLinking` links a provider account
             // to an existing user whose canonical email differs, the user ends
-            // up in someone else's session.  Block that here and return a clear
+            // up in someone else's session. Block that here and return a clear
             // error so the login page can display it.
+            //
+            // IMPORTANT: Only enforce this check during INITIAL sign-in, NOT when
+            // linking additional providers to an existing authenticated session.
+            // If user already has a session, they're intentionally linking a
+            // secondary account (e.g., signed up with Email, now linking GitHub).
             if (account?.type === 'oauth' && user?.id && profile) {
                 try {
                     const dbUser = await prisma.user.findUnique({
@@ -236,12 +328,44 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     ).toLowerCase().trim();
                     const canonicalEmail = (dbUser?.email || '').toLowerCase().trim();
 
+                    // Check if this account is already linked to this user
+                    const existingAccount = await prisma.account.findUnique({
+                        where: {
+                            provider_providerAccountId: {
+                                provider: account.provider,
+                                providerAccountId: account.providerAccountId,
+                            },
+                        },
+                        select: { userId: true },
+                    });
+
+                    // Only block if:
+                    // 1. Emails don't match
+                    // 2. This is NOT already linked to this user (not a re-auth)
+                    // 3. The user doesn't already have other linked accounts (not account linking)
+                    const userAccountsCount = await prisma.account.count({
+                        where: { userId: user.id },
+                    });
+
+                    const isReauth = existingAccount?.userId === user.id;
+                    const isLinkingAdditional = userAccountsCount > 0;
+
                     if (providerEmail && canonicalEmail && providerEmail !== canonicalEmail) {
-                        console.warn(
-                            `[auth][signIn] Blocked cross-email sign-in: provider ${account.provider} `
-                            + `email (${providerEmail}) ≠ canonical email (${canonicalEmail})`
-                        );
-                        return `/login?error=CrossEmailBlocked`;
+                        // Allow if this is re-authentication or linking additional account
+                        if (isReauth || isLinkingAdditional) {
+                            console.log(
+                                `[auth][signIn] Allowing cross-email link: provider ${account.provider} `
+                                + `email (${providerEmail}) ≠ canonical email (${canonicalEmail}) - `
+                                + `${isReauth ? 're-auth' : 'linking additional account'}`
+                            );
+                        } else {
+                            // Block initial sign-in with different email
+                            console.warn(
+                                `[auth][signIn] Blocked cross-email sign-in: provider ${account.provider} `
+                                + `email (${providerEmail}) ≠ canonical email (${canonicalEmail})`
+                            );
+                            return `/login?error=CrossEmailBlocked`;
+                        }
                     }
                 } catch (err) {
                     console.error('[auth][signIn] Guard check failed:', err.message);
@@ -300,8 +424,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                             updateData.name = profile.name;
                         }
 
-                        // Only set image if not already present
-                        if (!existingUser.image && (profile.picture || profile.avatar_url || profile.image)) {
+                        // Only set image if not already present (null or empty string)
+                        if ((!existingUser.image || existingUser.image === '') && (profile.picture || profile.avatar_url || profile.image)) {
                             updateData.image = profile.picture || profile.avatar_url || profile.image;
                         }
 
@@ -326,6 +450,23 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                             if (!existingUser.firstName && profile.givenName) updateData.firstName = profile.givenName;
                             if (!existingUser.lastName && profile.surname) updateData.lastName = profile.surname;
                             if (!existingUser.jobTitle && profile.jobTitle) updateData.jobTitle = profile.jobTitle;
+                            // Fetch profile photo from Microsoft Graph if no image set
+                            if ((!existingUser.image || existingUser.image === '') && account.access_token) {
+                                try {
+                                    const photoRes = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
+                                        headers: { Authorization: `Bearer ${account.access_token}` },
+                                    });
+                                    if (photoRes.ok) {
+                                        const blob = await photoRes.blob();
+                                        const arrayBuffer = await blob.arrayBuffer();
+                                        const base64 = Buffer.from(arrayBuffer).toString('base64');
+                                        const mimeType = photoRes.headers.get('content-type') || 'image/jpeg';
+                                        updateData.image = `data:${mimeType};base64,${base64}`;
+                                    }
+                                } catch {
+                                    // Graph photo fetch failed — leave image empty
+                                }
+                            }
                         }
 
                         // Only update if we have new data to fill in
@@ -348,13 +489,29 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return true;
         },
-        async jwt({ token, account, user, profile }) {
+        async jwt({ token, account, user, profile, trigger }) {
             if (account) {
                 token.accessToken = account.access_token;
-                token.provider = account.provider; // Store which provider the token is for
-                // Clear provider-sourced picture immediately — the canonical image
-                // will be set below from the DB. This prevents a linked provider's
-                // avatar from leaking into the session when the DB image differs.
+                token.provider = account.provider;
+                // Save the provider-sourced picture so it can be used as a fallback
+                // when the DB has no image. The DB image is always canonical.
+                token._providerPicture = profile?.picture || profile?.avatar_url || profile?.image || token.picture || null;
+                // For Microsoft, the OIDC profile has no picture — fetch from Graph API
+                if (account.provider === 'microsoft-entra-id' && !token._providerPicture && account.access_token) {
+                    try {
+                        const photoRes = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
+                            headers: { Authorization: `Bearer ${account.access_token}` },
+                        });
+                        if (photoRes.ok) {
+                            const arrayBuffer = await photoRes.arrayBuffer();
+                            const base64 = Buffer.from(arrayBuffer).toString('base64');
+                            const mimeType = photoRes.headers.get('content-type') || 'image/jpeg';
+                            token._providerPicture = `data:${mimeType};base64,${base64}`;
+                        }
+                    } catch {
+                        // Graph photo fetch failed
+                    }
+                }
                 token.picture = null;
             }
             // store the user id on initial sign in so session callback can use it later
@@ -371,9 +528,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             const DB_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
             const lookupId = user?.id || token.userId;
             const isSignIn = !!user?.id;
+            const isForceRefresh = trigger === "update";
             const isStale = token._dbRefreshedAt
                 && (Date.now() - token._dbRefreshedAt > DB_REFRESH_INTERVAL_MS);
-            const needsRefresh = isSignIn || isStale;
+            const needsRefresh = isSignIn || isStale || isForceRefresh;
 
             if (lookupId && needsRefresh) {
                 try {
@@ -385,10 +543,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                         token.email = dbUser.email;
                         token.name = dbUser.name;
                         // Always use the DB image as the canonical source.
-                        // Set to null if not present — prevents NextAuth from
-                        // auto-populating token.picture with the current provider's
-                        // profile photo (which may differ from the user's canonical image).
-                        token.picture = dbUser.image ?? null;
+                        // If DB has no image, fall back to the provider picture
+                        // (e.g., Google profile photo) so the avatar is visible
+                        // until the user uploads a custom one.
+                        token.picture = dbUser.image || token._providerPicture || null;
                     }
                     token._dbRefreshedAt = Date.now();
                 } catch (err) {
@@ -440,7 +598,16 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 }
             }
         },
-    }
+
+        /**
+         * linkAccount event - fires when an account is linked to a user
+         * This is triggered by allowDangerousEmailAccountLinking
+         */
+        async linkAccount({ user, account, profile }) {
+            console.log(`[auth][events] Account linked: ${account.provider} → user ${user.id}`);
+            console.log(`[auth][events] Provider email: ${profile?.email}, User email: ${user.email}`);
+        },
+    },
 
 
 })

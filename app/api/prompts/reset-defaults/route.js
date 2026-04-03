@@ -26,7 +26,6 @@ export const POST = createApiHandler(
     async (request, { session }) => {
         const userId = session.user.id;
 
-        console.log(`[reset-defaults] Starting reset for user ${userId}`);
 
         // Get the map of default prompts by defaultKey
         const defaultPromptsMap = getDefaultPromptsMap();
@@ -57,7 +56,6 @@ export const POST = createApiHandler(
         }
 
         const userDefaultPrompts = allPrompts.filter(prompt => prompt.isDefault && prompt.defaultKey);
-        console.log(`[reset-defaults] Found ${userDefaultPrompts.length} default prompts for user`);
 
         let promptsReset = 0;
 
@@ -83,8 +81,6 @@ export const POST = createApiHandler(
                 continue;
             }
 
-            console.log(`[reset-defaults] Prompt "${prompt.defaultKey}" is modified, resetting...`);
-
             try {
                 if (prompt.s3Key) {
                     try {
@@ -104,7 +100,6 @@ export const POST = createApiHandler(
                     },
                 });
 
-                console.log(`[reset-defaults] Reset prompt "${prompt.defaultKey}" (${prompt.id})`);
                 promptsReset++;
             } catch (error) {
                 console.error(`Failed to reset prompt "${prompt.title}" (${prompt.id}):`, error);

@@ -20,9 +20,9 @@ export function FeaturedPostSidebarItem({
         <div
           className="aspect-square w-14 h-14 rounded-lg shrink-0 flex items-center justify-center"
           style={{
-            background: `linear-gradient(135deg, 
-              rgba(var(--brand-accent-rgb), 0.15) 0%, 
-              rgba(var(--brand-primary-rgb), 0.25) 100%)`,
+            background: `linear-gradient(135deg,
+              hsl(var(--accent) / 0.15) 0%,
+              hsl(var(--primary) / 0.25) 100%)`,
           }}
         >
           {icon}
@@ -30,9 +30,9 @@ export function FeaturedPostSidebarItem({
       )}
       <div className="flex-1 min-w-0">
         {category && (
-          <span className="text-xs text-[var(--brand-accent)] font-medium">{category}</span>
+          <span className="text-xs text-accent font-medium">{category}</span>
         )}
-        <h4 className="text-sm leading-snug font-medium line-clamp-2 group-hover:text-[var(--brand-accent)] transition-colors">
+        <h4 className="text-sm leading-snug font-medium line-clamp-2 group-hover:text-accent transition-colors">
           {title}
         </h4>
       </div>

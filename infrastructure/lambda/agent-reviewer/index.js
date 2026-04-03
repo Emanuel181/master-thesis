@@ -7,6 +7,8 @@ const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-be
 const { BedrockAgentRuntimeClient, RetrieveCommand } = require("@aws-sdk/client-bedrock-agent-runtime");
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 
+const { buildCodeGraph, summarizeGraphForPrompt } = require('./code-graph/graph-builder');
+
 const bedrockClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
 const bedrockAgentClient = new BedrockAgentRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
 const s3Client = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
@@ -250,20 +252,35 @@ async function saveVulnerabilityViaAPI(runId, vuln) {
  * Analyze multiple files for vulnerabilities
  */
 async function analyzeFiles(useCase, files, codeType, ragContext, selectedDocuments, ragReferences = []) {
+    // Build code graph for multi-file structural analysis
+    let codeGraph = null;
+    let graphSummary = '';
+    if (files.length > 1) {
+        try {
+            codeGraph = buildCodeGraph(files);
+            if (codeGraph) {
+                graphSummary = summarizeGraphForPrompt(codeGraph);
+                console.log(`[CodeGraph] Built graph: ${codeGraph.stats.totalFunctions} functions, ${codeGraph.stats.totalCallEdges} call edges, ${codeGraph.entryPoints.length} entry points`);
+            }
+        } catch (graphErr) {
+            console.warn('[CodeGraph] Graph building failed (non-fatal):', graphErr.message);
+        }
+    }
+
     // Build combined code context for analysis
     let codeContext = '';
-    
+
     if (files.length === 1) {
         codeContext = files[0].content;
     } else {
         // For multiple files, include file paths and content
-        codeContext = files.map(file => 
+        codeContext = files.map(file =>
             `File: ${file.path}\n\`\`\`${file.language || 'plaintext'}\n${file.content}\n\`\`\``
         ).join('\n\n');
     }
-    
-    // Build security analysis prompt with RAG context and references
-    const prompt = buildSecurityAnalysisPrompt(useCase, codeContext, codeType, ragContext, selectedDocuments, files.length > 1, ragReferences);
+
+    // Build security analysis prompt with RAG context, references, and code graph
+    const prompt = buildSecurityAnalysisPrompt(useCase, codeContext, codeType, ragContext, selectedDocuments, files.length > 1, ragReferences, graphSummary);
 
     // Call AWS Bedrock
     const modelId = useCase.reviewerModel || 'anthropic.claude-3-haiku-20240307-v1:0';
@@ -1203,7 +1220,7 @@ function compressChunk(text, maxLength) {
     return compressed || text.substring(0, maxLength) + '...';
 }
 
-function buildSecurityAnalysisPrompt(useCase, code, codeType, ragContext = '', selectedDocuments = [], isMultiFile = false, ragReferences = []) {
+function buildSecurityAnalysisPrompt(useCase, code, codeType, ragContext = '', selectedDocuments = [], isMultiFile = false, ragReferences = [], graphSummary = '') {
     const customPrompt = useCase.reviewerPrompt || '';
     
     // Build document context section with available references
@@ -1229,8 +1246,13 @@ function buildSecurityAnalysisPrompt(useCase, code, codeType, ragContext = '', s
         ).join('\n')}\n=== END CITABLE REFERENCES ===\n`;
     }
     
-    const fileContext = isMultiFile ? 
+    const fileContext = isMultiFile ?
         '\n\nThis is a multi-file project. Check all files for vulnerabilities that match the knowledge base context.\n' :
+        '';
+
+    // Include code graph summary for multi-file structural analysis
+    const graphSection = graphSummary ?
+        `\n\n${graphSummary}\n\nIMPORTANT: The CODE STRUCTURE GRAPH above shows compiler-analyzed cross-file call chains and data flows. Pay special attention to:\n- [TAINTED] flows where user input reaches dangerous sinks across files\n- Cross-file calls that pass untrusted data\n- Entry points that receive external input\n` :
         '';
 
     return `You are a security code reviewer operating under strict document-scoped constraints.
@@ -1245,7 +1267,7 @@ function buildSecurityAnalysisPrompt(useCase, code, codeType, ragContext = '', s
 
 Use Case: ${useCase.title}
 Description: ${useCase.content}
-Code Type: ${codeType}${documentContext}${referenceList}${ragSection}${fileContext}
+Code Type: ${codeType}${documentContext}${referenceList}${ragSection}${fileContext}${graphSection}
 
 ${customPrompt ? `Additional Instructions: ${customPrompt}\n` : ''}
 
@@ -1262,41 +1284,62 @@ TASK: Compare the code above against the vulnerability patterns, security rules,
 6. fileName: File where the vulnerability exists
 7. lineNumber: Line number (estimate if unclear)
 8. confidence: 0.0 to 1.0
-9. vulnerableCode: The specific code snippet
+9. vulnerableCode: The specific code snippet that contains the vulnerability
 10. explanation: Why this code matches the vulnerability pattern described in the knowledge base
 11. bestPractices: Remediation steps AS DESCRIBED in the knowledge base documents (do not invent your own)
-12. exploitExamples: Only if the knowledge base provides exploit examples; otherwise omit or leave empty
-13. attackPath: Only if the knowledge base describes attack scenarios; otherwise omit or leave empty
-14. documentReferences: REQUIRED — array of {"documentId": "ref-X", "documentTitle": "...", "relevantExcerpt": "exact quote from knowledge base"}
+12. suggestedFix: REQUIRED — The corrected code snippet that fixes the vulnerability based on the bestPractices from the knowledge base. This should be a drop-in replacement for the vulnerableCode field.
+13. fixExplanation: Brief explanation of what was changed in the suggestedFix and why it resolves the vulnerability
+14. exploitExamples: Only if the knowledge base provides exploit examples; otherwise omit or leave empty
+15. attackPath: Only if the knowledge base describes attack scenarios; otherwise omit or leave empty
+16. documentReferences: REQUIRED — array of {"documentId": "ref-X", "documentTitle": "...", "relevantExcerpt": "exact quote from knowledge base"}
 
-IMPORTANT: Return ONLY a JSON object: {"vulnerabilities": [...]}
-If no code patterns match the knowledge base context, return: {"vulnerabilities": []}
-Do NOT add text outside the JSON. Do NOT report vulnerabilities without knowledge base backing.`;
+IMPORTANT REQUIREMENTS:
+- Every vulnerability MUST include both "vulnerableCode" and "suggestedFix" fields
+- The suggestedFix must be actual code that can replace vulnerableCode directly
+- Base the fix on the remediation guidance from the knowledge base context
+- Return ONLY a JSON object: {"vulnerabilities": [...]}
+- If no code patterns match the knowledge base context, return: {"vulnerabilities": []}
+- Do NOT add text outside the JSON. Do NOT report vulnerabilities without knowledge base backing.`;
 }
 
 function parseVulnerabilities(aiResponse) {
     try {
         // Remove markdown code blocks if present
         let jsonStr = aiResponse.trim();
-        
+
         // Remove ```json and ``` if present
         if (jsonStr.startsWith('```')) {
             jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
         }
-        
+
         // Find JSON object
         const startIdx = jsonStr.indexOf('{');
         const endIdx = jsonStr.lastIndexOf('}') + 1;
-        
+
         if (startIdx === -1 || endIdx === 0) {
             console.error('No JSON found in response');
             return [];
         }
-        
+
         jsonStr = jsonStr.substring(startIdx, endIdx);
         const data = JSON.parse(jsonStr);
-        
-        return data.vulnerabilities || [];
+
+        let vulnerabilities = data.vulnerabilities || [];
+
+        // Validate that each vulnerability has required fix fields
+        vulnerabilities = vulnerabilities.filter(vuln => {
+            if (!vuln.vulnerableCode) {
+                console.warn(`Vulnerability "${vuln.title}" missing vulnerableCode field - skipping`);
+                return false;
+            }
+            if (!vuln.suggestedFix) {
+                console.warn(`Vulnerability "${vuln.title}" missing suggestedFix field - skipping`);
+                return false;
+            }
+            return true;
+        });
+
+        return vulnerabilities;
     } catch (error) {
         console.error('Error parsing vulnerabilities:', error);
         console.error('AI Response:', aiResponse);

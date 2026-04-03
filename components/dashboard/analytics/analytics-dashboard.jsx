@@ -439,7 +439,7 @@ export function AnalyticsDashboard({
                             </TabsList>
                         </div>
                         <TabsContent value="all" className="mt-4">
-                            <ScrollArea className="h-[400px]">
+                            <ScrollArea className="h-96">
                                 <div className="divide-y">
                                     {vulnerabilities
                                         .filter(v => !v.resolved)
@@ -467,7 +467,7 @@ export function AnalyticsDashboard({
                             </ScrollArea>
                         </TabsContent>
                         <TabsContent value="critical" className="mt-4">
-                            <ScrollArea className="h-[400px]">
+                            <ScrollArea className="h-96">
                                 <div className="divide-y">
                                     {vulnerabilities
                                         .filter(v => !v.resolved && v.severity === 'Critical')
@@ -482,7 +482,7 @@ export function AnalyticsDashboard({
                             </ScrollArea>
                         </TabsContent>
                         <TabsContent value="high" className="mt-4">
-                            <ScrollArea className="h-[400px]">
+                            <ScrollArea className="h-96">
                                 <div className="divide-y">
                                     {vulnerabilities
                                         .filter(v => !v.resolved && v.severity === 'High')

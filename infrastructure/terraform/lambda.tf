@@ -8,7 +8,7 @@ resource "aws_lambda_function" "initialize_run" {
   function_name = "${var.environment}-initialize-run"
   role          = aws_iam_role.agent_lambda.arn
   handler       = "index.handler"
-  runtime       = "python3.11"
+  runtime       = "nodejs20.x"
   timeout       = 60
   memory_size   = 512
   
@@ -35,7 +35,7 @@ resource "aws_lambda_function" "agent_reviewer" {
   runtime       = "python3.11"
   timeout       = 900  # 15 minutes
   memory_size   = 2048
-  
+
   environment {
     variables = {
       ENVIRONMENT           = var.environment
@@ -51,9 +51,31 @@ resource "aws_lambda_function" "agent_reviewer" {
       # KNOWLEDGE_BASE_ID temporarily disabled - will be added when RAG is enabled
     }
   }
-  
+
   tags = {
     Name = "${var.environment}-agent-reviewer"
+  }
+}
+
+resource "aws_lambda_function" "agent_fixer" {
+  filename      = "../lambda/agent-fixer.zip"
+  function_name = "${var.environment}-agent-fixer"
+  role          = aws_iam_role.agent_lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+  timeout       = 900  # 15 minutes
+  memory_size   = 2048
+
+  environment {
+    variables = {
+      ENVIRONMENT            = var.environment
+      AWS_S3_BUCKET_NAME     = aws_s3_bucket.agent_artifacts.id
+      CODE_BUCKET            = aws_s3_bucket.code_repos.id
+    }
+  }
+
+  tags = {
+    Name = "${var.environment}-agent-fixer"
   }
 }
 
@@ -118,7 +140,7 @@ resource "aws_lambda_function" "agent_reporter" {
   runtime       = "python3.11"
   timeout       = 600
   memory_size   = 2048
-  
+
   environment {
     variables = {
       ENVIRONMENT           = var.environment
@@ -129,9 +151,36 @@ resource "aws_lambda_function" "agent_reporter" {
       EVENT_BUS_NAME        = aws_cloudwatch_event_bus.orchestrator.name
     }
   }
-  
+
   tags = {
     Name = "${var.environment}-agent-reporter"
+  }
+}
+
+# Autonomous Pentest Bridge Lambda (Node.js)
+resource "aws_lambda_function" "agent_tester_pentest" {
+  filename      = "../lambda/agent-tester-pentest.zip"
+  function_name = "${var.environment}-agent-tester-pentest"
+  role          = aws_iam_role.agent_lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+  timeout       = 900  # 15 minutes (Lambda will start pentest and return, not wait for completion)
+  memory_size   = 1024
+
+  environment {
+    variables = {
+      ENVIRONMENT                = var.environment
+      PENTEST_STATE_MACHINE_ARN  = "arn:aws:states:us-east-1:650080740856:stateMachine:vulniq-pentest-orchestrator"
+      PENTEST_CODE_BUCKET        = "vulniq-pentest-code-650080740856"
+      PENTEST_RESULTS_BUCKET     = "vulniq-pentest-results-650080740856"
+      PENTEST_SESSIONS_TABLE     = "PentestSessions"
+      PENTEST_FINDINGS_TABLE     = "PentestFindings"
+      EVENT_BUS_NAME             = aws_cloudwatch_event_bus.orchestrator.name
+    }
+  }
+
+  tags = {
+    Name = "${var.environment}-agent-tester-pentest"
   }
 }
 

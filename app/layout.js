@@ -1,20 +1,22 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 // removed ThemeProvider import to avoid conflicting theme managers
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
 import { CookieConsentBanner } from "@/components/cookie-consent";
+import { auth } from "@/auth";
 
 // Google Tag Manager ID
 const GTM_ID = "GTM-KRHF2P8N";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interSans = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  display: 'swap',
+  display: 'optional',
   preload: true,
   fallback: ['system-ui', 'arial'],
+  adjustFontFallback: true,
 });
 
 const geistMono = Geist_Mono({
@@ -116,7 +118,8 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const session = await auth();
   // Structured data for Google (Organization + WebSite + SiteNavigationElement)
   // Optimized for sitelinks generation - includes commercially important pages
   const structuredData = {
@@ -265,7 +268,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-x-hidden`}
+        className={`${interSans.variable} ${interSans.className} ${geistMono.variable} antialiased h-full overflow-x-hidden`}
         suppressHydrationWarning
       >
         {/* Google Tag Manager (noscript) */}
@@ -285,7 +288,7 @@ export default function RootLayout({ children }) {
         >
           Skip to main content
         </a>
-        <Providers>
+        <Providers session={session}>
           <main id="main-content" className="flex-1">
             {children}
           </main>

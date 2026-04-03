@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RefreshCw, ChevronDown, ChevronRight, Folder, File } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { DEMO_DOCUMENTS } from "@/contexts/demoContext"
@@ -38,7 +39,7 @@ export function KnowledgeBaseCard({
 
     return (
         <Card
-            className={`transition-all duration-200 card-hover-lift ${
+            className={`transition-all duration-200 ${
                 isSelected
                     ? 'border-primary border-2 bg-primary/5'
                     : 'hover:border-primary/40'
@@ -80,19 +81,23 @@ export function KnowledgeBaseCard({
                                 >
                                     {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 </Button>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-6 w-6 shrink-0"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onRefresh()
-                                    }}
-                                    title={`Refresh documents in ${kb.title}`}
-                                    disabled={isRefreshing}
-                                >
-                                    <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-6 w-6 shrink-0"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onRefresh()
+                                            }}
+                                            disabled={isRefreshing}
+                                        >
+                                            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Refresh documents in {kb.title}</TooltipContent>
+                                </Tooltip>
                             </div>
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">

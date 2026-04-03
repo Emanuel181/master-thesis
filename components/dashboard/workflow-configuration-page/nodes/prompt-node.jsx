@@ -75,10 +75,13 @@ export function PromptNode({ data }) {
                 <Handle type="target" position={Position.Left} className="!bg-primary !w-3 !h-3" />
             )}
 
-            <Card className={`w-[220px] sm:w-[280px] shadow-lg border-2 transition-all duration-300 ${borderColor} ${
+            <Card className={`w-[220px] sm:w-[280px] shadow-md border-2 border-dashed transition-all duration-300 ${borderColor} bg-muted/20 ${
                 isConfigured ? 'ring-2 ring-primary/20 shadow-md' : 'opacity-90'
             }`}>
                 <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-center gap-1 mb-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-sm">Prompt</span>
+                    </div>
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                         <div className={`p-2 sm:p-3 rounded-lg ${data.iconBg} relative`}>
                             <MessageSquare className="w-4 h-4 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />

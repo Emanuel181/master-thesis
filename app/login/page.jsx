@@ -9,14 +9,15 @@ import Image from 'next/image';
 import { LoginForm } from "@/components/login/login-form"
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PersonStanding, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { AccessibilityNavButton } from "@/components/accessibility-widget";
 export default function LoginPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const [serviceStatus, setServiceStatus] = useState("checking") // checking, operational, partial, down
     const [mounted, setMounted] = useState(false)
-    const { openPanel, setForceHideFloating } = useAccessibility()
+    const { setForceHideFloating } = useAccessibility()
 
     // Track mount state to avoid hydration mismatch
     useEffect(() => {
@@ -36,11 +37,14 @@ export default function LoginPage() {
     }, [status, router, mounted])
 
     useEffect(() => {
+        const controller = new AbortController();
+
         const checkHealth = async () => {
             try {
-                const response = await fetch("/api/health", { 
+                const response = await fetch("/api/health", {
                     method: "GET",
-                    cache: "no-store" 
+                    cache: "no-store",
+                    signal: controller.signal,
                 });
                 if (response.ok) {
                     const text = await response.text();
@@ -48,14 +52,17 @@ export default function LoginPage() {
                 } else {
                     setServiceStatus("partial");
                 }
-            } catch {
-                setServiceStatus("down");
+            } catch (err) {
+                if (err.name !== 'AbortError') setServiceStatus("down");
             }
         };
 
         checkHealth();
         const interval = setInterval(checkHealth, 60000);
-        return () => clearInterval(interval);
+        return () => {
+            controller.abort();
+            clearInterval(interval);
+        };
     }, []);
 
     // Show loading state only after mount to prevent hydration mismatch
@@ -83,7 +90,7 @@ export default function LoginPage() {
                         <span className="text-lg font-semibold">VulnIQ</span>
                     </Link>
                     <div className="flex items-center gap-2 sm:gap-3">
-                        <Button variant="ghost" size="sm" asChild className="hover:bg-[var(--brand-accent)]/10 hover:text-[var(--brand-accent)]">
+                        <Button variant="ghost" size="sm" asChild className="hover:bg-accent/10 hover:text-accent">
                             <Link href="/">
                                 <ArrowLeft className="h-4 w-4 sm:mr-2" />
                                 <span className="hidden sm:inline">Back to home</span>
@@ -113,7 +120,7 @@ export default function LoginPage() {
                                  serviceStatus === "down" ? "Services not operational" : "Checking..."}
                             </span>
                         </a>
-                        <AccessibilityButton />
+                        <AccessibilityNavButton />
                         <ThemeToggle />
                     </div>
                 </div>
@@ -161,14 +168,23 @@ export default function LoginPage() {
                 />
 
                 {/* Main Content */}
-                <div className="relative z-10 max-w-2xl px-8 text-center">
+                <div className="relative z-10 w-full px-8 text-left">
+                    <motion.p
+                        className="text-lg font-semibold uppercase tracking-[0.2em] text-white/60 mb-8"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.1 }}
+                    >
+                        Code security
+                    </motion.p>
                     <motion.h1
-                        className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl"
+                        className="font-bold tracking-tight text-white leading-[0.95]"
+                        style={{ fontSize: 'clamp(4rem, 8vw, 7rem)' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.2 }}
                     >
-                        Making code security autonomous by default
+                        Autonomous<br />by default
                     </motion.h1>
                 </div>
 
@@ -176,21 +192,5 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
             </motion.div>
         </div>
-    )
-}
-
-// Accessibility Button Component
-function AccessibilityButton() {
-    const { openPanel } = useAccessibility()
-
-    return (
-        <button
-            onClick={openPanel}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20 border border-[var(--brand-accent)]/30 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)] focus:ring-offset-2"
-            aria-label="Open accessibility menu"
-            title="Accessibility options"
-        >
-            <PersonStanding className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={2} />
-        </button>
     )
 }

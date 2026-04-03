@@ -37,25 +37,34 @@ export async function GET(request) {
                 _count: {
                     select: { vulnerabilities: true },
                 },
-                vulnerabilities: {
-                    select: { severity: true },
-                },
             },
             orderBy: { startedAt: "desc" },
             take: limit,
         });
 
-        // Compute severity counts per run and strip raw vulnerabilities array
-        const enrichedRuns = runs.map(run => {
-            const severityCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-            run.vulnerabilities.forEach(v => {
-                if (severityCounts.hasOwnProperty(v.severity)) {
-                    severityCounts[v.severity]++;
-                }
-            });
-            const { vulnerabilities, ...rest } = run;
-            return { ...rest, severityCounts };
+        // Single aggregation query instead of fetching every vulnerability row
+        const runIds = runs.map(r => r.id);
+        const severityGroups = await prisma.vulnerability.groupBy({
+            by: ['workflowRunId', 'severity'],
+            _count: true,
+            where: { workflowRunId: { in: runIds } },
         });
+
+        // Build runId → severityCounts map from the groupBy result
+        const severityByRun = {};
+        for (const group of severityGroups) {
+            if (!severityByRun[group.workflowRunId]) {
+                severityByRun[group.workflowRunId] = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+            }
+            if (Object.prototype.hasOwnProperty.call(severityByRun[group.workflowRunId], group.severity)) {
+                severityByRun[group.workflowRunId][group.severity] = group._count;
+            }
+        }
+
+        const enrichedRuns = runs.map(run => ({
+            ...run,
+            severityCounts: severityByRun[run.id] ?? { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        }));
 
         return NextResponse.json({ runs: enrichedRuns });
     } catch (error) {

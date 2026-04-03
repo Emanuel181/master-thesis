@@ -32,6 +32,12 @@ import { Results } from "@/components/dashboard/results-page/results";
 import { FeedbackDialog } from "@/components/dashboard/sidebar/feedback-dialog";
 import { HomePage } from "@/components/home/home-page";
 import { ArticleEditor } from "@/components/dashboard/article-editor/article-editor";
+import dynamic from "next/dynamic";
+
+const CodeGraph = dynamic(
+  () => import("@/components/dashboard/code-graph-page/code-graph"),
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div> }
+);
 
 // New feature imports
 import { CommandPaletteProvider } from "@/components/ui/command";
@@ -45,41 +51,30 @@ import { SharedDndProvider } from "@/components/ui/dnd-provider";
 import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog";
 import { DashboardLoader } from "@/components/ui/dashboard-loader";
 import { Button } from "@/components/ui/button";
-import { Search, PersonStanding } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAccessibility } from "@/contexts/accessibilityContext";
+import { AccessibilityNavButton } from "@/components/accessibility-widget";
 
 // Quick actions search bar trigger component
 function QuickActionsTrigger() {
     return (
-        <button
-            onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
-            title="Quick actions (⌘K)"
-            aria-label="Open quick actions"
-            className="inline-flex items-center gap-2 h-8 sm:h-9 px-2.5 sm:px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer w-40 sm:w-52 md:w-64"
-        >
-            <Search className="h-3.5 w-3.5 shrink-0" />
-            <span className="flex-1 text-left text-xs truncate">Search actions...</span>
-            <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                ⌘K
-            </kbd>
-        </button>
-    )
-}
-
-// Accessibility button component for dashboard
-function AccessibilityTrigger() {
-    const { openPanel } = useAccessibility()
-
-    return (
-        <Button
-            variant="outline"
-            size="icon"
-            onClick={openPanel}
-            title="Accessibility options"
-            aria-label="Open accessibility options"
-        >
-            <PersonStanding className="h-5 w-5" />
-        </Button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"))}
+                    aria-label="Open quick actions"
+                    className="inline-flex items-center gap-2 h-8 sm:h-9 px-2.5 sm:px-3 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer w-40 sm:w-52 md:w-64"
+                >
+                    <Search className="h-3.5 w-3.5 shrink-0" />
+                    <span className="flex-1 text-left text-xs truncate">Search actions...</span>
+                    <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                        Ctrl⇧K
+                    </kbd>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Quick actions (Ctrl+Shift+K)</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -231,9 +226,13 @@ function DashboardContent({ settings, mounted }) {
                 code: initialCode,
                 codeType: codeType,
             };
-            localStorage.setItem('vulniq_code_state', JSON.stringify(state));
-        } catch (err) {
-            console.error("Error saving code state to localStorage:", err);
+            const json = JSON.stringify(state);
+            // Skip persisting if payload is too large (>4 MB)
+            if (json.length > 4 * 1024 * 1024) return;
+            localStorage.setItem('vulniq_code_state', json);
+        } catch {
+            // Quota exceeded — clear this key so stale data doesn't linger
+            try { localStorage.removeItem('vulniq_code_state'); } catch { /* ignore */ }
         }
     }, [initialCode, codeType]);
 
@@ -320,6 +319,18 @@ function DashboardContent({ settings, mounted }) {
         }
         setActiveComponent(item.title)
     }, [setIsModelsDialogOpen, setIsFeedbackOpen, setBreadcrumbs, setActiveComponent]);
+
+    // Listen for "View in Graph" navigation from Results page
+    useEffect(() => {
+        const handler = (e) => {
+            handleNavigation({ title: "Code Graph" });
+            if (e.detail) {
+                sessionStorage.setItem("vulniq_graph_highlight", JSON.stringify(e.detail));
+            }
+        };
+        window.addEventListener("navigate-to-code-graph", handler);
+        return () => window.removeEventListener("navigate-to-code-graph", handler);
+    }, [handleNavigation]);
 
     // Handler for starting security review with orchestrator
     const handleStartReview = useCallback(async (code, codeType) => {
@@ -528,6 +539,8 @@ function DashboardContent({ settings, mounted }) {
                     return <KnowledgeBaseVisualization />
                 case "Results":
                     return <Results runId={currentRunId} />
+                case "Code Graph":
+                    return <CodeGraph />
                 case "Write article":
                     return <ArticleEditor />
                 case "Home":
@@ -575,12 +588,14 @@ function DashboardContent({ settings, mounted }) {
                             >
                                 <SidebarProvider
                                     className="h-screen overflow-hidden"
-                                    open={sidebarOpen}
-                                    onOpenChange={setSidebarOpen}
+                                    {...(mounted
+                                        ? { open: sidebarOpen, onOpenChange: setSidebarOpen }
+                                        : { defaultOpen: true }
+                                    )}
                                 >
                                     <AppSidebar onNavigate={handleNavigation} activeComponent={activeComponent} />
                                     <SidebarInset className="flex flex-col overflow-hidden">
-                                        <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-border/40">
+                                        <header className="flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-1 sm:gap-2 transition-[width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                                             <div className={`flex items-center justify-between w-full gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 ${activeComponent === "Home" ? "pr-2 sm:pr-4 md:pr-7" : ""}`}>
                                                 <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
                                                     <SidebarTrigger className="-ml-1 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9" />
@@ -622,7 +637,7 @@ function DashboardContent({ settings, mounted }) {
                                                 <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                     <QuickActionsTrigger />
                                                     <NotificationCenter />
-                                                    <AccessibilityTrigger />
+                                                    <AccessibilityNavButton />
                                                     <CustomizationDialog showEditorTabs={activeComponent === "Code inspection"} />
                                                     <ThemeToggle />
                                                 </div>

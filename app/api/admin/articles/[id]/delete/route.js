@@ -53,9 +53,6 @@ export async function DELETE(request, { params }) {
     // Use existing feedback if no new feedback provided
     const deletionReason = feedback || article.adminFeedback;
 
-    // SECURITY: Audit log for article deletion
-    console.log(`[Admin Audit] Article ${id} ("${article.title}") deleted by ${adminCheck.email} (master admin) at ${new Date().toISOString()}`);
-
     // Delete the article
     await prisma.article.delete({
       where: { id },

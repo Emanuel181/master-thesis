@@ -115,6 +115,7 @@ export const GET = createApiHandler(
                     rejectedAt: true,
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 500,
             }),
             // User's saved articles
             prisma.savedArticle.findMany({
@@ -131,6 +132,7 @@ export const GET = createApiHandler(
                     },
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 500,
             }),
             // User's workflow runs with use case runs
             prisma.workflowRun.findMany({
@@ -155,6 +157,7 @@ export const GET = createApiHandler(
                     },
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 1000,
             }),
             // User's notifications
             prisma.notification.findMany({
@@ -185,6 +188,7 @@ export const GET = createApiHandler(
                     },
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 2000,
             }),
             // User's agent configurations
             prisma.agentConfiguration.findMany({
@@ -196,6 +200,7 @@ export const GET = createApiHandler(
                     createdAt: true,
                     updatedAt: true,
                 },
+                take: 500,
             }),
             // User's use case groups
             prisma.useCaseGroup.findMany({
@@ -209,6 +214,7 @@ export const GET = createApiHandler(
                     createdAt: true,
                 },
                 orderBy: { order: 'asc' },
+                take: 500,
             }),
             // Vulnerabilities found in user's workflow runs
             prisma.vulnerability.findMany({

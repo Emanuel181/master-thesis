@@ -34,7 +34,10 @@ export function PromptsProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const fetchInProgress = useRef(false);
+    const mountedRef = useRef(true);
     const isDemoMode = pathname?.startsWith('/demo');
+
+    useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
     const fetchPrompts = useCallback(async () => {
         // In demo mode, use demo data instead of fetching
@@ -78,11 +81,9 @@ export function PromptsProvider({ children }) {
             const response = await fetch("/api/prompts");
             if (response.ok) {
                 const jsonResponse = await response.json();
-                console.log('[Prompts] Fetch prompts response:', jsonResponse);
-                
+
                 // The API returns { success: true, data: { agent: [...prompts] } }
                 const data = jsonResponse.data || jsonResponse;
-                console.log('[Prompts] Extracted prompts data:', data);
                 
                 // Validate that data is an object with agent keys
                 if (data && typeof data === 'object') {
@@ -127,8 +128,8 @@ export function PromptsProvider({ children }) {
     useEffect(() => {
         // Use requestIdleCallback for non-critical initial fetch
         const scheduleId = typeof requestIdleCallback !== 'undefined'
-            ? requestIdleCallback(() => fetchPrompts(), { timeout: 2000 })
-            : setTimeout(() => fetchPrompts(), 100);
+            ? requestIdleCallback(() => { if (mountedRef.current) fetchPrompts(); }, { timeout: 2000 })
+            : setTimeout(() => { if (mountedRef.current) fetchPrompts(); }, 100);
         
         return () => {
             if (typeof cancelIdleCallback !== 'undefined') {
@@ -212,11 +213,9 @@ export function PromptsProvider({ children }) {
             });
             if (response.ok) {
                 const jsonResponse = await response.json();
-                console.log('[Prompts] Add prompt response:', jsonResponse);
-                
+
                 // The API returns { success: true, data: { prompt } }
                 const newPrompt = jsonResponse.data || jsonResponse;
-                console.log('[Prompts] Extracted prompt data:', newPrompt);
                 
                 // Ensure we have a valid prompt object with required fields
                 if (newPrompt && newPrompt.id) {
@@ -378,8 +377,7 @@ export function PromptsProvider({ children }) {
             });
             if (response.ok) {
                 const jsonResponse = await response.json();
-                console.log('[Prompts] Edit prompt response:', jsonResponse);
-                
+
                 // Update local state with the edited prompt
                 setPrompts(prev => ({
                     ...prev,
@@ -475,8 +473,6 @@ export function PromptsProvider({ children }) {
 
             // Unwrap the standardized API response envelope: { success, data: { ... } }
             const data = jsonResponse.data || jsonResponse;
-
-            console.log(`[Prompts] Reset complete: ${data.promptsReset} prompts restored to defaults`);
 
             // Always re-fetch prompts from the server after reset to guarantee
             // the UI reflects the actual DB state (bypasses fetchInProgress guard)

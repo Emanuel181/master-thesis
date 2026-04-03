@@ -36,7 +36,7 @@ export function CategoryCard({ useCase, onSelect, isSelected, onEdit, onDelete }
 
     return (
         <Card
-            className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? "ring-2 ring-primary shadow-lg" : "ring-1 ring-border"
+            className={`cursor-pointer transition-all ${isSelected ? "ring-2 ring-primary shadow-lg" : "ring-1 ring-border"
                 } flex flex-col`}
             onClick={handleCardClick}
         >

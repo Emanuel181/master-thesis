@@ -174,14 +174,22 @@ export function KeyboardShortcutsDialog() {
 
 
     return (
-        <CommandDialog 
-            open={open} 
+        <CommandDialog
+            open={open}
             onOpenChange={setOpen}
             title="Quick Actions"
             description="Search and execute actions"
+            className="sm:max-w-lg"
         >
-            <CommandInput placeholder="Search actions..." />
-            <CommandList className="max-h-[400px]">
+            <CommandInput placeholder="Search actions...">
+                <button
+                    onClick={() => setOpen(false)}
+                    className="inline-flex h-5 items-center justify-center rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors cursor-pointer"
+                >
+                    Esc
+                </button>
+            </CommandInput>
+            <CommandList className="max-h-[28rem]">
                 <CommandEmpty>
                     <div className="flex flex-col items-center gap-2 py-4">
                         <Search className="h-8 w-8 opacity-40" />
@@ -208,6 +216,21 @@ export function KeyboardShortcutsDialog() {
                     </CommandGroup>
                 ))}
             </CommandList>
+            <div className="flex items-center gap-4 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px]">↑</kbd>
+                    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px]">↓</kbd>
+                    Navigate
+                </span>
+                <span className="flex items-center gap-1">
+                    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px]">↵</kbd>
+                    Select
+                </span>
+                <span className="flex items-center gap-1">
+                    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px]">Esc</kbd>
+                    Close
+                </span>
+            </div>
         </CommandDialog>
     )
 }

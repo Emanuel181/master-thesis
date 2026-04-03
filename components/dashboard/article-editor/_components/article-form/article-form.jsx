@@ -95,7 +95,7 @@ export function ArticleForm({
                                 </span>
                             </CardTitle>
                             {selectedArticle && (
-                                <CardDescription className="truncate max-w-full sm:max-w-[300px]">
+                                <CardDescription className="truncate max-w-full sm:max-w-xs">
                                     {selectedArticle.title || "Untitled"}
                                 </CardDescription>
                             )}
@@ -290,7 +290,7 @@ export function ArticleForm({
                             />
                         </div>
                         <h3 className="font-semibold text-lg mb-1">Ready to write?</h3>
-                        <p className="text-sm text-muted-foreground mb-6 max-w-[300px]">
+                        <p className="text-sm text-muted-foreground mb-6 max-w-xs">
                             Select an article from the sidebar to start editing, or create a new one to share your ideas.
                         </p>
                         <div className="flex items-center gap-3">

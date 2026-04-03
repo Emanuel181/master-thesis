@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { requireAdmin, checkAdminStatus } from "@/lib/admin-auth";
 import { securityHeaders } from "@/lib/api-security";
+
+const warnSchema = z.object({
+  action: z.enum(["warn"]),
+  reason: z.string().min(1, "Warning reason is required").max(1000),
+});
 
 // GET /api/admin/users/[id] - Get user details
 // Requires admin authentication
@@ -59,7 +65,16 @@ export async function POST(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { action, reason } = body;
+
+    const parsed = warnSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { action, reason } = parsed.data;
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -79,13 +94,6 @@ export async function POST(request, { params }) {
     }
 
     if (action === "warn") {
-      if (!reason || reason.trim().length === 0) {
-        return NextResponse.json(
-          { error: "Warning reason is required" },
-          { status: 400 }
-        );
-      }
-
       // Create warning record
       await prisma.userWarning.create({
         data: {

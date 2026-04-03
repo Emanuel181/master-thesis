@@ -399,7 +399,7 @@ export function QuickFileSwitcherProvider({ children, projectStructure, onFileSe
                     </div>
 
                     <div className="flex">
-                        <ScrollArea className="max-h-[400px] overflow-y-auto flex-1">
+                        <ScrollArea className="max-h-96 overflow-y-auto flex-1">
                             {allFilteredFiles.length === 0 ? (
                                 <div className="py-8 text-center text-sm text-muted-foreground">
                                     <FileCode className="h-10 w-10 mx-auto mb-3 opacity-40" />

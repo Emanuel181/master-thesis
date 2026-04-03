@@ -594,7 +594,6 @@ export default function AdminArticlesPage() {
         } catch (err) {
             if (err.name === 'NotAllowedError') {
                 // User cancelled - this is expected behavior, not an error
-                console.log('Passkey registration cancelled by user');
                 setVerifyError('Passkey registration was cancelled. Click the button to try again.');
             } else {
                 console.error('Passkey registration error:', err);
@@ -660,7 +659,6 @@ export default function AdminArticlesPage() {
         } catch (err) {
             if (err.name === 'NotAllowedError') {
                 // User cancelled or no passkey available - offer to reset
-                console.log('Passkey authentication cancelled or not available');
                 setVerifyError('Passkey not found on this device. You may need to reset your passkey if it was deleted or you\'re on a different device.');
             } else {
                 console.error('Passkey authentication error:', err);
@@ -1066,14 +1064,14 @@ export default function AdminArticlesPage() {
     // Loading state
     if (verifyState === VERIFY_STATE.LOADING) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-[var(--brand-accent)]/5">
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="flex flex-col items-center gap-4"
                 >
-                    <div className="p-4 rounded-full bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/20">
-                        <Loader2 className="h-8 w-8 text-[var(--brand-accent)] animate-spin" />
+                    <div className="p-4 rounded-full bg-accent/10 border border-accent/20">
+                        <Loader2 className="h-8 w-8 text-accent animate-spin" />
                     </div>
                     <p className="text-muted-foreground">Checking session...</p>
                 </motion.div>
@@ -1084,17 +1082,17 @@ export default function AdminArticlesPage() {
     // Verification screens
     if (verifyState !== VERIFY_STATE.VERIFIED) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-[var(--brand-accent)]/5">
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="w-full max-w-md"
                 >
-                    <Card className="border-[var(--brand-accent)]/20 shadow-xl shadow-[var(--brand-accent)]/5">
+                    <Card className="border-accent/20 shadow-xl shadow-accent/5">
                         <CardHeader className="text-center space-y-2">
                             <div className="flex justify-center mb-2">
-                                <div className="p-3 rounded-full bg-[var(--brand-accent)]/10 border border-[var(--brand-accent)]/20">
-                                    <Shield className="h-8 w-8 text-[var(--brand-accent)]" />
+                                <div className="p-3 rounded-full bg-accent/10 border border-accent/20">
+                                    <Shield className="h-8 w-8 text-accent" />
                                 </div>
                             </div>
                             <CardTitle className="text-xl">Admin Access</CardTitle>
@@ -1139,7 +1137,7 @@ export default function AdminArticlesPage() {
                                         </div>
                                     </div>
                                     <Button
-                                        className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                        className="w-full bg-accent hover:bg-accent/90"
                                         onClick={verifyEmail}
                                         disabled={isVerifying}
                                     >
@@ -1188,7 +1186,7 @@ export default function AdminArticlesPage() {
                                             </div>
                                         </div>
                                         <Button
-                                            className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                            className="w-full bg-accent hover:bg-accent/90"
                                             onClick={verifyPassword}
                                             disabled={isVerifying}
                                         >
@@ -1239,7 +1237,7 @@ export default function AdminArticlesPage() {
                                                 />
                                             </div>
                                             <Button
-                                                className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                                className="w-full bg-accent hover:bg-accent/90"
                                                 onClick={startPasskeySetup}
                                             >
                                                 <KeyRound className="mr-2 h-4 w-4" />
@@ -1271,7 +1269,7 @@ export default function AdminArticlesPage() {
                                                 <p>Complete authentication with your registered passkey.</p>
                                             </div>
                                             <Button
-                                                className="w-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                                className="w-full bg-accent hover:bg-accent/90"
                                                 onClick={startPasskeyAuth}
                                             >
                                                 <KeyRound className="mr-2 h-4 w-4" />
@@ -1316,7 +1314,7 @@ export default function AdminArticlesPage() {
                                 {verifyState === VERIFY_STATE.PASSKEY_PROCESSING && (
                                     <div className="space-y-4">
                                         <div className="flex flex-col items-center justify-center gap-3 py-8">
-                                            <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-accent)]" />
+                                            <Loader2 className="h-8 w-8 animate-spin text-accent" />
                                             <p className="text-sm text-muted-foreground">
                                                 Complete the verification on your device...
                                             </p>
@@ -1335,7 +1333,7 @@ export default function AdminArticlesPage() {
 
                                 <Separator />
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                    <Shield className="h-4 w-4 text-[var(--brand-accent)] shrink-0" />
+                                    <Shield className="h-4 w-4 text-accent shrink-0" />
                                     <p><span className="font-medium text-foreground">Security Notice:</span> Access is restricted to whitelisted admin emails.</p>
                                 </div>
                             </CardContent>
@@ -1364,10 +1362,10 @@ export default function AdminArticlesPage() {
                             <span className="hidden sm:inline-block">VulnIQ</span>
                         </Link>
                         <Badge variant="outline" className={cn(
-                            "border-[var(--brand-accent)]/30",
+                            "border-accent/30",
                             isMasterAdmin 
                                 ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
-                                : "bg-[var(--brand-accent)]/10 text-[var(--brand-accent)]"
+                                : "bg-accent/10 text-accent"
                         )}>
                             <ShieldCheck className="mr-1 h-3 w-3" />
                             {isMasterAdmin ? 'Master Admin' : 'Admin'}
@@ -1441,7 +1439,7 @@ export default function AdminArticlesPage() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
-                        <Alert className="bg-[var(--brand-accent)]/10 border-[var(--brand-accent)]/30 text-[var(--brand-accent)]">
+                        <Alert className="bg-accent/10 border-accent/30 text-accent">
                             <CheckCircle2 className="h-4 w-4" />
                             <AlertDescription>{successMessage}</AlertDescription>
                         </Alert>
@@ -1468,8 +1466,8 @@ export default function AdminArticlesPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
                     <div className="space-y-1">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-[var(--brand-accent)]/10">
-                                <FileText className="h-5 w-5 text-[var(--brand-accent)]" />
+                            <div className="p-2 rounded-lg bg-accent/10">
+                                <FileText className="h-5 w-5 text-accent" />
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold tracking-tight">Review Articles</h1>
@@ -1907,7 +1905,7 @@ export default function AdminArticlesPage() {
 
                 {/* Security Notice */}
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 bg-muted/30">
-                    <ShieldCheck className="h-5 w-5 text-[var(--brand-accent)] shrink-0" />
+                    <ShieldCheck className="h-5 w-5 text-accent shrink-0" />
                     <p className="text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">Security Notice:</span>{' '}
                         Your admin session expires after 30 minutes. All changes are applied immediately.
@@ -1928,9 +1926,9 @@ export default function AdminArticlesPage() {
                     <div className="px-6 py-4 border-b flex items-center justify-between bg-muted/30 shrink-0">
                         <div className="flex items-center gap-3">
                             {isEditMode ? (
-                                <Pencil className="h-5 w-5 text-[var(--brand-accent)]" />
+                                <Pencil className="h-5 w-5 text-accent" />
                             ) : (
-                                <Eye className="h-5 w-5 text-[var(--brand-accent)]" />
+                                <Eye className="h-5 w-5 text-accent" />
                             )}
                             <div>
                                 <h2 className="font-semibold">{isEditMode ? 'Edit Article' : 'Article Preview'}</h2>
@@ -2340,7 +2338,7 @@ export default function AdminArticlesPage() {
                                 <Button
                                     onClick={handleSaveArticle}
                                     disabled={isSavingArticle}
-                                    className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                    className="bg-accent hover:bg-accent/90"
                                 >
                                     {isSavingArticle ? (
                                         <>
@@ -2374,7 +2372,7 @@ export default function AdminArticlesPage() {
                                                 Reject
                                             </Button>
                                             <Button
-                                                className="bg-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/90"
+                                                className="bg-accent hover:bg-accent/90"
                                                 onClick={() => {
                                                     setIsArticlePreviewOpen(false);
                                                     setApproveDialogOpen(true);

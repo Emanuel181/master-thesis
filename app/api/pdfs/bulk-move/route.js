@@ -30,33 +30,38 @@ export const POST = createApiHandler(
             return ApiErrors.notFound('Target category', requestId);
         }
 
-        // Verify all PDFs belong to the user
-        const pdfs = await prisma.pdf.findMany({
-            where: {
-                id: { in: pdfIds },
-                useCase: { userId: session.user.id },
-            },
-            select: { id: true, useCaseId: true },
-        });
+        // Verify all PDFs belong to the user, then move them — wrapped in a
+        // transaction so the ownership check and the update are atomic.
+        const { moved } = await prisma.$transaction(async (tx) => {
+            const pdfs = await tx.pdf.findMany({
+                where: {
+                    id: { in: pdfIds },
+                    useCase: { userId: session.user.id },
+                },
+                select: { id: true, useCaseId: true },
+            });
 
-        if (pdfs.length === 0) {
-            return ApiErrors.notFound('PDFs', requestId);
-        }
+            if (pdfs.length === 0) {
+                return ApiErrors.notFound('PDFs', requestId);
+            }
 
-        // Move PDFs to the target use case (unset folderId since folders are use-case-scoped)
-        await prisma.pdf.updateMany({
-            where: {
-                id: { in: pdfs.map(p => p.id) },
-                useCase: { userId: session.user.id },
-            },
-            data: {
-                useCaseId: targetUseCaseId,
-                folderId: null, // Folders are scoped to a use case, so reset
-            },
+            // Move PDFs to the target use case (unset folderId since folders are use-case-scoped)
+            await tx.pdf.updateMany({
+                where: {
+                    id: { in: pdfs.map(p => p.id) },
+                    useCase: { userId: session.user.id },
+                },
+                data: {
+                    useCaseId: targetUseCaseId,
+                    folderId: null, // Folders are scoped to a use case, so reset
+                },
+            });
+
+            return { moved: pdfs.length };
         });
 
         return {
-            moved: pdfs.length,
+            moved,
             targetUseCaseId,
         };
     },

@@ -92,11 +92,8 @@ export function AddCategoryDialog({ onAddCategory, groups = [] }) {
       }
 
       const jsonResponse = await response.json()
-      console.log('[AddCategory] Create response:', jsonResponse)
-      
       // Handle wrapped response from createApiHandler
       const data = jsonResponse.data || jsonResponse
-      console.log('[AddCategory] Extracted data:', data)
       const useCase = data.useCase
       
       if (!useCase) {
@@ -122,7 +119,6 @@ export function AddCategoryDialog({ onAddCategory, groups = [] }) {
       setGroupId("")
       setOpen(false)
     } catch (error) {
-      console.error("Error creating use case:", error)
       toast.error(error.message || "Failed to create use case")
     } finally {
       setIsLoading(false)
