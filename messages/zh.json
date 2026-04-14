@@ -1,0 +1,710 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "自主AI代理，基于您的文档检测、修复和验证漏洞。"
+  },
+  "common": {
+    "loading": "加载中...",
+    "cancel": "取消",
+    "close": "关闭",
+    "submit": "提交",
+    "back": "返回",
+    "search": "搜索",
+    "goHome": "返回首页",
+    "tryAgain": "重试"
+  },
+  "nav": {
+    "product": "产品",
+    "resources": "资源",
+    "company": "公司",
+    "demo": "演示",
+    "dashboard": "控制台",
+    "getStarted": "开始使用",
+    "go": "前往",
+    "closeMenu": "关闭菜单",
+    "openMenu": "打开菜单",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "AI驱动的安全代码审查与自主修复。"
+      },
+      "features": {
+        "label": "功能特性",
+        "description": "高级漏洞检测与AI驱动的修复方案。"
+      },
+      "useCases": {
+        "label": "使用场景",
+        "description": "了解团队如何使用VulnIQ保障安全。"
+      },
+      "integrations": {
+        "label": "集成",
+        "description": "与GitHub、GitLab等平台无缝连接。"
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "博客",
+        "description": "安全洞察与最佳实践。"
+      },
+      "changelog": {
+        "label": "更新日志",
+        "description": "最新更新与发布记录。"
+      },
+      "supporters": {
+        "label": "支持者",
+        "description": "支持本项目的人们。"
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "在Product Hunt上支持我们。"
+      },
+      "tryDemo": {
+        "label": "体验演示",
+        "description": "亲身体验VulnIQ的功能。"
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "关于我们",
+        "description": "了解我们的使命与团队。"
+      },
+      "security": {
+        "label": "安全政策",
+        "description": "漏洞披露政策。"
+      },
+      "contact": {
+        "label": "联系我们",
+        "description": "与我们的团队取得联系。"
+      }
+    }
+  },
+  "hero": {
+    "badge": "公开测试版",
+    "headingPart1": "安全",
+    "headingPart2": "修复",
+    "headingPart3": "无",
+    "headingPart4": "幻觉。",
+    "subtitle": "自主AI代理检测、修复并验证漏洞。每个修复方案均{highlight}，采用RAG技术。",
+    "subtitleHighlight": "基于您的文档",
+    "subtitleBefore": "自主AI代理检测、修复并验证漏洞。每个修复方案均",
+    "subtitleAfter": "，采用RAG技术。",
+    "paperButton": "论文撰写中...",
+    "demoButton": "体验演示"
+  },
+  "features": {
+    "sectionLabel": "漏洞管理至关重要。",
+    "heading": "下一个前沿是",
+    "headingHighlight": "代理式修复",
+    "headingBefore": "下一个前沿是",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "有据可查的安全智能",
+        "description": "每个代理从您的安全知识库和用例手册（如安全登录）中检索指导，确保修复方案与您的基准事实保持一致。"
+      },
+      "secureIngestion": {
+        "title": "安全代码导入",
+        "description": "连接GitHub或GitLab，在几分钟内导入代码库。VulnIQ自动映射您的代码结构，为审查、修复、测试和报告做好准备。"
+      },
+      "multiAgent": {
+        "title": "多代理安全工作流",
+        "description": "4代理流水线：审查者、实施者、测试者、报告者。每个代理配备专属提示词和适配您的技术栈与策略的知识库。"
+      },
+      "automatedValidation": {
+        "title": "自动化安全验证",
+        "description": "修复完成后，测试代理通过针对性安全检查验证修复效果，确认漏洞已解决且不影响原有功能。"
+      },
+      "professionalReports": {
+        "title": "专业安全报告",
+        "description": "报告代理生成面向利益相关方的报告：发现的问题、已应用的补丁、知识库中的证据及测试结果，可直接用于审计。"
+      }
+    },
+    "animatedLabels": {
+      "login": "登录",
+      "auth": "认证",
+      "api": "API",
+      "grounded": "有据可查",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "导入",
+      "reviewer": "审查者",
+      "implement": "实施",
+      "tester": "测试者",
+      "reporter": "报告者",
+      "active": "运行中",
+      "testSuite": "测试套件",
+      "running": "执行中",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "失败",
+      "pass": "通过",
+      "evidence": "证据",
+      "kbCited": "知识库引用",
+      "report": "报告",
+      "generating": "生成中",
+      "findings": "发现",
+      "fixesApplied": "已应用修复",
+      "testResults": "测试结果",
+      "recommendations": "建议"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "简单而强大",
+    "heading": "{brand}的工作原理",
+    "headingBefore": "",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "的工作原理",
+    "steps": {
+      "importCode": {
+        "title": "导入您的代码",
+        "description": "连接GitHub或GitLab，选择代码库，VulnIQ将自动映射您的代码结构。"
+      },
+      "aiReview": {
+        "title": "AI审查漏洞",
+        "description": "审查代理根据您的知识库及CWE和OWASP等安全标准扫描代码。"
+      },
+      "agentsRemediate": {
+        "title": "代理修复并测试",
+        "description": "实施者基于您的文档应用有据可查的修复方案，测试者验证每个补丁均通过安全检查。"
+      },
+      "exportReport": {
+        "title": "导出验证报告",
+        "description": "报告者将发现、补丁、证据和测试结果编译成可供审计的PDF报告。"
+      }
+    }
+  },
+  "useCases": {
+    "heading": "谁能从VulnIQ中受益？",
+    "description": "从学习者到团队，VulnIQ适配您的工作流程。",
+    "cases": {
+      "securityLearners": {
+        "title": "安全学习者",
+        "description": "通过AI引导的修复方案（基于行业标准）了解真实漏洞模式及其修复方法。",
+        "visualTitle": "安全学习者",
+        "visualSubtitle": "在实践中学习"
+      },
+      "startups": {
+        "title": "初创企业",
+        "description": "无需专职安全团队，更快地交付安全代码。VulnIQ在漏洞进入生产环境前将其检测并修复。",
+        "visualTitle": "初创企业",
+        "visualSubtitle": "快速前进，保持安全"
+      },
+      "universities": {
+        "title": "高校",
+        "description": "通过AI辅助的漏洞检测和修复练习，教授安全编码实践。",
+        "visualTitle": "高校",
+        "visualSubtitle": "学术研究"
+      },
+      "openSource": {
+        "title": "开源项目",
+        "description": "通过自动漏洞扫描和AI驱动的修复方案，为公开代码库保障开源项目的安全。",
+        "visualTitle": "开源项目",
+        "visualSubtitle": "社区驱动的安全"
+      },
+      "teamsOfProgrammers": {
+        "title": "开发团队",
+        "description": "将VulnIQ集成到开发工作流中，在整个代码库中实现一致的、基于知识库的安全修复。",
+        "visualTitle": "开发团队",
+        "visualSubtitle": "协作安全"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "为何选择{brand}？",
+    "headingBefore": "为何选择",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "？",
+    "description": "了解代理式RAG与传统静态分析工具的对比。",
+    "columns": {
+      "feature": "功能",
+      "traditionalScanners": "传统扫描工具",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "上下文感知分析",
+        "traditional": "在不理解周围代码逻辑或项目特定上下文的情况下进行模式匹配。",
+        "vulniq": "代理检索相关知识库条目，在采取行动前对代码上下文进行推理。"
+      },
+      "falsePositiveRate": {
+        "label": "误报率",
+        "traditional": "高——标记大量非问题项，需要人工分类以识别真实漏洞。",
+        "vulniq": "降低——有据可查的推理通过与您的文档和标准交叉验证来过滤噪音。"
+      },
+      "remediation": {
+        "label": "修复能力",
+        "traditional": "无内置修复——输出问题列表，将修复完全留给开发者。",
+        "vulniq": "自主修复——实施代理直接向您的代码库应用有据可查的修复方案。"
+      },
+      "knowledgeSources": {
+        "label": "知识来源",
+        "traditional": "固定规则集和CVE数据库，无法针对您的技术栈定制。",
+        "vulniq": "您自己的安全知识库、手册、CWE、OWASP及技术栈专属指导。"
+      },
+      "fixVerification": {
+        "label": "修复验证",
+        "traditional": "无——没有自动化方式确认建议的修复方案是否真正解决了漏洞。",
+        "vulniq": "内置——测试代理在每次应用补丁后运行针对性安全检查。"
+      },
+      "reporting": {
+        "label": "报告",
+        "traditional": "原始扫描输出，需要手动格式化才能与利益相关方共享。",
+        "vulniq": "面向利益相关方的PDF报告，包含发现、补丁、证据引用和测试结果。"
+      }
+    }
+  },
+  "faq": {
+    "heading": "常见问题",
+    "description": "关于VulnIQ及其如何帮助保护代码的一切信息。",
+    "stillHaveQuestions": "还有疑问？",
+    "askThemHere": "在这里提问 →",
+    "items": {
+      "q1": {
+        "question": "VulnIQ是什么？",
+        "answer": "VulnIQ是一个由多代理RAG流水线驱动的自主安全修复平台。它检测代码中的漏洞，使用您自己的安全知识库应用有据可查的修复方案，通过针对性测试验证补丁，并生成可供审计的报告——全程无需人工干预。"
+      },
+      "q2": {
+        "question": "VulnIQ与传统静态分析工具有何不同？",
+        "answer": "传统静态分析工具对固定规则集进行模式匹配，生成问题列表而不提供修复方案。VulnIQ使用增强了检索增强生成技术的4代理流水线（审查者、实施者、测试者、报告者），确保每个修复方案都基于您的文档和安全标准、经过自动化测试验证，并编译成面向利益相关方的报告。"
+      },
+      "q3": {
+        "question": "VulnIQ支持哪些编程语言？",
+        "answer": "VulnIQ目前专注于最常与OWASP Top 10漏洞相关的Web应用语言和框架。支持范围正在积极扩展——请查看更新日志了解最新语言新增情况。"
+      },
+      "q4": {
+        "question": "VulnIQ能与我的CI/CD流水线集成吗？",
+        "answer": "CI/CD集成在路线图中。目前VulnIQ直接连接到GitHub和GitLab代码库进行按需扫描和修复。Webhook触发和计划任务运行计划在未来版本中推出。"
+      },
+      "q5": {
+        "question": "VulnIQ使用哪些AI提供商？",
+        "answer": "VulnIQ在设计上对模型无感知。该平台配置为与主流LLM提供商协同工作。具体的模型选择和提供商详情可在文档中找到，并可能因部署环境而异。"
+      },
+      "q6": {
+        "question": "有免费版本吗？",
+        "answer": "VulnIQ目前作为研究项目处于公开测试版阶段。您无需注册即可体验完整演示。基于账户的访问可用——请查看定价页面或联系我们了解当前访问等级的详情。"
+      },
+      "q7": {
+        "question": "VulnIQ修复的准确率如何？",
+        "answer": "准确率取决于所提供知识库的质量和漏洞的复杂性。通过将每个修复方案基于您的文档并使用测试代理进行验证，与无辅助LLM输出相比，VulnIQ显著降低了误报率和未经验证的补丁数量。定量结果在配套学位论文中有详细报告。"
+      }
+    },
+    "askDialog": {
+      "title": "提交问题",
+      "description": "发送您的问题，我们将尽快回复您。",
+      "emailLabel": "电子邮件",
+      "questionLabel": "您的问题",
+      "emailPlaceholder": "your@email.com",
+      "questionPlaceholder": "您想了解什么？",
+      "sendButton": "发送问题",
+      "sendingButton": "发送中...",
+      "successTitle": "问题已发送！",
+      "successDescription": "我们将很快回复您的邮件。"
+    }
+  },
+  "cta": {
+    "title": "开始保护您的代码",
+    "button": "立即开始"
+  },
+  "blogSection": {
+    "heading": "安全知识中心",
+    "description": "来自VulnIQ团队的应用安全、漏洞检测及安全开发实践专家洞察。",
+    "readArticle": "阅读文章",
+    "noArticles": "暂无文章",
+    "noArticlesDescription": "我们的安全专家正在创作新内容。请稍后回来查看有关应用安全和漏洞检测的最新洞察。",
+    "viewAllArticles": "查看所有文章"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "由检索增强生成技术驱动的自主安全修复。",
+    "followUs": "关注我们",
+    "productHunt": "Product Hunt",
+    "resources": "资源",
+    "haveFeedback": "有反馈意见？",
+    "changelog": "更新日志",
+    "sitemap": "网站地图",
+    "supporters": "支持者",
+    "viewThesisPaper": "查看学位论文（撰写中...）",
+    "serviceStatus": {
+      "operational": "服务正常运行",
+      "diagnosing": "正在诊断问题，修复中",
+      "down": "系统已停止",
+      "idle": "系统空闲"
+    },
+    "thesis": {
+      "label": "硕士学位论文",
+      "author": "Emanuel Rusu",
+      "university": "West University of Timișoara",
+      "faculty": "计算机科学学院",
+      "degree": "网络安全理学硕士",
+      "connectLinkedIn": "在LinkedIn上联系"
+    },
+    "newsletter": {
+      "heading": "保持更新",
+      "description": "获取新功能和研究更新通知。",
+      "emailPlaceholder": "请输入您的电子邮件地址",
+      "subscribeButton": "订阅",
+      "subscribingButton": "订阅中...",
+      "successMessage": "订阅成功",
+      "invalidEmail": "请输入有效的电子邮件地址"
+    },
+    "backToTop": "返回顶部",
+    "copyright": "© 2026 VulnIQ. 保留所有权利。",
+    "madeIn": "制作于罗马尼亚蒂米什瓦拉",
+    "privacyPolicy": "隐私政策",
+    "termsConditions": "条款与条件",
+    "vulnerabilityDisclosure": "漏洞披露政策",
+    "manageCookies": "管理 Cookie",
+    "openBetaBadge": "公开测试版 • 研究项目 •",
+    "feedbackDialog": {
+      "title": "分享您的反馈",
+      "description": "我们很乐意听取您对如何改进的想法。",
+      "feedbackLabel": "您的反馈",
+      "feedbackPlaceholder": "告诉我们您的想法...",
+      "cancelButton": "取消",
+      "submitButton": "提交反馈",
+      "submittingButton": "提交中..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "关于 | VulnIQ",
+      "description": "了解VulnIQ——一个研究代理式RAG用于自动化漏洞修复的硕士学位论文项目。"
+    },
+    "headingPart1": "代理式RAG用于",
+    "headingHighlight": "自动化程序修复",
+    "intro": "一个硕士学位论文项目，研究增强了专业安全知识的LLM代理在漏洞修复方面的有效性。",
+    "problemStatement": {
+      "heading": "问题陈述",
+      "body": "大型语言模型在自动化程序修复方面展现出巨大潜力，但其在安全漏洞修复中的应用仍未得到充分探索。现有方法依赖通用模型能力，未将修复方案基于权威安全知识，导致产生幻觉补丁、修复质量不一致，以及无法自动验证修复是否真正解决了漏洞。"
+    },
+    "limitations": {
+      "heading": "现有方法的局限性",
+      "body": "静态分析工具能识别漏洞但不提供修复方案。基于LLM的工具在不基于项目特定安全策略或经验证知识库的情况下生成修复方案，产生高误报率和无法验证的补丁，在被信任使用前需要大量人工审查。"
+    },
+    "methodology": {
+      "heading": "提出的方法论",
+      "body1": "VulnIQ实现了一个由四个专业代理组成的检索增强生成架构：审查者负责根据精心整理的知识库识别漏洞，实施者负责应用有据可查的修复方案，测试者通过针对性安全检查验证每个补丁，报告者负责编制可供审计的文档。",
+      "body2": "每个代理配备专属向量知识库，包含CWE条目、OWASP指导方针、技术栈专属安全编码模式和用例手册。检索确保流水线做出的每个决策都可追溯到特定知识来源，实现可重现且可审计的修复。"
+    },
+    "keyCapabilities": {
+      "heading": "核心能力",
+      "items": [
+        "基于您的安全知识库的检索增强漏洞修复",
+        "端到端4代理流水线，具备自动化修复验证和测试确认",
+        "可供审计的PDF报告，包含证据引用和完整补丁可追溯性"
+      ]
+    },
+    "researchContributions": "研究贡献",
+    "researchObjectives": "研究目标",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "上下文精确性",
+        "description": "评估RAG增强代理是否通过将修复方案基于项目特定知识库，能比无辅助LLM产生更具上下文精确性的修复方案。"
+      },
+      "automatedReasoning": {
+        "title": "自动化推理",
+        "description": "研究多代理推理在无人工干预情况下自主识别、优先排序和解决安全漏洞的程度。"
+      },
+      "fixVerification": {
+        "title": "修复验证",
+        "description": "评估测试代理自动生成和执行测试是否能可靠地验证所应用的补丁已解决目标漏洞。"
+      },
+      "knowledgeGrounding": {
+        "title": "知识基础",
+        "description": "衡量专业安全知识库与通用模型知识相比，对修复质量、一致性和可追溯性的影响。"
+      },
+      "reportQuality": {
+        "title": "报告质量",
+        "description": "确定代理生成的安全报告是否符合利益相关方沟通和合规审计场景所需的标准。"
+      },
+      "scalability": {
+        "title": "可扩展性",
+        "description": "检查流水线在不同规模、语言多样性和漏洞复杂性的代码库中的性能，以确定实际部署边界。"
+      }
+    },
+    "aboutResearch": "关于研究",
+    "viewPrototype": "查看原型",
+    "builtWith": "采用现代技术构建"
+  },
+  "blog": {
+    "metadata": {
+      "title": "博客 | VulnIQ",
+      "description": "来自VulnIQ团队的安全洞察、漏洞研究及安全开发最佳实践。"
+    },
+    "readTime": "{minutes}分钟阅读",
+    "postNotFound": "文章未找到",
+    "postNotFoundDescription": "您正在查找的文章可能已被移动或删除。",
+    "backToBlog": "返回博客",
+    "publishedOn": "发布于{date}",
+    "by": "作者：{author}",
+    "shareArticle": "分享文章",
+    "tableOfContents": "目录"
+  },
+  "login": {
+    "metadata": {
+      "title": "登录 — VulnIQ"
+    },
+    "tag": "代码安全",
+    "headline": "默认自主运行",
+    "featureDescription1": "VulnIQ的多代理流水线检测漏洞、从您的知识库应用有据可查的修复方案、通过自动化测试验证补丁并提供可供审计的报告——完全无需人工干预。",
+    "featureDescription2": "每个修复决策都可追溯到特定知识来源，使您的安全工作流可重现、一致，并随时准备好合规审查。",
+    "backToHome": "返回首页",
+    "agreementPrefix": "继续即表示您同意VulnIQ的",
+    "agreementAnd": "和",
+    "agreementSuffix": "。",
+    "termsLabel": "服务条款",
+    "privacyLabel": "隐私政策",
+    "serviceStatus": {
+      "operational": "服务正常运行",
+      "diagnosing": "正在诊断问题，修复中",
+      "down": "系统已停止",
+      "idle": "系统空闲"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "隐私政策 | VulnIQ",
+      "description": "VulnIQ隐私政策——我们如何收集、使用和保护您的数据。"
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "条款与条件 | VulnIQ",
+      "description": "VulnIQ使用条款与条件。"
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "安全 | VulnIQ",
+      "description": "VulnIQ漏洞披露政策与安全实践。"
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "更新日志 | VulnIQ",
+      "description": "VulnIQ的最新更新、改进和发布记录。"
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "支持者 | VulnIQ",
+      "description": "支持VulnIQ研究项目的个人和组织。"
+    }
+  },
+  "notFound": {
+    "title": "此页面不存在",
+    "description": "您正在查找的页面可能已被移动、删除或从未存在过。",
+    "backButton": "返回上一页"
+  },
+  "error": {
+    "title": "出现错误",
+    "description": "我们遇到了意外错误，我们的团队已收到通知。",
+    "errorId": "错误ID",
+    "copyErrorDetails": "复制错误详情",
+    "contactPrompt": "如果问题持续存在，请联系"
+  },
+  "cookie": {
+    "title": "您的 Cookie 选项",
+    "basicDescription": "请选择本网站是否可以使用功能性和/或广告 Cookie，如下所述：",
+    "essential": {
+      "label": "必要 Cookie",
+      "shortDesc": "网站基本功能所必需。",
+      "description": "这些 Cookie 是网站正常运行所必需的，无法在我们的系统中关闭。"
+    },
+    "analytics": {
+      "label": "功能性 Cookie",
+      "shortDesc": "帮助我们衡量和改善性能。",
+      "description": "这些 Cookie 使我们能够分析网站使用情况，从而衡量和改善性能。"
+    },
+    "marketing": {
+      "label": "广告 Cookie",
+      "shortDesc": "用于投放相关广告。",
+      "description": "这些 Cookie 用于向您投放与您兴趣相关的广告。"
+    },
+    "allowedFunctionality": "已允许的功能",
+    "disallowedFunctionality": "已禁止的功能",
+    "functionality": {
+      "secureAuth": "安全身份验证",
+      "sessionState": "记住您的会话状态",
+      "rememberAuth": "记住您的登录信息",
+      "retainCart": "保留您购物车中的内容",
+      "siteConsistency": "确保网站一致性",
+      "socialSharing": "允许在社交网络上分享页面",
+      "postComments": "允许您发表评论",
+      "targetedAds": "根据您的兴趣投放广告"
+    },
+    "submitPreferences": "提交偏好设置",
+    "advancedSettings": "高级设置",
+    "basicSettings": "基本设置",
+    "cancel": "取消",
+    "alwaysActive": "始终启用",
+    "showCookies": "显示 Cookie",
+    "hideCookies": "隐藏 Cookie",
+    "providerCompany": "公司",
+    "providerDomain": "域名",
+    "learnMore": "了解更多",
+    "done": "完成"
+  },
+  "accessibility": {
+    "widgetTitle": "无障碍功能",
+    "customizeExperience": "自定义您的体验",
+    "resetAll": "重置所有设置",
+    "resetAllButton": "重置所有无障碍设置",
+    "dragToMove": "无障碍选项（拖动以移动）",
+    "accessibilityOptions": "无障碍选项",
+    "openMenu": "打开无障碍菜单",
+    "features": {
+      "smartContrast": "智能对比度",
+      "stopAnimations": "停止动画",
+      "dyslexiaFriendly": "阅读障碍友好",
+      "invertColors": "反转颜色",
+      "highlightLinks": "高亮链接",
+      "biggerText": "放大文字",
+      "lightSpacing": "增加间距",
+      "hideImages": "隐藏图片",
+      "bigCursor": "大光标",
+      "tooltips": "工具提示",
+      "pageStructure": "页面结构",
+      "lineHeight": "行高",
+      "alignLeft": "左对齐",
+      "lowSaturation": "低饱和度",
+      "readingGuide": "阅读指引",
+      "focusIndicator": "焦点指示器"
+    },
+    "structure": {
+      "headings": "标题",
+      "landmarks": "地标",
+      "links": "链接",
+      "noHeadings": "未找到标题",
+      "noLandmarks": "未找到地标",
+      "noLinks": "未找到链接",
+      "noText": "（无文本）"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "控制台 | VulnIQ"
+    },
+    "nav": {
+      "home": "首页",
+      "codeInspection": "代码检查",
+      "knowledgeBase": "知识库",
+      "results": "结果",
+      "codeGraph": "代码图谱",
+      "writeArticle": "撰写文章"
+    },
+    "searchActions": "搜索操作...",
+    "quickActions": "快速操作",
+    "error": {
+      "title": "控制台错误",
+      "description": "加载控制台时出现问题。"
+    },
+    "demoMode": "演示模式",
+    "exitDemo": "退出演示",
+    "signInPrompt": "请登录以开始审查",
+    "noCodePrompt": "请输入代码或导入项目以进行审查",
+    "resultsMetadata": {
+      "title": "分析结果 | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "已复制到剪贴板",
+      "copyFailed": "复制失败",
+      "exportSuccess": "报告导出成功",
+      "exportFailed": "报告导出失败",
+      "saveSuccess": "保存成功",
+      "saveFailed": "保存失败"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "演示 | VulnIQ",
+      "description": "在实时演示环境中体验VulnIQ的自主漏洞修复流水线。"
+    },
+    "demoMode": "演示模式",
+    "exitDemo": "退出演示",
+    "pages": {
+      "home": {
+        "title": "演示首页"
+      },
+      "codeInput": {
+        "title": "代码输入"
+      },
+      "knowledgeBase": {
+        "title": "知识库"
+      },
+      "results": {
+        "title": "结果"
+      },
+      "profile": {
+        "title": "个人资料"
+      },
+      "writeArticle": {
+        "title": "撰写文章"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "管理员 | VulnIQ"
+    },
+    "verification": {
+      "title": "管理员验证",
+      "description": "输入您的密码以继续",
+      "emailLabel": "管理员邮箱",
+      "continueButton": "继续",
+      "verifyingButton": "验证中...",
+      "passwordLabel": "密码",
+      "verifyPasswordButton": "验证密码",
+      "useDifferentEmail": "使用其他邮箱",
+      "setUpPasskey": "设置通行密钥",
+      "startOver": "重新开始"
+    },
+    "userManagement": {
+      "title": "用户管理",
+      "description": "查看用户资料并发出警告",
+      "totalLabel": "总计",
+      "warnedLabel": "已警告",
+      "bannedIpsLabel": "已封禁IP",
+      "searchPlaceholder": "搜索用户...",
+      "tableHeaders": {
+        "user": "用户",
+        "email": "邮箱",
+        "status": "状态",
+        "joined": "加入时间",
+        "actions": "操作"
+      }
+    },
+    "articleStatus": {
+      "draft": "草稿",
+      "pending": "待审",
+      "inReview": "审核中",
+      "published": "已发布",
+      "rejected": "已拒绝",
+      "pendingDeletion": "待删除"
+    },
+    "nav": {
+      "users": "用户",
+      "articles": "文章",
+      "supporters": "支持者",
+      "createAdmin": "创建管理员"
+    }
+  },
+  "profile": {
+    "title": "个人资料",
+    "imageUploadDisabledDemo": "演示模式下图片上传已禁用"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "网站地图 | VulnIQ",
+      "description": "VulnIQ所有可用页面的完整地图。"
+    },
+    "title": "网站地图",
+    "description": "VulnIQ所有可用页面的完整地图。"
+  },
+  "languageSelector": {
+    "selectLanguage": "选择语言",
+    "close": "关闭",
+    "noLanguagesFound": "未找到语言",
+    "search": "搜索"
+  }
+}

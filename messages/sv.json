@@ -1,0 +1,710 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "Autonoma AI-agenter som upptäcker, åtgärdar och verifierar sårbarheter grundade i din dokumentation."
+  },
+  "common": {
+    "loading": "Laddar...",
+    "cancel": "Avbryt",
+    "close": "Stäng",
+    "submit": "Skicka",
+    "back": "Tillbaka",
+    "search": "Sök",
+    "goHome": "Gå till startsidan",
+    "tryAgain": "Försök igen"
+  },
+  "nav": {
+    "product": "Produkt",
+    "resources": "Resurser",
+    "company": "Företag",
+    "demo": "Demo",
+    "dashboard": "Instrumentpanel",
+    "getStarted": "Kom igång",
+    "go": "Gå",
+    "closeMenu": "Stäng meny",
+    "openMenu": "Öppna meny",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "AI-driven granskning av säkerhetskod med autonom åtgärd."
+      },
+      "features": {
+        "label": "Funktioner",
+        "description": "Avancerad sårbarhetsdetektering och AI-drivna åtgärder."
+      },
+      "useCases": {
+        "label": "Användningsfall",
+        "description": "Se hur team använder VulnIQ för säkerhet."
+      },
+      "integrations": {
+        "label": "Integrationer",
+        "description": "Anslut till GitHub, GitLab och mer."
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "Blogg",
+        "description": "Säkerhetsinsikter och bästa praxis."
+      },
+      "changelog": {
+        "label": "Ändringslogg",
+        "description": "Senaste uppdateringar och versioner."
+      },
+      "supporters": {
+        "label": "Supportrar",
+        "description": "Människor som stödjer det här projektet."
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "Stöd oss på Product Hunt."
+      },
+      "tryDemo": {
+        "label": "Prova demo",
+        "description": "Upplev VulnIQ i aktion."
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "Om oss",
+        "description": "Lär dig om vår mission och vårt team."
+      },
+      "security": {
+        "label": "Säkerhetspolicy",
+        "description": "Policy för sårbarhetsrapportering."
+      },
+      "contact": {
+        "label": "Kontakt",
+        "description": "Kom i kontakt med vårt team."
+      }
+    }
+  },
+  "hero": {
+    "badge": "Öppen beta",
+    "headingPart1": "Säkerhets-",
+    "headingPart2": "åtgärd",
+    "headingPart3": "utan",
+    "headingPart4": "hallucinationer.",
+    "subtitle": "Autonoma AI-agenter som upptäcker, åtgärdar och verifierar sårbarheter. Varje åtgärd är {highlight} med hjälp av RAG.",
+    "subtitleHighlight": "grundad i din dokumentation",
+    "subtitleBefore": "Autonoma AI-agenter som upptäcker, åtgärdar och verifierar sårbarheter. Varje åtgärd är ",
+    "subtitleAfter": " med hjälp av RAG.",
+    "paperButton": "Artikel pågår...",
+    "demoButton": "Prova demo"
+  },
+  "features": {
+    "sectionLabel": "Sårbarhetshantering är avgörande.",
+    "heading": "Nästa gräns är",
+    "headingHighlight": "agentisk åtgärd",
+    "headingBefore": "Nästa gräns är ",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "Grundad säkerhetsintelligens",
+        "description": "Varje agent hämtar vägledning från dina säkerhetskunskapsbaser och användningsfallsplaybooks (t.ex. säker inloggning), så att åtgärderna förblir konsekventa med din grundsanning."
+      },
+      "secureIngestion": {
+        "title": "Säker kodinläsning",
+        "description": "Anslut GitHub eller GitLab och importera repositories på minuter. VulnIQ kartlägger din kodbas och förbereder den för granskning, åtgärd, testning och rapportering."
+      },
+      "multiAgent": {
+        "title": "Multi-agent säkerhetsarbetsflöde",
+        "description": "En pipeline med 4 agenter: granskare, implementerare, testare, rapportör. Med per-agent specialiserade prompts och kunskapsbas för din stack och dina policyer."
+      },
+      "automatedValidation": {
+        "title": "Automatisk säkerhetsvalidering",
+        "description": "Efter åtgärden validerar Tester-agenten korrigeringarna med riktade säkerhetskontroller och bekräftar att sårbarheterna är lösta utan att påverka beteendet."
+      },
+      "professionalReports": {
+        "title": "Professionella säkerhetsrapporter",
+        "description": "Reporter-agenten genererar intressentklara rapporter: fynd, tillämpade patchar, bevis från kunskapsbaser och testresultat. Redo för revisioner."
+      }
+    },
+    "animatedLabels": {
+      "login": "INLOGGNING",
+      "auth": "AUTH",
+      "api": "API",
+      "grounded": "GRUNDAD",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "INLÄSNING",
+      "reviewer": "GRANSKARE",
+      "implement": "IMPLEMENTERA",
+      "tester": "TESTARE",
+      "reporter": "RAPPORTÖR",
+      "active": "AKTIV",
+      "testSuite": "TESTSVIT",
+      "running": "KÖRS",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "MISSLYCKAT",
+      "pass": "GODKÄNT",
+      "evidence": "BEVIS",
+      "kbCited": "KB CITERAD",
+      "report": "RAPPORT",
+      "generating": "GENERERAR",
+      "findings": "Fynd",
+      "fixesApplied": "Tillämpade Patchar",
+      "testResults": "Testresultat",
+      "recommendations": "Rekommendationer"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "Enkelt och kraftfullt",
+    "heading": "Hur {brand} fungerar",
+    "headingBefore": "Hur ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": " fungerar",
+    "steps": {
+      "importCode": {
+        "title": "Importera din kod",
+        "description": "Anslut GitHub eller GitLab. Välj ett repository och VulnIQ kartlägger din kodbas automatiskt."
+      },
+      "aiReview": {
+        "title": "AI granskar sårbarheter",
+        "description": "Granskaragenten söker igenom din kod mot din kunskapsbas och säkerhetsstandarder som CWE och OWASP."
+      },
+      "agentsRemediate": {
+        "title": "Agenter åtgärdar och testar",
+        "description": "Implementeraren tillämpar åtgärder grundade i din dokumentation. Testaren validerar att varje patch klarar säkerhetskontrollerna."
+      },
+      "exportReport": {
+        "title": "Exportera verifierad rapport",
+        "description": "Rapportören sammanställer fynd, patchar, bevis och testresultat till en revisionsklar PDF-rapport."
+      }
+    }
+  },
+  "useCases": {
+    "heading": "Vem drar nytta av VulnIQ?",
+    "description": "Från nybörjare till team anpassar sig VulnIQ till ditt arbetsflöde.",
+    "cases": {
+      "securityLearners": {
+        "title": "Säkerhetsstuderande",
+        "description": "Förstå verkliga sårbarhetsmönster och hur man åtgärdar dem med AI-guidad åtgärd grundad i branschstandarder.",
+        "visualTitle": "Säkerhetsstuderande",
+        "visualSubtitle": "Lär genom att göra"
+      },
+      "startups": {
+        "title": "Startups",
+        "description": "Leverera säker kod snabbare utan ett dedikerat säkerhetsteam. VulnIQ upptäcker och åtgärdar sårbarheter innan de når produktion.",
+        "visualTitle": "Startups",
+        "visualSubtitle": "Rör dig snabbt, håll dig säker"
+      },
+      "universities": {
+        "title": "Universitet",
+        "description": "Lär ut säkra kodningspraxis med praktiska AI-assisterade övningar i sårbarhetsdetektering och åtgärd.",
+        "visualTitle": "Universitet",
+        "visualSubtitle": "Akademisk forskning"
+      },
+      "openSource": {
+        "title": "Öppen källkod",
+        "description": "Håll ditt öppna källkodsprojekt säkert med automatisk sårbarhetsskanning och AI-drivna åtgärder för offentliga repositories.",
+        "visualTitle": "Öppen källkod",
+        "visualSubtitle": "Gemenskapsstyrd säkerhet"
+      },
+      "teamsOfProgrammers": {
+        "title": "Utvecklingsteam",
+        "description": "Integrera VulnIQ i ditt utvecklingsarbetsflöde för konsekvent, kunskapsbas-grundad säkerhetsåtgärd i hela din kodbas.",
+        "visualTitle": "Utvecklingsteam",
+        "visualSubtitle": "Samarbetssäkerhet"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "Varför {brand}?",
+    "headingBefore": "Varför ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "?",
+    "description": "Se hur agentisk RAG jämförs med traditionella statiska analysverktyg.",
+    "columns": {
+      "feature": "Funktion",
+      "traditionalScanners": "Traditionella skannrar",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "Kontextmedveten analys",
+        "traditional": "Matchar mönster utan att förstå omgivande kodlogik eller projektspecifik kontext.",
+        "vulniq": "Agenter hämtar relevanta kunskapsbasposter och resonerar om kodkontext innan de agerar."
+      },
+      "falsePositiveRate": {
+        "label": "Falskt positivt-frekvens",
+        "traditional": "Hög — flaggar många icke-problem, vilket kräver manuell sortering för att skilja ut verkliga sårbarheter.",
+        "vulniq": "Reducerad — grundat resonemang filtrerar brus genom korshänvisning mot din dokumentation och dina standarder."
+      },
+      "remediation": {
+        "label": "Åtgärd",
+        "traditional": "Ingen inbyggd — producerar en lista med problem och lämnar åtgärdandet helt till utvecklaren.",
+        "vulniq": "Autonom — Implementeragenten tillämpar grundade åtgärder direkt på din kodbas."
+      },
+      "knowledgeSources": {
+        "label": "Kunskapskällor",
+        "traditional": "Fasta regeluppsättningar och CVE-databaser som inte kan anpassas för din stack.",
+        "vulniq": "Dina egna säkerhetskunskapsbaser, playbooks, CWE, OWASP och stackspecifik vägledning."
+      },
+      "fixVerification": {
+        "label": "Åtgärdsverifiering",
+        "traditional": "Ingen — inget automatiserat sätt att bekräfta att en föreslagen åtgärd faktiskt löser sårbarheten.",
+        "vulniq": "Inbyggd — Testeragenten kör riktade säkerhetskontroller efter att varje patch tillämpats."
+      },
+      "reporting": {
+        "label": "Rapportering",
+        "traditional": "Rå skanningutdata som kräver manuell formatering innan den kan delas med intressenter.",
+        "vulniq": "Intressentklara PDF-rapporter med fynd, patchar, bevisciteringar och testresultat."
+      }
+    }
+  },
+  "faq": {
+    "heading": "Vanliga frågor",
+    "description": "Allt du behöver veta om VulnIQ och hur det kan hjälpa till att säkra din kod.",
+    "stillHaveQuestions": "Har du fortfarande frågor?",
+    "askThemHere": "Ställ dem här →",
+    "items": {
+      "q1": {
+        "question": "Vad är VulnIQ?",
+        "answer": "VulnIQ är en autonom säkerhetsåtgärdsplattform driven av en multi-agent RAG-pipeline. Den upptäcker sårbarheter i din kod, tillämpar grundade åtgärder med dina egna säkerhetskunskapsbaser, validerar patchar med riktade tester och genererar revisionsklara rapporter — allt utan manuell åtgärd."
+      },
+      "q2": {
+        "question": "Hur skiljer sig VulnIQ från traditionella statiska analysverktyg?",
+        "answer": "Traditionella statiska analysverktyg mönstermatchar mot fasta regeluppsättningar och producerar en lista med problem utan åtgärd. VulnIQ använder en pipeline med 4 agenter (Granskare, Implementerare, Testare, Rapportör) förstärkt med retrieval-augmented generation, så att varje åtgärd är grundad i din dokumentation och säkerhetsstandarder, verifierad av automatiserade tester och sammanställd till en intressentklar rapport."
+      },
+      "q3": {
+        "question": "Vilka programmeringsspråk stöder VulnIQ?",
+        "answer": "VulnIQ fokuserar för närvarande på webbapplikationsspråk och ramverk som oftast är associerade med OWASP Top 10-sårbarheter. Stödet utökas aktivt — kontrollera ändringsloggen för de senaste språktilläggen."
+      },
+      "q4": {
+        "question": "Kan VulnIQ integreras med min CI/CD-pipeline?",
+        "answer": "CI/CD-integration finns på färdplanen. För närvarande ansluter VulnIQ direkt till GitHub- och GitLab-repositories för skanning och åtgärd på begäran. Webhook-utlösta och schemalagda pipeline-körningar planeras i en framtida version."
+      },
+      "q5": {
+        "question": "Vilka AI-leverantörer använder VulnIQ?",
+        "answer": "VulnIQ är modell-agnostisk av design. Plattformen är konfigurerad att fungera med ledande LLM-leverantörer. Specifikt modellval och leverantörsdetaljer finns tillgängliga i dokumentationen och kan variera beroende på driftsättningmiljö."
+      },
+      "q6": {
+        "question": "Finns det en gratisversion?",
+        "answer": "VulnIQ befinner sig för närvarande i öppen beta som ett forskningsprojekt. Du kan prova hela demon utan att registrera dig. Kontobaserad åtkomst finns tillgänglig — kontrollera prissättningssidan eller kontakta oss för detaljer om nuvarande åtkomstnivåer."
+      },
+      "q7": {
+        "question": "Hur noggrann är VulnIQs åtgärd?",
+        "answer": "Noggrannheten beror på kvaliteten på de tillhandahållna kunskapsbaserna och sårbarhetens komplexitet. Genom att grunda varje åtgärd i din dokumentation och validera med Testeragenten minskar VulnIQ avsevärt falska positiva och overifierade patchar jämfört med oassisterad LLM-utdata. Kvantitativa resultat redovisas i den medföljande avhandlingen."
+      }
+    },
+    "askDialog": {
+      "title": "Ställ en fråga",
+      "description": "Skicka oss din fråga så återkommer vi så snart som möjligt.",
+      "emailLabel": "E-post",
+      "questionLabel": "Din fråga",
+      "emailPlaceholder": "din@email.com",
+      "questionPlaceholder": "Vad vill du veta?",
+      "sendButton": "Skicka fråga",
+      "sendingButton": "Skickar...",
+      "successTitle": "Fråga skickad!",
+      "successDescription": "Vi svarar på din e-post snart."
+    }
+  },
+  "cta": {
+    "title": "Börja säkra",
+    "button": "Kom igång"
+  },
+  "blogSection": {
+    "heading": "Säkerhetskunskapshub",
+    "description": "Expertinsikter om applikationssäkerhet, sårbarhetsdetektering och säkra utvecklingsmetoder från VulnIQ-teamet.",
+    "readArticle": "Läs artikel",
+    "noArticles": "Inga artiklar ännu",
+    "noArticlesDescription": "Våra säkerhetsexperter arbetar med nytt innehåll. Kom tillbaka snart för insikter om applikationssäkerhet och sårbarhetsdetektering.",
+    "viewAllArticles": "Visa alla artiklar"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "Autonom säkerhetsåtgärd driven av retrieval-augmented generation.",
+    "followUs": "Följ oss på",
+    "productHunt": "Product Hunt",
+    "resources": "Resurser",
+    "haveFeedback": "Har du feedback?",
+    "changelog": "Ändringslogg",
+    "sitemap": "Webbplatskarta",
+    "supporters": "Supportrar",
+    "viewThesisPaper": "Visa avhandling (pågår...)",
+    "serviceStatus": {
+      "operational": "Tjänster fungerar normalt",
+      "diagnosing": "Diagnostiserar problem, åtgärdar",
+      "down": "System nere",
+      "idle": "System inaktiva"
+    },
+    "thesis": {
+      "label": "Masteravhandling",
+      "author": "Emanuel Rusu",
+      "university": "Västra universitetet i Timișoara",
+      "faculty": "Institutionen för datavetenskap",
+      "degree": "MSc Cybersäkerhet",
+      "connectLinkedIn": "Kontakta på LinkedIn"
+    },
+    "newsletter": {
+      "heading": "Håll dig uppdaterad",
+      "description": "Få meddelanden om nya funktioner och forskningsuppdateringar.",
+      "emailPlaceholder": "Ange din e-postadress",
+      "subscribeButton": "Prenumerera",
+      "subscribingButton": "Prenumererar...",
+      "successMessage": "Prenumererad",
+      "invalidEmail": "Ange en giltig e-postadress"
+    },
+    "backToTop": "Tillbaka till toppen",
+    "copyright": "© 2026 VulnIQ. Alla rättigheter förbehållna.",
+    "madeIn": "Skapad i RO, Timișoara",
+    "privacyPolicy": "Integritetspolicy",
+    "termsConditions": "Användarvillkor",
+    "vulnerabilityDisclosure": "Policy för sårbarhetsrapportering",
+    "manageCookies": "Hantera cookies",
+    "openBetaBadge": "Öppen beta • Forskningsprojekt •",
+    "feedbackDialog": {
+      "title": "Dela din feedback",
+      "description": "Vi vill gärna höra dina tankar om hur vi kan förbättras.",
+      "feedbackLabel": "Din feedback",
+      "feedbackPlaceholder": "Berätta vad du tycker...",
+      "cancelButton": "Avbryt",
+      "submitButton": "Skicka feedback",
+      "submittingButton": "Skickar..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "Om | VulnIQ",
+      "description": "Lär dig om VulnIQ — ett masteravhandlingsprojekt som undersöker agentisk RAG för automatiserad sårbarhetsåtgärd."
+    },
+    "headingPart1": "Agentisk RAG för",
+    "headingHighlight": "automatiserad programreparation",
+    "intro": "Ett masteravhandlingsprojekt som undersöker effektiviteten hos LLM-baserade agenter utökade med specialiserad säkerhetskunskap för sårbarhetsåtgärd.",
+    "problemStatement": {
+      "heading": "Problembeskrivning",
+      "body": "Stora språkmodeller visar betydande potential för automatiserad programreparation, men deras tillämpning på säkerhetssårbarhetsåtgärd förblir outforskad. Befintliga metoder förlitar sig på generiska modellförmågor utan att grunda åtgärder i auktoritativ säkerhetskunskap, vilket leder till hallucinerade patchar, inkonsekvent åtgärdskvalitet och ingen automatiserad verifiering av om en åtgärd faktiskt löser sårbarheten."
+    },
+    "limitations": {
+      "heading": "Begränsningar med nuvarande metoder",
+      "body": "Statiska analysverktyg identifierar sårbarheter men erbjuder ingen åtgärd. LLM-baserade verktyg genererar åtgärder utan att grunda dem i projektspecifika säkerhetspolicyer eller validerade kunskapsbaser, vilket ger en hög andel falska positiva och overifierbara patchar som kräver betydande manuell granskning innan de kan litas på."
+    },
+    "methodology": {
+      "heading": "Föreslagen metodik",
+      "body1": "VulnIQ implementerar en retrieval-augmented generation-arkitektur bestående av fyra specialiserade agenter: en Granskare som identifierar sårbarheter mot kurerade kunskapsbaser, en Implementerare som tillämpar grundade åtgärder, en Testare som validerar varje patch med riktade säkerhetskontroller och en Rapportör som sammanställer revisionsklar dokumentation.",
+      "body2": "Varje agent är utrustad med en dedikerad vektorkunskapsbas som innehåller CWE-poster, OWASP-riktlinjer, stackspecifika säkra kodningsmönster och användningsfallsplaybooks. Hämtning säkerställer att varje beslut som fattas av pipelinen är spårbart till en specifik kunskapskälla, vilket möjliggör reproducerbar och reviderbar åtgärd."
+    },
+    "keyCapabilities": {
+      "heading": "Nyckelförmågor",
+      "items": [
+        "Retrieval-augmented sårbarhetsåtgärd grundad i dina säkerhetskunskapsbaser",
+        "End-to-end pipeline med 4 agenter med automatiserad åtgärdsverifiering och testvalidering",
+        "Revisionsklara PDF-rapporter med bevisciteringar och fullständig patchspårbarhet"
+      ]
+    },
+    "researchContributions": "Forskningsbidrag",
+    "researchObjectives": "Forskningsmål",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "Kontextuell precision",
+        "description": "Utvärdera om RAG-förstärkta agenter producerar mer kontextuellt precisa åtgärder än oassisterade LLM:er genom att grunda åtgärd i projektspecifika kunskapsbaser."
+      },
+      "automatedReasoning": {
+        "title": "Automatiserat resonemang",
+        "description": "Undersök i vilken utsträckning multi-agent-resonemang autonomt kan identifiera, prioritera och lösa säkerhetssårbarheter utan mänsklig intervention."
+      },
+      "fixVerification": {
+        "title": "Åtgärdsverifiering",
+        "description": "Bedöm om automatiserad testgenerering och -körning av Testeragenten ger tillförlitlig verifiering att tillämpade patchar löser den avsedda sårbarheten."
+      },
+      "knowledgeGrounding": {
+        "title": "Kunskapsgrundning",
+        "description": "Mät effekten av specialiserade säkerhetskunskapsbaser på åtgärdskvalitet, konsistens och spårbarhet jämfört med generisk modellkunskap."
+      },
+      "reportQuality": {
+        "title": "Rapportkvalitet",
+        "description": "Fastställ om agentgenererade säkerhetsrapporter uppfyller de standarder som krävs för intressentkommunikation och scenarier för efterlevnadsrevision."
+      },
+      "scalability": {
+        "title": "Skalbarhet",
+        "description": "Undersök pipeline-prestanda över repositories med varierande storlek, språklig mångfald och sårbarhetskomplexitet för att identifiera praktiska driftsättningsgränser."
+      }
+    },
+    "aboutResearch": "Om forskningen",
+    "viewPrototype": "Visa prototyp",
+    "builtWith": "Byggd med modern teknik"
+  },
+  "blog": {
+    "metadata": {
+      "title": "Blogg | VulnIQ",
+      "description": "Säkerhetsinsikter, sårbarhetsforskning och bästa praxis för säker utveckling från VulnIQ-teamet."
+    },
+    "readTime": "{minutes} min läsning",
+    "postNotFound": "Inlägg hittades inte",
+    "postNotFoundDescription": "Artikeln du letar efter kan ha flyttats eller tagits bort.",
+    "backToBlog": "Tillbaka till bloggen",
+    "publishedOn": "Publicerad {date}",
+    "by": "Av {author}",
+    "shareArticle": "Dela artikel",
+    "tableOfContents": "Innehållsförteckning"
+  },
+  "login": {
+    "metadata": {
+      "title": "Logga in — VulnIQ"
+    },
+    "tag": "Kodsäkerhet",
+    "headline": "Autonom som standard",
+    "featureDescription1": "VulnIQs multi-agent-pipeline upptäcker sårbarheter, tillämpar grundade åtgärder från dina kunskapsbaser, validerar patchar med automatiserade tester och levererar revisionsklara rapporter — helt utan manuell åtgärd.",
+    "featureDescription2": "Varje åtgärdsbeslut är spårbart till en specifik kunskapskälla, vilket gör ditt säkerhetsarbetsflöde reproducerbart, konsekvent och redo för efterlevnadsgranskning.",
+    "backToHome": "Tillbaka till startsidan",
+    "agreementPrefix": "Genom att fortsätta godkänner du VulnIQs",
+    "agreementAnd": "och",
+    "agreementSuffix": ".",
+    "termsLabel": "Villkor",
+    "privacyLabel": "Integritetspolicy",
+    "serviceStatus": {
+      "operational": "Tjänster fungerar normalt",
+      "diagnosing": "Diagnostiserar problem, åtgärdar",
+      "down": "System nere",
+      "idle": "System inaktiva"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "Integritetspolicy | VulnIQ",
+      "description": "VulnIQs integritetspolicy — hur vi samlar in, använder och skyddar dina uppgifter."
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "Användarvillkor | VulnIQ",
+      "description": "VulnIQs användarvillkor."
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "Säkerhet | VulnIQ",
+      "description": "VulnIQs policy för sårbarhetsrapportering och säkerhetspraxis."
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "Ändringslogg | VulnIQ",
+      "description": "Senaste uppdateringar, förbättringar och versioner för VulnIQ."
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "Supportrar | VulnIQ",
+      "description": "Personer och organisationer som stödjer VulnIQ-forskningsprojektet."
+    }
+  },
+  "notFound": {
+    "title": "Den här sidan finns inte",
+    "description": "Sidan du letar efter kan ha flyttats, tagits bort eller aldrig existerat.",
+    "backButton": "Gå tillbaka till föregående sida"
+  },
+  "error": {
+    "title": "Något gick fel",
+    "description": "Vi stötte på ett oväntat fel. Vårt team har underrättats.",
+    "errorId": "Fel-ID",
+    "copyErrorDetails": "Kopiera feldetaljer",
+    "contactPrompt": "Om problemet kvarstår, kontakta"
+  },
+  "cookie": {
+    "title": "Dina Cookie-alternativ",
+    "basicDescription": "Välj om denna webbplats får använda funktionella och/eller reklamcookies, enligt beskrivningen nedan:",
+    "essential": {
+      "label": "Nödvändiga Cookies",
+      "shortDesc": "Krävs för grundläggande webbplatsfunktionalitet.",
+      "description": "Dessa cookies är nödvändiga för att webbplatsen ska fungera och kan inte stängas av i våra system."
+    },
+    "analytics": {
+      "label": "Funktionella Cookies",
+      "shortDesc": "Hjälper oss att mäta och förbättra prestanda.",
+      "description": "Dessa cookies gör det möjligt för oss att analysera webbplatsens användning så att vi kan mäta och förbättra prestandan."
+    },
+    "marketing": {
+      "label": "Reklamcookies",
+      "shortDesc": "Används för att visa relevanta annonser.",
+      "description": "Dessa cookies används för att leverera reklam som är relevant för dina intressen."
+    },
+    "allowedFunctionality": "Tillåten Funktionalitet",
+    "disallowedFunctionality": "Ej Tillåten Funktionalitet",
+    "functionality": {
+      "secureAuth": "Säker autentisering",
+      "sessionState": "Kom ihåg ditt sessionstillstånd",
+      "rememberAuth": "Kom ihåg dina inloggningsuppgifter",
+      "retainCart": "Behåll innehållet i din kundvagn",
+      "siteConsistency": "Säkerställa att webbplatsen är konsekvent",
+      "socialSharing": "Tillåt delning av sidor i sociala nätverk",
+      "postComments": "Tillåt dig att lägga upp kommentarer",
+      "targetedAds": "Leverera reklam baserad på dina intressen"
+    },
+    "submitPreferences": "Spara Inställningar",
+    "advancedSettings": "Avancerade Inställningar",
+    "basicSettings": "Grundläggande Inställningar",
+    "cancel": "Avbryt",
+    "alwaysActive": "Alltid Aktiv",
+    "showCookies": "Visa cookies",
+    "hideCookies": "Dölj cookies",
+    "providerCompany": "Företag",
+    "providerDomain": "Domän",
+    "learnMore": "Läs mer",
+    "done": "Klar"
+  },
+  "accessibility": {
+    "widgetTitle": "Tillgänglighet",
+    "customizeExperience": "Anpassa din upplevelse",
+    "resetAll": "Återställ alla inställningar",
+    "resetAllButton": "Återställ alla tillgänglighetsinställningar",
+    "dragToMove": "Tillgänglighetsalternativ (dra för att flytta)",
+    "accessibilityOptions": "Tillgänglighetsalternativ",
+    "openMenu": "Öppna tillgänglighetsmeny",
+    "features": {
+      "smartContrast": "Smart kontrast",
+      "stopAnimations": "Stoppa animationer",
+      "dyslexiaFriendly": "Dyslexi-vänlig",
+      "invertColors": "Invertera färger",
+      "highlightLinks": "Markera länkar",
+      "biggerText": "Större text",
+      "lightSpacing": "Ökat radavstånd",
+      "hideImages": "Dölj bilder",
+      "bigCursor": "Stor markör",
+      "tooltips": "Verktygstips",
+      "pageStructure": "Sidstruktur",
+      "lineHeight": "Radhöjd",
+      "alignLeft": "Vänsterjustera",
+      "lowSaturation": "Låg mättnad",
+      "readingGuide": "Läshjälp",
+      "focusIndicator": "Fokusindikator"
+    },
+    "structure": {
+      "headings": "Rubriker",
+      "landmarks": "Landmärken",
+      "links": "Länkar",
+      "noHeadings": "Inga rubriker hittades",
+      "noLandmarks": "Inga landmärken hittades",
+      "noLinks": "Inga länkar hittades",
+      "noText": "(ingen text)"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "Instrumentpanel | VulnIQ"
+    },
+    "nav": {
+      "home": "Hem",
+      "codeInspection": "Kodgranskning",
+      "knowledgeBase": "Kunskapsbas",
+      "results": "Resultat",
+      "codeGraph": "Kodgraf",
+      "writeArticle": "Skriv artikel"
+    },
+    "searchActions": "Sök åtgärder...",
+    "quickActions": "Snabbåtgärder",
+    "error": {
+      "title": "Instrumentpanelfel",
+      "description": "Det uppstod ett problem med att ladda instrumentpanelen."
+    },
+    "demoMode": "Demoläge",
+    "exitDemo": "Avsluta demo",
+    "signInPrompt": "Logga in för att starta en granskning",
+    "noCodePrompt": "Ange kod eller importera ett projekt för att granska",
+    "resultsMetadata": {
+      "title": "Analysresultat | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "Kopierat till urklipp",
+      "copyFailed": "Kopiering misslyckades",
+      "exportSuccess": "Rapport exporterades",
+      "exportFailed": "Rapportexport misslyckades",
+      "saveSuccess": "Sparades",
+      "saveFailed": "Sparning misslyckades"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "Demo | VulnIQ",
+      "description": "Prova VulnIQs autonoma pipeline för sårbarhetsåtgärd i en live-demomiljö."
+    },
+    "demoMode": "Demoläge",
+    "exitDemo": "Avsluta demo",
+    "pages": {
+      "home": {
+        "title": "Demo Hem"
+      },
+      "codeInput": {
+        "title": "Kodinmatning"
+      },
+      "knowledgeBase": {
+        "title": "Kunskapsbas"
+      },
+      "results": {
+        "title": "Resultat"
+      },
+      "profile": {
+        "title": "Profil"
+      },
+      "writeArticle": {
+        "title": "Skriv artikel"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "Admin | VulnIQ"
+    },
+    "verification": {
+      "title": "Administratörsverifiering",
+      "description": "Ange ditt lösenord för att fortsätta",
+      "emailLabel": "Administratörse-post",
+      "continueButton": "Fortsätt",
+      "verifyingButton": "Verifierar...",
+      "passwordLabel": "Lösenord",
+      "verifyPasswordButton": "Verifiera lösenord",
+      "useDifferentEmail": "Använd annan e-post",
+      "setUpPasskey": "Konfigurera nyckel",
+      "startOver": "Börja om"
+    },
+    "userManagement": {
+      "title": "Användarhantering",
+      "description": "Visa användarprofiler och utfärda varningar",
+      "totalLabel": "Totalt",
+      "warnedLabel": "Varnade",
+      "bannedIpsLabel": "Blockerade IP",
+      "searchPlaceholder": "Sök användare...",
+      "tableHeaders": {
+        "user": "Användare",
+        "email": "E-post",
+        "status": "Status",
+        "joined": "Gick med",
+        "actions": "Åtgärder"
+      }
+    },
+    "articleStatus": {
+      "draft": "Utkast",
+      "pending": "Väntande",
+      "inReview": "Under granskning",
+      "published": "Publicerad",
+      "rejected": "Avvisad",
+      "pendingDeletion": "Väntar på borttagning"
+    },
+    "nav": {
+      "users": "Användare",
+      "articles": "Artiklar",
+      "supporters": "Supportrar",
+      "createAdmin": "Skapa administratör"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "imageUploadDisabledDemo": "Bilduppladdning är inaktiverad i demoläge"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "Webbplatskarta | VulnIQ",
+      "description": "En komplett karta över alla tillgängliga sidor på VulnIQ."
+    },
+    "title": "Webbplatskarta",
+    "description": "En komplett karta över alla tillgängliga sidor på VulnIQ."
+  },
+  "languageSelector": {
+    "selectLanguage": "Välj språk",
+    "close": "Stäng",
+    "noLanguagesFound": "Inga språk hittades",
+    "search": "Sök"
+  }
+}

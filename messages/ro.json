@@ -1,0 +1,710 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "Agenți AI autonomi care detectează, remediază și verifică vulnerabilități, fundamentați pe documentația dumneavoastră."
+  },
+  "common": {
+    "loading": "Se încarcă...",
+    "cancel": "Anulați",
+    "close": "Închideți",
+    "submit": "Trimiteți",
+    "back": "Înapoi",
+    "search": "Căutați",
+    "goHome": "Mergeți acasă",
+    "tryAgain": "Încercați din nou"
+  },
+  "nav": {
+    "product": "Produs",
+    "resources": "Resurse",
+    "company": "Companie",
+    "demo": "Demo",
+    "dashboard": "Panou de control",
+    "getStarted": "Începeți",
+    "go": "Accesați",
+    "closeMenu": "Închideți meniul",
+    "openMenu": "Deschideți meniul",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "Revizuire de cod de securitate cu AI și remediere autonomă."
+      },
+      "features": {
+        "label": "Funcționalități",
+        "description": "Detectare avansată a vulnerabilităților și corecții bazate pe AI."
+      },
+      "useCases": {
+        "label": "Cazuri de utilizare",
+        "description": "Descoperiți cum echipele folosesc VulnIQ pentru securitate."
+      },
+      "integrations": {
+        "label": "Integrări",
+        "description": "Conectați-vă cu GitHub, GitLab și altele."
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "Blog",
+        "description": "Perspective de securitate și bune practici."
+      },
+      "changelog": {
+        "label": "Jurnal de modificări",
+        "description": "Cele mai recente actualizări și lansări."
+      },
+      "supporters": {
+        "label": "Susținători",
+        "description": "Persoanele care susțin acest proiect."
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "Susțineți-ne pe Product Hunt."
+      },
+      "tryDemo": {
+        "label": "Încercați demo",
+        "description": "Experimentați VulnIQ în acțiune."
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "Despre noi",
+        "description": "Aflați despre misiunea și echipa noastră."
+      },
+      "security": {
+        "label": "Politică de securitate",
+        "description": "Politica de divulgare a vulnerabilităților."
+      },
+      "contact": {
+        "label": "Contact",
+        "description": "Luați legătura cu echipa noastră."
+      }
+    }
+  },
+  "hero": {
+    "badge": "Beta deschis",
+    "headingPart1": "Remediere",
+    "headingPart2": "de securitate",
+    "headingPart3": "fără",
+    "headingPart4": "halucinații.",
+    "subtitle": "Agenți AI autonomi care detectează, remediază și verifică vulnerabilități. Fiecare corecție este {highlight} folosind RAG.",
+    "subtitleHighlight": "fundamentată în documentația dumneavoastră",
+    "subtitleBefore": "Agenți AI autonomi care detectează, remediază și verifică vulnerabilități. Fiecare corecție este ",
+    "subtitleAfter": " folosind RAG.",
+    "paperButton": "Lucrare în curs...",
+    "demoButton": "Încercați demo"
+  },
+  "features": {
+    "sectionLabel": "Gestionarea vulnerabilităților este esențială.",
+    "heading": "Următoarea frontieră este",
+    "headingHighlight": "remedierea agentică",
+    "headingBefore": "Următoarea frontieră este ",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "Inteligență de securitate fundamentată",
+        "description": "Fiecare agent recuperează ghiduri din bazele dumneavoastră de cunoștințe de securitate și manuale de caz de utilizare (ex.: autentificare securizată), astfel corecțiile rămân consecvente cu baza dvs. de adevăr."
+      },
+      "secureIngestion": {
+        "title": "Ingestie securizată de cod",
+        "description": "Conectați GitHub sau GitLab și importați depozite în câteva minute. VulnIQ cartografiază baza de cod și o pregătește pentru revizuire, remediere, testare și raportare."
+      },
+      "multiAgent": {
+        "title": "Flux de lucru de securitate multi-agent",
+        "description": "Un pipeline cu 4 agenți: revizor, implementator, tester, reporter. Cu prompturi specializate per agent și bază de cunoștințe pentru stiva și politicile dumneavoastră."
+      },
+      "automatedValidation": {
+        "title": "Validare automată a securității",
+        "description": "După remediere, agentul Tester validează corecțiile prin verificări de securitate țintite, confirmând că vulnerabilitățile sunt rezolvate fără a afecta comportamentul aplicației."
+      },
+      "professionalReports": {
+        "title": "Rapoarte profesionale de securitate",
+        "description": "Agentul Reporter generează rapoarte gata pentru părțile interesate: constatări, corecții aplicate, dovezi din bazele de cunoștințe și rezultatele testelor. Pregătite pentru audituri."
+      }
+    },
+    "animatedLabels": {
+      "login": "LOGIN",
+      "auth": "AUTH",
+      "api": "API",
+      "grounded": "FUNDAMENTAT",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "INGESTIE",
+      "reviewer": "REVIZOR",
+      "implement": "IMPLEMENTARE",
+      "tester": "TESTER",
+      "reporter": "REPORTER",
+      "active": "ACTIV",
+      "testSuite": "SUITĂ TESTE",
+      "running": "ÎN RULARE",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "EȘUAT",
+      "pass": "TRECUT",
+      "evidence": "DOVADĂ",
+      "kbCited": "BC CITAT",
+      "report": "RAPORT",
+      "generating": "GENERARE",
+      "findings": "Constatări",
+      "fixesApplied": "Corecții Aplicate",
+      "testResults": "Rezultate Teste",
+      "recommendations": "Recomandări"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "Simplu și puternic",
+    "heading": "Cum funcționează {brand}",
+    "headingBefore": "Cum funcționează ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "",
+    "steps": {
+      "importCode": {
+        "title": "Importați codul dumneavoastră",
+        "description": "Conectați GitHub sau GitLab. Selectați un depozit și VulnIQ cartografiază automat baza de cod."
+      },
+      "aiReview": {
+        "title": "AI revizuiește vulnerabilitățile",
+        "description": "Agentul Revizor scanează codul față de baza dumneavoastră de cunoștințe și standardele de securitate precum CWE și OWASP."
+      },
+      "agentsRemediate": {
+        "title": "Agenții remediază și testează",
+        "description": "Implementatorul aplică corecții fundamentate în documentele dvs. Testerul validează că fiecare patch trece verificările de securitate."
+      },
+      "exportReport": {
+        "title": "Exportați raportul verificat",
+        "description": "Reporterul compilează constatările, patch-urile, dovezile și rezultatele testelor într-un raport PDF gata pentru audit."
+      }
+    }
+  },
+  "useCases": {
+    "heading": "Cine beneficiază de VulnIQ?",
+    "description": "De la cursanți la echipe, VulnIQ se adaptează fluxului dumneavoastră de lucru.",
+    "cases": {
+      "securityLearners": {
+        "title": "Cursanți în securitate",
+        "description": "Înțelegeți tiparele reale ale vulnerabilităților și cum să le remediați cu remediere ghidată de AI, fundamentată în standardele industriei.",
+        "visualTitle": "Cursanți în securitate",
+        "visualSubtitle": "Învățați prin practică"
+      },
+      "startups": {
+        "title": "Startup-uri",
+        "description": "Lansați cod securizat mai rapid fără o echipă dedicată de securitate. VulnIQ detectează și remediază vulnerabilitățile înainte de a ajunge în producție.",
+        "visualTitle": "Startup-uri",
+        "visualSubtitle": "Avansați rapid, rămâneți securizați"
+      },
+      "universities": {
+        "title": "Universități",
+        "description": "Predați practici de codare securizată prin exerciții practice de detectare și remediere a vulnerabilităților asistate de AI.",
+        "visualTitle": "Universități",
+        "visualSubtitle": "Cercetare academică"
+      },
+      "openSource": {
+        "title": "Open source",
+        "description": "Mențineți proiectul open source securizat cu scanare automată a vulnerabilităților și corecții bazate pe AI pentru depozite publice.",
+        "visualTitle": "Open source",
+        "visualSubtitle": "Securitate bazată pe comunitate"
+      },
+      "teamsOfProgrammers": {
+        "title": "Echipe de programatori",
+        "description": "Integrați VulnIQ în fluxul de dezvoltare pentru o remediere consecventă a securității, fundamentată în baza de cunoștințe, pe întreaga bază de cod.",
+        "visualTitle": "Echipe de programatori",
+        "visualSubtitle": "Securitate colaborativă"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "De ce {brand}?",
+    "headingBefore": "De ce ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "?",
+    "description": "Vedeți cum RAG agentică se compară cu instrumentele tradiționale de analiză statică.",
+    "columns": {
+      "feature": "Caracteristică",
+      "traditionalScanners": "Scanere tradiționale",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "Analiză conștientă de context",
+        "traditional": "Potrivește tipare fără a înțelege logica codului înconjurător sau contextul specific al proiectului.",
+        "vulniq": "Agenții recuperează intrări relevante din baza de cunoștințe și raționează despre contextul codului înainte de a acționa."
+      },
+      "falsePositiveRate": {
+        "label": "Rata de fals pozitive",
+        "traditional": "Ridicată — semnalează multe non-probleme, necesitând triere manuală pentru a separa vulnerabilitățile reale.",
+        "vulniq": "Redusă — raționamentul fundamentat filtrează zgomotul prin referință încrucișată cu documentația și standardele dumneavoastră."
+      },
+      "remediation": {
+        "label": "Remediere",
+        "traditional": "Niciuna inclusă — produce o listă de probleme și lasă remedierea în întregime în sarcina dezvoltatorului.",
+        "vulniq": "Autonomă — agentul Implementator aplică corecții fundamentate direct în baza de cod."
+      },
+      "knowledgeSources": {
+        "label": "Surse de cunoaștere",
+        "traditional": "Seturi fixe de reguli și baze de date CVE care nu pot fi personalizate pentru stiva dumneavoastră.",
+        "vulniq": "Propriile baze de cunoștințe de securitate, manuale, CWE, OWASP și ghiduri specifice stivei."
+      },
+      "fixVerification": {
+        "label": "Verificarea corecțiilor",
+        "traditional": "Niciuna — nicio modalitate automată de a confirma că o corecție sugerată rezolvă cu adevărat vulnerabilitatea.",
+        "vulniq": "Inclusă — agentul Tester rulează verificări de securitate țintite după aplicarea fiecărui patch."
+      },
+      "reporting": {
+        "label": "Raportare",
+        "traditional": "Rezultate brute ale scanării care necesită formatare manuală înainte de a putea fi împărtășite cu părțile interesate.",
+        "vulniq": "Rapoarte PDF gata pentru părțile interesate cu constatări, patch-uri, citate cu dovezi și rezultatele testelor."
+      }
+    }
+  },
+  "faq": {
+    "heading": "Întrebări frecvente",
+    "description": "Tot ce trebuie să știți despre VulnIQ și cum vă poate ajuta să securizați codul.",
+    "stillHaveQuestions": "Mai aveți întrebări?",
+    "askThemHere": "Adresați-le aici →",
+    "items": {
+      "q1": {
+        "question": "Ce este VulnIQ?",
+        "answer": "VulnIQ este o platformă autonomă de remediere a securității, alimentată de un pipeline multi-agent RAG. Detectează vulnerabilități în codul dumneavoastră, aplică corecții fundamentate folosind propriile baze de cunoștințe de securitate, validează patch-urile cu teste țintite și generează rapoarte gata pentru audit — totul fără intervenție manuală."
+      },
+      "q2": {
+        "question": "Cum diferă VulnIQ de instrumentele tradiționale de analiză statică?",
+        "answer": "Instrumentele tradiționale de analiză statică potrivesc tipare față de seturi fixe de reguli și produc o listă de probleme fără remediere. VulnIQ folosește un pipeline cu 4 agenți (Revizor, Implementator, Tester, Reporter) augmentat cu generare augmentată prin recuperare, astfel fiecare corecție este fundamentată în documentația și standardele de securitate, verificată prin teste automate și compilată într-un raport gata pentru părțile interesate."
+      },
+      "q3": {
+        "question": "Ce limbaje de programare suportă VulnIQ?",
+        "answer": "VulnIQ se concentrează în prezent pe limbajele și framework-urile pentru aplicații web cele mai frecvent asociate cu vulnerabilitățile OWASP Top 10. Suportul se extinde activ — consultați jurnalul de modificări pentru cele mai recente adăugiri de limbaje."
+      },
+      "q4": {
+        "question": "Poate VulnIQ să se integreze cu pipeline-ul meu CI/CD?",
+        "answer": "Integrarea CI/CD este pe foaia de parcurs. În prezent, VulnIQ se conectează direct la depozitele GitHub și GitLab pentru scanare și remediere la cerere. Rulările de pipeline declanșate prin webhook și planificate sunt planificate pentru o versiune viitoare."
+      },
+      "q5": {
+        "question": "Ce furnizori de AI folosește VulnIQ?",
+        "answer": "VulnIQ este agnostic față de modele prin design. Platforma este configurată să funcționeze cu furnizorii LLM de top. Selecția specifică a modelului și detaliile furnizorului sunt disponibile în documentație și pot varia în funcție de mediul de implementare."
+      },
+      "q6": {
+        "question": "Există un nivel gratuit?",
+        "answer": "VulnIQ se află în prezent în beta deschis ca proiect de cercetare. Puteți încerca demo-ul complet fără a vă înregistra. Accesul bazat pe cont este disponibil — consultați pagina de prețuri sau contactați-ne pentru detalii despre nivelurile actuale de acces."
+      },
+      "q7": {
+        "question": "Cât de precisă este remedierea VulnIQ?",
+        "answer": "Precizia depinde de calitatea bazelor de cunoștințe furnizate și de complexitatea vulnerabilității. Prin fundamentarea fiecărei corecții în documentația dvs. și validarea cu agentul Tester, VulnIQ reduce semnificativ falsele pozitive și patch-urile neverificate față de ieșirea LLM neasistat. Rezultatele cantitative sunt raportate în lucrarea de teză însoțitoare."
+      }
+    },
+    "askDialog": {
+      "title": "Adresați o întrebare",
+      "description": "Trimiteți-ne întrebarea și vă vom răspunde cât mai curând posibil.",
+      "emailLabel": "Email",
+      "questionLabel": "Întrebarea dumneavoastră",
+      "emailPlaceholder": "adresa@email.com",
+      "questionPlaceholder": "Ce doriți să aflați?",
+      "sendButton": "Trimiteți întrebarea",
+      "sendingButton": "Se trimite...",
+      "successTitle": "Întrebare trimisă!",
+      "successDescription": "Vă vom răspunde la email în curând."
+    }
+  },
+  "cta": {
+    "title": "Începeți să securizați",
+    "button": "Începeți"
+  },
+  "blogSection": {
+    "heading": "Hub de cunoștințe de securitate",
+    "description": "Perspective de experți despre securitatea aplicațiilor, detectarea vulnerabilităților și practicile de dezvoltare securizată din partea echipei VulnIQ.",
+    "readArticle": "Citiți articolul",
+    "noArticles": "Niciun articol încă",
+    "noArticlesDescription": "Experții noștri în securitate lucrează la conținut nou. Reveniți curând pentru perspective despre securitatea aplicațiilor și detectarea vulnerabilităților.",
+    "viewAllArticles": "Vedeți toate articolele"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "Remediere autonomă a securității bazată pe generare augmentată prin recuperare.",
+    "followUs": "Urmăriți-ne pe",
+    "productHunt": "Product Hunt",
+    "resources": "Resurse",
+    "haveFeedback": "Aveți feedback?",
+    "changelog": "Jurnal de modificări",
+    "sitemap": "Hartă site",
+    "supporters": "Susținători",
+    "viewThesisPaper": "Vizualizați lucrarea de teză (în curs...)",
+    "serviceStatus": {
+      "operational": "Serviciile sunt operaționale",
+      "diagnosing": "Se diagnostichează problema, se remediază",
+      "down": "Sistemele sunt inactive",
+      "idle": "Sistemele sunt inactive"
+    },
+    "thesis": {
+      "label": "Teză de masterat",
+      "author": "Emanuel Rusu",
+      "university": "Universitatea de Vest din Timișoara",
+      "faculty": "Facultatea de Informatică",
+      "degree": "MSc Securitate Cibernetică",
+      "connectLinkedIn": "Conectați-vă pe LinkedIn"
+    },
+    "newsletter": {
+      "heading": "Rămâneți la curent",
+      "description": "Primiți notificări despre funcționalități noi și actualizări de cercetare.",
+      "emailPlaceholder": "Introduceți adresa de email",
+      "subscribeButton": "Abonați-vă",
+      "subscribingButton": "Se abonează...",
+      "successMessage": "Abonat cu succes",
+      "invalidEmail": "Introduceți o adresă de email validă"
+    },
+    "backToTop": "Înapoi sus",
+    "copyright": "© 2026 VulnIQ. Toate drepturile rezervate.",
+    "madeIn": "Realizat în RO, Timișoara",
+    "privacyPolicy": "Politică de confidențialitate",
+    "termsConditions": "Termeni și condiții",
+    "vulnerabilityDisclosure": "Politică de divulgare a vulnerabilităților",
+    "manageCookies": "Gestionare Cookie-uri",
+    "openBetaBadge": "Beta deschis • Proiect de cercetare •",
+    "feedbackDialog": {
+      "title": "Împărtășiți feedback-ul dvs.",
+      "description": "Ne-ar plăcea să auzim opiniile dvs. despre cum putem îmbunătăți.",
+      "feedbackLabel": "Feedback-ul dumneavoastră",
+      "feedbackPlaceholder": "Spuneți-ne ce credeți...",
+      "cancelButton": "Anulați",
+      "submitButton": "Trimiteți feedback",
+      "submittingButton": "Se trimite..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "Despre | VulnIQ",
+      "description": "Aflați despre VulnIQ — un proiect de teză de masterat care investighează RAG agentică pentru remedierea automată a vulnerabilităților."
+    },
+    "headingPart1": "RAG agentică pentru",
+    "headingHighlight": "repararea automată a programelor",
+    "intro": "Un proiect de teză de masterat care investighează eficacitatea agenților bazați pe LLM, augmentați cu cunoștințe specializate de securitate pentru remedierea vulnerabilităților.",
+    "problemStatement": {
+      "heading": "Enunțul problemei",
+      "body": "Modelele lingvistice mari demonstrează un potențial semnificativ pentru repararea automată a programelor, totuși aplicarea lor la remedierea vulnerabilităților de securitate rămâne insuficient explorată. Abordările existente se bazează pe capabilitățile generice ale modelelor fără a fundamenta corecțiile în cunoașterea autoritară de securitate, ducând la patch-uri haluciante, calitate inconsistentă a remedierii și nicio verificare automată dacă o corecție rezolvă cu adevărat vulnerabilitatea."
+    },
+    "limitations": {
+      "heading": "Limitările abordărilor actuale",
+      "body": "Instrumentele de analiză statică identifică vulnerabilitățile, dar nu oferă remediere. Instrumentele bazate pe LLM generează corecții fără fundamentare în politicile de securitate specifice proiectului sau bazele de cunoștințe validate, producând o rată ridicată de fals pozitive și patch-uri neverificabile care necesită revizuire manuală semnificativă înainte de a putea fi de încredere."
+    },
+    "methodology": {
+      "heading": "Metodologia propusă",
+      "body1": "VulnIQ implementează o arhitectură de generare augmentată prin recuperare compusă din patru agenți specializați: un Revizor care identifică vulnerabilitățile față de baze de cunoștințe curate, un Implementator care aplică corecții fundamentate, un Tester care validează fiecare patch cu verificări de securitate țintite și un Reporter care compilează documentație gata pentru audit.",
+      "body2": "Fiecare agent este echipat cu o bază de cunoștințe vectoriale dedicată, conținând intrări CWE, ghiduri OWASP, tipare de codare securizată specifice stivei și manuale de caz de utilizare. Recuperarea asigură că fiecare decizie luată de pipeline este trasabilă la o sursă specifică de cunoaștere, permițând o remediere reproductibilă și auditabilă."
+    },
+    "keyCapabilities": {
+      "heading": "Capabilități cheie",
+      "items": [
+        "Remediere a vulnerabilităților augmentată prin recuperare, fundamentată în bazele dumneavoastră de cunoștințe de securitate",
+        "Pipeline end-to-end cu 4 agenți cu verificare automată a corecțiilor și validare prin teste",
+        "Raportare PDF gata pentru audit cu citate de dovezi și trasabilitate completă a patch-urilor"
+      ]
+    },
+    "researchContributions": "Contribuții de cercetare",
+    "researchObjectives": "Obiective de cercetare",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "Precizie contextuală",
+        "description": "Evaluați dacă agenții augmentați cu RAG produc corecții mai precise contextual decât LLM-urile neasistat, prin fundamentarea remedierii în bazele de cunoștințe specifice proiectului."
+      },
+      "automatedReasoning": {
+        "title": "Raționament automat",
+        "description": "Investigați măsura în care raționamentul multi-agent poate identifica, prioritiza și rezolva vulnerabilitățile de securitate în mod autonom, fără intervenție umană."
+      },
+      "fixVerification": {
+        "title": "Verificarea corecțiilor",
+        "description": "Evaluați dacă generarea și execuția automată a testelor de către agentul Tester furnizează verificare fiabilă că patch-urile aplicate rezolvă vulnerabilitatea țintită."
+      },
+      "knowledgeGrounding": {
+        "title": "Fundamentarea cunoașterii",
+        "description": "Măsurați impactul bazelor de cunoștințe specializate de securitate asupra calității, consecvenței și trasabilității remedierii, comparativ cu cunoașterea generică a modelului."
+      },
+      "reportQuality": {
+        "title": "Calitatea rapoartelor",
+        "description": "Determinați dacă rapoartele de securitate generate de agenți îndeplinesc standardele necesare pentru comunicarea cu părțile interesate și scenariile de audit de conformitate."
+      },
+      "scalability": {
+        "title": "Scalabilitate",
+        "description": "Examinați performanța pipeline-ului pe depozite de dimensiuni variate, diversitate lingvistică și complexitate a vulnerabilităților pentru a identifica limitele practice de implementare."
+      }
+    },
+    "aboutResearch": "Despre cercetare",
+    "viewPrototype": "Vizualizați prototipul",
+    "builtWith": "Construit cu tehnologii moderne"
+  },
+  "blog": {
+    "metadata": {
+      "title": "Blog | VulnIQ",
+      "description": "Perspective de securitate, cercetare a vulnerabilităților și bune practici de dezvoltare securizată din partea echipei VulnIQ."
+    },
+    "readTime": "{minutes} min citire",
+    "postNotFound": "Articolul nu a fost găsit",
+    "postNotFoundDescription": "Articolul pe care îl căutați poate fi mutat sau șters.",
+    "backToBlog": "Înapoi la blog",
+    "publishedOn": "Publicat pe {date}",
+    "by": "De {author}",
+    "shareArticle": "Distribuiți articolul",
+    "tableOfContents": "Cuprins"
+  },
+  "login": {
+    "metadata": {
+      "title": "Autentificare — VulnIQ"
+    },
+    "tag": "Securitate cod",
+    "headline": "Autonom implicit",
+    "featureDescription1": "Pipeline-ul multi-agent al VulnIQ detectează vulnerabilitățile, aplică corecții fundamentate din bazele dumneavoastră de cunoștințe, validează patch-urile cu teste automate și livrează rapoarte gata pentru audit — în întregime fără intervenție manuală.",
+    "featureDescription2": "Fiecare decizie de remediere este trasabilă la o sursă specifică de cunoaștere, făcând fluxul de securitate reproductibil, consecvent și pregătit pentru revizuire de conformitate.",
+    "backToHome": "Înapoi la pagina principală",
+    "agreementPrefix": "Continuând, acceptați",
+    "agreementAnd": "și",
+    "agreementSuffix": " VulnIQ.",
+    "termsLabel": "Termenii",
+    "privacyLabel": "Politica de confidențialitate",
+    "serviceStatus": {
+      "operational": "Serviciile sunt operaționale",
+      "diagnosing": "Se diagnostichează problema, se remediază",
+      "down": "Sistemele sunt inactive",
+      "idle": "Sistemele sunt inactive"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "Politică de confidențialitate | VulnIQ",
+      "description": "Politica de confidențialitate VulnIQ — cum colectăm, utilizăm și protejăm datele dumneavoastră."
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "Termeni și condiții | VulnIQ",
+      "description": "Termenii și condițiile de utilizare ale VulnIQ."
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "Securitate | VulnIQ",
+      "description": "Politica de divulgare a vulnerabilităților și practicile de securitate VulnIQ."
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "Jurnal de modificări | VulnIQ",
+      "description": "Cele mai recente actualizări, îmbunătățiri și lansări pentru VulnIQ."
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "Susținători | VulnIQ",
+      "description": "Persoane și organizații care susțin proiectul de cercetare VulnIQ."
+    }
+  },
+  "notFound": {
+    "title": "Această pagină nu există",
+    "description": "Pagina pe care o căutați poate fi mutată, ștearsă sau pur și simplu nu a existat.",
+    "backButton": "Înapoi la pagina anterioară"
+  },
+  "error": {
+    "title": "Ceva a mers greșit",
+    "description": "Am întâlnit o eroare neașteptată. Echipa noastră a fost notificată.",
+    "errorId": "ID eroare",
+    "copyErrorDetails": "Copiați detaliile erorii",
+    "contactPrompt": "Dacă această problemă persistă, contactați"
+  },
+  "cookie": {
+    "title": "Opțiunile dvs. privind cookie-urile",
+    "basicDescription": "Vă rugăm să alegeți dacă acest site poate utiliza cookie-uri funcționale și/sau publicitare, după cum este descris mai jos:",
+    "essential": {
+      "label": "Cookie-uri Obligatorii",
+      "shortDesc": "Necesare pentru funcționalitatea de bază a site-ului.",
+      "description": "Aceste cookie-uri sunt necesare pentru funcționarea site-ului și nu pot fi dezactivate în sistemele noastre."
+    },
+    "analytics": {
+      "label": "Cookie-uri Funcționale",
+      "shortDesc": "Ne ajută să măsurăm și să îmbunătățim performanța.",
+      "description": "Aceste cookie-uri ne permit să analizăm utilizarea site-ului pentru a putea măsura și îmbunătăți performanța."
+    },
+    "marketing": {
+      "label": "Cookie-uri Publicitare",
+      "shortDesc": "Utilizate pentru a afișa reclame relevante.",
+      "description": "Aceste cookie-uri sunt utilizate pentru a livra publicitate relevantă pentru interesele dvs."
+    },
+    "allowedFunctionality": "Funcționalitate Permisă",
+    "disallowedFunctionality": "Funcționalitate Nepermisă",
+    "functionality": {
+      "secureAuth": "Autentificare securizată",
+      "sessionState": "Reținerea stării sesiunii dvs.",
+      "rememberAuth": "Reținerea datelor de conectare",
+      "retainCart": "Păstrarea conținutului coșului de cumpărături",
+      "siteConsistency": "Asigurarea consistenței site-ului",
+      "socialSharing": "Permiterea partajării paginilor pe rețelele sociale",
+      "postComments": "Permiterea postării de comentarii",
+      "targetedAds": "Afișarea de publicitate bazată pe interesele dvs."
+    },
+    "submitPreferences": "Trimiteți Preferințele",
+    "advancedSettings": "Setări Avansate",
+    "basicSettings": "Setări de Bază",
+    "cancel": "Anulați",
+    "alwaysActive": "Întotdeauna Activ",
+    "showCookies": "Afișați cookie-urile",
+    "hideCookies": "Ascundeți cookie-urile",
+    "providerCompany": "Companie",
+    "providerDomain": "Domeniu",
+    "learnMore": "Aflați mai multe",
+    "done": "Gata"
+  },
+  "accessibility": {
+    "widgetTitle": "Accesibilitate",
+    "customizeExperience": "Personalizați experiența",
+    "resetAll": "Resetați toate setările",
+    "resetAllButton": "Resetați toate setările de accesibilitate",
+    "dragToMove": "Opțiuni de accesibilitate (trageți pentru a muta)",
+    "accessibilityOptions": "Opțiuni de accesibilitate",
+    "openMenu": "Deschideți meniul de accesibilitate",
+    "features": {
+      "smartContrast": "Contrast inteligent",
+      "stopAnimations": "Opriți animațiile",
+      "dyslexiaFriendly": "Prietenos cu dislexia",
+      "invertColors": "Inversați culorile",
+      "highlightLinks": "Evidențiați linkurile",
+      "biggerText": "Text mai mare",
+      "lightSpacing": "Spațiere redusă",
+      "hideImages": "Ascundeți imaginile",
+      "bigCursor": "Cursor mare",
+      "tooltips": "Sfaturi afișate",
+      "pageStructure": "Structura paginii",
+      "lineHeight": "Înălțimea liniei",
+      "alignLeft": "Aliniere la stânga",
+      "lowSaturation": "Saturație redusă",
+      "readingGuide": "Ghid de citire",
+      "focusIndicator": "Indicator de focus"
+    },
+    "structure": {
+      "headings": "Titluri",
+      "landmarks": "Repere",
+      "links": "Linkuri",
+      "noHeadings": "Niciun titlu găsit",
+      "noLandmarks": "Niciun reper găsit",
+      "noLinks": "Niciun link găsit",
+      "noText": "(fără text)"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "Panou de control | VulnIQ"
+    },
+    "nav": {
+      "home": "Acasă",
+      "codeInspection": "Inspecție cod",
+      "knowledgeBase": "Bază de cunoștințe",
+      "results": "Rezultate",
+      "codeGraph": "Graf cod",
+      "writeArticle": "Scrieți articol"
+    },
+    "searchActions": "Căutați acțiuni...",
+    "quickActions": "Acțiuni rapide",
+    "error": {
+      "title": "Eroare panou de control",
+      "description": "A apărut o problemă la încărcarea panoului de control."
+    },
+    "demoMode": "Mod demo",
+    "exitDemo": "Ieșiți din demo",
+    "signInPrompt": "Autentificați-vă pentru a începe o revizuire",
+    "noCodePrompt": "Introduceți cod sau importați un proiect pentru revizuire",
+    "resultsMetadata": {
+      "title": "Rezultate analiză | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "Copiat în clipboard",
+      "copyFailed": "Copierea a eșuat",
+      "exportSuccess": "Raport exportat cu succes",
+      "exportFailed": "Exportul raportului a eșuat",
+      "saveSuccess": "Salvat cu succes",
+      "saveFailed": "Salvarea a eșuat"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "Demo | VulnIQ",
+      "description": "Încercați pipeline-ul autonom de remediere a vulnerabilităților VulnIQ într-un mediu demo live."
+    },
+    "demoMode": "Mod demo",
+    "exitDemo": "Ieșiți din demo",
+    "pages": {
+      "home": {
+        "title": "Pagina principală demo"
+      },
+      "codeInput": {
+        "title": "Introducere cod"
+      },
+      "knowledgeBase": {
+        "title": "Bază de cunoștințe"
+      },
+      "results": {
+        "title": "Rezultate"
+      },
+      "profile": {
+        "title": "Profil"
+      },
+      "writeArticle": {
+        "title": "Scrieți articol"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "Admin | VulnIQ"
+    },
+    "verification": {
+      "title": "Verificare administrator",
+      "description": "Introduceți parola pentru a continua",
+      "emailLabel": "Email administrator",
+      "continueButton": "Continuați",
+      "verifyingButton": "Se verifică...",
+      "passwordLabel": "Parolă",
+      "verifyPasswordButton": "Verificați parola",
+      "useDifferentEmail": "Utilizați un alt email",
+      "setUpPasskey": "Configurați cheie de acces",
+      "startOver": "Reluați de la început"
+    },
+    "userManagement": {
+      "title": "Gestionarea utilizatorilor",
+      "description": "Vizualizați profilurile utilizatorilor și emiteți avertismente",
+      "totalLabel": "Total",
+      "warnedLabel": "Avertizați",
+      "bannedIpsLabel": "IP-uri blocate",
+      "searchPlaceholder": "Căutați utilizatori...",
+      "tableHeaders": {
+        "user": "Utilizator",
+        "email": "Email",
+        "status": "Status",
+        "joined": "Înregistrat",
+        "actions": "Acțiuni"
+      }
+    },
+    "articleStatus": {
+      "draft": "Schiță",
+      "pending": "În așteptare",
+      "inReview": "În revizuire",
+      "published": "Publicat",
+      "rejected": "Respins",
+      "pendingDeletion": "Ștergere în așteptare"
+    },
+    "nav": {
+      "users": "Utilizatori",
+      "articles": "Articole",
+      "supporters": "Susținători",
+      "createAdmin": "Creați administrator"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "imageUploadDisabledDemo": "Încărcarea imaginilor este dezactivată în modul demo"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "Hartă site | VulnIQ",
+      "description": "O hartă completă a tuturor paginilor disponibile pe VulnIQ."
+    },
+    "title": "Hartă site",
+    "description": "O hartă completă a tuturor paginilor disponibile pe VulnIQ."
+  },
+  "languageSelector": {
+    "selectLanguage": "Selectați limba",
+    "close": "Închideți",
+    "noLanguagesFound": "Nicio limbă găsită",
+    "search": "Căutați"
+  }
+}

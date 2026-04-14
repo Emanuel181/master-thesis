@@ -1,0 +1,710 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "Autonome AI-agenten die kwetsbaarheden detecteren, patchen en verifiëren op basis van uw documentatie."
+  },
+  "common": {
+    "loading": "Laden...",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "submit": "Verzenden",
+    "back": "Terug",
+    "search": "Zoeken",
+    "goHome": "Naar startpagina",
+    "tryAgain": "Opnieuw proberen"
+  },
+  "nav": {
+    "product": "Product",
+    "resources": "Bronnen",
+    "company": "Bedrijf",
+    "demo": "Demo",
+    "dashboard": "Dashboard",
+    "getStarted": "Aan de slag",
+    "go": "Ga",
+    "closeMenu": "Menu sluiten",
+    "openMenu": "Menu openen",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "AI-gestuurde beveiligingscoderecensie met autonome herstelacties."
+      },
+      "features": {
+        "label": "Functies",
+        "description": "Geavanceerde kwetsbaarheidsdetectie en AI-gedreven oplossingen."
+      },
+      "useCases": {
+        "label": "Toepassingen",
+        "description": "Ontdek hoe teams VulnIQ inzetten voor beveiliging."
+      },
+      "integrations": {
+        "label": "Integraties",
+        "description": "Verbinding maken met GitHub, GitLab en meer."
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "Blog",
+        "description": "Beveiligingsinzichten en best practices."
+      },
+      "changelog": {
+        "label": "Wijzigingenlog",
+        "description": "Laatste updates en releases."
+      },
+      "supporters": {
+        "label": "Supporters",
+        "description": "Mensen die dit project ondersteunen."
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "Steun ons op Product Hunt."
+      },
+      "tryDemo": {
+        "label": "Demo proberen",
+        "description": "Ervaar VulnIQ in actie."
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "Over ons",
+        "description": "Meer over onze missie en ons team."
+      },
+      "security": {
+        "label": "Beveiligingsbeleid",
+        "description": "Beleid voor kwetsbaarheidsmelding."
+      },
+      "contact": {
+        "label": "Contact",
+        "description": "Neem contact op met ons team."
+      }
+    }
+  },
+  "hero": {
+    "badge": "Open beta",
+    "headingPart1": "Beveiligings-",
+    "headingPart2": "herstel",
+    "headingPart3": "zonder",
+    "headingPart4": "hallucinaties.",
+    "subtitle": "Autonome AI-agenten die kwetsbaarheden detecteren, patchen en verifiëren. Elke oplossing is {highlight} met behulp van RAG.",
+    "subtitleHighlight": "verankerd in uw documentatie",
+    "subtitleBefore": "Autonome AI-agenten die kwetsbaarheden detecteren, patchen en verifiëren. Elke oplossing is ",
+    "subtitleAfter": " met behulp van RAG.",
+    "paperButton": "Paper in uitvoering...",
+    "demoButton": "Demo proberen"
+  },
+  "features": {
+    "sectionLabel": "Kwetsbaarheidsbeheer is cruciaal.",
+    "heading": "De volgende grens is",
+    "headingHighlight": "agentisch herstel",
+    "headingBefore": "De volgende grens is ",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "Gefundeerde beveiligingsintelligentie",
+        "description": "Elke agent haalt richtlijnen op uit uw beveiligingskennisbanken en use-case playbooks (bijv. veilig inloggen), zodat oplossingen consistent blijven met uw basiskennis."
+      },
+      "secureIngestion": {
+        "title": "Veilige code-ingestie",
+        "description": "Verbind GitHub of GitLab en importeer repositories in minuten. VulnIQ brengt uw codebase in kaart en bereidt deze voor op recensie, herstel, testen en rapportage."
+      },
+      "multiAgent": {
+        "title": "Multi-agent beveiligingsworkflow",
+        "description": "Een 4-agent pipeline: reviewer, implementer, tester, reporter. Met per agent gespecialiseerde prompts en kennisbank voor uw stack en beleid."
+      },
+      "automatedValidation": {
+        "title": "Geautomatiseerde beveiligingsvalidatie",
+        "description": "Na herstel valideert de Tester-agent de patches met gerichte beveiligingscontroles en bevestigt dat kwetsbaarheden zijn opgelost zonder het gedrag te verstoren."
+      },
+      "professionalReports": {
+        "title": "Professionele beveiligingsrapporten",
+        "description": "De Reporter-agent genereert kant-en-klare rapporten voor stakeholders: bevindingen, toegepaste patches, bewijs uit kennisbanken en testresultaten. Klaar voor audits."
+      }
+    },
+    "animatedLabels": {
+      "login": "LOGIN",
+      "auth": "AUTH",
+      "api": "API",
+      "grounded": "GEFUNDEERD",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "INGESTIE",
+      "reviewer": "REVIEWER",
+      "implement": "IMPLEMENTEER",
+      "tester": "TESTER",
+      "reporter": "REPORTER",
+      "active": "ACTIEF",
+      "testSuite": "TESTSUITE",
+      "running": "ACTIEF",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "MISLUKT",
+      "pass": "GESLAAGD",
+      "evidence": "BEWIJS",
+      "kbCited": "KB GECITEERD",
+      "report": "RAPPORT",
+      "generating": "GENEREREN",
+      "findings": "Bevindingen",
+      "fixesApplied": "Toegepaste Patches",
+      "testResults": "Testresultaten",
+      "recommendations": "Aanbevelingen"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "Eenvoudig en krachtig",
+    "heading": "Hoe {brand} werkt",
+    "headingBefore": "Hoe ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": " werkt",
+    "steps": {
+      "importCode": {
+        "title": "Importeer uw code",
+        "description": "Verbind GitHub of GitLab. Selecteer een repository en VulnIQ brengt uw codebase automatisch in kaart."
+      },
+      "aiReview": {
+        "title": "AI controleert kwetsbaarheden",
+        "description": "De Reviewer-agent scant uw code tegen uw kennisbank en beveiligingsnormen zoals CWE en OWASP."
+      },
+      "agentsRemediate": {
+        "title": "Agenten herstellen en testen",
+        "description": "De Implementer past oplossingen toe die verankerd zijn in uw documentatie. De Tester valideert dat elke patch de beveiligingscontroles doorstaat."
+      },
+      "exportReport": {
+        "title": "Exporteer geverifieerd rapport",
+        "description": "De Reporter compileert bevindingen, patches, bewijs en testresultaten in een auditklaar PDF-rapport."
+      }
+    }
+  },
+  "useCases": {
+    "heading": "Wie profiteert van VulnIQ?",
+    "description": "Van leerlingen tot teams, VulnIQ past zich aan uw workflow aan.",
+    "cases": {
+      "securityLearners": {
+        "title": "Beveiligingsstudenten",
+        "description": "Begrijp echte kwetsbaarheidpatronen en leer ze op te lossen met AI-begeleide herstelacties die verankerd zijn in industriestandaarden.",
+        "visualTitle": "Beveiligingsstudenten",
+        "visualSubtitle": "Leren door doen"
+      },
+      "startups": {
+        "title": "Startups",
+        "description": "Lever sneller veilige code zonder een dedicated beveiligingsteam. VulnIQ detecteert en herstelt kwetsbaarheden voordat ze de productie bereiken.",
+        "visualTitle": "Startups",
+        "visualSubtitle": "Snel vooruit, veilig blijven"
+      },
+      "universities": {
+        "title": "Universiteiten",
+        "description": "Onderwijs veilige codeerpraktijken met praktische, AI-ondersteunde kwetsbaarheidsdetectie en herstelloefeningen.",
+        "visualTitle": "Universiteiten",
+        "visualSubtitle": "Academisch onderzoek"
+      },
+      "openSource": {
+        "title": "Open source",
+        "description": "Houd uw open source project veilig met geautomatiseerde kwetsbaarheidscanning en AI-gestuurde oplossingen voor publieke repositories.",
+        "visualTitle": "Open source",
+        "visualSubtitle": "Gemeenschapsgedreven beveiliging"
+      },
+      "teamsOfProgrammers": {
+        "title": "Ontwikkelteams",
+        "description": "Integreer VulnIQ in uw ontwikkelworkflow voor consistent, kennisbank-gefundeerd beveiligingsherstel door uw gehele codebase.",
+        "visualTitle": "Ontwikkelteams",
+        "visualSubtitle": "Gezamenlijke beveiliging"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "Waarom {brand}?",
+    "headingBefore": "Waarom ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "?",
+    "description": "Zie hoe agentische RAG zich verhoudt tot traditionele statische analysetools.",
+    "columns": {
+      "feature": "Functie",
+      "traditionalScanners": "Traditionele scanners",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "Contextbewuste analyse",
+        "traditional": "Matcht patronen zonder de omliggende codelogica of projectspecifieke context te begrijpen.",
+        "vulniq": "Agenten halen relevante kennisbankitems op en redeneren over codecontext voordat ze handelen."
+      },
+      "falsePositiveRate": {
+        "label": "Fout-positief percentage",
+        "traditional": "Hoog — markeert veel niet-problemen, waarvoor handmatige triage nodig is om echte kwetsbaarheden te onderscheiden.",
+        "vulniq": "Gereduceerd — gefundeerde redenering filtert ruis door kruisverwijzingen met uw documentatie en normen."
+      },
+      "remediation": {
+        "label": "Herstel",
+        "traditional": "Geen ingebouwd — geeft een lijst met problemen en laat het oplossen volledig aan de ontwikkelaar over.",
+        "vulniq": "Autonoom — de Implementer-agent past gefundeerde oplossingen direct toe op uw codebase."
+      },
+      "knowledgeSources": {
+        "label": "Kennisbronnen",
+        "traditional": "Vaste regelsets en CVE-databases die niet kunnen worden aangepast voor uw stack.",
+        "vulniq": "Uw eigen beveiligingskennisbanken, playbooks, CWE, OWASP en stack-specifieke richtlijnen."
+      },
+      "fixVerification": {
+        "label": "Oplossingsverificatie",
+        "traditional": "Geen — geen geautomatiseerde manier om te bevestigen dat een voorgestelde oplossing de kwetsbaarheid daadwerkelijk verhelpt.",
+        "vulniq": "Ingebouwd — de Tester-agent voert gerichte beveiligingscontroles uit nadat elke patch is toegepast."
+      },
+      "reporting": {
+        "label": "Rapportage",
+        "traditional": "Ruwe scanuitvoer die handmatige opmaak vereist voordat deze met stakeholders kan worden gedeeld.",
+        "vulniq": "Kant-en-klare PDF-rapporten voor stakeholders met bevindingen, patches, bewijs en testresultaten."
+      }
+    }
+  },
+  "faq": {
+    "heading": "Veelgestelde vragen",
+    "description": "Alles wat u moet weten over VulnIQ en hoe het uw code kan beveiligen.",
+    "stillHaveQuestions": "Heeft u nog vragen?",
+    "askThemHere": "Stel ze hier →",
+    "items": {
+      "q1": {
+        "question": "Wat is VulnIQ?",
+        "answer": "VulnIQ is een autonoom beveiligingsherstelplatform dat wordt aangedreven door een multi-agent RAG-pipeline. Het detecteert kwetsbaarheden in uw code, past gefundeerde oplossingen toe met behulp van uw eigen beveiligingskennisbanken, valideert patches met gerichte tests en genereert auditklare rapporten — allemaal zonder handmatige tussenkomst."
+      },
+      "q2": {
+        "question": "Hoe verschilt VulnIQ van traditionele statische analysetools?",
+        "answer": "Traditionele statische analysetools matchen patronen tegen vaste regelsets en produceren een lijst met problemen zonder herstel. VulnIQ gebruikt een 4-agent pipeline (Reviewer, Implementer, Tester, Reporter) aangevuld met retrieval-augmented generation, zodat elke oplossing verankerd is in uw documentatie en beveiligingsnormen, geverifieerd door geautomatiseerde tests en samengesteld in een rapport voor stakeholders."
+      },
+      "q3": {
+        "question": "Welke programmeertalen ondersteunt VulnIQ?",
+        "answer": "VulnIQ richt zich momenteel op webtoepassingstalen en -frameworks die het meest geassocieerd worden met OWASP Top 10-kwetsbaarheden. Ondersteuning wordt actief uitgebreid — raadpleeg de wijzigingenlog voor de laatste taaltoevoegingen."
+      },
+      "q4": {
+        "question": "Kan VulnIQ integreren met mijn CI/CD-pipeline?",
+        "answer": "CI/CD-integratie staat op de roadmap. Momenteel maakt VulnIQ direct verbinding met GitHub- en GitLab-repositories voor on-demand scanning en herstel. Webhook-gestuurde en geplande pipeline-runs zijn gepland voor een toekomstige release."
+      },
+      "q5": {
+        "question": "Welke AI-providers gebruikt VulnIQ?",
+        "answer": "VulnIQ is modelagnostisch van ontwerp. Het platform is geconfigureerd om te werken met toonaangevende LLM-providers. Specifieke modelselectie en providerinformatie zijn beschikbaar in de documentatie en kunnen variëren per implementatieomgeving."
+      },
+      "q6": {
+        "question": "Is er een gratis versie?",
+        "answer": "VulnIQ bevindt zich momenteel in open beta als onderzoeksproject. U kunt de volledige demo uitproberen zonder u aan te melden. Op accounts gebaseerde toegang is beschikbaar — raadpleeg de prijspagina of neem contact met ons op voor details over huidige toegangsniveaus."
+      },
+      "q7": {
+        "question": "Hoe nauwkeurig is het herstel van VulnIQ?",
+        "answer": "De nauwkeurigheid hangt af van de kwaliteit van de aangeleverde kennisbanken en de complexiteit van de kwetsbaarheid. Door elke oplossing te verankeren in uw documentatie en te valideren met de Tester-agent, vermindert VulnIQ fout-positieven en niet-geverifieerde patches aanzienlijk in vergelijking met niet-ondersteunde LLM-uitvoer. Kwantitatieve resultaten worden gerapporteerd in het bijbehorende scriptieonderzoek."
+      }
+    },
+    "askDialog": {
+      "title": "Een vraag stellen",
+      "description": "Stuur ons uw vraag en we nemen zo snel mogelijk contact met u op.",
+      "emailLabel": "E-mail",
+      "questionLabel": "Uw vraag",
+      "emailPlaceholder": "uw@email.com",
+      "questionPlaceholder": "Wat wilt u weten?",
+      "sendButton": "Vraag versturen",
+      "sendingButton": "Versturen...",
+      "successTitle": "Vraag verzonden!",
+      "successDescription": "We reageren binnenkort op uw e-mail."
+    }
+  },
+  "cta": {
+    "title": "Begin met beveiligen",
+    "button": "Aan de slag"
+  },
+  "blogSection": {
+    "heading": "Beveiligingskenniscentrum",
+    "description": "Deskundige inzichten over applicatiebeveiliging, kwetsbaarheidsdetectie en veilige ontwikkelpraktijken van het VulnIQ-team.",
+    "readArticle": "Artikel lezen",
+    "noArticles": "Nog geen artikelen",
+    "noArticlesDescription": "Onze beveiligingsexperts werken aan nieuwe inhoud. Kom binnenkort terug voor inzichten over applicatiebeveiliging en kwetsbaarheidsdetectie.",
+    "viewAllArticles": "Alle artikelen bekijken"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "Autonoom beveiligingsherstel aangedreven door retrieval-augmented generation.",
+    "followUs": "Volg ons op",
+    "productHunt": "Product Hunt",
+    "resources": "Bronnen",
+    "haveFeedback": "Heeft u feedback?",
+    "changelog": "Wijzigingenlog",
+    "sitemap": "Sitemap",
+    "supporters": "Supporters",
+    "viewThesisPaper": "Scriptie bekijken (in uitvoering...)",
+    "serviceStatus": {
+      "operational": "Diensten zijn operationeel",
+      "diagnosing": "Probleem wordt gediagnosticeerd en opgelost",
+      "down": "Systemen zijn offline",
+      "idle": "Systemen zijn inactief"
+    },
+    "thesis": {
+      "label": "Masterthesis",
+      "author": "Emanuel Rusu",
+      "university": "West-Universiteit van Timișoara",
+      "faculty": "Faculteit Informatica",
+      "degree": "MSc Cybersecurity",
+      "connectLinkedIn": "Verbinden op LinkedIn"
+    },
+    "newsletter": {
+      "heading": "Blijf op de hoogte",
+      "description": "Ontvang meldingen over nieuwe functies en onderzoeksupdates.",
+      "emailPlaceholder": "Voer uw e-mailadres in",
+      "subscribeButton": "Abonneren",
+      "subscribingButton": "Abonneren...",
+      "successMessage": "Succesvol geabonneerd",
+      "invalidEmail": "Voer een geldig e-mailadres in"
+    },
+    "backToTop": "Terug naar boven",
+    "copyright": "© 2026 VulnIQ. Alle rechten voorbehouden.",
+    "madeIn": "Gemaakt in RO, Timișoara",
+    "privacyPolicy": "Privacybeleid",
+    "termsConditions": "Algemene voorwaarden",
+    "vulnerabilityDisclosure": "Beleid voor kwetsbaarheidsmelding",
+    "manageCookies": "Cookies beheren",
+    "openBetaBadge": "Open beta • Onderzoeksproject •",
+    "feedbackDialog": {
+      "title": "Uw feedback delen",
+      "description": "We horen graag uw gedachten over hoe we kunnen verbeteren.",
+      "feedbackLabel": "Uw feedback",
+      "feedbackPlaceholder": "Vertel ons wat u denkt...",
+      "cancelButton": "Annuleren",
+      "submitButton": "Feedback verzenden",
+      "submittingButton": "Verzenden..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "Over | VulnIQ",
+      "description": "Meer over VulnIQ — een masterscriptieproject dat agentische RAG onderzoekt voor geautomatiseerd herstel van kwetsbaarheden."
+    },
+    "headingPart1": "Agentische RAG voor",
+    "headingHighlight": "geautomatiseerde programmareparatie",
+    "intro": "Een masterscriptieproject dat de effectiviteit onderzoekt van LLM-gebaseerde agenten uitgebreid met gespecialiseerde beveiligingskennis voor kwetsbaarheidsherstel.",
+    "problemStatement": {
+      "heading": "Probleemstelling",
+      "body": "Grote taalmodellen tonen aanzienlijke belofte voor geautomatiseerde programmareparatie, maar hun toepassing op beveiligingskwetsbaarheidsherstel blijft onderbelicht. Bestaande benaderingen steunen op generieke modelcapaciteiten zonder oplossingen te verankeren in gezaghebbende beveiligingskennis, wat leidt tot gehallucineede patches, inconsistente herstelkwaliteit en geen geautomatiseerde verificatie of een oplossing de kwetsbaarheid daadwerkelijk verhelpt."
+    },
+    "limitations": {
+      "heading": "Beperkingen van huidige benaderingen",
+      "body": "Statische analysetools identificeren kwetsbaarheden maar bieden geen herstel. LLM-gebaseerde tools genereren oplossingen zonder verankering in projectspecifiek beveiligingsbeleid of gevalideerde kennisbanken, wat resulteert in een hoog aantal fout-positieven en niet-verifieerbare patches die aanzienlijke handmatige beoordeling vereisen voordat ze vertrouwd kunnen worden."
+    },
+    "methodology": {
+      "heading": "Voorgestelde methodologie",
+      "body1": "VulnIQ implementeert een retrieval-augmented generation architectuur bestaande uit vier gespecialiseerde agenten: een Reviewer die kwetsbaarheden identificeert aan de hand van gecureerde kennisbanken, een Implementer die gefundeerde oplossingen toepast, een Tester die elke patch valideert met gerichte beveiligingscontroles, en een Reporter die auditklare documentatie samenstelt.",
+      "body2": "Elke agent is uitgerust met een toegewijde vectorkennisbank met CWE-vermeldingen, OWASP-richtlijnen, stack-specifieke veilige coderingspatronen en use-case playbooks. Retrieval zorgt ervoor dat elke beslissing van de pipeline herleidbaar is naar een specifieke kennisbron, wat reproduceerbaar en auditeerbaar herstel mogelijk maakt."
+    },
+    "keyCapabilities": {
+      "heading": "Kernmogelijkheden",
+      "items": [
+        "Retrieval-augmented kwetsbaarheidsherstel verankerd in uw beveiligingskennisbanken",
+        "End-to-end 4-agent pipeline met geautomatiseerde oplossingsverificatie en testvalidatie",
+        "Auditklare PDF-rapportage met bewijscitaten en volledige patchtraceerbaarheid"
+      ]
+    },
+    "researchContributions": "Onderzoeksbijdragen",
+    "researchObjectives": "Onderzoeksdoelstellingen",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "Contextuele precisie",
+        "description": "Evalueer of RAG-uitgebreide agenten contextueel nauwkeurigere oplossingen produceren dan niet-ondersteunde LLM's door herstel te verankeren in projectspecifieke kennisbanken."
+      },
+      "automatedReasoning": {
+        "title": "Geautomatiseerd redeneren",
+        "description": "Onderzoek in welke mate multi-agent redeneren kwetsbaarheden autonoom kan identificeren, prioriteren en oplossen zonder menselijke tussenkomst."
+      },
+      "fixVerification": {
+        "title": "Oplossingsverificatie",
+        "description": "Beoordeel of geautomatiseerde testgeneratie en -uitvoering door de Tester-agent betrouwbare verificatie biedt dat toegepaste patches de beoogde kwetsbaarheid verhelpen."
+      },
+      "knowledgeGrounding": {
+        "title": "Kennisverankering",
+        "description": "Meet de impact van gespecialiseerde beveiligingskennisbanken op herstelkwaliteit, consistentie en traceerbaarheid in vergelijking met generieke modelkennis."
+      },
+      "reportQuality": {
+        "title": "Rapportkwaliteit",
+        "description": "Bepaal of door agenten gegenereerde beveiligingsrapporten voldoen aan de normen die vereist zijn voor stakeholderscommunicatie en compliance-auditscenario's."
+      },
+      "scalability": {
+        "title": "Schaalbaarheid",
+        "description": "Onderzoek de pipelineprestaties over repositories van variërende omvang, taalvariëteit en kwetsbaarheidscomplexiteit om praktische implementatiegrenzen te bepalen."
+      }
+    },
+    "aboutResearch": "Over het onderzoek",
+    "viewPrototype": "Prototype bekijken",
+    "builtWith": "Gebouwd met moderne technologieën"
+  },
+  "blog": {
+    "metadata": {
+      "title": "Blog | VulnIQ",
+      "description": "Beveiligingsinzichten, kwetsbaarheidsonderzoek en best practices voor veilige ontwikkeling van het VulnIQ-team."
+    },
+    "readTime": "{minutes} min lezen",
+    "postNotFound": "Bericht niet gevonden",
+    "postNotFoundDescription": "Het artikel dat u zoekt, is mogelijk verplaatst of verwijderd.",
+    "backToBlog": "Terug naar blog",
+    "publishedOn": "Gepubliceerd op {date}",
+    "by": "Door {author}",
+    "shareArticle": "Artikel delen",
+    "tableOfContents": "Inhoudsopgave"
+  },
+  "login": {
+    "metadata": {
+      "title": "Inloggen — VulnIQ"
+    },
+    "tag": "Codebeveiliging",
+    "headline": "Standaard autonoom",
+    "featureDescription1": "De multi-agent pipeline van VulnIQ detecteert kwetsbaarheden, past gefundeerde oplossingen toe uit uw kennisbanken, valideert patches met geautomatiseerde tests en levert auditklare rapporten — volledig zonder handmatige tussenkomst.",
+    "featureDescription2": "Elke herstelbesli ssis herleidbaar naar een specifieke kennisbron, waardoor uw beveiligingsworkflow reproduceerbaar, consistent en klaar is voor compliance-beoordeling.",
+    "backToHome": "Terug naar startpagina",
+    "agreementPrefix": "Door verder te gaan, gaat u akkoord met VulnIQ's",
+    "agreementAnd": "en",
+    "agreementSuffix": ".",
+    "termsLabel": "Voorwaarden",
+    "privacyLabel": "Privacybeleid",
+    "serviceStatus": {
+      "operational": "Diensten zijn operationeel",
+      "diagnosing": "Probleem wordt gediagnosticeerd en opgelost",
+      "down": "Systemen zijn offline",
+      "idle": "Systemen zijn inactief"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "Privacybeleid | VulnIQ",
+      "description": "VulnIQ privacybeleid — hoe we uw gegevens verzamelen, gebruiken en beschermen."
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "Algemene voorwaarden | VulnIQ",
+      "description": "Algemene gebruiksvoorwaarden van VulnIQ."
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "Beveiliging | VulnIQ",
+      "description": "VulnIQ beleid voor kwetsbaarheidsmelding en beveiligingspraktijken."
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "Wijzigingenlog | VulnIQ",
+      "description": "Laatste updates, verbeteringen en releases voor VulnIQ."
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "Supporters | VulnIQ",
+      "description": "Personen en organisaties die het VulnIQ-onderzoeksproject ondersteunen."
+    }
+  },
+  "notFound": {
+    "title": "Deze pagina bestaat niet",
+    "description": "De pagina die u zoekt, is mogelijk verplaatst, verwijderd of heeft nooit bestaan.",
+    "backButton": "Terug naar vorige pagina"
+  },
+  "error": {
+    "title": "Er is iets misgegaan",
+    "description": "We zijn een onverwachte fout tegengekomen. Ons team is op de hoogte gesteld.",
+    "errorId": "Fout-ID",
+    "copyErrorDetails": "Foutdetails kopiëren",
+    "contactPrompt": "Als dit probleem aanhoudt, neem dan contact op met"
+  },
+  "cookie": {
+    "title": "Uw Cookie-opties",
+    "basicDescription": "Kies hieronder of deze site functionele en/of advertentiecookies mag gebruiken, zoals hieronder beschreven:",
+    "essential": {
+      "label": "Vereiste Cookies",
+      "shortDesc": "Noodzakelijk voor de basisfunctionaliteit van de site.",
+      "description": "Deze cookies zijn noodzakelijk voor het functioneren van de website en kunnen niet worden uitgeschakeld in onze systemen."
+    },
+    "analytics": {
+      "label": "Functionele Cookies",
+      "shortDesc": "Helpen ons de prestaties te meten en te verbeteren.",
+      "description": "Deze cookies stellen ons in staat het gebruik van de site te analyseren, zodat we de prestaties kunnen meten en verbeteren."
+    },
+    "marketing": {
+      "label": "Advertentiecookies",
+      "shortDesc": "Worden gebruikt voor het tonen van relevante advertenties.",
+      "description": "Deze cookies worden gebruikt om advertenties te tonen die relevant zijn voor uw interesses."
+    },
+    "allowedFunctionality": "Toegestane Functionaliteit",
+    "disallowedFunctionality": "Niet-toegestane Functionaliteit",
+    "functionality": {
+      "secureAuth": "Veilige authenticatie",
+      "sessionState": "Uw sessie onthouden",
+      "rememberAuth": "Uw inloggegevens onthouden",
+      "retainCart": "De inhoud van uw winkelwagen bewaren",
+      "siteConsistency": "Zorgen voor consistentie van de site",
+      "socialSharing": "Pagina's delen op sociale netwerken",
+      "postComments": "U toestaan opmerkingen te plaatsen",
+      "targetedAds": "Advertenties tonen op basis van uw interesses"
+    },
+    "submitPreferences": "Voorkeuren opslaan",
+    "advancedSettings": "Geavanceerde Instellingen",
+    "basicSettings": "Basisinstellingen",
+    "cancel": "Annuleren",
+    "alwaysActive": "Altijd Actief",
+    "showCookies": "Cookies tonen",
+    "hideCookies": "Cookies verbergen",
+    "providerCompany": "Bedrijf",
+    "providerDomain": "Domein",
+    "learnMore": "Meer informatie",
+    "done": "Klaar"
+  },
+  "accessibility": {
+    "widgetTitle": "Toegankelijkheid",
+    "customizeExperience": "Uw ervaring aanpassen",
+    "resetAll": "Alle instellingen resetten",
+    "resetAllButton": "Alle toegankelijkheidsinstellingen resetten",
+    "dragToMove": "Toegankelijkheidsopties (slepen om te verplaatsen)",
+    "accessibilityOptions": "Toegankelijkheidsopties",
+    "openMenu": "Toegankelijkheidsmenu openen",
+    "features": {
+      "smartContrast": "Slim contrast",
+      "stopAnimations": "Animaties stoppen",
+      "dyslexiaFriendly": "Dislexievriendelijk",
+      "invertColors": "Kleuren omkeren",
+      "highlightLinks": "Links markeren",
+      "biggerText": "Grotere tekst",
+      "lightSpacing": "Ruime spatiëring",
+      "hideImages": "Afbeeldingen verbergen",
+      "bigCursor": "Grote cursor",
+      "tooltips": "Tooltips",
+      "pageStructure": "Paginastructuur",
+      "lineHeight": "Regelafstand",
+      "alignLeft": "Links uitlijnen",
+      "lowSaturation": "Lage verzadiging",
+      "readingGuide": "Leeshulp",
+      "focusIndicator": "Focusindicator"
+    },
+    "structure": {
+      "headings": "Koppen",
+      "landmarks": "Oriëntatiepunten",
+      "links": "Links",
+      "noHeadings": "Geen koppen gevonden",
+      "noLandmarks": "Geen oriëntatiepunten gevonden",
+      "noLinks": "Geen links gevonden",
+      "noText": "(geen tekst)"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "Dashboard | VulnIQ"
+    },
+    "nav": {
+      "home": "Startpagina",
+      "codeInspection": "Code-inspectie",
+      "knowledgeBase": "Kennisbank",
+      "results": "Resultaten",
+      "codeGraph": "Codegraph",
+      "writeArticle": "Artikel schrijven"
+    },
+    "searchActions": "Acties zoeken...",
+    "quickActions": "Snelle acties",
+    "error": {
+      "title": "Dashboardfout",
+      "description": "Er is een probleem opgetreden bij het laden van het dashboard."
+    },
+    "demoMode": "Demomodus",
+    "exitDemo": "Demo afsluiten",
+    "signInPrompt": "Meld u aan om een beoordeling te starten",
+    "noCodePrompt": "Voer code in of importeer een project om te beoordelen",
+    "resultsMetadata": {
+      "title": "Analyseresultaten | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "Gekopieerd naar klembord",
+      "copyFailed": "Kopiëren mislukt",
+      "exportSuccess": "Rapport succesvol geëxporteerd",
+      "exportFailed": "Exporteren van rapport mislukt",
+      "saveSuccess": "Succesvol opgeslagen",
+      "saveFailed": "Opslaan mislukt"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "Demo | VulnIQ",
+      "description": "Probeer VulnIQ's autonome kwetsbaarheidsherstel pipeline in een live demo-omgeving."
+    },
+    "demoMode": "Demomodus",
+    "exitDemo": "Demo afsluiten",
+    "pages": {
+      "home": {
+        "title": "Demo startpagina"
+      },
+      "codeInput": {
+        "title": "Code-invoer"
+      },
+      "knowledgeBase": {
+        "title": "Kennisbank"
+      },
+      "results": {
+        "title": "Resultaten"
+      },
+      "profile": {
+        "title": "Profiel"
+      },
+      "writeArticle": {
+        "title": "Artikel schrijven"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "Beheer | VulnIQ"
+    },
+    "verification": {
+      "title": "Beheerdersverificatie",
+      "description": "Voer uw wachtwoord in om door te gaan",
+      "emailLabel": "Beheerderse-mail",
+      "continueButton": "Doorgaan",
+      "verifyingButton": "Verifiëren...",
+      "passwordLabel": "Wachtwoord",
+      "verifyPasswordButton": "Wachtwoord verifiëren",
+      "useDifferentEmail": "Ander e-mailadres gebruiken",
+      "setUpPasskey": "Toegangssleutel instellen",
+      "startOver": "Opnieuw beginnen"
+    },
+    "userManagement": {
+      "title": "Gebruikersbeheer",
+      "description": "Gebruikersprofielen bekijken en waarschuwingen versturen",
+      "totalLabel": "Totaal",
+      "warnedLabel": "Gewaarschuwd",
+      "bannedIpsLabel": "Geblokkeerde IP's",
+      "searchPlaceholder": "Gebruikers zoeken...",
+      "tableHeaders": {
+        "user": "Gebruiker",
+        "email": "E-mail",
+        "status": "Status",
+        "joined": "Lid sinds",
+        "actions": "Acties"
+      }
+    },
+    "articleStatus": {
+      "draft": "Concept",
+      "pending": "In behandeling",
+      "inReview": "In beoordeling",
+      "published": "Gepubliceerd",
+      "rejected": "Afgewezen",
+      "pendingDeletion": "In afwachting van verwijdering"
+    },
+    "nav": {
+      "users": "Gebruikers",
+      "articles": "Artikelen",
+      "supporters": "Supporters",
+      "createAdmin": "Beheerder aanmaken"
+    }
+  },
+  "profile": {
+    "title": "Profiel",
+    "imageUploadDisabledDemo": "Afbeelding uploaden is uitgeschakeld in demomodus"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "Sitemap | VulnIQ",
+      "description": "Een volledig overzicht van alle beschikbare pagina's op VulnIQ."
+    },
+    "title": "Sitemap",
+    "description": "Een volledig overzicht van alle beschikbare pagina's op VulnIQ."
+  },
+  "languageSelector": {
+    "selectLanguage": "Taal selecteren",
+    "close": "Sluiten",
+    "noLanguagesFound": "Geen talen gevonden",
+    "search": "Zoeken"
+  }
+}

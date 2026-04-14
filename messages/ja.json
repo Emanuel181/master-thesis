@@ -1,0 +1,710 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "お客様のドキュメントに基づいて脆弱性を検出・修正・検証する自律型AIエージェント。"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "submit": "送信",
+    "back": "戻る",
+    "search": "検索",
+    "goHome": "ホームへ",
+    "tryAgain": "再試行"
+  },
+  "nav": {
+    "product": "プロダクト",
+    "resources": "リソース",
+    "company": "会社情報",
+    "demo": "デモ",
+    "dashboard": "ダッシュボード",
+    "getStarted": "始める",
+    "go": "移動",
+    "closeMenu": "メニューを閉じる",
+    "openMenu": "メニューを開く",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "AIによる自律的な修正機能を備えたセキュリティコードレビュー。"
+      },
+      "features": {
+        "label": "機能",
+        "description": "高度な脆弱性検出とAIによる修正。"
+      },
+      "useCases": {
+        "label": "ユースケース",
+        "description": "チームがVulnIQをセキュリティにどう活用しているかをご確認ください。"
+      },
+      "integrations": {
+        "label": "インテグレーション",
+        "description": "GitHub、GitLabなどと連携できます。"
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "ブログ",
+        "description": "セキュリティの洞察とベストプラクティス。"
+      },
+      "changelog": {
+        "label": "変更履歴",
+        "description": "最新のアップデートとリリース情報。"
+      },
+      "supporters": {
+        "label": "サポーター",
+        "description": "このプロジェクトを支援している方々。"
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "Product Huntで応援してください。"
+      },
+      "tryDemo": {
+        "label": "デモを試す",
+        "description": "VulnIQの機能を実際に体験できます。"
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "私たちについて",
+        "description": "私たちのミッションとチームをご紹介します。"
+      },
+      "security": {
+        "label": "セキュリティポリシー",
+        "description": "脆弱性開示ポリシー。"
+      },
+      "contact": {
+        "label": "お問い合わせ",
+        "description": "チームにご連絡ください。"
+      }
+    }
+  },
+  "hero": {
+    "badge": "オープンベータ",
+    "headingPart1": "幻覚なしの",
+    "headingPart2": "セキュリティ",
+    "headingPart3": "修復",
+    "headingPart4": "。",
+    "subtitle": "脆弱性を検出・修正・検証する自律型AIエージェント。すべての修正はRAGを使用して{highlight}。",
+    "subtitleHighlight": "お客様のドキュメントに基づいています",
+    "subtitleBefore": "脆弱性を検出・修正・検証する自律型AIエージェント。すべての修正はRAGを使用して",
+    "subtitleAfter": "。",
+    "paperButton": "論文執筆中...",
+    "demoButton": "デモを試す"
+  },
+  "features": {
+    "sectionLabel": "脆弱性管理は非常に重要です。",
+    "heading": "次のフロンティアは{highlight}です",
+    "headingHighlight": "エージェント型修復",
+    "headingBefore": "次のフロンティアは",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "根拠に基づいたセキュリティインテリジェンス",
+        "description": "各エージェントはセキュリティナレッジベースとユースケースプレイブック（例：安全なログイン）からガイダンスを取得し、修正内容がグラウンドトゥルースと一致するようにします。"
+      },
+      "secureIngestion": {
+        "title": "安全なコードの取り込み",
+        "description": "GitHubまたはGitLabを接続し、数分でリポジトリをインポートできます。VulnIQはコードベースをマッピングし、レビュー・修復・テスト・レポートに備えます。"
+      },
+      "multiAgent": {
+        "title": "マルチエージェントセキュリティワークフロー",
+        "description": "4エージェントのパイプライン：レビュアー、インプリメンター、テスター、レポーター。エージェントごとに専用のプロンプトと、技術スタック・ポリシーに対応したナレッジベースを装備しています。"
+      },
+      "automatedValidation": {
+        "title": "自動化されたセキュリティ検証",
+        "description": "修復後、テスターエージェントが目標を絞ったセキュリティチェックで修正を検証し、動作を壊さずに脆弱性が解消されていることを確認します。"
+      },
+      "professionalReports": {
+        "title": "プロフェッショナルなセキュリティレポート",
+        "description": "レポーターエージェントがステークホルダー向けのレポートを生成します。発見事項、適用されたパッチ、ナレッジベースからの証拠、テスト結果を含み、監査対応が可能です。"
+      }
+    },
+    "animatedLabels": {
+      "login": "ログイン",
+      "auth": "認証",
+      "api": "API",
+      "grounded": "根拠あり",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "取り込み",
+      "reviewer": "レビュアー",
+      "implement": "実装",
+      "tester": "テスター",
+      "reporter": "レポーター",
+      "active": "稼働中",
+      "testSuite": "テストスイート",
+      "running": "実行中",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "失敗",
+      "pass": "合格",
+      "evidence": "証拠",
+      "kbCited": "KB引用",
+      "report": "レポート",
+      "generating": "生成中",
+      "findings": "検出事項",
+      "fixesApplied": "適用済み修正",
+      "testResults": "テスト結果",
+      "recommendations": "推奨事項"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "シンプルかつ強力",
+    "heading": "{brand}の仕組み",
+    "headingBefore": "",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "の仕組み",
+    "steps": {
+      "importCode": {
+        "title": "コードをインポートする",
+        "description": "GitHubまたはGitLabを接続し、リポジトリを選択するとVulnIQがコードベースを自動的にマッピングします。"
+      },
+      "aiReview": {
+        "title": "AIが脆弱性をレビューする",
+        "description": "レビュアーエージェントがナレッジベースとCWEおよびOWASPなどのセキュリティ標準に照らしてコードをスキャンします。"
+      },
+      "agentsRemediate": {
+        "title": "エージェントが修復・テストする",
+        "description": "インプリメンターがドキュメントに基づいた修正を適用します。テスターが各パッチのセキュリティチェック合格を検証します。"
+      },
+      "exportReport": {
+        "title": "検証済みレポートを出力する",
+        "description": "レポーターが発見事項・パッチ・証拠・テスト結果を監査対応のPDFレポートにまとめます。"
+      }
+    }
+  },
+  "useCases": {
+    "heading": "VulnIQから誰が恩恵を受けますか？",
+    "description": "学習者からチームまで、VulnIQはお客様のワークフローに適応します。",
+    "cases": {
+      "securityLearners": {
+        "title": "セキュリティ学習者",
+        "description": "業界標準に基づくAIガイド付き修復を通じて、実際の脆弱性パターンとその修正方法を理解できます。",
+        "visualTitle": "セキュリティ学習者",
+        "visualSubtitle": "実践で学ぶ"
+      },
+      "startups": {
+        "title": "スタートアップ",
+        "description": "専任のセキュリティチームなしで安全なコードをより速くリリースできます。VulnIQが本番環境に到達する前に脆弱性を検出・修正します。",
+        "visualTitle": "スタートアップ",
+        "visualSubtitle": "スピードと安全を両立"
+      },
+      "universities": {
+        "title": "大学・教育機関",
+        "description": "AIを活用した脆弱性検出・修復演習を通じて、安全なコーディングの実践を教育します。",
+        "visualTitle": "大学・教育機関",
+        "visualSubtitle": "学術研究"
+      },
+      "openSource": {
+        "title": "オープンソース",
+        "description": "自動脆弱性スキャンとAIによる修正で、公開リポジトリのオープンソースプロジェクトを安全に保ちます。",
+        "visualTitle": "オープンソース",
+        "visualSubtitle": "コミュニティ主導のセキュリティ"
+      },
+      "teamsOfProgrammers": {
+        "title": "開発チーム",
+        "description": "VulnIQを開発ワークフローに統合し、コードベース全体で一貫したナレッジベースに基づくセキュリティ修復を実現します。",
+        "visualTitle": "開発チーム",
+        "visualSubtitle": "協調的なセキュリティ"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "なぜ{brand}なのか？",
+    "headingBefore": "なぜ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "なのか？",
+    "description": "エージェント型RAGが従来の静的解析ツールとどう違うかをご確認ください。",
+    "columns": {
+      "feature": "機能",
+      "traditionalScanners": "従来型スキャナー",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "コンテキスト対応分析",
+        "traditional": "周囲のコードロジックやプロジェクト固有のコンテキストを理解せずにパターンマッチングを行います。",
+        "vulniq": "エージェントが関連するナレッジベースエントリを取得し、行動する前にコードコンテキストについて推論します。"
+      },
+      "falsePositiveRate": {
+        "label": "誤検知率",
+        "traditional": "高い — 多くの非問題をフラグし、実際の脆弱性を分類するために手動トリアージが必要です。",
+        "vulniq": "低減 — 根拠に基づく推論がドキュメントと標準を相互参照してノイズを除去します。"
+      },
+      "remediation": {
+        "label": "修復",
+        "traditional": "組み込みなし — 問題のリストを出力し、修正は完全に開発者に委ねられます。",
+        "vulniq": "自律的 — インプリメンターエージェントが根拠に基づいた修正をコードベースに直接適用します。"
+      },
+      "knowledgeSources": {
+        "label": "知識ソース",
+        "traditional": "技術スタックに合わせてカスタマイズできない固定ルールセットとCVEデータベース。",
+        "vulniq": "お客様独自のセキュリティナレッジベース・プレイブック、CWE、OWASP、スタック固有のガイダンス。"
+      },
+      "fixVerification": {
+        "label": "修正の検証",
+        "traditional": "なし — 提案された修正が実際に脆弱性を解消するかを確認する自動化手段がありません。",
+        "vulniq": "組み込み — テスターエージェントが各パッチ適用後に目標を絞ったセキュリティチェックを実行します。"
+      },
+      "reporting": {
+        "label": "レポーティング",
+        "traditional": "ステークホルダーと共有する前に手動フォーマットが必要な生のスキャン出力。",
+        "vulniq": "発見事項・パッチ・証拠引用・テスト結果を含むステークホルダー向けPDFレポート。"
+      }
+    }
+  },
+  "faq": {
+    "heading": "よくある質問",
+    "description": "VulnIQとそのコード保護機能についてのすべての情報。",
+    "stillHaveQuestions": "まだご質問がありますか？",
+    "askThemHere": "こちらでお尋ねください →",
+    "items": {
+      "q1": {
+        "question": "VulnIQとは何ですか？",
+        "answer": "VulnIQは、マルチエージェントRAGパイプラインを活用した自律型セキュリティ修復プラットフォームです。コード内の脆弱性を検出し、お客様独自のセキュリティナレッジベースを使用して根拠に基づいた修正を適用し、目標を絞ったテストでパッチを検証し、監査対応レポートを生成します。すべて手動介入なしで完結します。"
+      },
+      "q2": {
+        "question": "VulnIQは従来の静的解析ツールとどう違いますか？",
+        "answer": "従来の静的解析ツールは固定ルールセットに対してパターンマッチングを行い、修復なしで問題のリストを生成します。VulnIQは検索拡張生成で強化された4エージェントパイプライン（レビュアー、インプリメンター、テスター、レポーター）を使用するため、すべての修正がお客様のドキュメントとセキュリティ標準に基づき、自動化テストで検証され、ステークホルダー向けレポートにまとめられます。"
+      },
+      "q3": {
+        "question": "VulnIQはどのプログラミング言語をサポートしていますか？",
+        "answer": "VulnIQは現在、OWASP Top 10の脆弱性と最も関連の深いWebアプリケーション言語とフレームワークに焦点を当てています。サポートは積極的に拡大中です — 最新の言語追加については変更履歴をご確認ください。"
+      },
+      "q4": {
+        "question": "VulnIQはCI/CDパイプラインと統合できますか？",
+        "answer": "CI/CDの統合はロードマップに含まれています。現在、VulnIQはオンデマンドのスキャンと修復のためにGitHubおよびGitLabリポジトリに直接接続します。Webhookトリガーとスケジュール実行は将来のリリースで予定されています。"
+      },
+      "q5": {
+        "question": "VulnIQはどのAIプロバイダーを使用していますか？",
+        "answer": "VulnIQは設計上モデル非依存です。プラットフォームは主要なLLMプロバイダーと連携するよう設定されています。特定のモデル選択とプロバイダーの詳細はドキュメントに記載されており、デプロイ環境によって異なる場合があります。"
+      },
+      "q6": {
+        "question": "無料プランはありますか？",
+        "answer": "VulnIQは現在、研究プロジェクトとしてオープンベータ段階にあります。登録なしで完全なデモを試せます。アカウントベースのアクセスも利用可能です — 現在のアクセス層の詳細については料金ページをご確認いただくか、お問い合わせください。"
+      },
+      "q7": {
+        "question": "VulnIQの修復精度はどのくらいですか？",
+        "answer": "精度は提供されるナレッジベースの品質と脆弱性の複雑さによって異なります。すべての修正をドキュメントに基づかせ、テスターエージェントで検証することで、VulnIQは支援なしのLLM出力と比較して誤検知率と未検証パッチを大幅に削減します。定量的な結果は添付の学位論文に報告されています。"
+      }
+    },
+    "askDialog": {
+      "title": "質問を送る",
+      "description": "ご質問をお送りください。できるだけ早くご返信いたします。",
+      "emailLabel": "メールアドレス",
+      "questionLabel": "ご質問",
+      "emailPlaceholder": "your@email.com",
+      "questionPlaceholder": "何をお知りになりたいですか？",
+      "sendButton": "質問を送信する",
+      "sendingButton": "送信中...",
+      "successTitle": "質問が送信されました！",
+      "successDescription": "近日中にメールでご返信いたします。"
+    }
+  },
+  "cta": {
+    "title": "セキュリティを強化する",
+    "button": "今すぐ始める"
+  },
+  "blogSection": {
+    "heading": "セキュリティナレッジハブ",
+    "description": "VulnIQチームによるアプリケーションセキュリティ・脆弱性検出・安全な開発実践に関する専門家の洞察。",
+    "readArticle": "記事を読む",
+    "noArticles": "記事はまだありません",
+    "noArticlesDescription": "セキュリティ専門家が新しいコンテンツを作成中です。アプリケーションセキュリティと脆弱性検出に関する洞察をお楽しみに。",
+    "viewAllArticles": "すべての記事を見る"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "検索拡張生成技術を活用した自律型セキュリティ修復。",
+    "followUs": "フォローする",
+    "productHunt": "Product Hunt",
+    "resources": "リソース",
+    "haveFeedback": "フィードバックがありますか？",
+    "changelog": "変更履歴",
+    "sitemap": "サイトマップ",
+    "supporters": "サポーター",
+    "viewThesisPaper": "学位論文を見る（執筆中...）",
+    "serviceStatus": {
+      "operational": "サービスは正常に動作しています",
+      "diagnosing": "問題を診断中、修正中",
+      "down": "システム停止中",
+      "idle": "システムアイドル"
+    },
+    "thesis": {
+      "label": "修士論文",
+      "author": "Emanuel Rusu",
+      "university": "West University of Timișoara",
+      "faculty": "コンピュータサイエンス学部",
+      "degree": "サイバーセキュリティ理学修士",
+      "connectLinkedIn": "LinkedInでつながる"
+    },
+    "newsletter": {
+      "heading": "最新情報を受け取る",
+      "description": "新機能や研究アップデートの通知を受け取れます。",
+      "emailPlaceholder": "メールアドレスを入力してください",
+      "subscribeButton": "登録する",
+      "subscribingButton": "登録中...",
+      "successMessage": "登録が完了しました",
+      "invalidEmail": "有効なメールアドレスを入力してください"
+    },
+    "backToTop": "ページトップへ",
+    "copyright": "© 2026 VulnIQ. All rights reserved.",
+    "madeIn": "ルーマニア・ティミショアラで制作",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsConditions": "利用規約",
+    "vulnerabilityDisclosure": "脆弱性開示ポリシー",
+    "manageCookies": "Cookieの管理",
+    "openBetaBadge": "オープンベータ • 研究プロジェクト •",
+    "feedbackDialog": {
+      "title": "フィードバックを共有する",
+      "description": "改善点についてのご意見をお聞かせください。",
+      "feedbackLabel": "フィードバック",
+      "feedbackPlaceholder": "ご意見をお聞かせください...",
+      "cancelButton": "キャンセル",
+      "submitButton": "フィードバックを送信",
+      "submittingButton": "送信中..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "私たちについて | VulnIQ",
+      "description": "VulnIQについて — 自動化された脆弱性修復のためのエージェント型RAGを研究する修士論文プロジェクト。"
+    },
+    "headingPart1": "{highlight}のためのエージェント型RAG",
+    "headingHighlight": "自動化プログラム修復",
+    "intro": "脆弱性修復に向けた、専門的なセキュリティ知識で強化されたLLMベースエージェントの有効性を研究する修士論文プロジェクト。",
+    "problemStatement": {
+      "heading": "問題の概要",
+      "body": "大規模言語モデルは自動化プログラム修復に大きな可能性を示していますが、セキュリティ脆弱性の修復への応用はまだ十分に研究されていません。既存のアプローチは権威あるセキュリティ知識に修正を基づかせることなく汎用的なモデル機能に依存しており、幻覚パッチ・一貫性のない修復品質・修正が実際に脆弱性を解消するかどうかの自動検証なしという問題が生じています。"
+    },
+    "limitations": {
+      "heading": "現在のアプローチの限界",
+      "body": "静的解析ツールは脆弱性を特定しますが、修復は提供しません。LLMベースのツールはプロジェクト固有のセキュリティポリシーや検証済みナレッジベースに基づかずに修正を生成するため、高い誤検知率と検証できないパッチが生じ、信頼できるようになる前に大幅な手動レビューが必要です。"
+    },
+    "methodology": {
+      "heading": "提案する方法論",
+      "body1": "VulnIQは4つの専門エージェントで構成される検索拡張生成アーキテクチャを実装しています。厳選されたナレッジベースに照らして脆弱性を特定するレビュアー、根拠に基づいた修正を適用するインプリメンター、目標を絞ったセキュリティチェックで各パッチを検証するテスター、監査対応ドキュメントをまとめるレポーターです。",
+      "body2": "各エージェントにはCWEエントリ・OWASPガイドライン・スタック固有の安全なコーディングパターン・ユースケースプレイブックを含む専用ベクターナレッジベースが装備されています。検索によりパイプラインが下す各決定が特定の知識ソースに追跡可能であることが保証され、再現可能で監査可能な修復が実現します。"
+    },
+    "keyCapabilities": {
+      "heading": "主要機能",
+      "items": [
+        "セキュリティナレッジベースに基づいた検索拡張脆弱性修復",
+        "修正の自動検証とテスト確認を備えたエンドツーエンドの4エージェントパイプライン",
+        "証拠の引用と完全なパッチ追跡可能性を持つ監査対応PDFレポート"
+      ]
+    },
+    "researchContributions": "研究の貢献",
+    "researchObjectives": "研究目標",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "コンテキスト精度",
+        "description": "修復をプロジェクト固有のナレッジベースに基づかせることで、RAG拡張エージェントが支援なしのLLMよりもコンテキスト的に正確な修正を生成するかどうかを評価します。"
+      },
+      "automatedReasoning": {
+        "title": "自動化推論",
+        "description": "マルチエージェント推論が人間の介入なしに自律的にセキュリティ脆弱性を特定・優先順位付け・解決できる程度を調査します。"
+      },
+      "fixVerification": {
+        "title": "修正の検証",
+        "description": "テスターエージェントによる自動テスト生成と実行が、適用されたパッチが対象の脆弱性を解消することを信頼性高く検証できるかどうかを評価します。"
+      },
+      "knowledgeGrounding": {
+        "title": "知識の根拠",
+        "description": "専門的なセキュリティナレッジベースが汎用モデル知識と比較して修復の品質・一貫性・追跡可能性に与える影響を測定します。"
+      },
+      "reportQuality": {
+        "title": "レポート品質",
+        "description": "エージェントが生成したセキュリティレポートがステークホルダーのコミュニケーションとコンプライアンス監査シナリオに必要な基準を満たしているかを判断します。"
+      },
+      "scalability": {
+        "title": "スケーラビリティ",
+        "description": "さまざまなサイズ・言語の多様性・脆弱性の複雑さのリポジトリ全体でのパイプラインパフォーマンスを検証し、実際のデプロイの境界を特定します。"
+      }
+    },
+    "aboutResearch": "研究について",
+    "viewPrototype": "プロトタイプを見る",
+    "builtWith": "モダンな技術で構築"
+  },
+  "blog": {
+    "metadata": {
+      "title": "ブログ | VulnIQ",
+      "description": "VulnIQチームによるセキュリティの洞察・脆弱性研究・安全な開発のベストプラクティス。"
+    },
+    "readTime": "{minutes}分で読めます",
+    "postNotFound": "投稿が見つかりません",
+    "postNotFoundDescription": "お探しの記事は移動または削除された可能性があります。",
+    "backToBlog": "ブログに戻る",
+    "publishedOn": "{date}に公開",
+    "by": "{author}著",
+    "shareArticle": "記事をシェアする",
+    "tableOfContents": "目次"
+  },
+  "login": {
+    "metadata": {
+      "title": "ログイン — VulnIQ"
+    },
+    "tag": "コードセキュリティ",
+    "headline": "デフォルトで自律的",
+    "featureDescription1": "VulnIQのマルチエージェントパイプラインは脆弱性を検出し、ナレッジベースから根拠に基づいた修正を適用し、自動化テストでパッチを検証し、監査対応レポートを提供します — 手動介入は一切不要です。",
+    "featureDescription2": "すべての修復決定は特定の知識ソースに追跡可能であり、セキュリティワークフローを再現可能・一貫性があり・コンプライアンスレビューに対応した状態に保ちます。",
+    "backToHome": "ホームに戻る",
+    "agreementPrefix": "続行することにより、VulnIQの",
+    "agreementAnd": "および",
+    "agreementSuffix": "に同意します。",
+    "termsLabel": "利用規約",
+    "privacyLabel": "プライバシーポリシー",
+    "serviceStatus": {
+      "operational": "サービスは正常に動作しています",
+      "diagnosing": "問題を診断中、修正中",
+      "down": "システム停止中",
+      "idle": "システムアイドル"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "プライバシーポリシー | VulnIQ",
+      "description": "VulnIQのプライバシーポリシー — データの収集・使用・保護方法について。"
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "利用規約 | VulnIQ",
+      "description": "VulnIQの利用規約。"
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "セキュリティ | VulnIQ",
+      "description": "VulnIQの脆弱性開示ポリシーとセキュリティプラクティス。"
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "変更履歴 | VulnIQ",
+      "description": "VulnIQの最新アップデート・改善・リリース情報。"
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "サポーター | VulnIQ",
+      "description": "VulnIQ研究プロジェクトを支援する個人と組織。"
+    }
+  },
+  "notFound": {
+    "title": "このページは存在しません",
+    "description": "お探しのページは移動・削除されたか、最初から存在しなかった可能性があります。",
+    "backButton": "前のページに戻る"
+  },
+  "error": {
+    "title": "エラーが発生しました",
+    "description": "予期しないエラーが発生しました。チームに通知されました。",
+    "errorId": "エラーID",
+    "copyErrorDetails": "エラー詳細をコピー",
+    "contactPrompt": "この問題が続く場合は、こちらにご連絡ください"
+  },
+  "cookie": {
+    "title": "Cookieのオプション",
+    "basicDescription": "以下に説明する通り、このサイトが機能性Cookie及び/または広告Cookieを使用することを許可するかどうかをお選びください：",
+    "essential": {
+      "label": "必須Cookie",
+      "shortDesc": "基本的なサイト機能に必要です。",
+      "description": "これらのCookieはウェブサイトの機能に必要であり、当社のシステムでオフにすることはできません。"
+    },
+    "analytics": {
+      "label": "機能Cookie",
+      "shortDesc": "パフォーマンスの測定と改善に役立ちます。",
+      "description": "これらのCookieにより、サイトの利用状況を分析し、パフォーマンスを測定・改善することができます。"
+    },
+    "marketing": {
+      "label": "広告Cookie",
+      "shortDesc": "関連する広告の配信に使用されます。",
+      "description": "これらのCookieは、お客様の興味に関連する広告を配信するために使用されます。"
+    },
+    "allowedFunctionality": "許可された機能",
+    "disallowedFunctionality": "許可されていない機能",
+    "functionality": {
+      "secureAuth": "安全な認証",
+      "sessionState": "セッション状態を記憶する",
+      "rememberAuth": "ログイン情報を記憶する",
+      "retainCart": "ショッピングカートの内容を保持する",
+      "siteConsistency": "サイトの一貫性を確保する",
+      "socialSharing": "ソーシャルネットワークでのページ共有を許可する",
+      "postComments": "コメントの投稿を許可する",
+      "targetedAds": "興味に基づいた広告を配信する"
+    },
+    "submitPreferences": "設定を送信",
+    "advancedSettings": "詳細設定",
+    "basicSettings": "基本設定",
+    "cancel": "キャンセル",
+    "alwaysActive": "常に有効",
+    "showCookies": "Cookieを表示",
+    "hideCookies": "Cookieを非表示",
+    "providerCompany": "会社",
+    "providerDomain": "ドメイン",
+    "learnMore": "詳細はこちら",
+    "done": "完了"
+  },
+  "accessibility": {
+    "widgetTitle": "アクセシビリティ",
+    "customizeExperience": "エクスペリエンスをカスタマイズ",
+    "resetAll": "すべての設定をリセット",
+    "resetAllButton": "すべてのアクセシビリティ設定をリセット",
+    "dragToMove": "アクセシビリティオプション（ドラッグで移動）",
+    "accessibilityOptions": "アクセシビリティオプション",
+    "openMenu": "アクセシビリティメニューを開く",
+    "features": {
+      "smartContrast": "スマートコントラスト",
+      "stopAnimations": "アニメーションを停止",
+      "dyslexiaFriendly": "ディスレクシアフレンドリー",
+      "invertColors": "色を反転",
+      "highlightLinks": "リンクを強調",
+      "biggerText": "テキストを拡大",
+      "lightSpacing": "軽いスペーシング",
+      "hideImages": "画像を非表示",
+      "bigCursor": "大きなカーソル",
+      "tooltips": "ツールチップ",
+      "pageStructure": "ページ構造",
+      "lineHeight": "行の高さ",
+      "alignLeft": "左揃え",
+      "lowSaturation": "低彩度",
+      "readingGuide": "読書ガイド",
+      "focusIndicator": "フォーカスインジケーター"
+    },
+    "structure": {
+      "headings": "見出し",
+      "landmarks": "ランドマーク",
+      "links": "リンク",
+      "noHeadings": "見出しが見つかりません",
+      "noLandmarks": "ランドマークが見つかりません",
+      "noLinks": "リンクが見つかりません",
+      "noText": "（テキストなし）"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "ダッシュボード | VulnIQ"
+    },
+    "nav": {
+      "home": "ホーム",
+      "codeInspection": "コード検査",
+      "knowledgeBase": "ナレッジベース",
+      "results": "結果",
+      "codeGraph": "コードグラフ",
+      "writeArticle": "記事を書く"
+    },
+    "searchActions": "アクションを検索...",
+    "quickActions": "クイックアクション",
+    "error": {
+      "title": "ダッシュボードエラー",
+      "description": "ダッシュボードの読み込み中に問題が発生しました。"
+    },
+    "demoMode": "デモモード",
+    "exitDemo": "デモを終了",
+    "signInPrompt": "レビューを開始するにはログインしてください",
+    "noCodePrompt": "レビューするコードを入力するかプロジェクトをインポートしてください",
+    "resultsMetadata": {
+      "title": "分析結果 | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "クリップボードにコピーしました",
+      "copyFailed": "コピーに失敗しました",
+      "exportSuccess": "レポートを正常に出力しました",
+      "exportFailed": "レポートの出力に失敗しました",
+      "saveSuccess": "正常に保存しました",
+      "saveFailed": "保存に失敗しました"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "デモ | VulnIQ",
+      "description": "ライブデモ環境でVulnIQの自律的な脆弱性修復パイプラインをお試しください。"
+    },
+    "demoMode": "デモモード",
+    "exitDemo": "デモを終了",
+    "pages": {
+      "home": {
+        "title": "デモホーム"
+      },
+      "codeInput": {
+        "title": "コード入力"
+      },
+      "knowledgeBase": {
+        "title": "ナレッジベース"
+      },
+      "results": {
+        "title": "結果"
+      },
+      "profile": {
+        "title": "プロフィール"
+      },
+      "writeArticle": {
+        "title": "記事を書く"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "管理者 | VulnIQ"
+    },
+    "verification": {
+      "title": "管理者認証",
+      "description": "続行するにはパスワードを入力してください",
+      "emailLabel": "管理者メールアドレス",
+      "continueButton": "続ける",
+      "verifyingButton": "認証中...",
+      "passwordLabel": "パスワード",
+      "verifyPasswordButton": "パスワードを確認",
+      "useDifferentEmail": "別のメールアドレスを使用",
+      "setUpPasskey": "パスキーを設定",
+      "startOver": "最初からやり直す"
+    },
+    "userManagement": {
+      "title": "ユーザー管理",
+      "description": "ユーザープロフィールを確認し、警告を発行します",
+      "totalLabel": "合計",
+      "warnedLabel": "警告済み",
+      "bannedIpsLabel": "禁止IP",
+      "searchPlaceholder": "ユーザーを検索...",
+      "tableHeaders": {
+        "user": "ユーザー",
+        "email": "メールアドレス",
+        "status": "ステータス",
+        "joined": "登録日",
+        "actions": "アクション"
+      }
+    },
+    "articleStatus": {
+      "draft": "下書き",
+      "pending": "保留中",
+      "inReview": "レビュー中",
+      "published": "公開済み",
+      "rejected": "却下",
+      "pendingDeletion": "削除保留中"
+    },
+    "nav": {
+      "users": "ユーザー",
+      "articles": "記事",
+      "supporters": "サポーター",
+      "createAdmin": "管理者を作成"
+    }
+  },
+  "profile": {
+    "title": "プロフィール",
+    "imageUploadDisabledDemo": "デモモードでは画像のアップロードが無効です"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "サイトマップ | VulnIQ",
+      "description": "VulnIQで利用可能なすべてのページの完全なマップ。"
+    },
+    "title": "サイトマップ",
+    "description": "VulnIQで利用可能なすべてのページの完全なマップ。"
+  },
+  "languageSelector": {
+    "selectLanguage": "言語を選択",
+    "close": "閉じる",
+    "noLanguagesFound": "言語が見つかりません",
+    "search": "検索"
+  }
+}

@@ -1,0 +1,708 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "Autonomous AI agents that detect, patch, and verify vulnerabilities grounded in your documentation."
+  },
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "submit": "Submit",
+    "back": "Back",
+    "search": "Search",
+    "goHome": "Go home",
+    "tryAgain": "Try again"
+  },
+  "nav": {
+    "product": "Product",
+    "resources": "Resources",
+    "company": "Company",
+    "demo": "Demo",
+    "dashboard": "Dashboard",
+    "getStarted": "Get started",
+    "go": "Go",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "AI-powered security code review with autonomous remediation."
+      },
+      "features": {
+        "label": "Features",
+        "description": "Advanced vulnerability detection and AI-driven fixes."
+      },
+      "useCases": {
+        "label": "Use cases",
+        "description": "See how teams use VulnIQ for security."
+      },
+      "integrations": {
+        "label": "Integrations",
+        "description": "Connect with GitHub, GitLab, and more."
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "Blog",
+        "description": "Security insights and best practices."
+      },
+      "changelog": {
+        "label": "Changelog",
+        "description": "Latest updates and releases."
+      },
+      "supporters": {
+        "label": "Supporters",
+        "description": "People supporting this project."
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "Support us on Product Hunt."
+      },
+      "tryDemo": {
+        "label": "Try demo",
+        "description": "Experience VulnIQ in action."
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "About us",
+        "description": "Learn about our mission and team."
+      },
+      "security": {
+        "label": "Security policy",
+        "description": "Vulnerability disclosure policy."
+      },
+      "contact": {
+        "label": "Contact",
+        "description": "Get in touch with our team."
+      }
+    }
+  },
+  "hero": {
+    "badge": "Open beta",
+    "headingPart1": "Security",
+    "headingPart2": "remediation",
+    "headingPart3": "without",
+    "headingPart4": "hallucinations.",
+    "subtitle": "Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix is <highlight>grounded in your documentation</highlight> using RAG.",
+    "subtitleBefore": "Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix is ",
+    "subtitleHighlight": "grounded in your documentation",
+    "subtitleAfter": " using RAG.",
+    "paperButton": "Paper in progress...",
+    "demoButton": "Try demo"
+  },
+  "features": {
+    "sectionLabel": "Vulnerability management is critical.",
+    "heading": "The next frontier is <highlight>agentic remediation</highlight>",
+    "headingBefore": "The next frontier is ",
+    "headingHighlight": "agentic remediation",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "Grounded security intelligence",
+        "description": "Each agent retrieves guidance from your security knowledge bases and use-case playbooks (e.g., secure login), so fixes stay consistent with your ground truth."
+      },
+      "secureIngestion": {
+        "title": "Secure code ingestion",
+        "description": "Connect GitHub or GitLab and import repositories in minutes. VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting."
+      },
+      "multiAgent": {
+        "title": "Multi-agent security workflow",
+        "description": "A 4-agent pipeline: reviewer, implementer, tester, reporter. With per-agent specialized prompts and knowledge base for your stack and policies."
+      },
+      "automatedValidation": {
+        "title": "Automated security validation",
+        "description": "After remediation, the Tester agent validates fixes with targeted security checks, confirming vulnerabilities are resolved without breaking behavior."
+      },
+      "professionalReports": {
+        "title": "Professional security reports",
+        "description": "The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes. Ready for audits."
+      }
+    },
+    "animatedLabels": {
+      "login": "LOGIN",
+      "auth": "AUTH",
+      "api": "API",
+      "grounded": "GROUNDED",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "INGEST",
+      "reviewer": "REVIEWER",
+      "implement": "IMPLEMENT",
+      "tester": "TESTER",
+      "reporter": "REPORTER",
+      "active": "ACTIVE",
+      "testSuite": "TEST SUITE",
+      "running": "RUNNING",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "FAIL",
+      "pass": "PASS",
+      "evidence": "EVIDENCE",
+      "kbCited": "KB CITED",
+      "report": "REPORT",
+      "generating": "GENERATING",
+      "findings": "Findings",
+      "fixesApplied": "Fixes Applied",
+      "testResults": "Test Results",
+      "recommendations": "Recommendations"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "Simple and powerful",
+    "heading": "How <brand>VulnIQ</brand> works",
+    "headingBefore": "How ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": " works",
+    "steps": {
+      "importCode": {
+        "title": "Import your code",
+        "description": "Connect GitHub or GitLab. Select a repository and VulnIQ maps your codebase automatically."
+      },
+      "aiReview": {
+        "title": "AI reviews vulnerabilities",
+        "description": "The Reviewer agent scans your code against your knowledge base and security standards like CWE & OWASP."
+      },
+      "agentsRemediate": {
+        "title": "Agents remediate & test",
+        "description": "The Implementer applies fixes grounded in your docs. The Tester validates each patch passes security checks."
+      },
+      "exportReport": {
+        "title": "Export verified report",
+        "description": "The Reporter compiles findings, patches, evidence, and test results into an audit-ready PDF report."
+      }
+    }
+  },
+  "useCases": {
+    "heading": "Who benefits from VulnIQ?",
+    "description": "From learners to teams, VulnIQ adapts to your workflow.",
+    "cases": {
+      "securityLearners": {
+        "title": "Security learners",
+        "description": "Understand real vulnerability patterns and how to fix them with AI-guided remediation grounded in industry standards.",
+        "visualTitle": "Security learners",
+        "visualSubtitle": "Learn by doing"
+      },
+      "startups": {
+        "title": "Startups",
+        "description": "Ship secure code faster without a dedicated security team. VulnIQ catches and fixes vulnerabilities before they reach production.",
+        "visualTitle": "Startups",
+        "visualSubtitle": "Move fast, stay secure"
+      },
+      "universities": {
+        "title": "Universities",
+        "description": "Teach secure coding practices with hands-on AI-assisted vulnerability detection and remediation exercises.",
+        "visualTitle": "Universities",
+        "visualSubtitle": "Academic research"
+      },
+      "openSource": {
+        "title": "Open source",
+        "description": "Keep your open source project secure with automated vulnerability scanning and AI-powered fixes for public repositories.",
+        "visualTitle": "Open source",
+        "visualSubtitle": "Community-driven security"
+      },
+      "teamsOfProgrammers": {
+        "title": "Teams of programmers",
+        "description": "Integrate VulnIQ into your development workflow for consistent, knowledge-base-grounded security remediation across your entire codebase.",
+        "visualTitle": "Teams of programmers",
+        "visualSubtitle": "Collaborative security"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "Why <brand>VulnIQ</brand>?",
+    "headingBefore": "Why ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "?",
+    "description": "See how agentic RAG compares to traditional static analysis tools.",
+    "columns": {
+      "feature": "Feature",
+      "traditionalScanners": "Traditional scanners",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "Context-aware analysis",
+        "traditional": "Matches patterns without understanding surrounding code logic or project-specific context.",
+        "vulniq": "Agents retrieve relevant knowledge base entries and reason about code context before acting."
+      },
+      "falsePositiveRate": {
+        "label": "False positive rate",
+        "traditional": "High — flags many non-issues, requiring manual triage to separate real vulnerabilities.",
+        "vulniq": "Reduced — grounded reasoning filters noise by cross-referencing your documentation and standards."
+      },
+      "remediation": {
+        "label": "Remediation",
+        "traditional": "None built-in — outputs a list of issues and leaves fixing entirely to the developer.",
+        "vulniq": "Autonomous — the Implementer agent applies grounded fixes directly to your codebase."
+      },
+      "knowledgeSources": {
+        "label": "Knowledge sources",
+        "traditional": "Fixed rule sets and CVE databases that cannot be customized for your stack.",
+        "vulniq": "Your own security knowledge bases, playbooks, CWE, OWASP, and stack-specific guidance."
+      },
+      "fixVerification": {
+        "label": "Fix verification",
+        "traditional": "None — no automated way to confirm a suggested fix actually resolves the vulnerability.",
+        "vulniq": "Built-in — the Tester agent runs targeted security checks after each patch is applied."
+      },
+      "reporting": {
+        "label": "Reporting",
+        "traditional": "Raw scan output that needs manual formatting before it can be shared with stakeholders.",
+        "vulniq": "Stakeholder-ready PDF reports with findings, patches, evidence citations, and test results."
+      }
+    }
+  },
+  "faq": {
+    "heading": "Frequently asked questions",
+    "description": "Everything you need to know about VulnIQ and how it can help secure your code.",
+    "stillHaveQuestions": "Still have questions?",
+    "askThemHere": "Ask them here →",
+    "items": {
+      "q1": {
+        "question": "What is VulnIQ?",
+        "answer": "VulnIQ is an autonomous security remediation platform powered by a multi-agent RAG pipeline. It detects vulnerabilities in your code, applies grounded fixes using your own security knowledge bases, validates patches with targeted tests, and generates audit-ready reports — all without manual intervention."
+      },
+      "q2": {
+        "question": "How does VulnIQ differ from traditional static analysis tools?",
+        "answer": "Traditional static analysis tools pattern-match against fixed rule sets and produce a list of issues with no remediation. VulnIQ uses a 4-agent pipeline (Reviewer, Implementer, Tester, Reporter) augmented with retrieval-augmented generation, so every fix is grounded in your documentation and security standards, verified by automated tests, and compiled into a stakeholder-ready report."
+      },
+      "q3": {
+        "question": "Which programming languages does VulnIQ support?",
+        "answer": "VulnIQ currently focuses on web application languages and frameworks most commonly associated with OWASP Top 10 vulnerabilities. Support is actively expanding — check the changelog for the latest language additions."
+      },
+      "q4": {
+        "question": "Can VulnIQ integrate with my CI/CD pipeline?",
+        "answer": "CI/CD integration is on the roadmap. Currently VulnIQ connects directly to GitHub and GitLab repositories for on-demand scanning and remediation. Webhook-triggered and scheduled pipeline runs are planned for a future release."
+      },
+      "q5": {
+        "question": "Which AI providers does VulnIQ use?",
+        "answer": "VulnIQ is model-agnostic by design. The platform is configured to work with leading LLM providers. Specific model selection and provider details are available in the documentation and may vary by deployment environment."
+      },
+      "q6": {
+        "question": "Is there a free tier?",
+        "answer": "VulnIQ is currently in open beta as a research project. You can try the full demo without signing up. Account-based access is available — check the pricing page or contact us for details on current access tiers."
+      },
+      "q7": {
+        "question": "How accurate is VulnIQ's remediation?",
+        "answer": "Accuracy depends on the quality of the knowledge bases provided and the complexity of the vulnerability. By grounding every fix in your documentation and validating with the Tester agent, VulnIQ significantly reduces false positives and unverified patches compared to unaided LLM output. Quantitative results are reported in the accompanying thesis paper."
+      }
+    },
+    "askDialog": {
+      "title": "Ask a Question",
+      "description": "Send us your question and we'll get back to you as soon as possible.",
+      "emailLabel": "Email",
+      "questionLabel": "Your Question",
+      "emailPlaceholder": "your@email.com",
+      "questionPlaceholder": "What would you like to know?",
+      "sendButton": "Send Question",
+      "sendingButton": "Sending...",
+      "successTitle": "Question sent!",
+      "successDescription": "We'll respond to your email soon."
+    }
+  },
+  "cta": {
+    "title": "Start securing",
+    "button": "Get Started"
+  },
+  "blogSection": {
+    "heading": "Security knowledge hub",
+    "description": "Expert insights on application security, vulnerability detection, and secure development practices from the VulnIQ team.",
+    "readArticle": "Read article",
+    "noArticles": "No articles yet",
+    "noArticlesDescription": "Our security experts are working on new content. Check back soon for insights on application security and vulnerability detection.",
+    "viewAllArticles": "View all articles"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "Autonomous security remediation powered by retrieval-augmented generation.",
+    "followUs": "Follow us on",
+    "productHunt": "Product Hunt",
+    "resources": "Resources",
+    "haveFeedback": "Have a feedback?",
+    "changelog": "Changelog",
+    "sitemap": "Sitemap",
+    "supporters": "Supporters",
+    "viewThesisPaper": "View thesis paper (in progress...)",
+    "serviceStatus": {
+      "operational": "Services are operational",
+      "diagnosing": "Diagnosing issue, fixing",
+      "down": "Systems down",
+      "idle": "Systems idle"
+    },
+    "thesis": {
+      "label": "Master thesis",
+      "author": "Emanuel Rusu",
+      "university": "West University of Timișoara",
+      "faculty": "Faculty of Computer Science",
+      "degree": "MSc Cybersecurity",
+      "connectLinkedIn": "Connect on LinkedIn"
+    },
+    "newsletter": {
+      "heading": "Stay updated",
+      "description": "Get notified about new features and research updates.",
+      "emailPlaceholder": "Enter your email address",
+      "subscribeButton": "Subscribe",
+      "subscribingButton": "Subscribing...",
+      "successMessage": "Subscribed successfully",
+      "invalidEmail": "Please enter a valid email address"
+    },
+    "backToTop": "Back to top",
+    "copyright": "© 2026 VulnIQ. All rights reserved.",
+    "madeIn": "🇷🇴 Made in RO, Timișoara",
+    "privacyPolicy": "Privacy Policy",
+    "termsConditions": "Terms & Conditions",
+    "vulnerabilityDisclosure": "Vulnerability Disclosure Policy",
+    "manageCookies": "Manage Cookies",
+    "openBetaBadge": "Open beta • Research project •",
+    "feedbackDialog": {
+      "title": "Share your feedback",
+      "description": "We'd love to hear your thoughts on how we can improve.",
+      "feedbackLabel": "Your feedback",
+      "feedbackPlaceholder": "Tell us what you think...",
+      "cancelButton": "Cancel",
+      "submitButton": "Submit Feedback",
+      "submittingButton": "Submitting..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "About | VulnIQ",
+      "description": "Learn about VulnIQ — a Master's thesis project investigating agentic RAG for automated vulnerability remediation."
+    },
+    "headingPart1": "Agentic RAG for",
+    "headingHighlight": "automated program repair",
+    "intro": "A Master's thesis project investigating the efficacy of LLM-based agents augmented with specialized security knowledge for vulnerability remediation.",
+    "problemStatement": {
+      "heading": "Problem statement",
+      "body": "Large language models show significant promise for automated program repair, yet their application to security vulnerability remediation remains underexplored. Existing approaches rely on generic model capabilities without grounding fixes in authoritative security knowledge, leading to hallucinated patches, inconsistent remediation quality, and no automated verification of whether a fix actually resolves the vulnerability."
+    },
+    "limitations": {
+      "heading": "Limitations of current approaches",
+      "body": "Static analysis tools identify vulnerabilities but offer no remediation. LLM-based tools generate fixes without grounding in project-specific security policies or validated knowledge bases, producing a high rate of false positives and unverifiable patches that require significant manual review before they can be trusted."
+    },
+    "methodology": {
+      "heading": "Proposed methodology",
+      "body1": "VulnIQ implements a retrieval-augmented generation architecture composed of four specialized agents: a Reviewer that identifies vulnerabilities against curated knowledge bases, an Implementer that applies grounded fixes, a Tester that validates each patch with targeted security checks, and a Reporter that compiles audit-ready documentation.",
+      "body2": "Each agent is equipped with a dedicated vector knowledge base containing CWE entries, OWASP guidelines, stack-specific secure coding patterns, and use-case playbooks. Retrieval ensures that every decision made by the pipeline is traceable to a specific knowledge source, enabling reproducible and auditable remediation."
+    },
+    "keyCapabilities": {
+      "heading": "Key capabilities",
+      "items": [
+        "Retrieval-augmented vulnerability remediation grounded in your security knowledge bases",
+        "End-to-end 4-agent pipeline with automated fix verification and test validation",
+        "Audit-ready PDF reporting with evidence citations and full patch traceability"
+      ]
+    },
+    "researchContributions": "Research contributions",
+    "researchObjectives": "Research objectives",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "Contextual precision",
+        "description": "Evaluate whether RAG-augmented agents produce more contextually precise fixes than unaided LLMs by grounding remediation in project-specific knowledge bases."
+      },
+      "automatedReasoning": {
+        "title": "Automated reasoning",
+        "description": "Investigate the extent to which multi-agent reasoning can autonomously identify, prioritize, and resolve security vulnerabilities without human intervention."
+      },
+      "fixVerification": {
+        "title": "Fix verification",
+        "description": "Assess whether automated test generation and execution by the Tester agent provides reliable verification that applied patches resolve the targeted vulnerability."
+      },
+      "knowledgeGrounding": {
+        "title": "Knowledge grounding",
+        "description": "Measure the impact of specialized security knowledge bases on remediation quality, consistency, and traceability compared to generic model knowledge."
+      },
+      "reportQuality": {
+        "title": "Report quality",
+        "description": "Determine whether agent-generated security reports meet the standards required for stakeholder communication and compliance audit scenarios."
+      },
+      "scalability": {
+        "title": "Scalability",
+        "description": "Examine pipeline performance across repositories of varying size, language diversity, and vulnerability complexity to identify practical deployment boundaries."
+      }
+    },
+    "aboutResearch": "About the research",
+    "viewPrototype": "View prototype",
+    "builtWith": "Built with modern technologies"
+  },
+  "blog": {
+    "metadata": {
+      "title": "Blog | VulnIQ",
+      "description": "Security insights, vulnerability research, and secure development best practices from the VulnIQ team."
+    },
+    "readTime": "{minutes} min read",
+    "postNotFound": "Post not found",
+    "postNotFoundDescription": "The article you're looking for may have been moved or deleted.",
+    "backToBlog": "Back to blog",
+    "publishedOn": "Published on {date}",
+    "by": "By {author}",
+    "shareArticle": "Share article",
+    "tableOfContents": "Table of contents"
+  },
+  "login": {
+    "metadata": {
+      "title": "Login — VulnIQ"
+    },
+    "tag": "Code security",
+    "headline": "Autonomous by default",
+    "featureDescription1": "VulnIQ's multi-agent pipeline detects vulnerabilities, applies grounded fixes from your knowledge bases, validates patches with automated tests, and delivers audit-ready reports — entirely without manual intervention.",
+    "featureDescription2": "Every remediation decision is traceable to a specific knowledge source, making your security workflow reproducible, consistent, and ready for compliance review.",
+    "backToHome": "Back to home",
+    "agreementPrefix": "By continuing, you agree to VulnIQ's",
+    "agreementAnd": "and",
+    "agreementSuffix": ".",
+    "termsLabel": "Terms",
+    "privacyLabel": "Privacy Policy",
+    "serviceStatus": {
+      "operational": "Services are operational",
+      "diagnosing": "Diagnosing issue, fixing",
+      "down": "Systems down",
+      "idle": "Systems idle"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "Privacy Policy | VulnIQ",
+      "description": "VulnIQ privacy policy — how we collect, use, and protect your data."
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "Terms & Conditions | VulnIQ",
+      "description": "VulnIQ terms and conditions of use."
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "Security | VulnIQ",
+      "description": "VulnIQ vulnerability disclosure policy and security practices."
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "Changelog | VulnIQ",
+      "description": "Latest updates, improvements, and releases for VulnIQ."
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "Supporters | VulnIQ",
+      "description": "People and organizations supporting the VulnIQ research project."
+    }
+  },
+  "notFound": {
+    "title": "This page doesn't exist",
+    "description": "The page you're looking for may have been moved, deleted, or never existed in the first place.",
+    "backButton": "Go back to previous page"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "We encountered an unexpected error. Our team has been notified.",
+    "errorId": "Error ID",
+    "copyErrorDetails": "Copy error details",
+    "contactPrompt": "If this problem persists, please contact"
+  },
+  "cookie": {
+    "title": "Your Cookie Options",
+    "basicDescription": "Please choose whether this site may use functional and/or advertising cookies, as described below:",
+    "essential": {
+      "label": "Required Cookies",
+      "shortDesc": "Necessary for basic site functionality.",
+      "description": "These cookies are necessary for the website to function and cannot be switched off in our systems."
+    },
+    "analytics": {
+      "label": "Functional Cookies",
+      "shortDesc": "Help us measure and improve performance.",
+      "description": "These cookies allow us to analyze site usage so we can measure and improve performance."
+    },
+    "marketing": {
+      "label": "Advertising Cookies",
+      "shortDesc": "Used to serve relevant advertisements.",
+      "description": "These cookies are used to deliver advertising that is relevant to your interests."
+    },
+    "allowedFunctionality": "Allowed Functionality",
+    "disallowedFunctionality": "Disallowed Functionality",
+    "functionality": {
+      "secureAuth": "Secure authentication",
+      "sessionState": "Remember your session state",
+      "rememberAuth": "Remember your login details",
+      "retainCart": "Retain what is in your shopping cart",
+      "siteConsistency": "Ensure the site is consistent",
+      "socialSharing": "Allow sharing pages on social networks",
+      "postComments": "Allow you to post comments",
+      "targetedAds": "Deliver advertising based on your interests"
+    },
+    "submitPreferences": "Submit Preferences",
+    "advancedSettings": "Advanced Settings",
+    "basicSettings": "Basic Settings",
+    "cancel": "Cancel",
+    "alwaysActive": "Always Active",
+    "showCookies": "Show cookies",
+    "hideCookies": "Hide cookies",
+    "providerCompany": "Company",
+    "providerDomain": "Domain"
+  },
+  "accessibility": {
+    "widgetTitle": "Accessibility",
+    "customizeExperience": "Customize your experience",
+    "resetAll": "Reset all settings",
+    "resetAllButton": "Reset All Accessibility Settings",
+    "dragToMove": "Accessibility options (drag to move)",
+    "accessibilityOptions": "Accessibility options",
+    "openMenu": "Open accessibility menu",
+    "features": {
+      "smartContrast": "Smart Contrast",
+      "stopAnimations": "Stop Animations",
+      "dyslexiaFriendly": "Dyslexia Friendly",
+      "invertColors": "Invert Colors",
+      "highlightLinks": "Highlight Links",
+      "biggerText": "Bigger Text",
+      "lightSpacing": "Light Spacing",
+      "hideImages": "Hide Images",
+      "bigCursor": "Big Cursor",
+      "tooltips": "Tooltips",
+      "pageStructure": "Page Structure",
+      "lineHeight": "Line Height",
+      "alignLeft": "Align Left",
+      "lowSaturation": "Low Saturation",
+      "readingGuide": "Reading Guide",
+      "focusIndicator": "Focus Indicator"
+    },
+    "structure": {
+      "headings": "Headings",
+      "landmarks": "Landmarks",
+      "links": "Links",
+      "noHeadings": "No headings found",
+      "noLandmarks": "No landmarks found",
+      "noLinks": "No links found",
+      "noText": "(no text)"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "Dashboard | VulnIQ"
+    },
+    "nav": {
+      "home": "Home",
+      "codeInspection": "Code inspection",
+      "knowledgeBase": "Knowledge base",
+      "results": "Results",
+      "codeGraph": "Code Graph",
+      "writeArticle": "Write article"
+    },
+    "searchActions": "Search actions...",
+    "quickActions": "Quick actions",
+    "error": {
+      "title": "Dashboard Error",
+      "description": "There was a problem loading the dashboard."
+    },
+    "demoMode": "Demo Mode",
+    "exitDemo": "Exit Demo",
+    "signInPrompt": "Please sign in to start a review",
+    "noCodePrompt": "Please enter code or import a project to review",
+    "resultsMetadata": {
+      "title": "Analysis Results | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "Copied to clipboard",
+      "copyFailed": "Failed to copy",
+      "exportSuccess": "Report exported successfully",
+      "exportFailed": "Failed to export report",
+      "saveSuccess": "Saved successfully",
+      "saveFailed": "Failed to save"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "Demo | VulnIQ",
+      "description": "Try VulnIQ's autonomous vulnerability remediation pipeline in a live demo environment."
+    },
+    "demoMode": "Demo Mode",
+    "exitDemo": "Exit Demo",
+    "pages": {
+      "home": {
+        "title": "Demo Home"
+      },
+      "codeInput": {
+        "title": "Code Input"
+      },
+      "knowledgeBase": {
+        "title": "Knowledge Base"
+      },
+      "results": {
+        "title": "Results"
+      },
+      "profile": {
+        "title": "Profile"
+      },
+      "writeArticle": {
+        "title": "Write Article"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "Admin | VulnIQ"
+    },
+    "verification": {
+      "title": "Admin Verification",
+      "description": "Enter your password to continue",
+      "emailLabel": "Admin Email",
+      "continueButton": "Continue",
+      "verifyingButton": "Verifying...",
+      "passwordLabel": "Password",
+      "verifyPasswordButton": "Verify Password",
+      "useDifferentEmail": "Use different email",
+      "setUpPasskey": "Set Up Passkey",
+      "startOver": "Start over"
+    },
+    "userManagement": {
+      "title": "User Management",
+      "description": "View user profiles and issue warnings",
+      "totalLabel": "Total",
+      "warnedLabel": "Warned",
+      "bannedIpsLabel": "Banned IPs",
+      "searchPlaceholder": "Search users...",
+      "tableHeaders": {
+        "user": "User",
+        "email": "Email",
+        "status": "Status",
+        "joined": "Joined",
+        "actions": "Actions"
+      }
+    },
+    "articleStatus": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "inReview": "In review",
+      "published": "Published",
+      "rejected": "Rejected",
+      "pendingDeletion": "Pending deletion"
+    },
+    "nav": {
+      "users": "Users",
+      "articles": "Articles",
+      "supporters": "Supporters",
+      "createAdmin": "Create Admin"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "imageUploadDisabledDemo": "Image upload is disabled in demo mode"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "Sitemap | VulnIQ",
+      "description": "A complete map of all pages available on VulnIQ."
+    },
+    "title": "Sitemap",
+    "description": "A complete map of all pages available on VulnIQ."
+  },
+  "languageSelector": {
+    "selectLanguage": "Select language",
+    "close": "Close",
+    "noLanguagesFound": "No languages found",
+    "search": "Search"
+  }
+}

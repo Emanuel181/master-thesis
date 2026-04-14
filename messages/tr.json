@@ -1,0 +1,710 @@
+{
+  "metadata": {
+    "title": "VulnIQ",
+    "description": "Belgelerinize dayalı güvenlik açıklarını tespit eden, yamalayan ve doğrulayan özerk yapay zeka ajanları."
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "back": "Geri",
+    "search": "Ara",
+    "goHome": "Ana sayfaya git",
+    "tryAgain": "Tekrar dene"
+  },
+  "nav": {
+    "product": "Ürün",
+    "resources": "Kaynaklar",
+    "company": "Şirket",
+    "demo": "Demo",
+    "dashboard": "Panel",
+    "getStarted": "Başlayın",
+    "go": "Git",
+    "closeMenu": "Menüyü kapat",
+    "openMenu": "Menüyü aç",
+    "productItems": {
+      "vulniq": {
+        "label": "VulnIQ",
+        "description": "Özerk düzeltme özelliğiyle yapay zeka destekli güvenlik kodu incelemesi."
+      },
+      "features": {
+        "label": "Özellikler",
+        "description": "Gelişmiş güvenlik açığı tespiti ve yapay zeka odaklı düzeltmeler."
+      },
+      "useCases": {
+        "label": "Kullanım senaryoları",
+        "description": "Ekiplerin VulnIQ'yu güvenlik için nasıl kullandığını keşfedin."
+      },
+      "integrations": {
+        "label": "Entegrasyonlar",
+        "description": "GitHub, GitLab ve daha fazlasıyla bağlantı kurun."
+      }
+    },
+    "resourceItems": {
+      "blog": {
+        "label": "Blog",
+        "description": "Güvenlik içgörüleri ve en iyi uygulamalar."
+      },
+      "changelog": {
+        "label": "Değişiklik günlüğü",
+        "description": "En son güncellemeler ve sürümler."
+      },
+      "supporters": {
+        "label": "Destekçiler",
+        "description": "Bu projeyi destekleyen kişiler."
+      },
+      "productHunt": {
+        "label": "Product Hunt",
+        "description": "Bizi Product Hunt'ta destekleyin."
+      },
+      "tryDemo": {
+        "label": "Demoyu deneyin",
+        "description": "VulnIQ'yu canlı deneyimleyin."
+      }
+    },
+    "companyItems": {
+      "about": {
+        "label": "Hakkımızda",
+        "description": "Misyonumuz ve ekibimiz hakkında bilgi edinin."
+      },
+      "security": {
+        "label": "Güvenlik politikası",
+        "description": "Güvenlik açığı ifşa politikası."
+      },
+      "contact": {
+        "label": "İletişim",
+        "description": "Ekibimizle iletişime geçin."
+      }
+    }
+  },
+  "hero": {
+    "badge": "Açık beta",
+    "headingPart1": "Halüsinasyonsuz",
+    "headingPart2": "güvenlik",
+    "headingPart3": "düzeltmesi.",
+    "headingPart4": "",
+    "subtitle": "Güvenlik açıklarını tespit eden, yamalayan ve doğrulayan özerk yapay zeka ajanları. Her düzeltme, RAG kullanılarak {highlight}.",
+    "subtitleHighlight": "belgelerinize dayalıdır",
+    "subtitleBefore": "Güvenlik açıklarını tespit eden, yamalayan ve doğrulayan özerk yapay zeka ajanları. Her düzeltme, RAG kullanılarak ",
+    "subtitleAfter": ".",
+    "paperButton": "Makale hazırlanıyor...",
+    "demoButton": "Demoyu deneyin"
+  },
+  "features": {
+    "sectionLabel": "Güvenlik açığı yönetimi kritik önem taşır.",
+    "heading": "Bir sonraki sınır",
+    "headingHighlight": "ajansal düzeltmedir",
+    "headingBefore": "Bir sonraki sınır ",
+    "cards": {
+      "groundedIntelligence": {
+        "title": "Temelli güvenlik zekası",
+        "description": "Her ajan, güvenlik bilgi tabanlarınızdan ve kullanım senaryosu kılavuzlarından (örn. güvenli giriş) rehberlik alır; böylece düzeltmeler temel gerçeklerinizle tutarlı kalır."
+      },
+      "secureIngestion": {
+        "title": "Güvenli kod aktarımı",
+        "description": "GitHub veya GitLab'a bağlanın ve depoları dakikalar içinde içe aktarın. VulnIQ, kod tabanınızı haritalandırır ve inceleme, düzeltme, test ve raporlama için hazırlar."
+      },
+      "multiAgent": {
+        "title": "Çok ajanlı güvenlik iş akışı",
+        "description": "4 ajanlı bir ardışık düzen: inceleyici, uygulayıcı, test eden, raporlayan. Yığınınız ve politikalarınız için ajan başına özel istemleri ve bilgi tabanıyla."
+      },
+      "automatedValidation": {
+        "title": "Otomatik güvenlik doğrulaması",
+        "description": "Düzeltmenin ardından Test Ajanı, güvenlik açıklarının davranışı bozmadan çözüldüğünü doğrulamak için hedefe yönelik güvenlik kontrolleriyle yamaları doğrular."
+      },
+      "professionalReports": {
+        "title": "Profesyonel güvenlik raporları",
+        "description": "Raporlayan ajan, paydaşlara hazır raporlar oluşturur: bulgular, uygulanan yamalar, bilgi tabanlarından kanıtlar ve test sonuçları. Denetime hazır."
+      }
+    },
+    "animatedLabels": {
+      "login": "GİRİŞ",
+      "auth": "KİMLİK DOĞRULAMA",
+      "api": "API",
+      "grounded": "TEMELLİ",
+      "github": "GITHUB",
+      "gitlab": "GITLAB",
+      "ingest": "AKTARIM",
+      "reviewer": "İNCELEYİCİ",
+      "implement": "UYGULA",
+      "tester": "TEST EDEN",
+      "reporter": "RAPORLAYAN",
+      "active": "AKTİF",
+      "testSuite": "TEST SETİ",
+      "running": "ÇALIŞIYOR",
+      "authSpec": "auth.spec",
+      "csrfSpec": "csrf.spec",
+      "depsSpec": "deps.spec",
+      "fail": "BAŞARISIZ",
+      "pass": "BAŞARILI",
+      "evidence": "KANIT",
+      "kbCited": "KB ATIFLI",
+      "report": "RAPOR",
+      "generating": "OLUŞTURULUYOR",
+      "findings": "Bulgular",
+      "fixesApplied": "Uygulanan Yamalar",
+      "testResults": "Test Sonuçları",
+      "recommendations": "Öneriler"
+    }
+  },
+  "howItWorks": {
+    "subtitle": "Basit ve güçlü",
+    "heading": "{brand} nasıl çalışır",
+    "headingBefore": "",
+    "headingBrand": "VulnIQ",
+    "headingAfter": " nasıl çalışır",
+    "steps": {
+      "importCode": {
+        "title": "Kodunuzu içe aktarın",
+        "description": "GitHub veya GitLab'a bağlanın. Bir depo seçin; VulnIQ kod tabanınızı otomatik olarak haritalandırır."
+      },
+      "aiReview": {
+        "title": "Yapay zeka güvenlik açıklarını inceler",
+        "description": "İnceleyici ajan, kodunuzu bilgi tabanınıza ve CWE ve OWASP gibi güvenlik standartlarına karşı tarar."
+      },
+      "agentsRemediate": {
+        "title": "Ajanlar düzeltir ve test eder",
+        "description": "Uygulayıcı, belgelerinize dayalı düzeltmeler uygular. Test Eden, her yamanın güvenlik kontrollerini geçtiğini doğrular."
+      },
+      "exportReport": {
+        "title": "Doğrulanmış raporu dışa aktarın",
+        "description": "Raporlayan ajan, bulguları, yamaları, kanıtları ve test sonuçlarını denetime hazır bir PDF raporunda derler."
+      }
+    }
+  },
+  "useCases": {
+    "heading": "VulnIQ kimler için faydalıdır?",
+    "description": "Öğrenenlerden ekiplere, VulnIQ iş akışınıza uyum sağlar.",
+    "cases": {
+      "securityLearners": {
+        "title": "Güvenlik öğrenenleri",
+        "description": "Gerçek güvenlik açığı kalıplarını ve bunları sektör standartlarına dayalı yapay zeka destekli düzeltmeyle nasıl gidereceğinizi öğrenin.",
+        "visualTitle": "Güvenlik öğrenenleri",
+        "visualSubtitle": "Yaparak öğrenin"
+      },
+      "startups": {
+        "title": "Girişimler",
+        "description": "Özel bir güvenlik ekibine gerek kalmadan daha hızlı güvenli kod gönderin. VulnIQ, güvenlik açıklarını üretime ulaşmadan tespit eder ve düzeltir.",
+        "visualTitle": "Girişimler",
+        "visualSubtitle": "Hızlı ilerle, güvende kal"
+      },
+      "universities": {
+        "title": "Üniversiteler",
+        "description": "Uygulamalı yapay zeka destekli güvenlik açığı tespiti ve düzeltme alıştırmalarıyla güvenli kodlama uygulamalarını öğretin.",
+        "visualTitle": "Üniversiteler",
+        "visualSubtitle": "Akademik araştırma"
+      },
+      "openSource": {
+        "title": "Açık kaynak",
+        "description": "Otomatik güvenlik açığı tarama ve genel depolar için yapay zeka destekli düzeltmelerle açık kaynak projenizi güvende tutun.",
+        "visualTitle": "Açık kaynak",
+        "visualSubtitle": "Topluluk odaklı güvenlik"
+      },
+      "teamsOfProgrammers": {
+        "title": "Geliştirici ekipler",
+        "description": "Tüm kod tabanınızda tutarlı, bilgi tabanına dayalı güvenlik düzeltmesi için VulnIQ'yu geliştirme iş akışınıza entegre edin.",
+        "visualTitle": "Geliştirici ekipler",
+        "visualSubtitle": "İşbirlikçi güvenlik"
+      }
+    }
+  },
+  "comparison": {
+    "heading": "Neden {brand}?",
+    "headingBefore": "Neden ",
+    "headingBrand": "VulnIQ",
+    "headingAfter": "?",
+    "description": "Ajansal RAG'ın geleneksel statik analiz araçlarıyla nasıl karşılaştırıldığını görün.",
+    "columns": {
+      "feature": "Özellik",
+      "traditionalScanners": "Geleneksel tarayıcılar",
+      "vulniq": "VulnIQ"
+    },
+    "rows": {
+      "contextAwareAnalysis": {
+        "label": "Bağlama duyarlı analiz",
+        "traditional": "Çevresindeki kod mantığını veya projeye özgü bağlamı anlamadan kalıpları eşleştirir.",
+        "vulniq": "Ajanlar, harekete geçmeden önce ilgili bilgi tabanı girişlerini alır ve kod bağlamını değerlendirir."
+      },
+      "falsePositiveRate": {
+        "label": "Yanlış pozitif oranı",
+        "traditional": "Yüksek — gerçek güvenlik açıklarını ayırt etmek için manuel önceliklendirme gerektiren çok sayıda sorun dışı durumu işaretler.",
+        "vulniq": "Azaltılmış — belgelerinize ve standartlara çapraz referans yaparak temelli akıl yürütme gürültüyü filtreler."
+      },
+      "remediation": {
+        "label": "Düzeltme",
+        "traditional": "Yerleşik yok — bir sorun listesi çıkarır ve düzeltmeyi tamamen geliştiriciye bırakır.",
+        "vulniq": "Özerk — Uygulayıcı ajan, temelli düzeltmeleri doğrudan kod tabanınıza uygular."
+      },
+      "knowledgeSources": {
+        "label": "Bilgi kaynakları",
+        "traditional": "Yığınınız için özelleştirilemeyen sabit kural kümeleri ve CVE veritabanları.",
+        "vulniq": "Kendi güvenlik bilgi tabanlarınız, kılavuzlarınız, CWE, OWASP ve yığına özgü rehberlik."
+      },
+      "fixVerification": {
+        "label": "Düzeltme doğrulaması",
+        "traditional": "Yok — önerilen bir düzeltmenin güvenlik açığını gerçekten çözüp çözmediğini doğrulamanın otomatik yolu yok.",
+        "vulniq": "Yerleşik — Test Ajanı, her yama uygulandıktan sonra hedefe yönelik güvenlik kontrolleri çalıştırır."
+      },
+      "reporting": {
+        "label": "Raporlama",
+        "traditional": "Paydaşlarla paylaşılmadan önce manuel biçimlendirme gerektiren ham tarama çıktısı.",
+        "vulniq": "Bulgular, yamalar, kanıt atıfları ve test sonuçları içeren paydaşlara hazır PDF raporları."
+      }
+    }
+  },
+  "faq": {
+    "heading": "Sık sorulan sorular",
+    "description": "VulnIQ ve kodunuzu güvence altına almaya nasıl yardımcı olabileceği hakkında bilmeniz gereken her şey.",
+    "stillHaveQuestions": "Hâlâ sorularınız mı var?",
+    "askThemHere": "Burada sorun →",
+    "items": {
+      "q1": {
+        "question": "VulnIQ nedir?",
+        "answer": "VulnIQ, çok ajanlı bir RAG ardışık düzeniyle çalışan özerk bir güvenlik düzeltme platformudur. Kodunuzdaki güvenlik açıklarını tespit eder, kendi güvenlik bilgi tabanlarınızı kullanarak temelli düzeltmeler uygular, yamaları hedefe yönelik testlerle doğrular ve denetime hazır raporlar oluşturur — tümü manuel müdahale olmadan."
+      },
+      "q2": {
+        "question": "VulnIQ geleneksel statik analiz araçlarından nasıl farklıdır?",
+        "answer": "Geleneksel statik analiz araçları sabit kural kümelerine karşı kalıp eşleştirme yapar ve düzeltme içermeyen bir sorun listesi üretir. VulnIQ, alım artırmalı üretimle desteklenmiş 4 ajanlı bir ardışık düzen (İnceleyici, Uygulayıcı, Test Eden, Raporlayan) kullanır; böylece her düzeltme belgelerinize ve güvenlik standartlarına dayalıdır, otomatik testlerle doğrulanır ve paydaşlara hazır bir raporda derlenir."
+      },
+      "q3": {
+        "question": "VulnIQ hangi programlama dillerini destekler?",
+        "answer": "VulnIQ şu anda OWASP Top 10 güvenlik açıklarıyla en sık ilişkilendirilen web uygulama dilleri ve çerçevelerine odaklanmaktadır. Destek aktif olarak genişletilmektedir — en son dil eklemeleri için değişiklik günlüğünü inceleyin."
+      },
+      "q4": {
+        "question": "VulnIQ CI/CD ardışık düzenim ile entegre olabilir mi?",
+        "answer": "CI/CD entegrasyonu yol haritasında yer almaktadır. Şu anda VulnIQ, isteğe bağlı tarama ve düzeltme için doğrudan GitHub ve GitLab depolarına bağlanmaktadır. Web kancası tetiklemeli ve zamanlanmış ardışık düzen çalıştırmaları gelecekteki bir sürüm için planlanmaktadır."
+      },
+      "q5": {
+        "question": "VulnIQ hangi yapay zeka sağlayıcılarını kullanır?",
+        "answer": "VulnIQ, tasarım gereği modelden bağımsızdır. Platform, önde gelen LLM sağlayıcılarıyla çalışacak şekilde yapılandırılmıştır. Belirli model seçimi ve sağlayıcı ayrıntıları dokümantasyonda mevcuttur ve dağıtım ortamına göre değişebilir."
+      },
+      "q6": {
+        "question": "Ücretsiz bir katman var mı?",
+        "answer": "VulnIQ şu anda bir araştırma projesi olarak açık beta aşamasındadır. Kayıt olmadan tam demoyu deneyebilirsiniz. Hesap tabanlı erişim mevcuttur — mevcut erişim katmanları hakkında ayrıntılar için fiyatlandırma sayfasını inceleyin veya bizimle iletişime geçin."
+      },
+      "q7": {
+        "question": "VulnIQ'nun düzeltme doğruluğu nedir?",
+        "answer": "Doğruluk, sağlanan bilgi tabanlarının kalitesine ve güvenlik açığının karmaşıklığına bağlıdır. Her düzeltmeyi belgelerinize dayandırarak ve Test Ajanı ile doğrulayarak VulnIQ, yardımsız LLM çıktısına kıyasla yanlış pozitifleri ve doğrulanmamış yamaları önemli ölçüde azaltır. Nicel sonuçlar eşlik eden tez makalesinde raporlanmıştır."
+      }
+    },
+    "askDialog": {
+      "title": "Soru Sorun",
+      "description": "Sorunuzu bize gönderin, en kısa sürede yanıt verelim.",
+      "emailLabel": "E-posta",
+      "questionLabel": "Sorunuz",
+      "emailPlaceholder": "sizin@email.com",
+      "questionPlaceholder": "Ne öğrenmek istersiniz?",
+      "sendButton": "Soru Gönder",
+      "sendingButton": "Gönderiliyor...",
+      "successTitle": "Soru gönderildi!",
+      "successDescription": "E-postanıza kısa sürede yanıt vereceğiz."
+    }
+  },
+  "cta": {
+    "title": "Güvenliği sağlamaya başlayın",
+    "button": "Başlayın"
+  },
+  "blogSection": {
+    "heading": "Güvenlik bilgi merkezi",
+    "description": "VulnIQ ekibinden uygulama güvenliği, güvenlik açığı tespiti ve güvenli geliştirme uygulamaları üzerine uzman içgörüleri.",
+    "readArticle": "Makaleyi oku",
+    "noArticles": "Henüz makale yok",
+    "noArticlesDescription": "Güvenlik uzmanlarımız yeni içerikler üzerinde çalışıyor. Uygulama güvenliği ve güvenlik açığı tespiti hakkında içgörüler için yakında tekrar kontrol edin.",
+    "viewAllArticles": "Tüm makaleleri görüntüle"
+  },
+  "footer": {
+    "brand": "VulnIQ",
+    "tagline": "Alım artırmalı üretimle desteklenen özerk güvenlik düzeltmesi.",
+    "followUs": "Bizi takip edin",
+    "productHunt": "Product Hunt",
+    "resources": "Kaynaklar",
+    "haveFeedback": "Geri bildiriminiz mi var?",
+    "changelog": "Değişiklik günlüğü",
+    "sitemap": "Site haritası",
+    "supporters": "Destekçiler",
+    "viewThesisPaper": "Tez makalesini görüntüle (devam ediyor...)",
+    "serviceStatus": {
+      "operational": "Hizmetler çalışıyor",
+      "diagnosing": "Sorun tespit ediliyor, düzeltiliyor",
+      "down": "Sistemler çevrimdışı",
+      "idle": "Sistemler boşta"
+    },
+    "thesis": {
+      "label": "Yüksek lisans tezi",
+      "author": "Emanuel Rusu",
+      "university": "Batı Timișoara Üniversitesi",
+      "faculty": "Bilgisayar Bilimleri Fakültesi",
+      "degree": "Yüksek Lisans Siber Güvenlik",
+      "connectLinkedIn": "LinkedIn'de bağlantı kurun"
+    },
+    "newsletter": {
+      "heading": "Güncel kalın",
+      "description": "Yeni özellikler ve araştırma güncellemeleri hakkında bildirim alın.",
+      "emailPlaceholder": "E-posta adresinizi girin",
+      "subscribeButton": "Abone ol",
+      "subscribingButton": "Abone olunuyor...",
+      "successMessage": "Başarıyla abone olundu",
+      "invalidEmail": "Lütfen geçerli bir e-posta adresi girin"
+    },
+    "backToTop": "Başa dön",
+    "copyright": "© 2026 VulnIQ. Tüm hakları saklıdır.",
+    "madeIn": "Romanya, Timișoara'da yapıldı",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsConditions": "Şartlar ve Koşullar",
+    "vulnerabilityDisclosure": "Güvenlik Açığı İfşa Politikası",
+    "manageCookies": "Çerezleri Yönet",
+    "openBetaBadge": "Açık beta • Araştırma projesi •",
+    "feedbackDialog": {
+      "title": "Geri bildiriminizi paylaşın",
+      "description": "Nasıl iyileştirebileceğimiz hakkındaki düşüncelerinizi duymak isteriz.",
+      "feedbackLabel": "Geri bildiriminiz",
+      "feedbackPlaceholder": "Düşüncelerinizi yazın...",
+      "cancelButton": "İptal",
+      "submitButton": "Geri Bildirimi Gönder",
+      "submittingButton": "Gönderiliyor..."
+    }
+  },
+  "about": {
+    "metadata": {
+      "title": "Hakkında | VulnIQ",
+      "description": "VulnIQ hakkında bilgi edinin — otomatik güvenlik açığı düzeltmesi için ajansal RAG'ı araştıran bir yüksek lisans tezi projesi."
+    },
+    "headingPart1": "{highlight} için Ajansal RAG",
+    "headingHighlight": "otomatik program onarımı",
+    "intro": "Güvenlik açığı düzeltmesi için özelleştirilmiş güvenlik bilgisiyle desteklenmiş LLM tabanlı ajanların etkinliğini araştıran bir yüksek lisans tezi projesi.",
+    "problemStatement": {
+      "heading": "Problem tanımı",
+      "body": "Büyük dil modelleri otomatik program onarımı için önemli bir potansiyel göstermektedir; ancak güvenlik açığı düzeltmesine uygulanmaları yeterince araştırılmamıştır. Mevcut yaklaşımlar, düzeltmeleri yetkili güvenlik bilgisine dayandırmadan genel model yeteneklerine güvenmekte; bu da halüsinasyon içeren yamalar, tutarsız düzeltme kalitesi ve bir düzeltmenin güvenlik açığını gerçekten çözüp çözmediğinin otomatik doğrulamasının bulunmaması sorunlarına yol açmaktadır."
+    },
+    "limitations": {
+      "heading": "Mevcut yaklaşımların sınırlılıkları",
+      "body": "Statik analiz araçları güvenlik açıklarını tespit eder ancak düzeltme sunamaz. LLM tabanlı araçlar, projeye özgü güvenlik politikalarına veya doğrulanmış bilgi tabanlarına dayanmadan düzeltmeler üretir; bu durum yüksek oranda yanlış pozitif ve güvenilir olmadan önce önemli manuel inceleme gerektiren doğrulanamaz yamalar ortaya çıkarır."
+    },
+    "methodology": {
+      "heading": "Önerilen metodoloji",
+      "body1": "VulnIQ, dört özelleşmiş ajandan oluşan bir alım artırmalı üretim mimarisi uygular: seçilmiş bilgi tabanlarına karşı güvenlik açıklarını tespit eden bir İnceleyici, temelli düzeltmeler uygulayan bir Uygulayıcı, her yamayı hedefe yönelik güvenlik kontrolleriyle doğrulayan bir Test Eden ve denetime hazır belgeler derleyen bir Raporlayan.",
+      "body2": "Her ajan, CWE girişleri, OWASP yönergeleri, yığına özgü güvenli kodlama kalıpları ve kullanım senaryosu kılavuzları içeren özel bir vektör bilgi tabanıyla donatılmıştır. Alım, ardışık düzen tarafından alınan her kararın belirli bir bilgi kaynağına izlenebilir olmasını sağlar; böylece yeniden üretilebilir ve denetlenebilir düzeltme mümkün kılınır."
+    },
+    "keyCapabilities": {
+      "heading": "Temel yetenekler",
+      "items": [
+        "Güvenlik bilgi tabanlarınıza dayalı alım artırmalı güvenlik açığı düzeltmesi",
+        "Otomatik düzeltme doğrulaması ve test validasyonu ile uçtan uca 4 ajanlı ardışık düzen",
+        "Kanıt atıfları ve tam yama izlenebilirliği ile denetime hazır PDF raporlama"
+      ]
+    },
+    "researchContributions": "Araştırma katkıları",
+    "researchObjectives": "Araştırma hedefleri",
+    "objectives": {
+      "contextualPrecision": {
+        "title": "Bağlamsal kesinlik",
+        "description": "RAG ile desteklenmiş ajanların, düzeltmeyi projeye özgü bilgi tabanlarına dayandırarak yardımsız LLM'lere göre daha bağlamsal açıdan kesin düzeltmeler üretip üretmediğini değerlendirin."
+      },
+      "automatedReasoning": {
+        "title": "Otomatik akıl yürütme",
+        "description": "Çok ajanlı akıl yürütmenin güvenlik açıklarını insan müdahalesi olmadan ne ölçüde özerk biçimde tespit edip, önceliğini belirleyip çözebileceğini araştırın."
+      },
+      "fixVerification": {
+        "title": "Düzeltme doğrulaması",
+        "description": "Test Ajanı tarafından otomatik test üretimi ve çalıştırmasının, uygulanan yamaların hedeflenen güvenlik açığını çözüp çözmediğinin güvenilir doğrulamasını sağlayıp sağlamadığını değerlendirin."
+      },
+      "knowledgeGrounding": {
+        "title": "Bilgi temellendirme",
+        "description": "Özelleştirilmiş güvenlik bilgi tabanlarının genel model bilgisiyle karşılaştırıldığında düzeltme kalitesi, tutarlılığı ve izlenebilirliği üzerindeki etkisini ölçün."
+      },
+      "reportQuality": {
+        "title": "Rapor kalitesi",
+        "description": "Ajan tarafından üretilen güvenlik raporlarının paydaş iletişimi ve uyumluluk denetim senaryoları için gerekli standartları karşılayıp karşılamadığını belirleyin."
+      },
+      "scalability": {
+        "title": "Ölçeklenebilirlik",
+        "description": "Pratik dağıtım sınırlarını belirlemek için farklı boyut, dil çeşitliliği ve güvenlik açığı karmaşıklığına sahip depolar genelinde ardışık düzen performansını inceleyin."
+      }
+    },
+    "aboutResearch": "Araştırma hakkında",
+    "viewPrototype": "Prototipi görüntüle",
+    "builtWith": "Modern teknolojilerle inşa edildi"
+  },
+  "blog": {
+    "metadata": {
+      "title": "Blog | VulnIQ",
+      "description": "VulnIQ ekibinden güvenlik içgörüleri, güvenlik açığı araştırması ve güvenli geliştirme en iyi uygulamaları."
+    },
+    "readTime": "{minutes} dakika okuma",
+    "postNotFound": "Gönderi bulunamadı",
+    "postNotFoundDescription": "Aradığınız makale taşınmış veya silinmiş olabilir.",
+    "backToBlog": "Bloga geri dön",
+    "publishedOn": "{date} tarihinde yayınlandı",
+    "by": "Yazan: {author}",
+    "shareArticle": "Makaleyi paylaş",
+    "tableOfContents": "İçindekiler"
+  },
+  "login": {
+    "metadata": {
+      "title": "Giriş — VulnIQ"
+    },
+    "tag": "Kod güvenliği",
+    "headline": "Varsayılan olarak özerk",
+    "featureDescription1": "VulnIQ'nun çok ajanlı ardışık düzeni güvenlik açıklarını tespit eder, bilgi tabanlarınızdan temelli düzeltmeler uygular, yamaları otomatik testlerle doğrular ve denetime hazır raporlar sunar — tamamen manuel müdahale olmadan.",
+    "featureDescription2": "Her düzeltme kararı belirli bir bilgi kaynağına izlenebilir; bu da güvenlik iş akışınızı yeniden üretilebilir, tutarlı ve uyumluluk incelemesine hazır kılar.",
+    "backToHome": "Ana sayfaya dön",
+    "agreementPrefix": "Devam ederek VulnIQ'nun",
+    "agreementAnd": "ve",
+    "agreementSuffix": " belgelerini kabul etmiş olursunuz.",
+    "termsLabel": "Şartlar",
+    "privacyLabel": "Gizlilik Politikası",
+    "serviceStatus": {
+      "operational": "Hizmetler çalışıyor",
+      "diagnosing": "Sorun tespit ediliyor, düzeltiliyor",
+      "down": "Sistemler çevrimdışı",
+      "idle": "Sistemler boşta"
+    }
+  },
+  "privacy": {
+    "metadata": {
+      "title": "Gizlilik Politikası | VulnIQ",
+      "description": "VulnIQ gizlilik politikası — verilerinizi nasıl topladığımız, kullandığımız ve koruduğumuz."
+    }
+  },
+  "terms": {
+    "metadata": {
+      "title": "Şartlar ve Koşullar | VulnIQ",
+      "description": "VulnIQ kullanım şartları ve koşulları."
+    }
+  },
+  "security": {
+    "metadata": {
+      "title": "Güvenlik | VulnIQ",
+      "description": "VulnIQ güvenlik açığı ifşa politikası ve güvenlik uygulamaları."
+    }
+  },
+  "changelog": {
+    "metadata": {
+      "title": "Değişiklik Günlüğü | VulnIQ",
+      "description": "VulnIQ için en son güncellemeler, iyileştirmeler ve sürümler."
+    }
+  },
+  "supporters": {
+    "metadata": {
+      "title": "Destekçiler | VulnIQ",
+      "description": "VulnIQ araştırma projesini destekleyen kişiler ve kuruluşlar."
+    }
+  },
+  "notFound": {
+    "title": "Bu sayfa mevcut değil",
+    "description": "Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.",
+    "backButton": "Önceki sayfaya geri dön"
+  },
+  "error": {
+    "title": "Bir şeyler yanlış gitti",
+    "description": "Beklenmedik bir hatayla karşılaştık. Ekibimiz bilgilendirildi.",
+    "errorId": "Hata Kimliği",
+    "copyErrorDetails": "Hata ayrıntılarını kopyala",
+    "contactPrompt": "Bu sorun devam ederse lütfen iletişime geçin"
+  },
+  "cookie": {
+    "title": "Çerez Seçenekleriniz",
+    "basicDescription": "Aşağıda açıklandığı şekilde bu sitenin işlevsel ve/veya reklam çerezleri kullanıp kullanmayacağını lütfen seçin:",
+    "essential": {
+      "label": "Zorunlu Çerezler",
+      "shortDesc": "Temel site işlevselliği için gereklidir.",
+      "description": "Bu çerezler web sitesinin çalışması için gereklidir ve sistemlerimizde kapatılamaz."
+    },
+    "analytics": {
+      "label": "İşlevsel Çerezler",
+      "shortDesc": "Performansı ölçmemize ve iyileştirmemize yardımcı olur.",
+      "description": "Bu çerezler, performansı ölçebilmek ve iyileştirebilmek amacıyla site kullanımını analiz etmemize olanak tanır."
+    },
+    "marketing": {
+      "label": "Reklam Çerezleri",
+      "shortDesc": "İlgili reklamlar sunmak için kullanılır.",
+      "description": "Bu çerezler, ilgi alanlarınıza uygun reklamlar sunmak amacıyla kullanılır."
+    },
+    "allowedFunctionality": "İzin Verilen İşlevsellik",
+    "disallowedFunctionality": "İzin Verilmeyen İşlevsellik",
+    "functionality": {
+      "secureAuth": "Güvenli kimlik doğrulama",
+      "sessionState": "Oturum durumunuzu hatırlama",
+      "rememberAuth": "Giriş bilgilerinizi hatırlama",
+      "retainCart": "Alışveriş sepetinizdeki ürünleri saklama",
+      "siteConsistency": "Sitenin tutarlı çalışmasını sağlama",
+      "socialSharing": "Sayfaları sosyal ağlarda paylaşmaya izin verme",
+      "postComments": "Yorum göndermenize izin verme",
+      "targetedAds": "İlgi alanlarınıza göre reklam sunma"
+    },
+    "submitPreferences": "Tercihleri Gönder",
+    "advancedSettings": "Gelişmiş Ayarlar",
+    "basicSettings": "Temel Ayarlar",
+    "cancel": "İptal",
+    "alwaysActive": "Her Zaman Etkin",
+    "showCookies": "Çerezleri göster",
+    "hideCookies": "Çerezleri gizle",
+    "providerCompany": "Şirket",
+    "providerDomain": "Alan Adı",
+    "learnMore": "Daha fazla bilgi",
+    "done": "Tamam"
+  },
+  "accessibility": {
+    "widgetTitle": "Erişilebilirlik",
+    "customizeExperience": "Deneyiminizi özelleştirin",
+    "resetAll": "Tüm ayarları sıfırla",
+    "resetAllButton": "Tüm Erişilebilirlik Ayarlarını Sıfırla",
+    "dragToMove": "Erişilebilirlik seçenekleri (taşımak için sürükleyin)",
+    "accessibilityOptions": "Erişilebilirlik seçenekleri",
+    "openMenu": "Erişilebilirlik menüsünü aç",
+    "features": {
+      "smartContrast": "Akıllı Kontrast",
+      "stopAnimations": "Animasyonları Durdur",
+      "dyslexiaFriendly": "Disleksi Dostu",
+      "invertColors": "Renkleri Ters Çevir",
+      "highlightLinks": "Bağlantıları Vurgula",
+      "biggerText": "Daha Büyük Metin",
+      "lightSpacing": "Geniş Aralık",
+      "hideImages": "Görselleri Gizle",
+      "bigCursor": "Büyük İmleç",
+      "tooltips": "Araç İpuçları",
+      "pageStructure": "Sayfa Yapısı",
+      "lineHeight": "Satır Yüksekliği",
+      "alignLeft": "Sola Hizala",
+      "lowSaturation": "Düşük Doygunluk",
+      "readingGuide": "Okuma Kılavuzu",
+      "focusIndicator": "Odak Göstergesi"
+    },
+    "structure": {
+      "headings": "Başlıklar",
+      "landmarks": "Yer İşaretleri",
+      "links": "Bağlantılar",
+      "noHeadings": "Başlık bulunamadı",
+      "noLandmarks": "Yer işareti bulunamadı",
+      "noLinks": "Bağlantı bulunamadı",
+      "noText": "(metin yok)"
+    }
+  },
+  "dashboard": {
+    "metadata": {
+      "title": "Panel | VulnIQ"
+    },
+    "nav": {
+      "home": "Ana Sayfa",
+      "codeInspection": "Kod incelemesi",
+      "knowledgeBase": "Bilgi tabanı",
+      "results": "Sonuçlar",
+      "codeGraph": "Kod Grafiği",
+      "writeArticle": "Makale yaz"
+    },
+    "searchActions": "Eylemleri ara...",
+    "quickActions": "Hızlı eylemler",
+    "error": {
+      "title": "Panel Hatası",
+      "description": "Panel yüklenirken bir sorun oluştu."
+    },
+    "demoMode": "Demo Modu",
+    "exitDemo": "Demodan Çık",
+    "signInPrompt": "İncelemeye başlamak için lütfen giriş yapın",
+    "noCodePrompt": "İncelemek için lütfen kod girin veya bir proje içe aktarın",
+    "resultsMetadata": {
+      "title": "Analiz Sonuçları | VulnIQ"
+    },
+    "toast": {
+      "copiedToClipboard": "Panoya kopyalandı",
+      "copyFailed": "Kopyalanamadı",
+      "exportSuccess": "Rapor başarıyla dışa aktarıldı",
+      "exportFailed": "Rapor dışa aktarılamadı",
+      "saveSuccess": "Başarıyla kaydedildi",
+      "saveFailed": "Kaydedilemedi"
+    }
+  },
+  "demo": {
+    "metadata": {
+      "title": "Demo | VulnIQ",
+      "description": "VulnIQ'nun özerk güvenlik açığı düzeltme ardışık düzenini canlı demo ortamında deneyin."
+    },
+    "demoMode": "Demo Modu",
+    "exitDemo": "Demodan Çık",
+    "pages": {
+      "home": {
+        "title": "Demo Ana Sayfa"
+      },
+      "codeInput": {
+        "title": "Kod Girişi"
+      },
+      "knowledgeBase": {
+        "title": "Bilgi Tabanı"
+      },
+      "results": {
+        "title": "Sonuçlar"
+      },
+      "profile": {
+        "title": "Profil"
+      },
+      "writeArticle": {
+        "title": "Makale Yaz"
+      }
+    }
+  },
+  "admin": {
+    "metadata": {
+      "title": "Yönetici | VulnIQ"
+    },
+    "verification": {
+      "title": "Yönetici Doğrulaması",
+      "description": "Devam etmek için şifrenizi girin",
+      "emailLabel": "Yönetici E-postası",
+      "continueButton": "Devam Et",
+      "verifyingButton": "Doğrulanıyor...",
+      "passwordLabel": "Şifre",
+      "verifyPasswordButton": "Şifreyi Doğrula",
+      "useDifferentEmail": "Farklı e-posta kullan",
+      "setUpPasskey": "Parola Anahtarı Kur",
+      "startOver": "Baştan başla"
+    },
+    "userManagement": {
+      "title": "Kullanıcı Yönetimi",
+      "description": "Kullanıcı profillerini görüntüleyin ve uyarı gönderin",
+      "totalLabel": "Toplam",
+      "warnedLabel": "Uyarılan",
+      "bannedIpsLabel": "Yasaklı IP'ler",
+      "searchPlaceholder": "Kullanıcı ara...",
+      "tableHeaders": {
+        "user": "Kullanıcı",
+        "email": "E-posta",
+        "status": "Durum",
+        "joined": "Katılım",
+        "actions": "İşlemler"
+      }
+    },
+    "articleStatus": {
+      "draft": "Taslak",
+      "pending": "Beklemede",
+      "inReview": "İncelemede",
+      "published": "Yayınlandı",
+      "rejected": "Reddedildi",
+      "pendingDeletion": "Silinme beklemede"
+    },
+    "nav": {
+      "users": "Kullanıcılar",
+      "articles": "Makaleler",
+      "supporters": "Destekçiler",
+      "createAdmin": "Yönetici Oluştur"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "imageUploadDisabledDemo": "Demo modunda görsel yükleme devre dışıdır"
+  },
+  "siteMap": {
+    "metadata": {
+      "title": "Site Haritası | VulnIQ",
+      "description": "VulnIQ'da mevcut tüm sayfaların tam haritası."
+    },
+    "title": "Site Haritası",
+    "description": "VulnIQ'da mevcut tüm sayfaların tam haritası."
+  },
+  "languageSelector": {
+    "selectLanguage": "Dil seçin",
+    "close": "Kapat",
+    "noLanguagesFound": "Dil bulunamadı",
+    "search": "Ara"
+  }
+}
