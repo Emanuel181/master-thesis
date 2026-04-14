@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input";
@@ -1637,7 +1637,7 @@ export default function KnowledgeBaseVisualization() {
                         {searchTerm && (
                             <button
                                 onClick={() => setSearchTerm("")}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm transition-colors"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-sm transition-colors"
                                 title="Clear search"
                             >
                                 <X className="h-4 w-4 text-muted-foreground" />
@@ -1645,22 +1645,28 @@ export default function KnowledgeBaseVisualization() {
                         )}
                     </div>
                     <div className="flex items-center gap-2 justify-end">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleRefreshAllUseCases}
-                            title={
-                                selectedGroupId === null
-                                    ? "Refresh all use cases"
-                                    : selectedGroupId === "ungrouped"
-                                        ? "Refresh ungrouped use cases"
-                                        : `Refresh use cases in ${useCaseGroups.find(g => g.id === selectedGroupId)?.name || 'group'}`
-                            }
-                            disabled={isLoading || refreshingUseCases.size > 0}
-                            className="h-9 w-9 sm:h-10 sm:w-10"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${isLoading || refreshingUseCases.size > 0 ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={handleRefreshAllUseCases}
+                                        disabled={isLoading || refreshingUseCases.size > 0}
+                                        className="h-9 w-9 sm:h-10 sm:w-10"
+                                    >
+                                        <RefreshCw className={`h-4 w-4 ${isLoading || refreshingUseCases.size > 0 ? 'animate-spin' : ''}`} />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="text-xs">
+                                    {selectedGroupId === null
+                                        ? "Refresh all use cases"
+                                        : selectedGroupId === "ungrouped"
+                                            ? "Refresh ungrouped use cases"
+                                            : `Refresh use cases in ${useCaseGroups.find(g => g.id === selectedGroupId)?.name || 'group'}`}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <AddCategoryDialog onAddCategory={handleAddCategory} groups={useCaseGroups} />
                     </div>
                 </div>
@@ -1869,7 +1875,7 @@ export default function KnowledgeBaseVisualization() {
                                     "flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 sm:px-6 py-4 sm:py-8 transition-all duration-200 bg-background",
                                     isDragActive
                                         ? "border-primary bg-primary/5 scale-[1.01] shadow-inner"
-                                        : "border-input hover:bg-accent/50 hover:border-accent-foreground/50"
+                                        : "border-input hover:bg-muted/50 hover:border-accent-foreground/50"
                                 )}
                                 onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
                                 onDragEnter={(e) => { e.preventDefault(); setIsDragActive(true); }}
@@ -2046,7 +2052,7 @@ export default function KnowledgeBaseVisualization() {
                                                             className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
                                                                 selectedFolderId === folder.id 
                                                                     ? 'bg-primary/10 border border-primary' 
-                                                                    : 'hover:bg-accent'
+                                                                    : 'hover:bg-muted'
                                                             }`}
                                                             style={{ paddingLeft: `${folder.depth * 12 + 8}px` }}
                                                             onClick={() => setSelectedFolderId(folder.id)}

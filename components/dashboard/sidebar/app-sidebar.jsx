@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import {
     BookOpen,
     Bot,
@@ -34,7 +34,8 @@ import {
 } from "@/components/ui/sidebar"
 import { NavUser } from "./nav-user";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const data = {
     team: {
@@ -58,6 +59,7 @@ export function AppSidebar({ onNavigate, activeComponent = "Home", ...props }) {
     const { data: session, status } = useSession()
     const [isAdmin, setIsAdmin] = React.useState(false)
     const [mounted, setMounted] = React.useState(false)
+    const t = useTranslations('dashboard');
 
     React.useEffect(() => { setMounted(true) }, [])
 

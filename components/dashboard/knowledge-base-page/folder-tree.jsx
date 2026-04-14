@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { Tree } from "react-arborist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +85,7 @@ function TreeNode({ node, style, dragHandle }) {
             ref={dragHandle}
             style={style}
             className={`relative flex items-center gap-1 py-0.5 px-1 rounded-md cursor-pointer group transition-colors duration-200 ${
-                node.isSelected ? "bg-accent" : "hover:bg-accent/50"
+                node.isSelected ? "bg-accent" : "hover:bg-muted/50"
             } ${isSelected ? "bg-accent/30" : ""} ${
                 isDragging ? "opacity-40 cursor-grabbing" : ""
             } ${
@@ -1270,7 +1270,7 @@ const FolderTree = forwardRef(function FolderTree({
                                         e.dataTransfer.setData("application/pdf-move", JSON.stringify({ pdfIds }));
                                         e.dataTransfer.effectAllowed = "move";
                                     }}
-                                    className={`relative flex items-center gap-1.5 py-1.5 px-2 rounded-md hover:bg-accent/50 cursor-pointer group ${
+                                    className={`relative flex items-center gap-1.5 py-1.5 px-2 rounded-md hover:bg-muted/50 cursor-pointer group ${
                                         selectedItems.has(item.id) ? "bg-accent/30" : ""
                                     }`}
                                     onClick={() => {
@@ -1333,7 +1333,7 @@ const FolderTree = forwardRef(function FolderTree({
                                         e.dataTransfer.setData("application/pdf-move", JSON.stringify({ pdfIds }));
                                         e.dataTransfer.effectAllowed = "move";
                                     }}
-                                    className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-accent/50 cursor-pointer group transition-colors ${
+                                    className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-muted/50 cursor-pointer group transition-colors ${
                                         selectedItems.has(item.id) ? "bg-accent/30 border-primary" : "border-transparent"
                                     }`}
                                     onClick={() => {
@@ -1406,7 +1406,7 @@ const FolderTree = forwardRef(function FolderTree({
                                         e.dataTransfer.setData("application/pdf-move", JSON.stringify({ pdfIds }));
                                         e.dataTransfer.effectAllowed = "move";
                                     }}
-                                    className={`relative flex items-center gap-1.5 py-1 px-2 border-b hover:bg-accent/50 cursor-pointer group ${
+                                    className={`relative flex items-center gap-1.5 py-1 px-2 border-b hover:bg-muted/50 cursor-pointer group ${
                                         selectedItems.has(item.id) ? "bg-accent/30" : ""
                                     }`}
                                     onClick={() => {
@@ -1582,7 +1582,7 @@ const FolderTree = forwardRef(function FolderTree({
                         <div className="p-2 space-y-1">
                             {/* Root option */}
                             <div
-                                className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer"
                                 onClick={() => handleSelectFolderFromPicker(null)}
                             >
                                 <Home className="h-4 w-4 text-muted-foreground" />
@@ -1593,7 +1593,7 @@ const FolderTree = forwardRef(function FolderTree({
                                 paginatedFoldersForPicker.map(folder => (
                                     <div
                                         key={folder.id}
-                                        className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                                        className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer"
                                         style={{ paddingLeft: `${folder.depth * 12 + 8}px` }}
                                         onClick={() => handleSelectFolderFromPicker(folder.id)}
                                     >

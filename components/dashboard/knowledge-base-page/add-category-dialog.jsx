@@ -26,6 +26,7 @@ import { Plus, Loader2, Check, Folder } from "lucide-react"
 import { IconPicker } from "./icon-picker"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 
 // Category color options
@@ -127,12 +128,19 @@ export function AddCategoryDialog({ onAddCategory, groups = [] }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Add category
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add category
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Create a new knowledge base category</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Add New Category</DialogTitle>

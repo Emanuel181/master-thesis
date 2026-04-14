@@ -79,7 +79,7 @@ export function SearchInput({
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="p-0.5 hover:bg-accent rounded-sm transition-colors"
+                        className="p-0.5 hover:bg-muted/15 rounded-sm transition-colors"
                         title="Clear search"
                     >
                         <X className="h-4 w-4 text-muted-foreground" />

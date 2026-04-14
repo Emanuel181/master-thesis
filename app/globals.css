@@ -197,6 +197,11 @@
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
+/* Hero heading — fluid type that scales with viewport */
+.hero-heading {
+  font-size: clamp(3rem, 6vw + 1rem, 6rem);
+}
+
 /* ============================================
    MICRO-INTERACTION UTILITIES
    ============================================ */
@@ -689,14 +694,14 @@ html {
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-highlight: var(--highlight);
+}
 
-  @keyframes move {
-    0% {
-      transform: translateX(-200px);
-    }
-    100% {
-      transform: translateX(200px);
-    }
+@keyframes move {
+  0% {
+    transform: translateX(-200px);
+  }
+  100% {
+    transform: translateX(200px);
   }
 }
 
@@ -705,6 +710,8 @@ html {
   --highlight: oklch(0.852 0.199 91.936);
 
   /* Legacy brand variables - map to preset tokens */
+  --brand: oklch(0.623 0.214 259.815);
+  --brand-foreground: var(--brand-accent);
   --brand-accent: var(--primary);
   --brand-primary: var(--primary);
   --brand-dark: oklch(0.141 0.005 285.823);
@@ -744,8 +751,8 @@ html {
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.52 0.105 223.128);
-  --accent-foreground: oklch(0.984 0.019 200.873);
+  --accent: oklch(0.50 0.12 200);
+  --accent-foreground: oklch(0.984 0.019 200);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.705 0.015 286.067);
@@ -770,8 +777,8 @@ html {
   --secondary-foreground: oklch(0.96 0.005 280);
   --muted: oklch(0.26 0.01 280);
   --muted-foreground: oklch(0.65 0.015 280);
-  --accent: oklch(0.60 0.14 260);
-  --accent-foreground: oklch(0.96 0.005 280);
+  --accent: oklch(0.72 0.12 200);
+  --accent-foreground: oklch(0.13 0.02 200);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.55 0.12 260);
@@ -788,6 +795,8 @@ html {
   --highlight: oklch(0.852 0.199 91.936);
 
   /* Legacy brand variables - map to preset tokens */
+  --brand: oklch(0.707 0.165 254.624);
+  --brand-foreground: var(--brand-accent);
   --brand-accent: var(--primary);
   --brand-primary: var(--primary);
   --brand-dark: oklch(0.141 0.005 285.823);
@@ -1220,13 +1229,23 @@ html {
   100% { background-position: 200% 0; }
 }
 
+@keyframes shimmer-slide {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .skeleton-shimmer {
   background: linear-gradient(90deg,
     hsl(var(--muted)) 0%,
-    hsl(var(--muted-foreground) / 0.1) 50%,
+    hsl(var(--muted-foreground) / 0.08) 50%,
     hsl(var(--muted)) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Smooth interactive transitions for links, buttons, badges */
+a, button, [role="button"], .interactive-smooth {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 /* Success checkmark animation */
@@ -1917,6 +1936,44 @@ body[style*="--a11y-saturation"] {
 .a11y-big-cursor button[aria-label="Open accessibility menu"],
 .a11y-big-cursor .a11y-widget-button {
   cursor: pointer !important;
+}
+
+/* Invert Colors */
+.a11y-invert-colors {
+  filter: invert(1) hue-rotate(180deg);
+}
+.a11y-invert-colors img,
+.a11y-invert-colors video,
+.a11y-invert-colors [data-slot="avatar-image"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Hide Images */
+.a11y-hide-images img,
+.a11y-hide-images [data-slot="avatar-image"],
+.a11y-hide-images picture,
+.a11y-hide-images svg:not([class*="lucide"]):not([class*="icon"]) {
+  visibility: hidden !important;
+}
+
+/* Tooltips — force title attributes visible via pseudo-element (best-effort) */
+.a11y-tooltips [title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+}
+.a11y-tooltips [title] {
+  position: relative;
 }
 
 /* Exclude accessibility widget from font/style changes */

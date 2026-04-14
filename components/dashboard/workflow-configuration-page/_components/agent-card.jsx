@@ -48,6 +48,13 @@ export function AgentCard({
     isRefreshing,
     onRefresh,
 }) {
+    // Derive status from props if not explicitly provided
+    const derivedStatus = status ?? (
+        selectedModel && selectedPrompt ? "complete" :
+        selectedModel || selectedPrompt ? "partial" :
+        "empty"
+    )
+
     // Get friendly name for selected model
     const getModelDisplayName = (modelId) => {
         if (!modelId) return null
@@ -59,10 +66,10 @@ export function AgentCard({
 
     return (
         <Card className={`transition-all duration-200 ${
-            status === "complete" ? 'border-emerald-500/30' : status === "partial" ? 'border-yellow-500/20' : ''
+            derivedStatus === "complete" ? 'border-emerald-500/30' : derivedStatus === "partial" ? 'border-yellow-500/20' : ''
         }`}>
             <CardHeader className={`flex flex-row items-center justify-between pb-2 rounded-t-lg transition-colors duration-300 ${
-                status === "complete" ? 'bg-gradient-to-r from-emerald-500/5 to-transparent' : ''
+                derivedStatus === "complete" ? 'bg-gradient-to-r from-emerald-500/5 to-transparent' : ''
             }`}>
                 <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-medium">{title}</CardTitle>
@@ -71,30 +78,30 @@ export function AgentCard({
                             <TooltipTrigger asChild>
                                 <span
                                     className={`h-2.5 w-2.5 rounded-full shrink-0 transition-colors duration-300 ${
-                                        status === "complete"
+                                        derivedStatus === "complete"
                                             ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
-                                            : status === "partial"
+                                            : derivedStatus === "partial"
                                             ? "bg-yellow-500 shadow-sm shadow-yellow-500/50"
                                             : "bg-muted-foreground/30"
                                     }`}
                                 />
                             </TooltipTrigger>
                             <TooltipContent>
-                                {status === "complete"
+                                {derivedStatus === "complete"
                                     ? "Fully configured"
-                                    : status === "partial"
+                                    : derivedStatus === "partial"
                                     ? "Partially configured"
                                     : "Not configured"}
                             </TooltipContent>
                         </Tooltip>
                         <span className={`text-[10px] font-medium ${
-                            status === "complete"
+                            derivedStatus === "complete"
                                 ? "text-emerald-600 dark:text-emerald-400"
-                                : status === "partial"
+                                : derivedStatus === "partial"
                                 ? "text-yellow-600 dark:text-yellow-400"
                                 : "text-muted-foreground"
                         }`}>
-                            {status === "complete" ? "Ready" : status === "partial" ? "Partial" : "Setup needed"}
+                            {derivedStatus === "complete" ? "Ready" : derivedStatus === "partial" ? "Partial" : "Setup needed"}
                         </span>
                     </div>
                 </div>
@@ -124,7 +131,7 @@ export function AgentCard({
                                     position="popper"
                                 >
                                     <div onWheelCapture={(e) => e.stopPropagation()}>
-                                        <div className="p-2 border-b">
+                                        <div className="p-2">
                                             <Input
                                                 placeholder="Search models..."
                                                 value={modelSearchTerm}
@@ -159,7 +166,7 @@ export function AgentCard({
                                             )}
                                         </div>
                                         {totalModelPages > 1 && (
-                                            <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                            <div className="flex items-center justify-between px-2 py-1.5">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -214,7 +221,7 @@ export function AgentCard({
                                         position="popper"
                                     >
                                         <div onWheelCapture={(e) => e.stopPropagation()}>
-                                            <div className="p-2 border-b">
+                                            <div className="p-2">
                                                 <Input
                                                     placeholder="Search prompts..."
                                                     value={promptSearchTerm}
@@ -240,7 +247,7 @@ export function AgentCard({
                                                 )}
                                             </div>
                                             {totalPromptPages > 1 && (
-                                                <div className="flex items-center justify-between px-2 py-1.5 border-t">
+                                                <div className="flex items-center justify-between px-2 py-1.5">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"

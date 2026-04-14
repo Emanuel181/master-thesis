@@ -1,5 +1,9 @@
 'use client';
 
+// NOTE: This is the global error boundary at app/global-error.jsx (outside [locale]).
+// It cannot use next-intl translations because it renders outside the locale provider.
+// All strings here are English-only by design.
+
 import { useEffect, useState } from "react";
 import { AlertTriangle, RefreshCw, Home, Copy, Check } from "lucide-react";
 

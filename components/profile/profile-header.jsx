@@ -13,7 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Camera, Calendar, Mail, MapPin, Pencil, X, Check, Loader2, Briefcase, Shield, ZoomIn, RotateCw, Crop } from "lucide-react";
+import { Camera, Calendar, Mail, MapPin, Pencil, X, Check, Loader2, Briefcase, ZoomIn, RotateCw, Crop } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cropper from "react-easy-crop";
@@ -287,10 +287,6 @@ export default function ProfileHeader({
                         <div className="space-y-1 text-center sm:text-left min-w-0">
                             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2">
                                 <h1 className="text-lg sm:text-xl font-bold leading-tight truncate">{displayUser?.name || "User"}</h1>
-                                <Badge variant="outline" className="text-[10px] gap-1 h-5 font-normal shrink-0">
-                                    <Shield className="h-2.5 w-2.5" />
-                                    Member
-                                </Badge>
                             </div>
                             <div className="text-muted-foreground flex flex-wrap justify-center sm:justify-start gap-x-3 gap-y-0.5 text-xs">
                                 {displayUser?.title && (

@@ -520,10 +520,14 @@ model Vulnerability {
   // Document references from knowledge base (JSON array)
   documentReferences Json? // Array of {documentId, documentTitle, relevantExcerpt}
   graphNodeIds       Json? // Code graph node IDs linked to this vulnerability
+  // CVSS scoring
+  cvssScore          Float?  // Numeric score e.g. 9.8
+  cvssVector         String? // CVSS vector string e.g. "CVSS:4.0/AV:N/..."
   // Structured analysis fields
   dataFlow           Json? // Array of {type: source|intermediate|sink, function, file, line, description}
   cvssAnalysis       Json? // Object of {metricKey: analysisText} for dynamic CVSS explanations
   debateLog          Json? // Summary debate result: {verdict, confidence, rounds}
+  exploitSections    Json? // Array of {heading, text, code, language} structured exploit steps
   // Metadata
   lineNumber         Int?
   columnNumber       Int?
@@ -571,6 +575,7 @@ model CodeFix {
   id              String        @id @default(cuid())
   vulnerabilityId String
   vulnerability   Vulnerability @relation(fields: [vulnerabilityId], references: [id], onDelete: Cascade)
+  workflowRunId   String? // Direct link to workflow run for auto-fix scenarios
 
   // Original code
   fileName     String
@@ -604,6 +609,7 @@ model CodeFix {
   @@index([vulnerabilityId])
   @@index([status])
   @@index([fileName])
+  @@index([workflowRunId])
 }
 
 enum FixStatus {

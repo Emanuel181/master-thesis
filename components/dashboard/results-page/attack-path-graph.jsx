@@ -10,150 +10,142 @@ import {
 } from "@/components/ui/tooltip";
 
 /**
- * AttackPathGraph — Interactive SVG-based attack path visualization
+ * AttackPathGraph — Grid-based attack path visualization
  *
- * Renders dataFlow nodes (source → intermediate → sink) as connected cards
- * with directional arrows and color-coded badges.
+ * Renders dataFlow nodes as connected cards in a responsive grid,
+ * matching the design from images: Source / Intermediate / Sink cards
+ * with file:line, description, and directional arrows.
+ *
+ * Accepts:
+ *   dataFlow: Node[]  — flat array of nodes
+ *   dataFlow: { nodes: Node[], edges: Edge[] }  — object with nodes + edges
  */
 
 const NODE_COLORS = {
     source: {
-        bg: "bg-primary/5",
+        bg: "bg-primary/8",
         border: "border-primary/30",
-        badge: "bg-primary/10 text-primary",
-        dot: "bg-primary",
+        badge: "bg-primary/15 text-primary border border-primary/30",
+        connector: "bg-primary/30",
+        header: "text-primary",
     },
     intermediate: {
-        bg: "bg-severity-medium/5",
-        border: "border-severity-medium/30",
-        badge: "bg-severity-medium/10 text-severity-medium",
-        dot: "bg-severity-medium",
+        bg: "bg-amber-500/8",
+        border: "border-amber-500/30",
+        badge: "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+        connector: "bg-amber-500/30",
+        header: "text-amber-500",
     },
     sink: {
-        bg: "bg-destructive/5",
+        bg: "bg-destructive/8",
         border: "border-destructive/30",
-        badge: "bg-destructive/10 text-destructive",
-        dot: "bg-destructive",
+        badge: "bg-destructive/15 text-destructive border border-destructive/30",
+        connector: "bg-destructive/30",
+        header: "text-destructive",
     },
 };
 
 const NODE_LABELS = {
     source: "Source",
-    intermediate: "Transform",
+    intermediate: "Intermediate",
     sink: "Sink",
 };
 
-function FlowNode({ node, index, isLast }) {
+function FlowNodeCard({ node }) {
     const colors = NODE_COLORS[node.type] || NODE_COLORS.intermediate;
-    const label = NODE_LABELS[node.type] || node.type;
+    const typeLabel = NODE_LABELS[node.type] || node.type;
+    const displayName = node.function || node.name || node.label || "unknown";
+    const fileLine = node.file
+        ? `${node.file}${node.line ? `:L${node.line}` : ""}`
+        : node.line
+        ? `L${node.line}`
+        : null;
 
     return (
-        <div className="flex items-center gap-0">
-            {/* Node Card */}
-            <div
-                className={cn(
-                    "relative flex flex-col gap-1 rounded-lg border p-3 min-w-[180px] max-w-[240px] transition-all duration-200 hover:scale-[1.02]",
-                    colors.bg,
-                    colors.border
-                )}
-            >
-                {/* Type Badge */}
-                <div className="flex items-center gap-2">
-                    <div className={cn("h-2 w-2 rounded-full", colors.dot)} />
-                    <span
-                        className={cn(
-                            "text-[10px] font-semibold uppercase tracking-wider rounded px-1.5 py-0.5",
-                            colors.badge
-                        )}
-                    >
-                        {label}
-                    </span>
-                    {index !== undefined && (
-                        <span className="ml-auto text-[10px] text-muted-foreground font-mono">
-                            #{index + 1}
-                        </span>
-                    )}
-                </div>
-
-                {/* Function name */}
-                <TooltipProvider>
+        <div
+            className={cn(
+                "flex flex-col rounded-lg border p-3.5 min-w-0 flex-1 transition-all duration-200 hover:shadow-sm",
+                colors.bg,
+                colors.border
+            )}
+        >
+            {/* Header row: name + type badge */}
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+                <TooltipProvider delayDuration={200}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <p className="text-sm font-mono font-medium truncate cursor-default">
-                                {node.function || node.name || "unknown"}
+                            <p className={cn("text-sm font-mono font-semibold truncate flex-1 cursor-default", colors.header)}>
+                                {displayName}
                             </p>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p className="font-mono text-xs">
-                                {node.function || node.name}
-                            </p>
+                        <TooltipContent side="top" className="max-w-[280px]">
+                            <p className="font-mono text-xs break-all">{displayName}</p>
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
-
-                {/* File & line */}
-                {(node.file || node.line) && (
-                    <p className="text-[11px] text-muted-foreground truncate">
-                        {node.file}
-                        {node.line ? `:${node.line}` : ""}
-                    </p>
-                )}
-
-                {/* Description */}
-                {node.description && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {node.description}
-                    </p>
-                )}
+                <span className={cn("text-[10px] font-semibold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap flex-shrink-0", colors.badge)}>
+                    {typeLabel}
+                </span>
             </div>
 
-            {/* Arrow connector */}
-            {!isLast && (
-                <div className="flex items-center mx-1 flex-shrink-0">
-                    <div className="w-8 h-0.5 bg-gradient-to-r from-muted-foreground/40 to-muted-foreground/20 relative">
-                        {/* Animated pulse on the line */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 animate-pulse" />
-                    </div>
-                    <svg
-                        width="8"
-                        height="12"
-                        viewBox="0 0 8 12"
-                        className="text-muted-foreground/50 -ml-px"
-                    >
-                        <path
-                            d="M1 1L6 6L1 11"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </div>
+            {/* File:line */}
+            {fileLine && (
+                <p className="text-[11px] text-muted-foreground font-mono mb-1.5 flex items-center gap-1">
+                    <span className="opacity-50">◎</span>
+                    {fileLine}
+                </p>
             )}
+
+            {/* Description */}
+            {node.description && (
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                    {node.description}
+                </p>
+            )}
+        </div>
+    );
+}
+
+function ArrowConnector({ vertical = false }) {
+    if (vertical) {
+        return (
+            <div className="flex flex-col items-center py-1 flex-shrink-0">
+                <div className="w-0.5 h-4 bg-gradient-to-b from-muted-foreground/40 to-muted-foreground/20" />
+                <svg width="10" height="6" viewBox="0 0 10 6" className="text-muted-foreground/50">
+                    <path d="M0 0L5 5L10 0" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            </div>
+        );
+    }
+    return (
+        <div className="flex items-center flex-shrink-0 px-1">
+            <div className="w-5 h-0.5 bg-gradient-to-r from-muted-foreground/40 to-muted-foreground/20" />
+            <svg width="6" height="10" viewBox="0 0 6 10" className="text-muted-foreground/50 -ml-px">
+                <path d="M0 0L5 5L0 10" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
         </div>
     );
 }
 
 export function AttackPathGraph({ dataFlow, className }) {
     const nodes = useMemo(() => {
-        if (!dataFlow || !Array.isArray(dataFlow) || dataFlow.length === 0) {
-            return null;
-        }
-        return dataFlow;
+        if (!dataFlow) return null;
+        // Accept flat array or { nodes: [...], edges: [...] } object
+        const arr = Array.isArray(dataFlow) ? dataFlow : (dataFlow.nodes || null);
+        if (!arr || arr.length === 0) return null;
+        // Normalise: support node.label, node.function, node.name interchangeably
+        return arr.map(n => ({
+            ...n,
+            function: n.function || n.name || n.label || "unknown",
+        }));
     }, [dataFlow]);
 
     if (!nodes) {
         return (
-            <div
-                className={cn(
-                    "rounded-lg border border-dashed p-6 flex items-center justify-center text-sm text-muted-foreground",
-                    className
-                )}
-            >
-                <div className="text-center space-y-1">
+            <div className={cn("rounded-lg border border-dashed p-8 flex items-center justify-center text-sm text-muted-foreground", className)}>
+                <div className="text-center space-y-1.5">
                     <p className="font-medium">No data flow available</p>
-                    <p className="text-xs">
+                    <p className="text-xs text-muted-foreground/70">
                         Data flow analysis was not generated for this vulnerability
                     </p>
                 </div>
@@ -161,99 +153,35 @@ export function AttackPathGraph({ dataFlow, className }) {
         );
     }
 
-    // For compact flows (≤3 nodes), render inline
-    if (nodes.length <= 3) {
-        return (
-            <div className={cn("space-y-3", className)}>
-                <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Attack Path ({nodes.length} step{nodes.length > 1 ? "s" : ""})
-                    </p>
-                </div>
-                <div className="flex items-center overflow-x-auto pb-2">
-                    {nodes.map((node, i) => (
-                        <FlowNode
-                            key={i}
-                            node={node}
-                            index={i}
-                            isLast={i === nodes.length - 1}
-                        />
-                    ))}
-                </div>
-            </div>
-        );
+    // Responsive grid layout: up to 4 cards per row with arrows between them
+    // Group into rows of up to 4
+    const COLS = Math.min(nodes.length, 4);
+    const rows = [];
+    for (let i = 0; i < nodes.length; i += COLS) {
+        rows.push(nodes.slice(i, i + COLS));
     }
 
-    // For larger flows, render as vertical list with connections
     return (
-        <div className={cn("space-y-3", className)}>
-            <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Attack Path ({nodes.length} steps)
-                </p>
-            </div>
-            <div className="space-y-0">
-                {nodes.map((node, i) => {
-                    const colors =
-                        NODE_COLORS[node.type] || NODE_COLORS.intermediate;
-                    return (
-                        <div key={i} className="flex gap-3">
-                            {/* Vertical connector */}
-                            <div className="flex flex-col items-center w-6 flex-shrink-0">
-                                <div
-                                    className={cn(
-                                        "h-3 w-3 rounded-full border-2 z-10",
-                                        colors.dot,
-                                        "border-background"
-                                    )}
-                                />
-                                {i < nodes.length - 1 && (
-                                    <div className="w-0.5 flex-1 bg-gradient-to-b from-muted-foreground/30 to-muted-foreground/10 -mt-px" />
-                                )}
-                            </div>
-
-                            {/* Node content */}
-                            <div
-                                className={cn(
-                                    "flex-1 rounded-lg border p-3 mb-2 transition-all duration-200 hover:shadow-sm",
-                                    colors.bg,
-                                    colors.border
-                                )}
-                            >
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span
-                                        className={cn(
-                                            "text-[10px] font-semibold uppercase tracking-wider rounded px-1.5 py-0.5",
-                                            colors.badge
-                                        )}
-                                    >
-                                        {NODE_LABELS[node.type] || node.type}
-                                    </span>
-                                    <span className="text-[10px] text-muted-foreground font-mono">
-                                        Step {i + 1}
-                                    </span>
-                                </div>
-                                <p className="text-sm font-mono font-medium">
-                                    {node.function || node.name || "unknown"}
-                                </p>
-                                {(node.file || node.line) && (
-                                    <p className="text-[11px] text-muted-foreground">
-                                        {node.file}
-                                        {node.line ? `:${node.line}` : ""}
-                                    </p>
-                                )}
-                                {node.description && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {node.description}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+        <div className={cn("space-y-2 rounded-xl border border-border/50 bg-muted/10 p-4", className)}>
+            {rows.map((row, rowIdx) => (
+                <div key={rowIdx} className="flex items-stretch gap-0">
+                    {row.map((node, colIdx) => {
+                        const isLastInRow = colIdx === row.length - 1;
+                        const globalIdx = rowIdx * COLS + colIdx;
+                        const isLastGlobal = globalIdx === nodes.length - 1;
+                        return (
+                            <React.Fragment key={node.id || colIdx}>
+                                <FlowNodeCard node={node} />
+                                {!isLastInRow && !isLastGlobal && <ArrowConnector />}
+                            </React.Fragment>
+                        );
+                    })}
+                    {/* Pad incomplete last row */}
+                    {row.length < COLS && Array.from({ length: COLS - row.length }).map((_, i) => (
+                        <div key={`pad-${i}`} className="flex-1" />
+                    ))}
+                </div>
+            ))}
         </div>
     );
 }

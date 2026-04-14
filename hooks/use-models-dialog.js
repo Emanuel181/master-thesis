@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import { useUseCases } from "@/contexts/useCasesContext"
 import { usePrompts } from "@/contexts/promptsContext"
 import { DEMO_DOCUMENTS, DEMO_WORKFLOW_CONFIGS } from "@/contexts/demoContext"

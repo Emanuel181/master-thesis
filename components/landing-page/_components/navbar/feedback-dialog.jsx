@@ -24,7 +24,7 @@ export function FeedbackButton({ onClick }) {
             onClick={onClick}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="hidden sm:flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-accent/10 hover:bg-accent/20 border border-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+            className="hidden sm:flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-accent/10 hover:bg-muted/20 border border-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             aria-label="Send Feedback"
             title="Send Feedback"
         >

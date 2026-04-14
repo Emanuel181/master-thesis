@@ -617,7 +617,7 @@ export function NewScanDialog({
                                 ) : (
                                     <label
                                         htmlFor="zip-upload"
-                                        className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-accent/30 hover:border-primary/30 transition-colors text-center"
+                                        className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-muted/30 hover:border-primary/30 transition-colors text-center"
                                     >
                                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                             <Upload className="h-5 w-5 text-muted-foreground" />

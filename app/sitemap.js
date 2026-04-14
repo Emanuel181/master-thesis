@@ -1,83 +1,41 @@
 import { prisma } from "@/lib/prisma";
+import { locales } from "@/i18n/config";
 
 const BASE_URL = 'https://vulniq.org';
 
+function makeAlternates(path) {
+    return {
+        languages: Object.fromEntries(
+            locales.map(l => [l, `${BASE_URL}/${l}${path}`])
+        ),
+    };
+}
+
 export default async function sitemap() {
-    // Static pages with appropriate priorities
-    const staticPages = [
-        {
-            url: `${BASE_URL}`,
-            lastModified: new Date(),
-            changeFrequency: 'weekly',
-            priority: 1.00,
-        },
-        {
-            url: `${BASE_URL}/blog`,
-            lastModified: new Date(),
-            changeFrequency: 'daily',
-            priority: 0.90,
-        },
-        {
-            url: `${BASE_URL}/login`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.80,
-        },
-        {
-            url: `${BASE_URL}/changelog`,
-            lastModified: new Date(),
-            changeFrequency: 'weekly',
-            priority: 0.80,
-        },
-        {
-            url: `${BASE_URL}/privacy`,
-            lastModified: new Date(),
-            changeFrequency: 'yearly',
-            priority: 0.80,
-        },
-        {
-            url: `${BASE_URL}/terms`,
-            lastModified: new Date(),
-            changeFrequency: 'yearly',
-            priority: 0.80,
-        },
-        {
-            url: `${BASE_URL}/security`,
-            lastModified: new Date(),
-            changeFrequency: 'yearly',
-            priority: 0.80,
-        },
-        {
-            url: `${BASE_URL}/about`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.64,
-        },
-        {
-            url: `${BASE_URL}/supporters`,
-            lastModified: new Date(),
-            changeFrequency: 'weekly',
-            priority: 0.64,
-        },
-        {
-            url: `${BASE_URL}/demo`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.70,
-        },
-        {
-            url: `${BASE_URL}/health`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.30,
-        },
-        {
-            url: `${BASE_URL}/site-map`,
-            lastModified: new Date(),
-            changeFrequency: 'monthly',
-            priority: 0.50,
-        },
+    const staticRoutes = [
+        { path: '', changeFrequency: 'weekly', priority: 1.00 },
+        { path: '/blog', changeFrequency: 'daily', priority: 0.90 },
+        { path: '/login', changeFrequency: 'monthly', priority: 0.80 },
+        { path: '/changelog', changeFrequency: 'weekly', priority: 0.80 },
+        { path: '/privacy', changeFrequency: 'yearly', priority: 0.80 },
+        { path: '/terms', changeFrequency: 'yearly', priority: 0.80 },
+        { path: '/security', changeFrequency: 'yearly', priority: 0.80 },
+        { path: '/about', changeFrequency: 'monthly', priority: 0.64 },
+        { path: '/supporters', changeFrequency: 'weekly', priority: 0.64 },
+        { path: '/demo', changeFrequency: 'monthly', priority: 0.70 },
+        { path: '/site-map', changeFrequency: 'monthly', priority: 0.50 },
     ];
+
+    // Generate entries for all locales
+    const staticPages = staticRoutes.flatMap((route) =>
+        locales.map((locale) => ({
+            url: `${BASE_URL}/${locale}${route.path}`,
+            lastModified: new Date(),
+            changeFrequency: route.changeFrequency,
+            priority: route.priority,
+            alternates: makeAlternates(route.path),
+        }))
+    );
 
     // Dynamic blog posts from database
     let blogPosts = [];
@@ -92,15 +50,17 @@ export default async function sitemap() {
             orderBy: { publishedAt: 'desc' },
         });
 
-        blogPosts = articles.map((article) => ({
-            url: `${BASE_URL}/blog/${article.slug}`,
-            lastModified: article.updatedAt || article.publishedAt || new Date(),
-            changeFrequency: 'weekly',
-            priority: 0.80,
-        }));
+        blogPosts = articles.flatMap((article) =>
+            locales.map((locale) => ({
+                url: `${BASE_URL}/${locale}/blog/${article.slug}`,
+                lastModified: article.updatedAt || article.publishedAt || new Date(),
+                changeFrequency: 'weekly',
+                priority: 0.80,
+                alternates: makeAlternates(`/blog/${article.slug}`),
+            }))
+        );
     } catch (error) {
         console.error('Error fetching articles for sitemap:', error);
-        // Continue with static pages only if database fails
     }
 
     return [...staticPages, ...blogPosts];

@@ -56,7 +56,7 @@ const HoverExpandPanels = dynamic(
 
 const FlipWordsDemo = dynamic(
   () => import('@/components/flip-words-demo').then(mod => mod.FlipWordsDemo),
-  { loading: () => <div className="min-h-[100px]" /> }
+  { ssr: false, loading: () => <div className="min-h-[100px]" /> }
 );
 
 
@@ -289,7 +289,7 @@ export function ClientLandingWrapper({ children }) {
           </section>
 
           {/* CTA Section */}
-          <section id="connect" className="relative z-10 w-full overflow-hidden">
+          <section id="connect" className="relative z-10 w-full">
             <CTASection />
           </section>
         </main>

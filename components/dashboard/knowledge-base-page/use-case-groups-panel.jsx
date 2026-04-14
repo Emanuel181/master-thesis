@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -716,7 +716,7 @@ export function UseCaseGroupsPanel({
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
                             selectedGroupId === null
                                 ? "bg-primary/10 text-primary border-l-2 border-l-primary font-medium"
-                                : "hover:bg-accent"
+                                : "hover:bg-muted"
                         )}
                     >
                         <LayoutGrid className="h-4 w-4 shrink-0" />
@@ -745,7 +745,7 @@ export function UseCaseGroupsPanel({
                                 "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
                                 selectedGroupId === "ungrouped"
                                     ? "bg-primary/10 text-primary border-l-2 border-l-primary font-medium"
-                                    : "hover:bg-accent",
+                                    : "hover:bg-muted",
                                 dragOverGroupId === "ungrouped" && "bg-primary/15 text-primary font-medium"
                             )}
                         >
@@ -819,7 +819,7 @@ export function UseCaseGroupsPanel({
                                     }}
                                     className={cn(
                                         "flex items-center gap-1 rounded-md transition-all duration-200 group",
-                                        isSelected ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-accent",
+                                        isSelected ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-muted",
                                         isDragOver && !isBeingDragged && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/10 scale-[1.02]",
                                         isBeingDragged && "opacity-40 scale-[0.97]",
                                         isChecked && "ring-1 ring-primary/50 bg-primary/5"
@@ -845,7 +845,7 @@ export function UseCaseGroupsPanel({
                                     </div>
 
                                     <CollapsibleTrigger asChild>
-                                        <button className="p-1.5 hover:bg-accent/50 rounded-md">
+                                        <button className="p-1.5 hover:bg-muted/50 rounded-md">
                                             {isExpanded ? (
                                                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                                             ) : (
@@ -961,7 +961,7 @@ export function UseCaseGroupsPanel({
                                                                         onSelectUseCase?.(uc.id)
                                                                     }}
                                                                     className={cn(
-                                                                        "w-full flex items-center gap-2 px-2 py-1 text-xs rounded-md hover:bg-accent/50 cursor-pointer transition-colors min-w-0",
+                                                                        "w-full flex items-center gap-2 px-2 py-1 text-xs rounded-md hover:bg-muted/50 cursor-pointer transition-colors min-w-0",
                                                                         searchTerm && filteredData.matchedUseCaseIds.has(uc.id)
                                                                             ? "text-primary bg-primary/5 font-medium"
                                                                             : "text-muted-foreground hover:text-foreground"
@@ -999,7 +999,7 @@ export function UseCaseGroupsPanel({
                             "w-full flex items-center gap-3 p-3 rounded-lg border transition-all",
                             selectedGroupId === null
                                 ? "bg-primary/10 border-primary text-primary"
-                                : "hover:bg-accent border-transparent hover:border-border"
+                                : "hover:bg-muted border-transparent hover:border-border"
                         )}
                     >
                         <div className="p-2 rounded-md bg-muted">
@@ -1027,7 +1027,7 @@ export function UseCaseGroupsPanel({
                                 "w-full flex items-center gap-3 p-3 rounded-lg border transition-all",
                                 selectedGroupId === "ungrouped"
                                     ? "bg-primary/10 border-primary text-primary"
-                                    : "hover:bg-accent border-transparent hover:border-border",
+                                    : "hover:bg-muted border-transparent hover:border-border",
                                 dragOverGroupId === "ungrouped" && "bg-primary/10 border-primary"
                             )}
                         >
@@ -1105,7 +1105,7 @@ export function UseCaseGroupsPanel({
                                         "w-full flex items-center gap-3 p-3 rounded-lg border transition-all group cursor-pointer",
                                         selectedGroupId === group.id
                                             ? "bg-primary/10 border-primary text-primary border-l-[3px]"
-                                            : "hover:bg-accent border-transparent hover:border-border",
+                                            : "hover:bg-muted border-transparent hover:border-border",
                                         isDragOver && "bg-primary/10 border-primary",
                                         isChecked && "ring-1 ring-primary/50 bg-primary/5"
                                     )}

@@ -27,7 +27,7 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { signOut } from "next-auth/react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname } from "@/i18n/navigation"
 import { toast } from "sonner"
 import { clearDemoStorage, isDemoPath } from "@/lib/demo-mode"
 

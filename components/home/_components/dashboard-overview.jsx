@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter } from "@/i18n/navigation"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -119,7 +119,7 @@ function DailyRecommendedBlog({ isDemoMode }) {
         ? { className: "flex items-center gap-3 p-2.5 rounded-lg border bg-card text-left w-full cursor-default" }
         : {
             onClick: () => router.push(`/blog/${blog.slug}`),
-            className: "group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-150 text-left w-full"
+            className: "group flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-muted/50 hover:border-primary/20 transition-all duration-150 text-left w-full"
           }
 
     return (
@@ -405,7 +405,7 @@ export function RecentScansCard({ runs, isLoading, onNavigate, onRefresh }) {
                                                 }
                                                 onNavigate({ title: "Results" })
                                             }}
-                                            className="w-full grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3 items-center px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border/30 last:border-b-0 hover:bg-accent/50 transition-colors text-left group disabled:opacity-50"
+                                            className="w-full grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3 items-center px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border/30 last:border-b-0 hover:bg-muted/50 transition-colors text-left group disabled:opacity-50"
                                         >
                                             {/* Scan name + repo */}
                                             <div className="min-w-0">
@@ -556,7 +556,7 @@ export function TopVulnerabilitiesCard({ vulnerabilities, isLoading, onNavigate 
                         {topVulns.map((vuln) => (
                             <div
                                 key={vuln.id}
-                                className="flex items-start gap-2 p-1.5 rounded-md hover:bg-accent transition-colors"
+                                className="flex items-start gap-2 p-1.5 rounded-md hover:bg-muted transition-colors"
                             >
                                 <Badge
                                     variant={severityVariant[vuln.severity] || "outline"}

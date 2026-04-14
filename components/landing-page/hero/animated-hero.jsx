@@ -80,7 +80,8 @@ export function AnimatedHero({ scrollContainerRef }) {
 
             <motion.h1
               variants={itemVariants}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight"
+              className="font-bold tracking-tight leading-tight"
+              style={{ fontSize: 'clamp(2.25rem, 4.5vw + 0.75rem, 4.5rem)' }}
             >
               <span className="text-primary dark:text-foreground">Security </span>
               <br className="hidden sm:block" />
@@ -96,7 +97,7 @@ export function AnimatedHero({ scrollContainerRef }) {
               className="text-base sm:text-lg md:text-xl text-primary/70 dark:text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0"
             >
               Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix is{' '}
-              <span className="text-accent font-medium">grounded in your documentation</span> using RAG.
+              <span className="text-primary font-medium">grounded in your documentation</span> using RAG.
             </motion.p>
 
             <motion.div
@@ -119,7 +120,7 @@ export function AnimatedHero({ scrollContainerRef }) {
                 asChild
                 variant="outline"
                 size="lg"
-                className="rounded-lg w-full sm:w-auto hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all duration-300"
+                className="rounded-lg w-full sm:w-auto hover:bg-muted/10 hover:text-accent hover:border-accent/50 transition-all duration-300"
               >
                 <a href="/login" aria-label="Explore VulnIQ">
                   Explore VulnIQ

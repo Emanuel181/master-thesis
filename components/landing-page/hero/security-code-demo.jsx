@@ -267,7 +267,7 @@ export const SecurityCodeDemo = () => {
                             <div className="w-3 h-3 rounded-full bg-[#28c840]" />
                         </div>
                     </div>
-                    <span className="text-[11px] text-slate-500 font-medium">VulnIQ — Security Analysis</span>
+                    <span className="text-[11px] text-slate-500 font-medium">VulnIQ - Security Analysis</span>
                     <div className="w-16" />
                 </div>
 

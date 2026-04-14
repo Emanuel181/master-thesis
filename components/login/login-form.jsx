@@ -412,7 +412,7 @@ function LoginFormInner({ className, ...props }) {
                             <Button
                                 type="submit"
                                 disabled={isLoading !== null || !email || !turnstileToken}
-                                className="text-white dark:text-primary"
+                                className="text-primary-foreground"
                             >
                                 {isLoading === "nodemailer" ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

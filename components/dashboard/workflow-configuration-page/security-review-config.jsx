@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useSession } from "next-auth/react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import {
     Dialog,
     DialogContent,

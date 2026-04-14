@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { 
     FileText, 
     Users, 
@@ -12,36 +12,37 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const adminNavItems = [
-    {
-        href: '/admin/articles',
-        label: 'Articles',
-        icon: FileText,
-        description: 'Review and manage articles'
-    },
-    {
-        href: '/admin/users',
-        label: 'Users',
-        icon: Users,
-        description: 'Manage registered users'
-    },
-    {
-        href: '/admin/supporters',
-        label: 'Supporters',
-        icon: Heart,
-        description: 'Manage supporters'
-    },
-    {
-        href: '/admin/create-admin',
-        label: 'Admins',
-        icon: UserCog,
-        description: 'Manage admin accounts',
-        masterOnly: true
-    }
-];
-
 export function AdminNav({ adminEmail, isMasterAdmin = false, className }) {
     const pathname = usePathname();
+    const t = useTranslations('admin');
+
+    const adminNavItems = [
+        {
+            href: '/admin/articles',
+            label: t('nav.articles'),
+            icon: FileText,
+            description: 'Review and manage articles'
+        },
+        {
+            href: '/admin/users',
+            label: t('nav.users'),
+            icon: Users,
+            description: 'Manage registered users'
+        },
+        {
+            href: '/admin/supporters',
+            label: t('nav.supporters'),
+            icon: Heart,
+            description: 'Manage supporters'
+        },
+        {
+            href: '/admin/create-admin',
+            label: t('nav.createAdmin'),
+            icon: UserCog,
+            description: 'Manage admin accounts',
+            masterOnly: true
+        }
+    ];
     
     // Filter items based on master admin status
     const visibleItems = adminNavItems.filter(item => 

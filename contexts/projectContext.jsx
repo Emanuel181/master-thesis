@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { isDemoPath, getStorageKey, DEMO_STORAGE_PREFIX } from "@/lib/demo-mode";
 
 const ProjectContext = createContext({

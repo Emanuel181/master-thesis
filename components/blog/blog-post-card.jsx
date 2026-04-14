@@ -23,7 +23,7 @@ export function BlogPostCard({
             className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {category && (
-            <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium rounded-md bg-accent/90 text-white">
+            <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium rounded-md bg-primary/90 text-primary-foreground">
               {category}
             </span>
           )}

@@ -390,7 +390,7 @@ export function QuickFileSwitcherProvider({ children, projectStructure, onFileSe
                         {search && (
                             <button
                                 onClick={clearSearch}
-                                className="p-1 hover:bg-accent rounded-sm"
+                                className="p-1 hover:bg-muted/15 rounded-sm"
                                 title="Clear search"
                             >
                                 <X className="h-4 w-4 text-muted-foreground" />
@@ -506,8 +506,8 @@ const FileItem = React.forwardRef(function FileItem({ file, isSelected, search, 
             className={cn(
                 "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors border-l-[3px]",
                 isSelected
-                    ? "bg-accent border-l-primary/50 text-foreground"
-                    : "hover:bg-accent/50 border-l-transparent text-muted-foreground"
+                    ? "bg-accent/15 border-l-primary/50 text-foreground"
+                    : "hover:bg-muted/10 border-l-transparent text-muted-foreground"
             )}
             onClick={onClick}
         >

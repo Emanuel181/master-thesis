@@ -47,14 +47,14 @@ export function SortablePromptItem({
         <div
             ref={setNodeRef}
             style={style}
-            className={`group border border-border/50 rounded-lg p-2.5 hover:bg-accent/10 hover:border-primary/30 hover:shadow-sm transition-colors duration-200 cursor-pointer ${isDragging ? 'shadow-xl bg-background border-primary/50 ring-2 ring-primary/20' : ''}`}
+            className={`group border border-border/50 rounded-lg p-2.5 hover:bg-muted/10 hover:border-primary/30 hover:shadow-sm transition-colors duration-200 cursor-pointer ${isDragging ? 'shadow-xl bg-background border-primary/50 ring-2 ring-primary/20' : ''}`}
         >
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div
                         {...attributes}
                         {...listeners}
-                        className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-accent/50 rounded-md touch-none select-none"
+                        className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-muted/50 rounded-md touch-none select-none"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <GripVertical className="h-4 w-4 text-muted-foreground/60" />
@@ -94,7 +94,7 @@ export function SortablePromptItem({
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 hover:bg-accent"
+                                    className="h-6 w-6 p-0 hover:bg-muted"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onMoveUp(prompt.id)
@@ -112,7 +112,7 @@ export function SortablePromptItem({
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 hover:bg-accent"
+                                    className="h-6 w-6 p-0 hover:bg-muted"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onMoveDown(prompt.id)
@@ -129,7 +129,7 @@ export function SortablePromptItem({
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 w-6 p-0 hover:bg-accent"
+                                className="h-6 w-6 p-0 hover:bg-muted"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     setViewFullTextPrompt(prompt)
@@ -145,7 +145,7 @@ export function SortablePromptItem({
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 w-6 p-0 hover:bg-accent"
+                                className="h-6 w-6 p-0 hover:bg-muted"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     openEditDialog(agent, prompt)

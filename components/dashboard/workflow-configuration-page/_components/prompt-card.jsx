@@ -79,9 +79,9 @@ export function PromptCard({
                                 <div 
                                     key={prompt.id} 
                                     className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                                        isSelected 
-                                            ? 'border-primary bg-primary/10 shadow-sm shadow-primary/10' 
-                                            : 'hover:border-muted-foreground/50 hover:shadow-sm'
+                                        isSelected
+                                            ? 'border-primary bg-primary/10 shadow-sm shadow-primary/10'
+                                            : 'border-border/30 hover:border-muted-foreground/50 hover:shadow-sm'
                                     }`}
                                     onClick={() => onPromptSelect(agent, prompt.id)}
                                 >

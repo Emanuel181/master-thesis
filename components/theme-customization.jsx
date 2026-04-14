@@ -1,6 +1,10 @@
 'use client'
 
-import React, { useCallback } from "react"
+import React, { useCallback, useState, useMemo } from "react"
+import { useLocale } from "next-intl"
+import { useRouter, usePathname } from "@/i18n/navigation"
+import { locales, localeNames } from "@/i18n/config"
+import { Globe, Check, Search } from "lucide-react"
 import { useSettings, themePresets, scales, radiusOptions, editorThemes, editorFonts, editorFontSizes, syntaxColorPresets, syntaxTokenTypes } from '@/contexts/settingsContext'
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -27,8 +31,89 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+function LanguagePicker({ locale, onSelect }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return locales
+    const q = search.toLowerCase()
+    return locales.filter((code) => {
+      const names = localeNames[code]
+      return (
+        names.native.toLowerCase().includes(q) ||
+        names.english.toLowerCase().includes(q) ||
+        code.includes(q)
+      )
+    })
+  }, [search])
+
+  const current = localeNames[locale]
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium">Language:</Label>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearch("") }}>
+        <PopoverTrigger asChild>
+          <button className="flex w-full items-center gap-2 rounded-md border border-input bg-input/30 px-3 py-1.5 text-xs hover:bg-muted transition-colors">
+            <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="flex-1 text-left truncate">{current?.native}</span>
+            <span className="text-muted-foreground truncate">{current?.english}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[280px] p-0" align="start">
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              placeholder="Search languages..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+              autoFocus
+            />
+          </div>
+          <div
+            className="max-h-[200px] overflow-y-auto overscroll-contain"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
+            <div className="p-1">
+              {filtered.map((code) => (
+                <button
+                  key={code}
+                  onClick={() => { onSelect(code); setOpen(false); setSearch("") }}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-muted ${
+                    locale === code ? 'bg-accent' : ''
+                  }`}
+                >
+                  <span className="flex-1 text-left">{localeNames[code].native}</span>
+                  <span className="text-muted-foreground">{localeNames[code].english}</span>
+                  {locale === code && <Check className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+              ))}
+              {filtered.length === 0 && (
+                <div className="px-2 py-4 text-center text-xs text-muted-foreground">
+                  No languages found
+                </div>
+              )}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
 const ThemeCustomization = ({ showEditorTabs = true }) => {
   const { settings, updateSettings, resetSettings, mounted } = useSettings()
+  const locale = useLocale()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleLanguageChange = useCallback((code) => {
+    router.replace(pathname, { locale: code })
+  }, [router, pathname])
 
   const handleThemeChange = useCallback((preset) => {
     updateSettings({ ...settings, themePreset: preset })
@@ -183,7 +268,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
               <button
                 key={key}
                 onClick={() => handleScaleChange(key)}
-                className={`rounded-md border px-2 py-1.5 text-xs font-medium uppercase transition-all hover:bg-accent ${
+                className={`rounded-md border px-2 py-1.5 text-xs font-medium uppercase transition-all hover:bg-muted ${
                   settings.scale === key ? 'border-primary bg-accent' : 'border-border'
                 }`}
               >
@@ -209,7 +294,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
               <button
                 key={key}
                 onClick={() => handleRadiusChange(key)}
-                className={`rounded-md border px-2 py-1.5 text-xs font-medium uppercase transition-all hover:bg-accent ${
+                className={`rounded-md border px-2 py-1.5 text-xs font-medium uppercase transition-all hover:bg-muted ${
                   settings.radius === key ? 'border-primary bg-accent' : 'border-border'
                 }`}
                 style={settings.radius === key ? { borderRadius: radiusOptions[key] } : {}}
@@ -234,7 +319,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
           <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={() => handleModeChange('light')}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                 settings.mode === 'light' ? 'border-primary bg-accent' : 'border-border'
               }`}
             >
@@ -242,7 +327,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
             </button>
             <button
               onClick={() => handleModeChange('dark')}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                 settings.mode === 'dark' ? 'border-primary bg-accent' : 'border-border'
               }`}
             >
@@ -257,7 +342,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
           <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={() => handleLayoutChange('full')}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                 settings.contentLayout === 'full' ? 'border-primary bg-accent' : 'border-border'
               }`}
             >
@@ -265,7 +350,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
             </button>
             <button
               onClick={() => handleLayoutChange('centered')}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                 settings.contentLayout === 'centered' ? 'border-primary bg-accent' : 'border-border'
               }`}
             >
@@ -280,7 +365,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
           <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={() => handleSidebarChange('default')}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                 settings.sidebarMode === 'default' ? 'border-primary bg-accent' : 'border-border'
               }`}
             >
@@ -288,7 +373,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
             </button>
             <button
               onClick={() => handleSidebarChange('icon')}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                 settings.sidebarMode === 'icon' ? 'border-primary bg-accent' : 'border-border'
               }`}
             >
@@ -296,6 +381,9 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
             </button>
           </div>
         </div>
+
+        {/* Language */}
+        <LanguagePicker locale={locale} onSelect={handleLanguageChange} />
       </TabsContent>
 
       {showEditorTabs && (
@@ -385,7 +473,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
                 <button
                   key={key}
                   onClick={() => handleEditorFontSizeChange(key)}
-                  className={`rounded-md border px-2 py-1.5 text-xs font-medium uppercase transition-all hover:bg-accent ${
+                  className={`rounded-md border px-2 py-1.5 text-xs font-medium uppercase transition-all hover:bg-muted ${
                     settings.editorFontSize === key ? 'border-primary bg-accent' : 'border-border'
                   }`}
                   title={`${config.size}px`}
@@ -492,7 +580,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 onClick={() => updateSettings({ ...settings, mode: 'dark' })}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                   settings.mode === 'dark' ? 'border-primary bg-accent' : 'border-border'
                 }`}
               >
@@ -500,7 +588,7 @@ const ThemeCustomization = ({ showEditorTabs = true }) => {
               </button>
               <button
                 onClick={() => updateSettings({ ...settings, mode: 'light' })}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-accent ${
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:bg-muted ${
                   settings.mode === 'light' ? 'border-primary bg-accent' : 'border-border'
                 }`}
               >

@@ -111,6 +111,11 @@ export function PageTransition({
     className = "",
 }) {
     const shouldReduceMotion = useReducedMotion()
+    const [hasMounted, setHasMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setHasMounted(true)
+    }, [])
 
     const variants = {
         default: pageVariants,
@@ -127,7 +132,7 @@ export function PageTransition({
         <AnimatePresence mode="wait">
             <motion.div
                 key={pageKey}
-                initial="initial"
+                initial={hasMounted ? "initial" : false}
                 animate="enter"
                 exit="exit"
                 variants={selectedVariants}

@@ -39,7 +39,7 @@
     },
     "ProcessUseCases": {
       "Type": "Map",
-      "ItemsPath": "$.runContext.useCases",
+      "ItemsPath": "$.useCases",
       "MaxConcurrency": 3,
       "Iterator": {
         "StartAt": "EmitUseCaseStarted",

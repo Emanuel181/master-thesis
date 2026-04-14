@@ -181,6 +181,45 @@ export function KnowledgeBaseNode({ data }) {
         return grouped;
     }, [useCaseGroups, contextUseCases, kbSearchTerm]);
 
+    // Keep selectedGroups in sync: remove groups whose files are all deselected
+    React.useEffect(() => {
+        if (selectedGroups.size === 0) return;
+
+        // If no files are selected at all, all groups are stale
+        if (selectedFiles.size === 0) {
+            setSelectedGroups(new Set());
+            return;
+        }
+
+        // Only check individual groups once PDFs have been loaded
+        if (Object.keys(useCasePdfs).length === 0) return;
+
+        const groupsToRemove = [];
+        for (const groupId of selectedGroups) {
+            const group = groupedUseCases[groupId];
+            if (!group) { groupsToRemove.push(groupId); continue; }
+
+            // Check if any file from any use case in this group is still selected
+            let hasSelectedFile = false;
+            for (const uc of group.useCases) {
+                const pdfs = useCasePdfs[uc.id] || [];
+                if (pdfs.some(pdf => selectedFiles.has(pdf.id))) {
+                    hasSelectedFile = true;
+                    break;
+                }
+            }
+            if (!hasSelectedFile) groupsToRemove.push(groupId);
+        }
+
+        if (groupsToRemove.length > 0) {
+            setSelectedGroups(prev => {
+                const next = new Set(prev);
+                groupsToRemove.forEach(id => next.delete(id));
+                return next;
+            });
+        }
+    }, [selectedFiles, selectedGroups, groupedUseCases, useCasePdfs, setSelectedGroups]);
+
     // Helper: ensure PDFs are fetched for a use case (returns the PDFs)
     const ensurePdfsFetched = async (useCaseId) => {
         if (useCasePdfs[useCaseId]) return useCasePdfs[useCaseId];
@@ -380,7 +419,10 @@ export function KnowledgeBaseNode({ data }) {
                         <div className="flex-1 min-w-0">
                             <div className="font-semibold text-xs sm:text-base truncate">{data.label}</div>
                             <div className="text-[10px] sm:text-xs text-primary font-medium">
-                                {selectedGroups.size} group{selectedGroups.size !== 1 ? 's' : ''}, {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''}
+                                {selectedGroups.size > 0 || selectedFiles.size > 0
+                                    ? `${selectedGroups.size} group${selectedGroups.size !== 1 ? 's' : ''}, ${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''}`
+                                    : <span className="text-muted-foreground">No selection</span>
+                                }
                             </div>
                         </div>
                     </div>
@@ -455,7 +497,7 @@ export function KnowledgeBaseNode({ data }) {
                                         return (
                                             <div key={groupId} className="border rounded-lg bg-background">
                                                 {/* Group Header */}
-                                                <div className="flex items-center gap-2 p-2 hover:bg-accent/50 transition-colors rounded-t-lg">
+                                                <div className="flex items-center gap-2 p-2 hover:bg-muted/50 transition-colors rounded-t-lg">
                                                     <Checkbox
                                                         checked={isGroupSelected}
                                                         onCheckedChange={() => toggleGroup(groupId)}
@@ -493,7 +535,7 @@ export function KnowledgeBaseNode({ data }) {
                                                                 return (
                                                                     <div key={useCase.id} className="border-b last:border-b-0">
                                                                         {/* Use Case Header */}
-                                                                        <div className="w-full flex items-center gap-2 p-2 pl-6 hover:bg-accent/30 transition-colors">
+                                                                        <div className="w-full flex items-center gap-2 p-2 pl-6 hover:bg-muted/30 transition-colors">
                                                                             <Checkbox
                                                                                 checked={allPdfsSelected ? true : somePdfsSelected ? "indeterminate" : false}
                                                                                 onCheckedChange={() => toggleUseCaseSelection(useCase.id)}
@@ -542,7 +584,7 @@ export function KnowledgeBaseNode({ data }) {
                                                                                             return (
                                                                                             <label
                                                                                                 key={pdf.id}
-                                                                                                className="flex items-center gap-2 p-2 pl-12 hover:bg-accent/20 cursor-pointer transition-colors"
+                                                                                                className="flex items-center gap-2 p-2 pl-12 hover:bg-muted/20 cursor-pointer transition-colors"
                                                                                             >
                                                                                                 <Checkbox
                                                                                                 checked={selectedFiles.has(pdf.id)}

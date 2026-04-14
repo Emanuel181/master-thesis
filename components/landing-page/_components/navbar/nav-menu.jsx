@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from '@/i18n/navigation'
 import { Sparkles, Zap, Shield, GitBranch, Rss, FileCode, Heart, Rocket, Building2, MessageSquare, ExternalLink } from "lucide-react"
 import {
     NavigationMenu,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/navigation-menu"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useTranslations } from 'next-intl'
 
 /**
  * ListItem - Navigation menu list item component
@@ -53,6 +54,7 @@ function ListItem({ title, children, href, icon: Icon, external, ...props }) {
  */
 export function NavMenu({ isAboveColoredSection }) {
     const isMobile = useIsMobile()
+    const t = useTranslations('nav')
 
     const triggerClassName = cn(
         "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 text-sm transition-colors duration-500 ease-out",
@@ -63,12 +65,12 @@ export function NavMenu({ isAboveColoredSection }) {
 
     return (
         <div className="hidden md:flex items-center">
-            <NavigationMenu viewport={!isMobile}>
+            <NavigationMenu viewport={false}>
                 <NavigationMenuList>
                     {/* Product Dropdown */}
                     <NavigationMenuItem>
                         <NavigationMenuTrigger className={triggerClassName}>
-                            Product
+                            {t('product')}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
                             <ul className="grid gap-2 p-3 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
@@ -79,27 +81,27 @@ export function NavMenu({ isAboveColoredSection }) {
                                             href="/#features"
                                         >
                                             <Sparkles className="h-6 w-6 text-accent" />
-                                            <div className="mb-2 mt-4 text-lg font-medium">VulnIQ</div>
+                                            <div className="mb-2 mt-4 text-lg font-medium">{t('productItems.vulniq.label')}</div>
                                             <p className="text-sm leading-tight text-muted-foreground">
-                                                AI-powered security code review with autonomous remediation.
+                                                {t('productItems.vulniq.description')}
                                             </p>
                                         </Link>
                                     </NavigationMenuLink>
                                 </li>
-                                <ListItem href="/#features" title="Features" icon={Zap}>
-                                    Advanced vulnerability detection and AI-driven fixes.
+                                <ListItem href="/#features" title={t('productItems.features.label')} icon={Zap}>
+                                    {t('productItems.features.description')}
                                 </ListItem>
-                                <ListItem href="/#use-cases" title="Use cases" icon={Shield}>
-                                    See how teams use VulnIQ for security.
+                                <ListItem href="/#use-cases" title={t('productItems.useCases.label')} icon={Shield}>
+                                    {t('productItems.useCases.description')}
                                 </ListItem>
                                 <li>
                                     <div className="block select-none rounded-md p-3 no-underline outline-none">
                                         <div className="flex items-center gap-2">
                                             <GitBranch className="h-4 w-4 text-accent shrink-0" />
-                                            <span className="text-sm font-medium leading-none">Integrations</span>
+                                            <span className="text-sm font-medium leading-none">{t('productItems.integrations.label')}</span>
                                         </div>
                                         <p className="text-xs leading-snug text-muted-foreground line-clamp-2 mt-1.5 pl-6">
-                                            Connect with GitHub, GitLab, and more.
+                                            {t('productItems.integrations.description')}
                                         </p>
                                     </div>
                                 </li>
@@ -110,7 +112,7 @@ export function NavMenu({ isAboveColoredSection }) {
                     {/* Resources Dropdown */}
                     <NavigationMenuItem>
                         <NavigationMenuTrigger className={triggerClassName}>
-                            Resources
+                            {t('resources')}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
                             <ul className="grid gap-3 p-4 md:w-[450px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
@@ -122,24 +124,24 @@ export function NavMenu({ isAboveColoredSection }) {
                                         >
                                             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
                                             <Rss className="h-8 w-8 mb-3 text-accent relative z-10 group-hover:scale-110 transition-transform" />
-                                            <div className="mb-1 text-lg font-medium relative z-10 text-foreground">Blog</div>
+                                            <div className="mb-1 text-lg font-medium relative z-10 text-foreground">{t('resourceItems.blog.label')}</div>
                                             <p className="text-sm leading-tight text-muted-foreground relative z-10">
-                                                Security insights and best practices.
+                                                {t('resourceItems.blog.description')}
                                             </p>
                                         </Link>
                                     </NavigationMenuLink>
                                 </li>
-                                <ListItem href="/changelog" title="Changelog" icon={FileCode}>
-                                    Latest updates and releases.
+                                <ListItem href="/changelog" title={t('resourceItems.changelog.label')} icon={FileCode}>
+                                    {t('resourceItems.changelog.description')}
                                 </ListItem>
-                                <ListItem href="/supporters" title="Supporters" icon={Heart}>
-                                    People supporting this project.
+                                <ListItem href="/supporters" title={t('resourceItems.supporters.label')} icon={Heart}>
+                                    {t('resourceItems.supporters.description')}
                                 </ListItem>
-                                <ListItem href="https://www.producthunt.com/posts/vulniq" title="Product Hunt" icon={Rocket} external>
-                                    Support us on Product Hunt.
+                                <ListItem href="https://www.producthunt.com/posts/vulniq" title={t('resourceItems.productHunt.label')} icon={Rocket} external>
+                                    {t('resourceItems.productHunt.description')}
                                 </ListItem>
-                                <ListItem href="/demo" title="Try demo" icon={Zap}>
-                                    Experience VulnIQ in action.
+                                <ListItem href="/demo" title={t('resourceItems.tryDemo.label')} icon={Zap}>
+                                    {t('resourceItems.tryDemo.description')}
                                 </ListItem>
                             </ul>
                         </NavigationMenuContent>
@@ -148,18 +150,18 @@ export function NavMenu({ isAboveColoredSection }) {
                     {/* Company Dropdown */}
                     <NavigationMenuItem>
                         <NavigationMenuTrigger className={triggerClassName}>
-                            Company
+                            {t('company')}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
                             <ul className="grid w-[280px] gap-2 p-3">
-                                <ListItem href="/about" title="About us" icon={Building2}>
-                                    Learn about our mission and team.
+                                <ListItem href="/about" title={t('companyItems.about.label')} icon={Building2}>
+                                    {t('companyItems.about.description')}
                                 </ListItem>
-                                <ListItem href="/security" title="Security policy" icon={Shield}>
-                                    Vulnerability disclosure policy.
+                                <ListItem href="/security" title={t('companyItems.security.label')} icon={Shield}>
+                                    {t('companyItems.security.description')}
                                 </ListItem>
-                                <ListItem href="/#connect" title="Contact" icon={MessageSquare}>
-                                    Get in touch with our team.
+                                <ListItem href="/#connect" title={t('companyItems.contact.label')} icon={MessageSquare}>
+                                    {t('companyItems.contact.description')}
                                 </ListItem>
                             </ul>
                         </NavigationMenuContent>

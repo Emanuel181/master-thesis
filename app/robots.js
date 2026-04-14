@@ -3,7 +3,7 @@ export default function robots() {
         rules: {
             userAgent: '*',
             allow: ['/'],
-            disallow: ['/private/', '/api/', '/admin/', '/dashboard/', '/profile/', '/editor/'],
+            disallow: ['/private/', '/api/', '/*/admin/', '/*/dashboard/', '/*/profile/', '/*/editor/'],
         },
         sitemap: 'https://vulniq.org/sitemap.xml',
     }

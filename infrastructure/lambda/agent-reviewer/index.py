@@ -430,10 +430,10 @@ Example format for each vulnerability:
 }"""
 
     if rag_context:
-        base_prompt += f"\n\n## Reference Documentation\nUse the following documentation as reference for your analysis. When your findings relate to this documentation, include document references in your vulnerability output:\n\n{rag_context}"
+        base_prompt += f"\n\nREFERENCE DOCUMENTATION:\nUse the following documentation as reference for your analysis. When your findings relate to this documentation, include document references in your vulnerability output:\n\n{rag_context}"
 
     if custom_prompt:
-        base_prompt += f"\n\n## Custom Instructions\n{custom_prompt}"
+        base_prompt += f"\n\nCUSTOM INSTRUCTIONS:\n{custom_prompt}"
     
     return base_prompt
 
@@ -468,8 +468,8 @@ def truncate_system_prompt(system_prompt: str, max_chars: int = 50000) -> str:
         return system_prompt
 
     # Find the base prompt section (before RAG context)
-    rag_marker = "## Reference Documentation"
-    custom_marker = "## Custom Instructions"
+    rag_marker = "REFERENCE DOCUMENTATION:"
+    custom_marker = "CUSTOM INSTRUCTIONS:"
 
     if rag_marker in system_prompt:
         base_end = system_prompt.find(rag_marker)

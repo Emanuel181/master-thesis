@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import { useSession, signIn } from "next-auth/react"
 import { useProject } from "@/contexts/projectContext"
 import { useDemo, DEMO_GITHUB_REPOS } from "@/contexts/demoContext"

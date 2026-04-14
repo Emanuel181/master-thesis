@@ -144,6 +144,46 @@ export async function POST(request) {
             }
         }
 
+        // Also include pentest findings if available
+        try {
+            const pentestSession = await prisma.pentestSession.findFirst({
+                where: { workflowRunId: runId },
+                include: { findings: true },
+            });
+            if (pentestSession?.findings?.length > 0) {
+                const pentestVulns = pentestSession.findings.map(f => ({
+                    id: f.id,
+                    title: `[Pentest] ${f.title}`,
+                    severity: f.severity ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1) : 'Medium',
+                    type: f.category || 'Security',
+                    details: f.description,
+                    fileName: f.affectedCode?.split(':')[0] || '',
+                    lineNumber: null,
+                    vulnerableCode: f.proofOfConcept || null,
+                    explanation: f.description,
+                    bestPractices: f.remediation,
+                    exploitExamples: f.proofOfConcept,
+                    cweId: f.cwe || null,
+                    attackPath: null,
+                    confidence: f.exploitSuccess ? 1.0 : 0.7,
+                }));
+                vulnData = [...vulnData, ...pentestVulns];
+                // Update summary counts
+                if (summaryData) {
+                    summaryData.totalVulnerabilities = vulnData.length;
+                    for (const pv of pentestVulns) {
+                        const sev = pv.severity?.toLowerCase();
+                        if (sev === 'critical') summaryData.criticalCount++;
+                        else if (sev === 'high') summaryData.highCount++;
+                        else if (sev === 'medium') summaryData.mediumCount++;
+                        else if (sev === 'low') summaryData.lowCount++;
+                    }
+                }
+            }
+        } catch (pentestErr) {
+            console.warn('Error fetching pentest findings for PDF:', pentestErr.message);
+        }
+
         // Ensure vulnData is an array and sanitize it
         if (!Array.isArray(vulnData)) {
             vulnData = [];

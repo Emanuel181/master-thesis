@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from '@/i18n/navigation'
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Sparkles, Zap, Shield, GitBranch, Rss, FileCode, Heart, Rocket, BookOpen,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccessibilityButton } from "./accessibility-button"
+import { useTranslations } from 'next-intl'
 
 // Motion-enabled Link component for internal navigation
 const MotionLink = motion.create(Link)
@@ -49,11 +50,12 @@ export function MobileMenu({ isOpen, onClose, isAuthenticated }) {
 }
 
 function ProductSection({ onClose }) {
+    const t = useTranslations('nav')
     return (
         <div className="mb-4">
             <div className="text-[11px] font-bold text-accent uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                 <Sparkles className="w-3 h-3" />
-                Product
+                {t('product')}
             </div>
             <div className="grid grid-cols-3 gap-2">
                 <MotionLink
@@ -63,7 +65,7 @@ function ProductSection({ onClose }) {
                     className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-accent/10 to-primary/5 border border-accent/20 hover:border-accent/40 transition-all"
                 >
                     <Zap className="w-5 h-5 text-accent mb-1.5" />
-                    <span className="text-xs font-medium text-foreground">Features</span>
+                    <span className="text-xs font-medium text-foreground">{t('productItems.features.label')}</span>
                 </MotionLink>
                 <MotionLink
                     href="/#use-cases"
@@ -72,11 +74,11 @@ function ProductSection({ onClose }) {
                     className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-accent/10 to-primary/5 border border-accent/20 hover:border-accent/40 transition-all"
                 >
                     <Shield className="w-5 h-5 text-accent mb-1.5" />
-                    <span className="text-xs font-medium text-foreground">Use cases</span>
+                    <span className="text-xs font-medium text-foreground">{t('productItems.useCases.label')}</span>
                 </MotionLink>
                 <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-br from-accent/10 to-primary/5 border border-accent/20">
                     <GitBranch className="w-5 h-5 text-accent mb-1.5" />
-                    <span className="text-xs font-medium text-foreground">Integrations</span>
+                    <span className="text-xs font-medium text-foreground">{t('productItems.integrations.label')}</span>
                 </div>
             </div>
         </div>
@@ -84,14 +86,15 @@ function ProductSection({ onClose }) {
 }
 
 function ResourcesSection({ onClose }) {
+    const t = useTranslations('nav')
     const internalItems = [
-        { href: "/blog", icon: Rss, title: "Blog", subtitle: "Security insights" },
-        { href: "/changelog", icon: FileCode, title: "Changelog", subtitle: "Latest updates" },
-        { href: "/supporters", icon: Heart, title: "Supporters", subtitle: "Our community" },
+        { href: "/blog", icon: Rss, title: t('resourceItems.blog.label'), subtitle: t('resourceItems.blog.description') },
+        { href: "/changelog", icon: FileCode, title: t('resourceItems.changelog.label'), subtitle: t('resourceItems.changelog.description') },
+        { href: "/supporters", icon: Heart, title: t('resourceItems.supporters.label'), subtitle: t('resourceItems.supporters.description') },
     ]
     
     const externalItems = [
-        { href: "https://www.producthunt.com/posts/vulniq", icon: Rocket, title: "Product Hunt" },
+        { href: "https://www.producthunt.com/posts/vulniq", icon: Rocket, title: t('resourceItems.productHunt.label') },
         { href: "https://github.com/vulniq/vulniq", icon: BookOpen, title: "Documentation" },
     ]
 
@@ -99,7 +102,7 @@ function ResourcesSection({ onClose }) {
         <div className="mb-4">
             <div className="text-[11px] font-bold text-accent uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                 <Rss className="w-3 h-3" />
-                Resources
+                {t('resources')}
             </div>
             <div className="space-y-1">
                 {internalItems.map((item) => (
@@ -110,7 +113,7 @@ function ResourcesSection({ onClose }) {
                         whileTap={{ scale: 0.98 }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all duration-150 group select-none"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-muted/20 transition-colors">
                             <item.icon className="w-4 h-4 text-accent" />
                         </div>
                         <div>
@@ -131,7 +134,7 @@ function ResourcesSection({ onClose }) {
                         whileTap={{ scale: 0.98 }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all duration-150 group select-none"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-muted/20 transition-colors">
                             <item.icon className="w-4 h-4 text-accent" />
                         </div>
                         <div>
@@ -148,17 +151,18 @@ function ResourcesSection({ onClose }) {
 }
 
 function CompanySection({ onClose }) {
+    const t = useTranslations('nav')
     const items = [
-        { href: "/about", icon: Building2, label: "About" },
-        { href: "/security", icon: Shield, label: "Security" },
-        { href: "/#connect", icon: MessageSquare, label: "Contact" },
+        { href: "/about", icon: Building2, label: t('companyItems.about.label') },
+        { href: "/security", icon: Shield, label: t('companyItems.security.label') },
+        { href: "/#connect", icon: MessageSquare, label: t('companyItems.contact.label') },
     ]
 
     return (
         <div className="pt-3 border-t border-border/30">
             <div className="text-[11px] font-bold text-accent uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                 <Building2 className="w-3 h-3" />
-                Company
+                {t('company')}
             </div>
             <div className="flex flex-wrap gap-2">
                 {items.map((item) => (
@@ -179,6 +183,7 @@ function CompanySection({ onClose }) {
 }
 
 function BottomActions({ onClose, isAuthenticated }) {
+    const t = useTranslations('nav')
     return (
         <div className="border-t border-border/40 p-3 bg-gradient-to-r from-muted/30 via-muted/50 to-muted/30 space-y-2">
             <div className="flex items-center justify-center gap-1 bg-muted/30 rounded-xl p-1 border border-border/30">
@@ -191,25 +196,25 @@ function BottomActions({ onClose, isAuthenticated }) {
                 href="/demo"
                 onClick={onClose}
                 whileTap={{ scale: 0.95 }}
-                className="flex-1 px-4 py-3 text-sm font-medium text-center text-accent border border-accent/40 rounded-xl hover:bg-accent/10 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 text-sm font-medium text-center text-accent border border-accent/40 rounded-xl hover:bg-muted/10 transition-colors flex items-center justify-center gap-2"
             >
                 <Sparkles className="w-4 h-4" />
-                Try demo
+                {t('resourceItems.tryDemo.label')}
             </MotionLink>
             <MotionLink
                 href={isAuthenticated ? "/dashboard" : "/login"}
                 onClick={onClose}
                 whileTap={{ scale: 0.95 }}
-                className="flex-1 px-4 py-3 text-sm font-medium text-center text-white bg-gradient-to-r from-accent to-primary rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
+                className="flex-1 px-4 py-3 text-sm font-medium text-center text-primary-foreground bg-gradient-to-r from-primary/80 to-primary rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
             >
                 {isAuthenticated ? (
                     <>
                         <LayoutDashboard className="w-4 h-4" />
-                        Dashboard
+                        {t('dashboard')}
                     </>
                 ) : (
                     <>
-                        Get started
+                        {t('getStarted')}
                         <ArrowRight className="w-4 h-4" />
                     </>
                 )}

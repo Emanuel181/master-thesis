@@ -134,7 +134,7 @@ export function IconPicker({ value, onValueChange, className }) {
                                         onClick={() => handleSelect(iconName)}
                                         className={cn(
                                             "flex flex-col items-center justify-center p-2 rounded-md transition-colors",
-                                            "hover:bg-accent hover:text-accent-foreground",
+                                            "hover:bg-muted hover:text-foreground",
                                             isSelected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                                         )}
                                         title={iconName}

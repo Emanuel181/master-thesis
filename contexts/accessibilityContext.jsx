@@ -20,6 +20,9 @@ const defaultSettings = {
   focusIndicator: false,
   textAlign: "default",
   hideFloatingButton: false,
+  invertColors: false,
+  hideImages: false,
+  tooltips: false,
 };
 
 const STORAGE_KEY = "vulniq-accessibility-settings";
@@ -105,6 +108,9 @@ export function AccessibilityProvider({ children }) {
     body.classList.toggle("a11y-big-cursor", settings.bigCursor);
     body.classList.toggle("a11y-stop-animations", settings.stopAnimations);
     body.classList.toggle("a11y-focus-indicator", settings.focusIndicator);
+    body.classList.toggle("a11y-invert-colors", settings.invertColors);
+    body.classList.toggle("a11y-hide-images", settings.hideImages);
+    body.classList.toggle("a11y-tooltips", settings.tooltips);
 
     // Remove all contrast classes first
     body.classList.remove(

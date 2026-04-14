@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,7 +109,7 @@ export function ImportDialog({
                                             <Button 
                                                 variant="ghost" 
                                                 size="sm" 
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 hover:bg-accent text-xs gap-1"
+                                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 hover:bg-muted text-xs gap-1"
                                             >
                                                 {filterMode === 'all' ? (
                                                     <span className="text-muted-foreground">All</span>
@@ -194,7 +194,7 @@ export function ImportDialog({
                                                     <div
                                                         key={r.id}
                                                         onClick={() => onSelectRepo(r)}
-                                                        className="p-2 hover:bg-accent rounded-md cursor-pointer flex justify-between text-sm transition-colors"
+                                                        className="p-2 hover:bg-muted rounded-md cursor-pointer flex justify-between text-sm transition-colors"
                                                     >
                                                         <span className="font-medium truncate mr-2">{r.name}</span>
                                                         <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${r.private ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
@@ -242,7 +242,7 @@ export function ImportDialog({
                                                     <div
                                                         key={r.id}
                                                         onClick={() => onSelectGitlabRepo(r)}
-                                                        className="p-2 hover:bg-accent rounded-md cursor-pointer flex justify-between text-sm transition-colors"
+                                                        className="p-2 hover:bg-muted rounded-md cursor-pointer flex justify-between text-sm transition-colors"
                                                     >
                                                         <span className="font-medium truncate mr-2">{r.name}</span>
                                                         <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${r.visibility === 'private' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>

@@ -1,35 +1,46 @@
+import createIntlMiddleware from 'next-intl/middleware';
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { routing } from './i18n/routing';
+
+const intlMiddleware = createIntlMiddleware(routing);
 
 export const proxy = auth((req) => {
     const { pathname } = req.nextUrl;
 
-    // Protect dashboard, profile, and admin routes
+    // Strip locale prefix to check the actual route
+    const localePattern = /^\/(en|ro|es|fr|de|pt|zh|ja|ko|ar|ru|it|hi|tr|nl|pl|sv)(\/|$)/;
+    const match = pathname.match(localePattern);
+    const strippedPath = match ? pathname.slice(match[1].length + 1) || '/' : pathname;
+
+    // Protect dashboard and profile routes
     if (
-        pathname.startsWith("/dashboard") ||
-        pathname.startsWith("/profile")
+        strippedPath.startsWith("/dashboard") ||
+        strippedPath.startsWith("/profile")
     ) {
         if (!req.auth) {
-            const loginUrl = new URL("/login", req.url);
+            const locale = match ? match[1] : 'en';
+            const loginUrl = new URL(`/${locale}/login`, req.url);
             loginUrl.searchParams.set("callbackUrl", pathname);
             return NextResponse.redirect(loginUrl);
         }
     }
 
-    // Admin routes require auth (admin check is done at the API/page level)
-    if (pathname.startsWith("/admin")) {
+    // Admin routes require auth
+    if (strippedPath.startsWith("/admin")) {
         if (!req.auth) {
-            return NextResponse.redirect(new URL("/login", req.url));
+            const locale = match ? match[1] : 'en';
+            return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
         }
     }
 
-    return NextResponse.next();
+    // Run next-intl middleware for locale routing
+    return intlMiddleware(req);
 });
 
 export const config = {
     matcher: [
-        "/dashboard/:path*",
-        "/profile/:path*",
-        "/admin/:path*",
+        // Match all paths except API, static files, _next internals
+        '/((?!api|_next|health|.*\\..*).*)',
     ],
 };

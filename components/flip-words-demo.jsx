@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { FlipWords } from "./ui/flip-words";
 import { ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
@@ -19,7 +19,7 @@ export function FlipWordsDemo() {
             <p className="relative mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground text-center max-w-lg">
                 Trusted by developers who want real security — not guesswork.
             </p>
-            <Button asChild variant="outline" size="sm" className="relative mt-4 rounded-full border-accent/30 hover:bg-accent/10 hover:border-accent/50 text-xs sm:text-sm">
+            <Button asChild variant="outline" size="sm" className="relative mt-4 rounded-full border-accent/30 hover:bg-muted/10 hover:border-accent/50 text-xs sm:text-sm">
                 <Link href="/demo">
                     Try the demo
                     <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

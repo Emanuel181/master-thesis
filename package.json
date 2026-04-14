@@ -131,10 +131,11 @@
     "lucide-react": "^0.555.0",
     "monaco-editor": "^0.55.1",
     "motion": "^12.23.26",
-    "next": "16.1.6",
+    "next": "^16.2.2",
     "next-auth": "^5.0.0-beta.30",
+    "next-intl": "^4.9.1",
     "next-themes": "^0.4.6",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^8.0.4",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "5.4.296",
     "pg": "^8.16.3",
@@ -185,8 +186,9 @@
     "@types/node": "24.10.1",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.2.2",
     "fast-check": "^4.5.3",
+    "playwright": "^1.59.1",
     "sass": "^1.97.1",
     "tailwindcss": "^4.1.17",
     "tree-sitter-wasms": "^0.1.13",
@@ -216,6 +218,7 @@
     "immutable": "^5.1.5",
     "lodash": "^4.17.23",
     "lodash-es": "^4.17.23",
-    "dompurify": "^3.3.2"
+    "dompurify": "^3.3.2",
+    "effect": "^3.21.0"
   }
 }

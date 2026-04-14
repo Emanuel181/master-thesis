@@ -839,10 +839,21 @@ export function DemoArticleEditor() {
                       <div
                         className="relative h-36 rounded-xl overflow-hidden shadow-sm ring-1 ring-border/50"
                         style={{
-                          background: editFormState.coverType === "gradient"
-                            ? editFormState.gradient
-                            : (editFormState.coverImage ? `url(${editFormState.coverImage}) center/cover no-repeat` : "hsl(var(--muted))"),
-                          backgroundSize: editFormState.coverType === "gradient" ? "200% 200%" : "cover"
+                          ...(editFormState.coverType === "gradient"
+                            ? {
+                                backgroundImage: editFormState.gradient,
+                                backgroundSize: "200% 200%",
+                              }
+                            : editFormState.coverImage
+                              ? {
+                                  backgroundImage: `url(${editFormState.coverImage})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                  backgroundRepeat: "no-repeat",
+                                }
+                              : {
+                                  backgroundColor: "hsl(var(--muted))",
+                                }),
                         }}
                       >
                         {editFormState.coverType === "image" && !editFormState.coverImage && (

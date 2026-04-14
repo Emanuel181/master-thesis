@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from "@/components/ui/card";
 import { sanitizeImageUrl } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 import { 
   ArrowRight, 
   Calendar, 
@@ -60,6 +61,7 @@ const ICON_MAP = {
 const POSTS_PER_PAGE = 4;
 
 const BlogCard = ({ post }) => {
+  const t = useTranslations('blogSection');
   const Icon = ICON_MAP[post.iconName] || Shield;
 
   return (
@@ -97,7 +99,7 @@ const BlogCard = ({ post }) => {
 
             {/* Icon in center */}
             <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="p-5 rounded-full bg-accent/15 backdrop-blur-sm group-hover:scale-110 group-hover:bg-accent/25 transition-all duration-300">
+              <div className="p-5 rounded-full bg-accent/15 backdrop-blur-sm group-hover:scale-110 group-hover:bg-muted/25 transition-all duration-300">
                 <Icon
                   className="w-10 h-10 text-accent-foreground"
                 />
@@ -133,10 +135,10 @@ const BlogCard = ({ post }) => {
         <CardFooter className="gap-3 pt-2 bg-card dark:bg-transparent">
           <Button
             asChild
-            className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
+            className="flex-1 bg-accent hover:bg-muted/90 text-accent-foreground"
           >
             <Link href={`/blog/${post.slug}`}>
-              Read article
+              {t('readArticle')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
@@ -156,7 +158,7 @@ const PaginationDots = ({ currentPage, totalPages, onPageChange }) => {
         size="icon"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 0}
-        className="h-9 w-9 rounded-full hover:bg-accent/10 text-foreground"
+        className="h-9 w-9 rounded-full hover:bg-muted/10 text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -179,7 +181,7 @@ const PaginationDots = ({ currentPage, totalPages, onPageChange }) => {
         size="icon"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages - 1}
-        className="h-9 w-9 rounded-full hover:bg-accent/10 text-foreground"
+        className="h-9 w-9 rounded-full hover:bg-muted/10 text-foreground"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
@@ -188,15 +190,17 @@ const PaginationDots = ({ currentPage, totalPages, onPageChange }) => {
 };
 
 // Empty state component
-const EmptyState = () => (
+const EmptyState = () => {
+  const t = useTranslations('blogSection');
+  return (
   <div className="text-center py-16">
     <BookOpen className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-    <h3 className="text-xl font-semibold text-foreground mb-2">No articles yet</h3>
+    <h3 className="text-xl font-semibold text-foreground mb-2">{t('noArticles')}</h3>
     <p className="text-muted-foreground max-w-md mx-auto">
-      Our security experts are working on new content. Check back soon for insights on application security and vulnerability detection.
+      {t('noArticlesDescription')}
     </p>
   </div>
-);
+);};
 
 // Loading state component
 const LoadingState = () => (
@@ -206,6 +210,7 @@ const LoadingState = () => (
 );
 
 export function BlogSection() {
+  const t = useTranslations('blogSection');
   const [currentPage, setCurrentPage] = useState(0);
   const [blogPosts, setBlogPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -258,10 +263,10 @@ export function BlogSection() {
           className="text-center mb-12 sm:mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Security knowledge hub
+            {t('heading')}
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Expert insights on application security, vulnerability detection, and secure development practices from the VulnIQ team.
+            {t('description')}
           </p>
         </motion.div>
         
@@ -308,10 +313,10 @@ export function BlogSection() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-full font-medium border-accent/30 hover:bg-accent/10 hover:text-accent hover:border-accent/50 text-foreground px-8"
+              className="rounded-full font-medium border-accent/30 hover:bg-muted/10 hover:text-accent hover:border-accent/50 text-foreground px-8"
             >
               <Link href="/blog" className="flex items-center gap-2">
-                View all articles
+                {t('viewAllArticles')}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>

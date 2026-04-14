@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useSession } from "next-auth/react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
@@ -320,8 +320,8 @@ export function NotificationProvider({ children }) {
             firstFetchDoneRef.current = true
 
             setNotifications(dbNotifications)
-        } catch (error) {
-            console.error('Error fetching notifications:', error)
+        } catch {
+            // Network unavailable — notifications will retry on next poll
         }
     }, [isDemoMode, session?.user?.id, soundEnabled, doNotDisturb, desktopEnabled])
 
@@ -815,8 +815,8 @@ export function NotificationCenter() {
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
                                         className={cn(
-                                            "group flex items-start gap-3 p-3 border-b hover:bg-accent/50 transition-all duration-150 cursor-pointer select-none",
-                                            !notification.read && "bg-accent/30"
+                                            "group flex items-start gap-3 p-3 border-b hover:bg-muted/10 transition-all duration-150 cursor-pointer select-none",
+                                            !notification.read && "bg-accent/5"
                                         )}
                                         onClick={() => {
                                             markAsRead(notification.id)

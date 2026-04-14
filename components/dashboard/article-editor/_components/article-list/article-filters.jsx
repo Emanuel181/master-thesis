@@ -101,7 +101,7 @@ export function ArticleFilters({
                 {searchTerm && (
                     <button
                         onClick={() => setSearchTerm("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-sm transition-colors"
                     >
                         <X className="h-3 w-3 text-muted-foreground" />
                     </button>

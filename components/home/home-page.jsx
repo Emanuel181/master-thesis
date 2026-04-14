@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter } from "@/i18n/navigation"
 import { useSession } from "next-auth/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"

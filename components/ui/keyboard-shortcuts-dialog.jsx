@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter, usePathname } from "next/navigation" // navigation hooks
+import { useRouter, usePathname } from "@/i18n/navigation" // navigation hooks
 import {
     CommandDialog,
     CommandEmpty,

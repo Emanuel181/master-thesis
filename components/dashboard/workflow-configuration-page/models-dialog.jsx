@@ -2,7 +2,7 @@
 
 import React from "react"
 import dynamic from "next/dynamic"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import {
     Drawer,
     DrawerContent,
@@ -109,15 +109,10 @@ function ModelsDialogInner({ isOpen, onOpenChange, codeType, onCodeTypeChange })
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange} modal={false}>
             <DrawerContent className="overflow-hidden">
-                <div className="mx-auto w-full max-w-[95vw]">
+                <div className="mx-auto w-full max-w-[95vw] overflow-hidden">
                     <DrawerHeader className="pb-2">
+                        <DrawerTitle className="sr-only">Agent Configuration</DrawerTitle>
                         <div className="flex items-center justify-between">
-                            <div>
-                                <DrawerTitle>Configure AI agent workflow</DrawerTitle>
-                                <DrawerDescription>
-                                    Visualize your code workflow and select AI models for each agent.
-                                </DrawerDescription>
-                            </div>
                             <div className="hidden sm:flex items-center gap-3">
                                 <div className="text-right">
                                     <div className="text-xs font-medium text-muted-foreground">
@@ -241,7 +236,7 @@ function WorkflowTab({ dialog, codeType, onCodeTypeChange, onOpenChange }) {
 
     return (
         <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-4" data-vaul-no-drag>
-            <div className="space-y-4 pr-4">
+            <div className="space-y-4 pr-4 overflow-hidden">
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         Your code flows through a series of AI agents. Each agent can use a different model. Select models directly in the workflow below:
@@ -395,92 +390,98 @@ function PromptsTab({ dialog }) {
     }, [dialog])
 
     return (
-        <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg p-4" data-vaul-no-drag>
-            <div className="pr-4">
-            <div className="flex items-center justify-between mb-4">
-                <div className="text-sm text-muted-foreground">
-                    Configure the prompts used by each AI agent. Select one prompt per agent.
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={dialog.handleRefreshAllPrompts}
-                    disabled={dialog.isRefreshingAllPrompts}
-                    className="shrink-0 ml-4 text-foreground"
-                >
-                    {dialog.isRefreshingAllPrompts ? (
-                        <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Refreshing...
-                        </>
-                    ) : (
-                        <>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Refresh all
-                        </>
-                    )}
-                </Button>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-                {visibleAgents.map(([agent, agentPrompts]) => (
-                    <PromptCard
-                        key={agent}
-                        agent={agent}
-                        agentPrompts={agentPrompts}
-                        selectedPrompts={dialog.selectedPrompts}
-                        currentPage={dialog.currentPage[agent] || 0}
-                        isRefreshing={dialog.isRefreshingPrompts[agent]}
-                        onPromptSelect={handlePromptSelectWithSync}
-                        onViewPrompt={dialog.setViewPrompt}
-                        onRefresh={() => dialog.handleRefreshAgentPrompts(agent)}
-                        onPageChange={(page) => dialog.setCurrentPage(prev => ({ ...prev, [agent]: page }))}
-                        truncateText={dialog.truncateText}
-                    />
-                ))}
-            </div>
-
+        <div className="flex flex-col h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] bg-muted/30 rounded-lg">
+            {/* Agent page navigation — sticky at top */}
             {totalAgentPages > 1 && (
-                <div className="flex items-center justify-center gap-4 pt-4 border-t">
+                <div className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-muted/50 rounded-t-lg shrink-0">
                     <Button
                         variant="outline"
                         size="sm"
+                        className="h-8"
                         onClick={() => dialog.setAgentPage(prev => Math.max(0, prev - 1))}
                         disabled={dialog.agentPage === 0}
                     >
-                        ← Previous agents page
+                        ← Prev
                     </Button>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                         Agents {dialog.agentPage * agentsPerPage + 1}-{Math.min((dialog.agentPage + 1) * agentsPerPage, agentEntries.length)} of {agentEntries.length}
                     </span>
                     <Button
                         variant="outline"
                         size="sm"
+                        className="h-8"
                         onClick={() => dialog.setAgentPage(prev => Math.min(totalAgentPages - 1, prev + 1))}
                         disabled={dialog.agentPage >= totalAgentPages - 1}
                     >
-                        Next agents page →
+                        Next →
                     </Button>
                 </div>
             )}
 
-            {/* View Prompt Dialog */}
-            <Dialog open={!!dialog.viewPrompt} onOpenChange={() => dialog.setViewPrompt(null)}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>{dialog.viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
-                        <DialogDescription>Complete text of the selected prompt.</DialogDescription>
-                    </DialogHeader>
-                    {dialog.viewPrompt && (
-                        <Textarea value={dialog.viewPrompt.text} readOnly rows={10} className="resize-none" />
-                    )}
-                    <DialogFooter>
-                        <Button onClick={() => dialog.setViewPrompt(null)}>Close</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-            </div>
-        </ScrollArea>
+            <ScrollArea className="flex-1 p-4" data-vaul-no-drag>
+                <div className="pr-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                    <div className="text-sm text-muted-foreground">
+                        Configure the prompts used by each AI agent. Select one prompt per agent.
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={dialog.handleRefreshAllPrompts}
+                        disabled={dialog.isRefreshingAllPrompts}
+                        className="shrink-0 text-foreground"
+                    >
+                        {dialog.isRefreshingAllPrompts ? (
+                            <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Refreshing...
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Refresh all
+                            </>
+                        )}
+                    </Button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    {visibleAgents.map(([agent, agentPrompts]) => (
+                        <div key={agent}>
+                            <PromptCard
+                                agent={agent}
+                                agentPrompts={agentPrompts}
+                                selectedPrompts={dialog.selectedPrompts}
+                                currentPage={dialog.currentPage[agent] || 0}
+                                isRefreshing={dialog.isRefreshingPrompts[agent]}
+                                onPromptSelect={handlePromptSelectWithSync}
+                                onViewPrompt={dialog.setViewPrompt}
+                                onRefresh={() => dialog.handleRefreshAgentPrompts(agent)}
+                                onPageChange={(page) => dialog.setCurrentPage(prev => ({ ...prev, [agent]: page }))}
+                                truncateText={dialog.truncateText}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* View Prompt Dialog */}
+                <Dialog open={!!dialog.viewPrompt} onOpenChange={() => dialog.setViewPrompt(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>{dialog.viewPrompt?.title || "Untitled Prompt"}</DialogTitle>
+                            <DialogDescription>Complete text of the selected prompt.</DialogDescription>
+                        </DialogHeader>
+                        {dialog.viewPrompt && (
+                            <Textarea value={dialog.viewPrompt.text} readOnly rows={10} className="resize-none" />
+                        )}
+                        <DialogFooter>
+                            <Button onClick={() => dialog.setViewPrompt(null)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                </div>
+            </ScrollArea>
+        </div>
     )
 }
 
@@ -700,7 +701,7 @@ function KnowledgeBaseTab({ dialog, codeType }) {
                         return (
                             <div key={groupId} className="border rounded-lg bg-background">
                                 {/* Group Header */}
-                                <div className="flex items-center gap-2 p-3 hover:bg-accent/50 transition-colors rounded-t-lg">
+                                <div className="flex items-center gap-2 p-3 hover:bg-muted/50 transition-colors rounded-t-lg">
                                     <Checkbox
                                         checked={isGroupSelected}
                                         onCheckedChange={() => toggleGroup(groupId)}
@@ -738,7 +739,7 @@ function KnowledgeBaseTab({ dialog, codeType }) {
                                                     <div key={useCase.id} className="border-b last:border-b-0">
                                                         <button
                                                             onClick={() => toggleUseCase(useCase.id)}
-                                                            className="w-full flex items-center gap-2 p-2 pl-8 hover:bg-accent/30 transition-colors"
+                                                            className="w-full flex items-center gap-2 p-2 pl-8 hover:bg-muted/30 transition-colors"
                                                         >
                                                             <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isUseCaseExpanded ? 'rotate-90' : ''}`} />
                                                             <File className="h-3.5 w-3.5 text-severity-high" />
@@ -765,7 +766,7 @@ function KnowledgeBaseTab({ dialog, codeType }) {
                                                                     pdfs.map(pdf => (
                                                                         <label
                                                                             key={pdf.id}
-                                                                            className="flex items-center gap-2 p-2 pl-16 hover:bg-accent/20 cursor-pointer transition-colors"
+                                                                            className="flex items-center gap-2 p-2 pl-16 hover:bg-muted/20 cursor-pointer transition-colors"
                                                                         >
                                                                             <Checkbox
                                                                                 checked={selectedFiles.has(pdf.id)}

@@ -22,7 +22,7 @@ import {
     Save,
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import "reactflow/dist/style.css";
 
 // Import extracted nodes and edges
@@ -336,10 +336,6 @@ export function AIWorkflowVisualization({
                 targetHandle: "kb-in",
                 type: "animated",
                 animated: true,
-                label: "KB context",
-                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.cyan, strokeWidth: 2, strokeDasharray: "5,5" },
                 data: { duration: "4s", radius: 4 },
             },
@@ -351,10 +347,6 @@ export function AIWorkflowVisualization({
                 target: "reviewer",
                 targetHandle: "prompt-in",
                 type: "animated",
-                label: "Prompt",
-                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
                 data: { duration: "2s", radius: 4 },
@@ -365,10 +357,6 @@ export function AIWorkflowVisualization({
                 target: "implementation",
                 targetHandle: "prompt-in",
                 type: "animated",
-                label: "Prompt",
-                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
                 data: { duration: "2s", radius: 4 },
@@ -379,10 +367,6 @@ export function AIWorkflowVisualization({
                 target: "tester",
                 targetHandle: "prompt-in",
                 type: "animated",
-                label: "Prompt",
-                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
                 data: { duration: "2s", radius: 4 },
@@ -393,10 +377,6 @@ export function AIWorkflowVisualization({
                 target: "report",
                 targetHandle: "prompt-in",
                 type: "animated",
-                label: "Prompt",
-                labelStyle: { fill: primaryColor, fontWeight: 600, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.indigo, strokeWidth: 2.5 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.indigo, width: 18, height: 18 },
                 data: { duration: "2s", radius: 4 },
@@ -410,10 +390,6 @@ export function AIWorkflowVisualization({
                 targetHandle: "flow-in",
                 type: "animated",
                 animated: true,
-                label: "Code",
-                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.amber, strokeWidth: 3 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.amber, width: 20, height: 20 },
             },
@@ -424,10 +400,6 @@ export function AIWorkflowVisualization({
                 targetHandle: "flow-in",
                 type: "animated",
                 animated: true,
-                label: "Review",
-                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.blue, strokeWidth: 3 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.blue, width: 20, height: 20 },
             },
@@ -438,10 +410,6 @@ export function AIWorkflowVisualization({
                 targetHandle: "flow-in",
                 type: "animated",
                 animated: true,
-                label: "Changes",
-                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.green, strokeWidth: 3 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.green, width: 20, height: 20 },
             },
@@ -452,10 +420,6 @@ export function AIWorkflowVisualization({
                 targetHandle: "flow-in",
                 type: "animated",
                 animated: true,
-                label: "Results",
-                labelStyle: { fill: primaryColor, fontWeight: 700, fontSize: 10 },
-                labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.85 },
-                labelBgPadding: [4, 3],
                 style: { stroke: edgeColors.orange, strokeWidth: 3 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: edgeColors.orange, width: 20, height: 20 },
             },
@@ -550,13 +514,10 @@ export function AIWorkflowVisualization({
     }, [codeType, knowledgeBases, selectedKnowledgeBases, onKnowledgeBaseChange]);
 
     return (
-        <div className="w-full">
+        <div className="w-full overflow-hidden">
             <div className="border rounded-lg bg-background shadow-sm flex flex-col overflow-hidden">
                 {/* Header - responsive layout */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-muted/30 gap-2 sm:gap-3">
-                    <div className="text-sm font-semibold text-foreground">
-                        AI workflow configuration
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-muted/30 gap-2 sm:gap-3">
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {/* Zoom controls */}
                         <div className="flex items-center gap-1 bg-background/50 rounded-md p-0.5">
@@ -688,31 +649,6 @@ export function AIWorkflowVisualization({
                     </p>
                 </div>
 
-                {/* Legend */}
-                <div className="hidden sm:flex items-center gap-4 px-4 py-2 border-b bg-muted/20 text-[10px] text-muted-foreground flex-wrap">
-                    <span className="font-semibold text-foreground/60 uppercase tracking-wider text-[9px]">Legend:</span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-6 border-t-2 border-primary" />
-                        Code flow
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-6 border-t-2 border-dashed border-primary" style={{ borderStyle: 'dashed' }} />
-                        Prompt instruction
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-6 border-t-2" style={{ borderStyle: 'dashed', borderColor: 'hsl(var(--primary)/0.5)' }} />
-                        KB context
-                    </span>
-                    <span className="flex items-center gap-1.5 ml-auto">
-                        <span className="inline-block w-3 h-3 rounded-sm bg-primary/10 border border-dashed border-primary/60" />
-                        Prompt node
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-3 h-3 rounded-sm bg-muted border border-border" />
-                        Agent node
-                    </span>
-                </div>
-
                 {/* ReactFlow container - responsive height */}
                 <div
                     className="h-96 sm:h-[32rem] md:h-[38rem] lg:h-[50rem] relative overflow-hidden"
@@ -735,8 +671,9 @@ export function AIWorkflowVisualization({
                         snapToGrid
                         snapGrid={[20, 20]}
                         onInit={(instance) => { reactFlowInstanceRef.current = instance; }}
-                        panOnScroll
+                        panOnScroll={false}
                         panOnDrag
+                        zoomOnScroll={false}
                         zoomOnPinch
                         proOptions={{ hideAttribution: true }}
                     >

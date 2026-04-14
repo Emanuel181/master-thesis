@@ -3,38 +3,15 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
-const comparisonRows = [
-  {
-    feature: "Context-aware analysis",
-    traditional: "Generic rule-based pattern matching",
-    vulniq: "RAG-grounded understanding of your codebase and docs",
-  },
-  {
-    feature: "False positive rate",
-    traditional: "High — noisy alerts, developer fatigue",
-    vulniq: "Minimal — multi-agent debate validates each finding",
-  },
-  {
-    feature: "Remediation",
-    traditional: "Manual — generic fix suggestions at best",
-    vulniq: "Automated — AI agents implement verified patches",
-  },
-  {
-    feature: "Knowledge sources",
-    traditional: "Static rule databases",
-    vulniq: "Your docs + CWE, OWASP, NVD via retrieval augmentation",
-  },
-  {
-    feature: "Fix verification",
-    traditional: "None — you hope the fix works",
-    vulniq: "Tester agent runs targeted security checks on every patch",
-  },
-  {
-    feature: "Reporting",
-    traditional: "CSV export with vulnerability list",
-    vulniq: "Audit-ready PDF with evidence, patches, and test results",
-  },
+const comparisonRowKeys = [
+  'contextAwareAnalysis',
+  'falsePositiveRate',
+  'remediation',
+  'knowledgeSources',
+  'fixVerification',
+  'reporting',
 ];
 
 function ComparisonRow({ row, index }) {
@@ -67,6 +44,12 @@ function ComparisonRow({ row, index }) {
 }
 
 export function ComparisonSection() {
+  const t = useTranslations('comparison');
+  const comparisonRows = comparisonRowKeys.map(key => ({
+    feature: t(`rows.${key}.label`),
+    traditional: t(`rows.${key}.traditional`),
+    vulniq: t(`rows.${key}.vulniq`),
+  }));
   return (
     <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-6 lg:px-12 relative">
@@ -79,10 +62,10 @@ export function ComparisonSection() {
           className="text-center mb-12 sm:mb-14 md:mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Why <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">VulnIQ</span>?
+            {t('headingBefore')}<span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">{t('headingBrand')}</span>{t('headingAfter')}
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto mt-4">
-            See how agentic RAG compares to traditional static analysis tools.
+            {t('description')}
           </p>
           <div className="h-0.5 bg-gradient-to-r from-transparent via-accent to-transparent w-16 sm:w-20 md:w-24 mx-auto mt-5 sm:mt-6" />
         </motion.div>
@@ -92,13 +75,13 @@ export function ComparisonSection() {
           {/* Column headers (desktop only) */}
           <div className="hidden md:grid grid-cols-[1fr_1fr_1fr] pb-4 mb-2 border-b-2 border-accent/20">
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Feature
+              {t('columns.feature')}
             </div>
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-4">
-              Traditional scanners
+              {t('columns.traditionalScanners')}
             </div>
             <div className="text-xs font-semibold uppercase tracking-wider text-accent px-4">
-              VulnIQ
+              {t('columns.vulniq')}
             </div>
           </div>
 

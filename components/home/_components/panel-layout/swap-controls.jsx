@@ -22,7 +22,7 @@ export function SwapButton({ onClick, title, className, rotate = false, onHoverC
                     onClick={onClick}
                     onMouseEnter={() => onHoverChange?.(true)}
                     onMouseLeave={() => onHoverChange?.(false)}
-                    className={`h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-accent ${className || ''}`}
+                    className={`h-8 w-8 rounded-full bg-background shadow-md border-border/80 hover:bg-muted ${className || ''}`}
                 >
                     <ArrowUpDown className={`h-4 w-4 ${rotate ? 'rotate-90' : ''}`} />
                 </Button>

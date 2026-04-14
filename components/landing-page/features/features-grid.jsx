@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from 'next-intl';
 import {
     Database,
     Github,
@@ -17,14 +18,15 @@ import {
 } from "lucide-react";
 
 export function FeaturesGrid() {
+    const t = useTranslations('features');
     return (
         <ul className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 md:grid-cols-12 lg:gap-8 xl:grid-rows-2 w-full">
             {/* 1. GROUNDED SECURITY INTELLIGENCE (Top Left) */}
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
                 icon={<Database className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                title="Grounded security intelligence"
-                description="Each agent retrieves guidance from your security knowledge bases and use-case playbooks (e.g., secure login), so fixes stay consistent with your ground truth."
+                title={t('cards.groundedIntelligence.title')}
+                description={t('cards.groundedIntelligence.description')}
                 header={<SkeletonKnowledgeRAG />}
             />
 
@@ -32,8 +34,8 @@ export function FeaturesGrid() {
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
                 icon={<Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                title="Secure code ingestion"
-                description="Connect GitHub or GitLab and import repositories in minutes. VulnIQ maps your codebase and prepares it for review, remediation, testing, and reporting."
+                title={t('cards.secureIngestion.title')}
+                description={t('cards.secureIngestion.description')}
                 header={<SkeletonRepoImport />}
             />
 
@@ -41,8 +43,8 @@ export function FeaturesGrid() {
             <GridItem
                 area="md:col-span-12 xl:col-span-4 xl:row-span-2"
                 icon={<Settings2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                title="Multi-agent security workflow"
-                description="A 4-agent pipeline: reviewer, implementer, tester, reporter. With per-agent specialized prompts and knowledge base for your stack and policies."
+                title={t('cards.multiAgent.title')}
+                description={t('cards.multiAgent.description')}
                 header={<SkeletonAgentPipeline />}
             />
 
@@ -50,8 +52,8 @@ export function FeaturesGrid() {
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
                 icon={<ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                title="Automated security validation"
-                description="After remediation, the Tester agent validates fixes with targeted security checks, confirming vulnerabilities are resolved without breaking behavior."
+                title={t('cards.automatedValidation.title')}
+                description={t('cards.automatedValidation.description')}
                 header={<SkeletonSecurityTesting />}
             />
 
@@ -59,8 +61,8 @@ export function FeaturesGrid() {
             <GridItem
                 area="md:col-span-6 xl:col-span-4"
                 icon={<FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                title="Professional security reports"
-                description="The Reporter agent generates stakeholder-ready reports: findings, patches applied, evidence from knowledge bases, and test outcomes. Ready for audits."
+                title={t('cards.professionalReports.title')}
+                description={t('cards.professionalReports.description')}
                 header={<SkeletonReportGeneration />}
             />
         </ul>
@@ -91,7 +93,7 @@ const GridItem = ({ area, icon, title, description, header }) => {
                     {/* Text content */}
                     <div className="space-y-2 sm:space-y-2.5 md:space-y-3">
                         <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg border border-accent/30 bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors shrink-0">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg border border-accent/30 bg-accent/10 flex items-center justify-center text-accent group-hover:bg-muted/20 transition-colors shrink-0">
                                 {icon}
                             </div>
                             <h2 className="font-semibold text-primary dark:text-accent-foreground text-sm sm:text-base md:text-lg leading-tight">
@@ -117,21 +119,22 @@ const GridItem = ({ area, icon, title, description, header }) => {
  * KB cards -> retrieval beam -> grounded output check
  */
 const SkeletonKnowledgeRAG = () => {
+    const t = useTranslations('features.animatedLabels');
     return (
         <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-[200px] sm:max-w-[240px] flex items-center justify-between gap-2 sm:gap-4">
                 {/* KB stack */}
                 <div className="flex flex-col gap-1.5 sm:gap-2">
-                    {["LOGIN", "AUTH", "API"].map((label, i) => (
+                    {["login", "auth", "api"].map((key, i) => (
                         <motion.div
-                            key={label}
+                            key={key}
                             initial={{ opacity: 0.7, y: 0 }}
                             animate={{ opacity: [0.65, 1, 0.65], y: [0, -1, 0] }}
                             transition={{ duration: 2.4, delay: i * 0.2, repeat: Infinity, ease: "easeInOut" }}
                             className="w-12 sm:w-16 h-6 sm:h-8 rounded-lg bg-background border border-border/50 flex items-center justify-center"
                         >
               <span className="text-[7px] sm:text-[9px] font-mono tracking-wider text-muted-foreground">
-                {label}
+                {t(key)}
               </span>
                         </motion.div>
                     ))}
@@ -156,7 +159,7 @@ const SkeletonKnowledgeRAG = () => {
                         <CheckCircle2 className="h-3 sm:h-4 w-3 sm:w-4 text-accent" />
                     </motion.div>
                     <span className="text-[7px] sm:text-[9px] font-mono tracking-wider text-muted-foreground">
-            GROUNDED
+            {t('grounded')}
           </span>
                 </div>
             </div>
@@ -169,6 +172,7 @@ const SkeletonKnowledgeRAG = () => {
  * GitHub/GitLab -> secure intake container -> files flowing in
  */
 const SkeletonRepoImport = () => {
+    const t = useTranslations('features.animatedLabels');
     return (
         <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-[200px] sm:max-w-[240px] flex items-center justify-between gap-2 sm:gap-4">
@@ -177,13 +181,13 @@ const SkeletonRepoImport = () => {
                     <div className="w-12 sm:w-16 h-7 sm:h-9 rounded-lg bg-background border border-border/50 flex items-center justify-center gap-1">
                         <Github className="h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <span className="text-[7px] sm:text-[9px] font-mono text-muted-foreground hidden sm:inline">
-              GITHUB
+              {t('github')}
             </span>
                     </div>
                     <div className="w-12 sm:w-16 h-7 sm:h-9 rounded-lg bg-background border border-border/50 flex items-center justify-center gap-1">
                         <Gitlab className="h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <span className="text-[7px] sm:text-[9px] font-mono text-muted-foreground hidden sm:inline">
-              GITLAB
+              {t('gitlab')}
             </span>
                     </div>
                 </div>
@@ -212,7 +216,7 @@ const SkeletonRepoImport = () => {
                         <Database className="h-3 sm:h-4 w-3 sm:w-4 text-accent" />
                     </motion.div>
                     <span className="text-[7px] sm:text-[9px] font-mono tracking-wider text-muted-foreground">
-            INGEST
+            {t('ingest')}
           </span>
                 </div>
             </div>
@@ -225,11 +229,12 @@ const SkeletonRepoImport = () => {
  * Reviewer -> Implementer -> Tester -> Reporter, sequential highlight
  */
 const SkeletonAgentPipeline = () => {
+    const t = useTranslations('features.animatedLabels');
     const steps = [
-        { label: "REVIEWER", Icon: Search },
-        { label: "IMPLEMENT", Icon: Wrench },
-        { label: "TESTER", Icon: ShieldCheck },
-        { label: "REPORTER", Icon: FileText },
+        { label: t('reviewer'), Icon: Search },
+        { label: t('implement'), Icon: Wrench },
+        { label: t('tester'), Icon: ShieldCheck },
+        { label: t('reporter'), Icon: FileText },
     ];
 
     return (
@@ -278,7 +283,7 @@ const SkeletonAgentPipeline = () => {
                                         delay: i * 1.2,
                                     }}
                                 >
-                                    ACTIVE
+                                    {t('active')}
                                 </motion.span>
                             </div>
                             <div className="mt-0.5 sm:mt-1 h-1 sm:h-1.5 rounded bg-muted overflow-hidden">
@@ -307,10 +312,11 @@ const SkeletonAgentPipeline = () => {
  * A small suite runs: fail -> fixed -> pass (shows validation)
  */
 const SkeletonSecurityTesting = () => {
+    const t = useTranslations('features.animatedLabels');
     const rows = [
-        { label: "auth.spec", initial: "FAIL" },
-        { label: "csrf.spec", initial: "FAIL" },
-        { label: "deps.spec", initial: "PASS" },
+        { label: t('authSpec'), initial: "FAIL" },
+        { label: t('csrfSpec'), initial: "FAIL" },
+        { label: t('depsSpec'), initial: "PASS" },
     ];
 
     return (
@@ -318,14 +324,14 @@ const SkeletonSecurityTesting = () => {
             <div className="w-full max-w-[220px] sm:max-w-[260px] rounded-xl bg-[background] dark:bg-[card] border border-[primary]/10 dark:border-[accent]/20 p-2 sm:p-3">
                 <div className="flex items-center justify-between mb-1.5 sm:mb-2">
           <span className="text-[7px] sm:text-[9px] font-mono tracking-wider text-[primary]/60 dark:text-[accent-foreground]/60">
-            TEST SUITE
+            {t('testSuite')}
           </span>
                     <motion.span
                         className="text-[7px] sm:text-[9px] font-mono text-[accent]"
                         animate={{ opacity: [0.4, 1, 0.4] }}
                         transition={{ duration: 1.6, repeat: Infinity }}
                     >
-                        RUNNING
+                        {t('running')}
                     </motion.span>
                 </div>
 
@@ -354,7 +360,7 @@ const SkeletonSecurityTesting = () => {
                                 >
                                     <XCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-orange-500" />
                                     <span className="text-[7px] sm:text-[9px] font-mono text-orange-600 dark:text-orange-400">
-                    FAIL
+                    {t('fail')}
                   </span>
                                 </motion.div>
 
@@ -371,7 +377,7 @@ const SkeletonSecurityTesting = () => {
                                 >
                                     <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-accent" />
                                     <span className="text-[7px] sm:text-[9px] font-mono text-accent">
-                    PASS
+                    {t('pass')}
                   </span>
                                 </motion.div>
                             </div>
@@ -397,13 +403,14 @@ const SkeletonSecurityTesting = () => {
  * Evidence/logs transform into a structured report
  */
 const SkeletonReportGeneration = () => {
+    const t = useTranslations('features.animatedLabels');
     return (
         <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-[220px] sm:max-w-[260px] grid grid-cols-2 gap-2 sm:gap-3">
                 {/* Evidence (left) */}
                 <div className="rounded-xl bg-background border border-border/50 p-2 sm:p-3">
                     <div className="text-[7px] sm:text-[9px] font-mono tracking-wider text-muted-foreground mb-1.5 sm:mb-2">
-                        EVIDENCE
+                        {t('evidence')}
                     </div>
                     <div className="flex flex-col gap-1.5 sm:gap-2">
                         {[60, 80, 45, 70].map((w, i) => (
@@ -423,7 +430,7 @@ const SkeletonReportGeneration = () => {
                         transition={{ duration: 1.8, repeat: Infinity }}
                     >
                         <Database className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        <span>KB CITED</span>
+                        <span>{t('kbCited')}</span>
                     </motion.div>
                 </div>
 
@@ -431,23 +438,23 @@ const SkeletonReportGeneration = () => {
                 <div className="relative rounded-xl bg-[background] dark:bg-[card] border border-[accent]/20 p-2 sm:p-3 overflow-hidden">
                     <div className="flex items-center justify-between">
             <span className="text-[7px] sm:text-[9px] font-mono tracking-wider text-[primary]/60 dark:text-[accent-foreground]/60">
-              REPORT
+              {t('report')}
             </span>
                         <motion.span
                             className="text-[7px] sm:text-[9px] font-mono text-[accent]"
                             animate={{ opacity: [0.35, 1, 0.35] }}
                             transition={{ duration: 1.6, repeat: Infinity }}
                         >
-                            GENERATING
+                            {t('generating')}
                         </motion.span>
                     </div>
 
                     <div className="mt-2 sm:mt-3 flex flex-col gap-1.5 sm:gap-2">
                         {[
-                            { label: "Findings", delay: 0.2 },
-                            { label: "Fixes Applied", delay: 0.6 },
-                            { label: "Test Results", delay: 1.0 },
-                            { label: "Recommendations", delay: 1.4 },
+                            { label: t('findings'), delay: 0.2 },
+                            { label: t('fixesApplied'), delay: 0.6 },
+                            { label: t('testResults'), delay: 1.0 },
+                            { label: t('recommendations'), delay: 1.4 },
                         ].map((s) => (
                             <motion.div
                                 key={s.label}

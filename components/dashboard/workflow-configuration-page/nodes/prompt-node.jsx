@@ -164,7 +164,7 @@ export function PromptNode({ data }) {
                                     {promptSearchTerm && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setPromptSearchTerm(""); }}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-sm"
                                         >
                                             <X className="h-3 w-3 text-muted-foreground" />
                                         </button>
@@ -179,7 +179,7 @@ export function PromptNode({ data }) {
                                                 key={prompt.id}
                                                 className={cn(
                                                     "flex items-start gap-3 rounded-md p-3 cursor-pointer transition-colors",
-                                                    "hover:bg-accent",
+                                                    "hover:bg-muted",
                                                     isSelected && "bg-primary/5 dark:bg-primary/10"
                                                 )}
                                                 onClick={() => handleToggle(prompt.id)}

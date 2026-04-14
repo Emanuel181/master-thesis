@@ -62,14 +62,12 @@ export function KnowledgeBaseCard({
                         }`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-sm sm:text-base truncate">{kb.title}</h3>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                    {docCount} docs
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1 mb-1">
+                            <h3 className="font-semibold text-sm sm:text-base truncate max-w-[60%]">{kb.title}</h3>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                                {docCount} docs
+                            </span>
+                            <div className="flex items-center gap-1 ml-auto shrink-0">
                                 <Button
                                     variant="ghost"
                                     size="icon"

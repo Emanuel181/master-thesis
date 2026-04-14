@@ -497,7 +497,7 @@ export function ShortcutCustomizationDialog({ open, onOpenChange }) {
                                                 key={item.id}
                                                 className={cn(
                                                     "flex items-center justify-between p-2 rounded-md",
-                                                    isEditing && "bg-accent",
+                                                    isEditing && "bg-accent/15",
                                                     hasConflict && "bg-yellow-500/10"
                                                 )}
                                             >
@@ -535,7 +535,7 @@ export function ShortcutCustomizationDialog({ open, onOpenChange }) {
                                                     ) : (
                                                         <>
                                                             <kbd
-                                                                className="inline-flex h-7 items-center rounded border bg-muted px-2 font-mono text-xs cursor-pointer hover:bg-accent"
+                                                                className="inline-flex h-7 items-center rounded border bg-muted px-2 font-mono text-xs cursor-pointer hover:bg-muted/15"
                                                                 onClick={() => setEditingId(item.id)}
                                                             >
                                                                 {formatShortcut(item.keys)}

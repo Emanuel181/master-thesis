@@ -74,7 +74,7 @@ export function AddPromptDialog({
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             rows={16}
-                            className="min-h-[320px] font-mono text-sm resize-y"
+                            className="h-[320px] max-h-[320px] font-mono text-sm resize-none overflow-y-auto"
                         />
                     </div>
                 </div>
@@ -193,7 +193,7 @@ export function EditPromptDialog({
                                 onChange={(e) => setEditingData(prev => ({ ...prev, text: e.target.value }))}
                                 placeholder="Enter your prompt here..."
                                 rows={16}
-                                className="text-sm font-mono min-h-[320px] resize-y"
+                                className="text-sm font-mono h-[320px] max-h-[320px] resize-none overflow-y-auto"
                             />
                             <p className="text-[10px] sm:text-xs text-muted-foreground text-right">
                                 {editingData.text?.length || 0} characters

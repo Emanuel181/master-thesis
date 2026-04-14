@@ -74,6 +74,10 @@ const startWorkflowSchema = z.object({
     ]),
     codeType: z.string(),
     timestamp: z.string().optional(),
+    currentRepo: z.object({
+      owner: z.string(),
+      repo: z.string(),
+    }).nullable().optional(),
   }).optional(),
 });
 
@@ -205,11 +209,30 @@ export async function POST(request) {
     });
 
     // Prepare Step Functions input with strict security constraints
+    const artifactsBucket = process.env.AGENT_ARTIFACTS_BUCKET || `dev-security-agent-artifacts-${process.env.AWS_ACCOUNT_ID || '000000000000'}`;
     const stepFunctionsInput = {
       runId: workflowRun.id,
       userId: user.id,
       userDataSourceId: user.bedrockDataSourceId || null, // Per-user vector isolation
       ragEnabled, // Whether Bedrock KB vectorization is available for RAG queries
+      // Output configuration for agent artifacts
+      outputConfig: {
+        bucket: artifactsBucket,
+        reviewerOutputPattern: 'runs/{runId}/reviewer/{useCaseId}/output.json',
+        implementerOutputPattern: 'runs/{runId}/implementer/{useCaseId}/output.json',
+      },
+      // Callback URLs for agent-to-server communication
+      callbackUrls: {
+        autoFix: `${process.env.NEXTAUTH_URL || ''}/api/workflow/auto-fix`,
+        triggerPentest: `${process.env.NEXTAUTH_URL || ''}/api/workflow/trigger-pentest`,
+        reportData: `${process.env.NEXTAUTH_URL || ''}/api/workflow/report-data`,
+      },
+      // Pentest configuration
+      pentestConfig: {
+        stateMachineArn: process.env.PENTEST_STATE_MACHINE_ARN || null,
+        codeBucket: process.env.PENTEST_CODE_BUCKET || null,
+        resultsBucket: process.env.PENTEST_RESULTS_BUCKET || null,
+      },
       // SECURITY CONSTRAINTS - These must be enforced by the Step Functions workflow
       securityConstraints: {
         strictDocumentScope: true, // Only use documents explicitly listed below
@@ -271,6 +294,10 @@ export async function POST(request) {
           userDataSourceId: user.bedrockDataSourceId || null, // Per-user vector isolation
           code: codeReference,     // Include code (single, project, or S3 reference)
           codeType: codeType,      // Include codeType
+          // File manifest for per-file analysis by reviewer agent
+          fileManifest: codePayload.type === 'project' && codePayload.files
+            ? codePayload.files.map(f => ({ path: f.path, language: f.language }))
+            : [{ path: codePayload.fileName || 'main', language: codeType }],
           // SECURITY: Only include explicitly selected documents
           selectedDocuments: useCase.pdfs.map(pdf => ({
             id: pdf.id,
@@ -401,6 +428,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: "Internal server error",
+        details: process.env.NODE_ENV !== 'production' ? error.message : undefined,
       },
       { status: 500 }
     );
@@ -458,7 +486,11 @@ export async function GET(request) {
           const res = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
           const data = JSON.parse(await res.Body.transformToString());
           if (Array.isArray(data.vulnerabilities)) vulns.push(...data.vulnerabilities);
-        } catch { /* file may not exist yet */ }
+        } catch (err) {
+          if (err.name !== 'NoSuchKey') {
+            console.warn(`[workflow GET] S3 fetch failed for runs/${runId}/reviewer/${ucId}/output.json:`, err.message);
+          }
+        }
       }
       return vulns;
     }
@@ -468,7 +500,7 @@ export async function GET(request) {
       const defaultUseCaseId = workflowRun.useCaseRuns?.[0]?.useCaseId || runId;
       for (const vuln of vulns) {
         try {
-          const vulnId = vuln.id || `vuln_${runId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const vulnId = vuln.id || `vuln_${runId}_${(vuln.fileName || 'unknown').replace(/[^a-zA-Z0-9]/g, '_')}_L${vuln.lineNumber || 0}_${Date.now()}`;
           await prisma.vulnerability.upsert({
             where: { id: vulnId },
             update: {},
@@ -485,10 +517,19 @@ export async function GET(request) {
               explanation: vuln.explanation || null,
               bestPractices: vuln.bestPractices || null,
               exploitExamples: vuln.exploitExamples || null,
+              exploitSections: vuln.exploitSections || null,
               attackPath: vuln.attackPath || null,
               cweId: vuln.cweId || null,
               documentReferences: vuln.documentReferences || null,
               lineNumber: vuln.lineNumber || null,
+              columnNumber: vuln.columnNumber || null,
+              confidence: typeof vuln.confidence === 'number' ? vuln.confidence : 1.0,
+              cvssScore: typeof vuln.cvssScore === 'number' ? vuln.cvssScore : null,
+              cvssVector: vuln.cvssVector || null,
+              cvssAnalysis: vuln.cvssAnalysis || null,
+              dataFlow: vuln.dataFlow || null,
+              debateLog: vuln.debateLog || null,
+              graphNodeIds: vuln.graphNodeIds || null,
             },
           });
         } catch { /* duplicate or other DB error, skip */ }
@@ -614,6 +655,23 @@ export async function GET(request) {
           await refetchWorkflowRun();
         }
       }
+
+      // Check for linked pentest session to determine tester completion
+      if (workflowRun.status === 'running') {
+        const pentestSession = await prisma.pentestSession.findFirst({
+          where: { workflowRunId: runId },
+          select: { id: true, status: true },
+        });
+        if (pentestSession?.status === 'completed') {
+          await prisma.workflowUseCaseRun.updateMany({
+            where: { workflowRunId: runId },
+            data: { testerCompleted: true },
+          });
+          for (const ucRun of (workflowRun.useCaseRuns || [])) {
+            ucRun.testerCompleted = true;
+          }
+        }
+      }
     }
 
     // ════════════════════════════════════════════════════
@@ -621,6 +679,23 @@ export async function GET(request) {
     // ════════════════════════════════════════════════════
     if (workflowRun.status === 'completed') {
       await ensureVulnerabilitiesLoaded();
+    }
+
+    // ════════════════════════════════════════════
+    // Step 2b: Fetch pentest results if available
+    // ════════════════════════════════════════════
+    let pentestResults = null;
+    const pentestSession = await prisma.pentestSession.findFirst({
+      where: { workflowRunId: runId },
+      include: { findings: { orderBy: { createdAt: 'desc' } } },
+    });
+    if (pentestSession) {
+      pentestResults = {
+        sessionId: pentestSession.id,
+        status: pentestSession.status,
+        findingsCount: pentestSession.findings?.length || 0,
+        findings: pentestSession.findings || [],
+      };
     }
 
     // ════════════════════════════════════════════
@@ -709,6 +784,7 @@ export async function GET(request) {
         vulnerabilities: workflowRun.vulnerabilities,
         severityCounts,
         totalVulnerabilities: workflowRun.vulnerabilities.length,
+        pentestResults,
       },
     });
   } catch (error) {

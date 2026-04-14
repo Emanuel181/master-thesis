@@ -1,14 +1,16 @@
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, FileText, ExternalLink } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * Server-rendered Hero component for SEO and fast initial paint.
  * No 'use client' - this is a React Server Component.
  * All interactive elements are handled by the client wrapper.
  */
-export function ServerHero() {
+export async function ServerHero() {
+  const t = await getTranslations('hero');
   return (
     <section
       id="hero"
@@ -28,23 +30,22 @@ export function ServerHero() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
                 </span>
-                Open beta
+                {t('badge')}
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight">
-              <span className="text-primary dark:text-foreground">Security </span>
+            <h1 className="font-bold tracking-tight leading-tight" style={{ fontSize: 'clamp(2.25rem, 4.5vw + 0.75rem, 4.5rem)' }}>
+              <span className="text-primary dark:text-foreground">{t('headingPart1')} </span>
               <br className="hidden sm:block" />
-              <span className="text-primary dark:text-foreground">remediation </span>
+              <span className="text-primary dark:text-foreground">{t('headingPart2')} </span>
               <br className="hidden sm:block" />
-              <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">without </span>
+              <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">{t('headingPart3')} </span>
               <br className="hidden sm:block" />
-              <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">hallucinations.</span>
+              <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">{t('headingPart4')}</span>
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Autonomous AI agents that detect, patch, and verify vulnerabilities. Every fix is{' '}
-              <span className="text-accent font-medium">grounded in your documentation</span> using RAG.
+              {t('subtitleBefore')}<span className="text-accent font-medium">{t('subtitleHighlight')}</span>{t('subtitleAfter')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -56,13 +57,13 @@ export function ServerHero() {
                   className="flex items-center justify-center"
                 >
                   <FileText className="mr-2 h-4 w-4" />
-                  Paper in progress...
+                  {t('paperButton')}
                   <ExternalLink className="ml-2 h-3 w-3" />
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-lg w-full sm:w-auto">
                 <Link href="/demo">
-                  Try demo
+                  {t('demoButton')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

@@ -172,7 +172,7 @@ export async function GET(request) {
     const pendingDeletion = await prisma.article.count({
       where: {
         scheduledForDeletionAt: {
-          not: null,
+          not: { equals: null },
         },
         status: {
           in: ["REJECTED", "SCHEDULED_FOR_DELETION"],

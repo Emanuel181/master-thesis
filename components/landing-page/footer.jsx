@@ -2,12 +2,14 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from '@/i18n/navigation';
 import { motion, useInView } from "framer-motion";
 import { FileText, Send, Loader2, CheckCircle2, AlertCircle, Linkedin, ChevronUp, Map, Twitter, Github, Instagram, ExternalLink, MessageSquare, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { HexGridBackground } from "./hex-grid-background";
+import { LanguageSelector } from "@/components/language-selector";
+import { useTranslations } from 'next-intl';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -28,6 +30,8 @@ const itemVariants = {
 
 
 export function Footer({ onScrollToTop }) {
+    const t = useTranslations('footer');
+    const tNav = useTranslations('nav');
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
     const [email, setEmail] = useState("");
@@ -65,7 +69,7 @@ export function Footer({ onScrollToTop }) {
         e.preventDefault();
         if (!email || !email.includes("@")) {
             setStatus("error");
-            setMessage("Please enter a valid email address");
+            setMessage(t('newsletter.invalidEmail'));
             return;
         }
 
@@ -118,10 +122,10 @@ export function Footer({ onScrollToTop }) {
                     >
                         <div className="flex items-center gap-2.5">
                             <Image src="/web-app-manifest-512x512.png" alt="VulnIQ Logo" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" width={32} height={32} loading="eager" />
-                            <span className="font-semibold text-foreground text-base sm:text-lg tracking-tight">VulnIQ</span>
+                            <span className="font-semibold text-foreground text-base sm:text-lg tracking-tight">{t('brand')}</span>
                         </div>
                         <p className="text-sm leading-relaxed text-muted-foreground">
-                            Autonomous security remediation powered by retrieval-augmented generation.
+                            {t('tagline')}
                         </p>
                         {/* Product Hunt Card */}
                         <motion.a
@@ -135,15 +139,15 @@ export function Footer({ onScrollToTop }) {
                                 <path d="M13.604 8.4h-3.405V12h3.405c.995 0 1.801-.806 1.801-1.8 0-.995-.806-1.8-1.801-1.8zM12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm1.604 14.4h-3.405V18H7.801V6h5.803c2.319 0 4.2 1.881 4.2 4.2 0 2.319-1.881 4.2-4.2 4.2z"/>
                             </svg>
                             <div className="flex flex-col">
-                                <span className="text-[10px] uppercase tracking-wider text-[#FF6154]/70 font-medium">Follow us on</span>
-                                <span className="text-sm font-semibold text-[#FF6154]">Product Hunt</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#FF6154]/70 font-medium">{t('followUs')}</span>
+                                <span className="text-sm font-semibold text-[#FF6154]">{t('productHunt')}</span>
                             </div>
                         </motion.a>
                     </motion.div>
 
                     {/* Column 2: Resources */}
                     <motion.div variants={itemVariants} className="space-y-4">
-                        <h4 className="font-semibold text-foreground text-sm">Resources</h4>
+                        <h4 className="font-semibold text-foreground text-sm">{t('resources')}</h4>
                         <div className="flex flex-col gap-2.5" onMouseLeave={() => setHoveredResource(null)}>
                             <button
                                 onClick={() => setFeedbackOpen(true)}
@@ -151,7 +155,7 @@ export function Footer({ onScrollToTop }) {
                                 className={`inline-flex items-center gap-2 text-sm text-accent hover:underline text-left transition-opacity duration-200 ${hoveredResource && hoveredResource !== 'feedback' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <MessageSquare className="w-4 h-4" />
-                                Have a feedback?
+                                {t('haveFeedback')}
                             </button>
                             <Link
                                 href="/changelog"
@@ -159,7 +163,7 @@ export function Footer({ onScrollToTop }) {
                                 className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'changelog' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <FileText className="w-4 h-4" />
-                                Changelog
+                                {t('changelog')}
                             </Link>
                             <Link
                                 href="/site-map"
@@ -167,7 +171,7 @@ export function Footer({ onScrollToTop }) {
                                 className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'sitemap' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <Map className="w-4 h-4" />
-                                Sitemap
+                                {t('sitemap')}
                             </Link>
                             <Link
                                 href="/supporters"
@@ -175,7 +179,7 @@ export function Footer({ onScrollToTop }) {
                                 className={`inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ${hoveredResource && hoveredResource !== 'supporters' ? 'opacity-30' : 'opacity-100'}`}
                             >
                                 <Heart className="w-4 h-4" />
-                                Supporters
+                                {t('supporters')}
                             </Link>
                             <motion.a
                                 href="https://www.overleaf.com/read/vdqywdqywyhr#693113"
@@ -186,7 +190,7 @@ export function Footer({ onScrollToTop }) {
                                 whileHover={{ x: 2 }}
                             >
                                 <FileText className="w-4 h-4" />
-                                View thesis paper (in progress...)
+                                {t('viewThesisPaper')}
                                 <ExternalLink className="w-3 h-3" />
                             </motion.a>
                             <motion.a
@@ -209,22 +213,21 @@ export function Footer({ onScrollToTop }) {
                                         serviceStatus === "down" ? "bg-red-500" : "bg-gray-500"
                                     }`} />
                                 </span>
-                                {serviceStatus === "operational" ? "Services are operational" :
-                                 serviceStatus === "partial" ? "Diagnosing issue, fixing" :
-                                 serviceStatus === "down" ? "Systems down" :
-                                 "Systems idle"}
+                                {serviceStatus === "operational" ? t('serviceStatus.operational') :
+                                 serviceStatus === "partial" ? t('serviceStatus.diagnosing') :
+                                 serviceStatus === "down" ? t('serviceStatus.down') :
+                                 t('serviceStatus.idle')}
                             </motion.a>
                         </div>
                     </motion.div>
 
                     {/* Column 3: About */}
                     <motion.div variants={itemVariants} className="space-y-4" onMouseLeave={() => setHoveredThesis(null)}>
-                        <h4 className="font-semibold text-foreground text-sm">Master thesis</h4>
+                        <h4 className="font-semibold text-foreground text-sm">{t('thesis.label')}</h4>
                         <div className="space-y-1.5 text-sm text-muted-foreground">
                             <p
                                 onMouseEnter={() => setHoveredThesis('name')}
-                                className={`font-medium text-foreground transition-opacity duration-200 ${hoveredThesis && hoveredThesis !== 'name' ? 'opacity-30' : 'opacity-100'}`}
-                            >Emanuel Rusu</p>
+                            >{t('thesis.author')}</p>
                             <a
                                 href="https://www.uvt.ro/en/" 
                                 target="_blank" 
@@ -232,13 +235,13 @@ export function Footer({ onScrollToTop }) {
                                 onMouseEnter={() => setHoveredThesis('university')}
                                 className={`inline-flex items-center gap-1 hover:text-foreground transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'university' ? 'opacity-30' : 'opacity-100'}`}
                             >
-                                West University of Timișoara
+                                {t('thesis.university')}
                                 <ExternalLink className="w-3 h-3" />
                             </a>
                             <p
                                 onMouseEnter={() => setHoveredThesis('faculty')}
                                 className={`transition-opacity duration-200 ${hoveredThesis && hoveredThesis !== 'faculty' ? 'opacity-30' : 'opacity-100'}`}
-                            >Faculty of Computer Science</p>
+                            >{t('thesis.faculty')}</p>
                             <a
                                 href="https://info.uvt.ro/master/cybersecurity/"
                                 target="_blank"
@@ -246,7 +249,7 @@ export function Footer({ onScrollToTop }) {
                                 onMouseEnter={() => setHoveredThesis('msc')}
                                 className={`inline-flex items-center gap-1 hover:text-foreground transition-all duration-200 ${hoveredThesis && hoveredThesis !== 'msc' ? 'opacity-30' : 'opacity-100'}`}
                             >
-                                MSc Cybersecurity
+                                {t('thesis.degree')}
                                 <ExternalLink className="w-3 h-3" />
                             </a>
                         </div>
@@ -259,23 +262,23 @@ export function Footer({ onScrollToTop }) {
                             whileHover={{ x: 2 }}
                         >
                             <Linkedin className="w-4 h-4" />
-                            Connect on LinkedIn
+                            {t('thesis.connectLinkedIn')}
                             <ExternalLink className="w-3 h-3" />
                         </motion.a>
                     </motion.div>
 
                     {/* Column 4: Newsletter */}
                     <motion.div variants={itemVariants} className="space-y-4 sm:col-span-2 lg:col-span-1">
-                        <h4 className="font-semibold text-foreground text-sm">Stay updated</h4>
+                        <h4 className="font-semibold text-foreground text-sm">{t('newsletter.heading')}</h4>
                         <p className="text-sm text-muted-foreground">
-                            Get notified about new features and research updates.
+                            {t('newsletter.description')}
                         </p>
                         <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter your email address"
+                                placeholder={t('newsletter.emailPlaceholder')}
                                 className="w-full px-4 py-3 text-sm rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60 transition-all min-h-[44px]"
                                 disabled={status === "loading" || status === "success"}
                             />
@@ -284,9 +287,9 @@ export function Footer({ onScrollToTop }) {
                                     type="submit"
                                     disabled={status === "loading" || status === "success"}
                                     className="w-full min-h-[44px] whitespace-nowrap"
-                                    aria-label={status === "loading" ? "Subscribing..." : status === "success" ? "Subscribed successfully" : "Subscribe to newsletter"}
+                                    aria-label={status === "loading" ? t('newsletter.subscribingButton') : status === "success" ? t('newsletter.successMessage') : t('newsletter.subscribeButton')}
                                 >
-                                    <span>Subscribe</span>
+                                    <span>{t('newsletter.subscribeButton')}</span>
                                     {status === "loading" ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : status === "success" ? (
@@ -335,7 +338,7 @@ export function Footer({ onScrollToTop }) {
                             className="text-xs"
                         >
                             <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
-                            Back to top
+                            {t('backToTop')}
                         </Button>
                     </div>
 
@@ -345,7 +348,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-muted/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="Twitter"
                         >
                             <Twitter className="w-5 h-5" />
@@ -354,7 +357,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-muted/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="GitHub"
                         >
                             <Github className="w-5 h-5" />
@@ -363,7 +366,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-muted/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="LinkedIn"
                         >
                             <Linkedin className="w-5 h-5" />
@@ -372,7 +375,7 @@ export function Footer({ onScrollToTop }) {
                             href="https://vulniq.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all"
+                            className="p-2 rounded-full bg-muted hover:bg-muted/20 text-muted-foreground hover:text-accent transition-all"
                             aria-label="Instagram"
                         >
                             <Instagram className="w-5 h-5" />
@@ -380,40 +383,50 @@ export function Footer({ onScrollToTop }) {
                     </div>
                     
                     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
-                        <span className="text-xs text-muted-foreground">© 2026 VulnIQ. All rights reserved.</span>
+                        <span className="text-xs text-muted-foreground">{t('copyright')}</span>
                         <span className="text-muted-foreground/50 text-xs">•</span>
-                        <span className="text-xs text-muted-foreground">🇷🇴 Made in RO, Timișoara</span>
+                        <span className="text-xs text-muted-foreground">{t('madeIn')}</span>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
+                        <LanguageSelector />
                         <span className="text-muted-foreground/50 text-xs">•</span>
                         <Link
                             href="/privacy"
                             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            Privacy Policy
+                            {t('privacyPolicy')}
                         </Link>
                         <span className="text-muted-foreground/50 text-xs">•</span>
                         <Link
                             href="/terms"
                             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            Terms & Conditions
+                            {t('termsConditions')}
                         </Link>
                         <span className="text-muted-foreground/50 text-xs">•</span>
                         <Link
                             href="/security"
                             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            Vulnerability Disclosure Policy
+                            {t('vulnerabilityDisclosure')}
                         </Link>
                         <span className="text-muted-foreground/50 text-xs">•</span>
+                        <button
+                            type="button"
+                            onClick={() => window.dispatchEvent(new Event('open-cookie-preferences'))}
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            {t('manageCookies')}
+                        </button>
+                        <span className="text-muted-foreground/50 text-xs">•</span>
                         <span className="text-xs text-muted-foreground">
-                            Open beta • Research project •{" "}
+                            {t('openBetaBadge')}{" "}
                             <a
                                 href="https://info.uvt.ro/en/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="hover:text-foreground transition-colors underline underline-offset-2 inline-flex items-center gap-1"
                             >
-                                Faculty of Computer Science
+                                {t('thesis.faculty')}
                                 <ExternalLink className="w-3 h-3" />
                             </a>
                         </span>
@@ -433,6 +446,7 @@ export function Footer({ onScrollToTop }) {
 
 // Footer Feedback Dialog Component - custom modal to avoid Radix scroll issues
 function FooterFeedbackDialog({ isOpen, onClose }) {
+    const t = useTranslations('footer.feedbackDialog');
     const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const textareaRef = useRef(null);
@@ -501,19 +515,19 @@ function FooterFeedbackDialog({ isOpen, onClose }) {
                 
                 {/* Header */}
                 <div className="flex flex-col gap-2 text-center sm:text-left mb-4">
-                    <h2 className="text-lg font-semibold leading-none">Share your feedback</h2>
+                    <h2 className="text-lg font-semibold leading-none">{t('title')}</h2>
                     <p className="text-muted-foreground text-sm">
-                        We&apos;d love to hear your thoughts on how we can improve.
+                        {t('description')}
                     </p>
                 </div>
                 
                 {/* Content */}
                 <div className="space-y-2 mb-4">
-                    <Label htmlFor="footer-feedback">Your feedback</Label>
+                    <Label htmlFor="footer-feedback">{t('feedbackLabel')}</Label>
                     <textarea
                         ref={textareaRef}
                         id="footer-feedback"
-                        placeholder="Tell us what you think..."
+                        placeholder={t('feedbackPlaceholder')}
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
                         className="w-full h-[120px] px-3 py-2 text-sm rounded-md border border-input bg-transparent resize-none outline-none focus:ring-2 focus:ring-ring"
@@ -528,14 +542,14 @@ function FooterFeedbackDialog({ isOpen, onClose }) {
                         onClick={onClose}
                         disabled={isSubmitting}
                     >
-                        Cancel
+                        {t('cancelButton')}
                     </Button>
-                    <Button 
-                        type="button" 
-                        onClick={handleSubmit} 
+                    <Button
+                        type="button"
+                        onClick={handleSubmit}
                         disabled={isSubmitting || !feedback.trim()}
                     >
-                        {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                        {isSubmitting ? t('submittingButton') : t('submitButton')}
                     </Button>
                 </div>
             </div>

@@ -168,7 +168,7 @@ export function SupporterCard({ supporter, className }) {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="gap-2 text-muted-foreground hover:text-accent hover:bg-accent/10"
+                                        className="gap-2 text-muted-foreground hover:text-accent hover:bg-muted/10"
                                         asChild
                                     >
                                         <a

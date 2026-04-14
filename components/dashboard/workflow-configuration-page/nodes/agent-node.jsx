@@ -187,7 +187,7 @@ export function AgentNode({ data }) {
                                     {modelSearchTerm && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setModelSearchTerm(""); }}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded-sm"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-sm"
                                         >
                                             <X className="h-3 w-3 text-muted-foreground" />
                                         </button>

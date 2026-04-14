@@ -19,26 +19,30 @@ const glowVariants = cva("absolute w-full", {
 });
 
 function Glow({
-  className,
-  variant,
-  ...props
-}) {
+                className,
+                variant,
+                ...props
+              }) {
   return (
-    <div
-      data-slot="glow"
-      className={cn(glowVariants({ variant }), className)}
-      {...props}>
       <div
-        className={cn(
-          "from-brand-foreground/50 to-brand-foreground/0 absolute left-1/2 h-[256px] w-[60%] -translate-x-1/2 scale-[2.5] rounded-[50%] bg-radial from-10% to-60% opacity-20 sm:h-[512px] dark:opacity-100",
-          variant === "center" && "-translate-y-1/2"
-        )} />
-      <div
-        className={cn(
-          "from-brand/30 to-brand-foreground/0 absolute left-1/2 h-[128px] w-[40%] -translate-x-1/2 scale-200 rounded-[50%] bg-radial from-10% to-60% opacity-20 sm:h-[256px] dark:opacity-100",
-          variant === "center" && "-translate-y-1/2"
-        )} />
-    </div>
+          data-slot="glow"
+          className={cn(glowVariants({ variant }), className)}
+          {...props}>
+        <div
+            className={cn(
+                "absolute left-1/2 h-[256px] w-[60%] -translate-x-1/2 scale-[2.5] rounded-[50%] sm:h-[512px]",
+                variant === "center" && "-translate-y-1/2"
+            )}
+            style={{ background: 'radial-gradient(closest-side, rgba(56, 139, 194, 0.5), transparent)' }}
+        />
+        <div
+            className={cn(
+                "absolute left-1/2 h-[128px] w-[40%] -translate-x-1/2 scale-200 rounded-[50%] sm:h-[256px]",
+                variant === "center" && "-translate-y-1/2"
+            )}
+            style={{ background: 'radial-gradient(closest-side, rgba(56, 139, 194, 0.3), transparent)' }}
+        />
+      </div>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { toast } from "sonner";
 import { DEMO_GITHUB_REPOS, DEMO_GITLAB_REPOS, DEMO_PROJECTS } from '@/contexts/demoContext';
 import { fetchRepoTree as apiFetchRepoTree } from '@/lib/github-api';

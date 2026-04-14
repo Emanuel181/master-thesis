@@ -64,7 +64,7 @@ export function LayoutCustomizer({
                         return (
                             <div
                                 key={id}
-                                className="flex items-center gap-1.5 p-1.5 rounded-md hover:bg-accent group"
+                                className="flex items-center gap-1.5 p-1.5 rounded-md hover:bg-muted group"
                             >
                                 <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
                                 <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -135,7 +135,7 @@ function SwapToggle({ label, active, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-accent text-left"
+            className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-muted text-left"
         >
             <span className="text-xs">{label}</span>
             <div

@@ -30,8 +30,8 @@ export function StaticHero() {
             </div>
 
             <h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight animate-fade-in-up"
-              style={{ animationDelay: '100ms' }}
+              className="font-bold tracking-tight leading-tight animate-fade-in-up"
+              style={{ fontSize: 'clamp(2.25rem, 4.5vw + 0.75rem, 4.5rem)', animationDelay: '100ms' }}
             >
               <span className="text-primary dark:text-foreground">Security </span>
               <br className="hidden sm:block" />
@@ -70,7 +70,7 @@ export function StaticHero() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="rounded-lg w-full sm:w-auto hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all duration-300"
+                className="rounded-lg w-full sm:w-auto hover:bg-muted/10 hover:text-accent hover:border-accent/50 transition-all duration-300"
               >
                 <a href="/login" aria-label="Explore VulnIQ">
                   Explore VulnIQ

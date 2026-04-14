@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation"
 import "@/lib/monaco-config"; // Must be imported before Editor
 import "prismjs/themes/prism.css";
 import "@/app/github-theme.css";
@@ -604,7 +604,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                         additionalButtons={openTabs.length > 0 ? (
                                             <button
                                                 onClick={closeAllTabs}
-                                                className="p-1 hover:bg-accent rounded-md"
+                                                className="p-1 hover:bg-muted rounded-md"
                                                 title="Close All Tabs"
                                             >
                                                 <X className="h-3.5 w-3.5" />
@@ -681,7 +681,7 @@ export function CodeInput({ code, setCode, codeType, setCodeType, onStart }) {
                                             additionalButtons={openTabs.length > 0 ? (
                                                 <button
                                                     onClick={closeAllTabs}
-                                                    className="p-1 hover:bg-accent rounded-md"
+                                                    className="p-1 hover:bg-muted rounded-md"
                                                     title="Close All Tabs"
                                                 >
                                                     <X className="h-3.5 w-3.5" />

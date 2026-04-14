@@ -3,66 +3,19 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { GraduationCap, Rocket, BookOpen, Building2, Users } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 const defaultTitleClass = "text-sm sm:text-base md:text-lg font-semibold mb-0.5 sm:mb-1 text-foreground transition-opacity duration-300";
 const defaultDescriptionClass = "text-xs sm:text-sm font-medium text-muted-foreground max-w-[350px] leading-[140%] transition-opacity duration-300";
 
-const useCasesData = [
-  {
-    number: "01",
-    title: "Security learners",
-    description: "Hands-on insight with real vulnerabilities. Four agents guide you through detection, fixes, testing, and documentation.",
-    visual: {
-      icon: BookOpen,
-      title: "Guided learning",
-      subtitle: "Step-by-step remediation",
-      color: "from-violet-500 to-indigo-600",
-    },
-  },
-  {
-    number: "02",
-    title: "Startups",
-    description: "Strong security without a dedicated team. Import code, run the workflow, ship fixes fast.",
-    visual: {
-      icon: Rocket,
-      title: "Move fast",
-      subtitle: "Security at startup speed",
-      color: "from-emerald-500 to-green-600",
-    },
-  },
-  {
-    number: "03",
-    title: "Universities",
-    description: "Connect theory with practice. Students learn real remediation with curriculum-aligned prompts.",
-    visual: {
-      icon: GraduationCap,
-      title: "Academic focus",
-      subtitle: "Theory meets practice",
-      color: "from-violet-500 to-purple-600",
-    },
-  },
-  {
-    number: "04",
-    title: "Open source",
-    description: "Transparent, community-driven security. Shared knowledge bases produce trustworthy fixes.",
-    visual: {
-      icon: Users,
-      title: "Community driven",
-      subtitle: "Transparent improvements",
-      color: "from-orange-500 to-rose-600",
-    },
-  },
-  {
-    number: "05",
-    title: "Teams of programmers",
-    description: "Integrate VulnIQ into your team workflow. Shared prompts, consistent fixes, and security reviews that scale with your codebase.",
-    visual: {
-      icon: Building2,
-      title: "Team workflow",
-      subtitle: "Security at scale",
-      color: "from-slate-500 to-zinc-700",
-    },
-  },
+const useCaseKeys = ['securityLearners', 'startups', 'universities', 'openSource', 'teamsOfProgrammers'];
+const useCaseIcons = [BookOpen, Rocket, GraduationCap, Users, Building2];
+const useCaseColors = [
+  "from-violet-500 to-indigo-600",
+  "from-emerald-500 to-green-600",
+  "from-violet-500 to-purple-600",
+  "from-orange-500 to-rose-600",
+  "from-slate-500 to-zinc-700",
 ];
 
 const getBarPercentageHeight = (scrollProgress, thresholdStart, thresholdEnd) => {
@@ -141,8 +94,21 @@ const VisualCard = ({ visual, isActive }) => {
 };
 
 export function UseCasesScrollReveal({ className }) {
+  const t = useTranslations('useCases');
   const [scrollProgress, setScrollProgress] = useState(0);
   const containerRef = useRef(null);
+
+  const useCasesData = useCaseKeys.map((key, i) => ({
+    number: String(i + 1).padStart(2, '0'),
+    title: t(`cases.${key}.title`),
+    description: t(`cases.${key}.description`),
+    visual: {
+      icon: useCaseIcons[i],
+      title: t(`cases.${key}.visualTitle`),
+      subtitle: t(`cases.${key}.visualSubtitle`),
+      color: useCaseColors[i],
+    },
+  }));
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -197,10 +163,10 @@ export function UseCasesScrollReveal({ className }) {
               {/* Section Header */}
               <div className="mb-4 md:mb-6">
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Who benefits from VulnIQ?
+                  {t('heading')}
                 </h2>
                 <p className="text-muted-foreground text-xs sm:text-sm max-w-sm">
-                  From learners to teams, VulnIQ adapts to your workflow.
+                  {t('description')}
                 </p>
               </div>
 

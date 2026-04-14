@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/navigation"
 import {
     SidebarMenu,
     SidebarMenuButton,

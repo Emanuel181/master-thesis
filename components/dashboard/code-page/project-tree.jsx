@@ -230,7 +230,7 @@ export default function ProjectTree({
                             <div className="flex items-center gap-1">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <button onClick={handleExpandAll} className="p-1.5 hover:bg-accent rounded-md" aria-label="Expand all">
+                                        <button onClick={handleExpandAll} className="p-1.5 hover:bg-muted rounded-md" aria-label="Expand all">
                                             <FolderOpen className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
@@ -238,7 +238,7 @@ export default function ProjectTree({
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <button onClick={handleCollapseAll} className="p-1.5 hover:bg-accent rounded-md" aria-label="Collapse all">
+                                        <button onClick={handleCollapseAll} className="p-1.5 hover:bg-muted rounded-md" aria-label="Collapse all">
                                             <FolderClosed className="h-4 w-4" />
                                         </button>
                                     </TooltipTrigger>
@@ -261,7 +261,7 @@ export default function ProjectTree({
                             {searchTerm && (
                                 <button
                                     onClick={() => setSearchTerm("")}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
                                 >
                                     <X className="h-3 w-3 text-muted-foreground" />
                                 </button>
@@ -308,7 +308,7 @@ export default function ProjectTree({
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <button onClick={handleExpandAll} className="p-1 hover:bg-accent rounded-md" aria-label="Expand all">
+                                    <button onClick={handleExpandAll} className="p-1 hover:bg-muted rounded-md" aria-label="Expand all">
                                         <FolderOpen className="h-3.5 w-3.5" />
                                     </button>
                                 </TooltipTrigger>
@@ -316,7 +316,7 @@ export default function ProjectTree({
                             </Tooltip>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <button onClick={handleCollapseAll} className="p-1 hover:bg-accent rounded-md" aria-label="Collapse all">
+                                    <button onClick={handleCollapseAll} className="p-1 hover:bg-muted rounded-md" aria-label="Collapse all">
                                         <FolderClosed className="h-3.5 w-3.5" />
                                     </button>
                                 </TooltipTrigger>
@@ -326,7 +326,7 @@ export default function ProjectTree({
                         </div>
                     </>
                 )}
-                <button onClick={() => setCollapsed(!collapsed)} className={cn("p-1 hover:bg-accent rounded-md z-10", collapsed && "mx-auto")}>
+                <button onClick={() => setCollapsed(!collapsed)} className={cn("p-1 hover:bg-muted rounded-md z-10", collapsed && "mx-auto")}>
                     {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                 </button>
             </div>

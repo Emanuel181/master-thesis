@@ -3,41 +3,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Github, Search, Wrench, FileText } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
-const steps = [
-  {
-    number: "01",
-    title: "Import your code",
-    description:
-      "Connect GitHub or GitLab. Select a repository and VulnIQ maps your codebase automatically.",
-    icon: Github,
-    color: "from-violet-500 to-indigo-600",
-  },
-  {
-    number: "02",
-    title: "AI reviews vulnerabilities",
-    description:
-      "The Reviewer agent scans your code against your knowledge base and security standards like CWE & OWASP.",
-    icon: Search,
-    color: "from-violet-500 to-purple-600",
-  },
-  {
-    number: "03",
-    title: "Agents remediate & test",
-    description:
-      "The Implementer applies fixes grounded in your docs. The Tester validates each patch passes security checks.",
-    icon: Wrench,
-    color: "from-emerald-500 to-green-600",
-  },
-  {
-    number: "04",
-    title: "Export verified report",
-    description:
-      "The Reporter compiles findings, patches, evidence, and test results into an audit-ready PDF report.",
-    icon: FileText,
-    color: "from-orange-500 to-rose-600",
-  },
-];
+const stepIcons = [Github, Search, Wrench, FileText];
+const stepKeys = ['importCode', 'aiReview', 'agentsRemediate', 'exportReport'];
 
 function StepCard({ step, index, total }) {
   const Icon = step.icon;
@@ -86,6 +55,13 @@ function StepCard({ step, index, total }) {
 }
 
 export function HowItWorksSection() {
+  const t = useTranslations('howItWorks');
+  const steps = stepKeys.map((key, i) => ({
+    number: String(i + 1).padStart(2, '0'),
+    title: t(`steps.${key}.title`),
+    description: t(`steps.${key}.description`),
+    icon: stepIcons[i],
+  }));
   return (
     <section className="relative z-10 py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/5 to-transparent pointer-events-none" />
@@ -100,10 +76,10 @@ export function HowItWorksSection() {
           className="text-center mb-12 sm:mb-14 md:mb-16"
         >
           <p className="text-sm sm:text-base text-muted-foreground mb-3 font-medium">
-            Simple and powerful
+            {t('subtitle')}
           </p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            How <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">VulnIQ</span> works
+            {t('headingBefore')}<span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">{t('headingBrand')}</span>{t('headingAfter')}
           </h2>
           <div className="h-0.5 bg-gradient-to-r from-transparent via-accent to-transparent w-16 sm:w-20 md:w-24 mx-auto mt-5 sm:mt-6" />
         </motion.div>

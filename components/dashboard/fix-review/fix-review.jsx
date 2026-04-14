@@ -256,6 +256,7 @@ export function FixReview({ runId }) {
     const acceptedCount = useMemo(() => fixes.filter(f => f.status === 'ACCEPTED').length, [fixes]);
     const pendingCount = useMemo(() => fixes.filter(f => f.status === 'PENDING').length, [fixes]);
     const rejectedCount = useMemo(() => fixes.filter(f => f.status === 'REJECTED').length, [fixes]);
+    const prCreatedFix = useMemo(() => fixes.find(f => f.status === 'PR_CREATED' && f.prUrl), [fixes]);
 
     if (loading) {
         return (
@@ -376,24 +377,36 @@ export function FixReview({ runId }) {
                         </Tooltip>
                     </TooltipProvider>
 
-                    <Button
-                        onClick={handleCreatePR}
-                        disabled={acceptedCount === 0 || creatingPR}
-                        className="gap-2"
-                        size="sm"
-                    >
-                        {creatingPR ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Creating PR...
-                            </>
-                        ) : (
-                            <>
-                                <GitPullRequest className="w-4 h-4" />
-                                Create PR ({acceptedCount})
-                            </>
-                        )}
-                    </Button>
+                    {prCreatedFix ? (
+                        <Button
+                            onClick={() => window.open(prCreatedFix.prUrl, '_blank')}
+                            className="gap-2"
+                            size="sm"
+                            variant="outline"
+                        >
+                            <GitPullRequest className="w-4 h-4" />
+                            View PR {prCreatedFix.branchName ? `(${prCreatedFix.branchName})` : ''}
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleCreatePR}
+                            disabled={acceptedCount === 0 || creatingPR}
+                            className="gap-2"
+                            size="sm"
+                        >
+                            {creatingPR ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Creating PR...
+                                </>
+                            ) : (
+                                <>
+                                    <GitPullRequest className="w-4 h-4" />
+                                    Create PR ({acceptedCount})
+                                </>
+                            )}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -431,7 +444,7 @@ export function FixReview({ runId }) {
                                     <Card
                                         key={fix.id}
                                         className={cn(
-                                            "p-3 cursor-pointer hover:bg-accent/50 hover:border-primary/30 transition-all duration-150 select-none border-l-[3px]",
+                                            "p-3 cursor-pointer hover:bg-muted/50 hover:border-primary/30 transition-all duration-150 select-none border-l-[3px]",
                                             selectedFix?.id === fix.id ? 'border-l-primary bg-accent shadow-sm' : '',
                                             !selectedFix || selectedFix.id !== fix.id ? sevColors.borderLeft : ''
                                         )}

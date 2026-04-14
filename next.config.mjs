@@ -1,3 +1,7 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./i18n/request.js');
+
 /** @type {import('next').NextConfig} */
 
 // ── Shared security headers ────────────────────────────────────────
@@ -139,7 +143,7 @@ const nextConfig = {
     return [
       // Public marketing pages - allow bfcache
       {
-        source: '/',
+        source: '/:locale',
         headers: [
           ...baseSecurityHeaders,
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
@@ -148,7 +152,7 @@ const nextConfig = {
       },
 
       {
-        source: '/admin/:path*',
+        source: '/:locale/admin/:path*',
         headers: [
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
           { key: 'Cache-Control', value: 'private, no-cache, no-store, must-revalidate' },
@@ -157,7 +161,7 @@ const nextConfig = {
 
       // Login and auth pages - full security headers, no cache
       {
-        source: '/login',
+        source: '/:locale/login',
         headers: [
           ...baseSecurityHeaders,
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
@@ -167,7 +171,7 @@ const nextConfig = {
 
       // Other public pages - full security headers
       {
-        source: '/(about|privacy|terms|changelog|security|blog|supporters|site-map)',
+        source: '/:locale/(about|privacy|terms|changelog|security|blog|supporters|site-map)',
         headers: [
           ...baseSecurityHeaders,
           { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
@@ -175,7 +179,7 @@ const nextConfig = {
       },
       // Demo routes - security headers but no auth
       {
-        source: '/demo/:path*',
+        source: '/:locale/demo/:path*',
         headers: [
           ...baseSecurityHeaders,
           { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
@@ -191,7 +195,15 @@ const nextConfig = {
       },
       // Protected/API routes - no cache for security
       {
-        source: '/(dashboard|profile|api|editor)/:path*',
+        source: '/api/:path*',
+        headers: [
+          ...baseSecurityHeaders,
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cache-Control', value: 'private, no-cache, no-store, must-revalidate' },
+        ]
+      },
+      {
+        source: '/:locale/(dashboard|profile|editor)/:path*',
         headers: [
           ...baseSecurityHeaders,
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
@@ -235,4 +247,4 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

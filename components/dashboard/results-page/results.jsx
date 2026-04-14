@@ -43,7 +43,7 @@ import {
     getExpandedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
-import { ChevronDownIcon, ChevronRightIcon, Download, Eye, EyeOff, Lock, Copy, Check, Fingerprint, ShieldCheck, KeyRound, Search, ShieldAlert, Activity } from "lucide-react"
+import { ChevronDownIcon, ChevronRightIcon, Download, Eye, EyeOff, Lock, Copy, Check, Fingerprint, ShieldCheck, KeyRound, Search, ShieldAlert, Activity, FileText } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -646,6 +646,109 @@ function DraggableRow({ row }) {
 }
 
 /**
+ * ReportView — fetches and renders the Markdown security report with PDF download
+ */
+function ReportView({ runId }) {
+    const [report, setReport] = React.useState(null)
+    const [isLoading, setIsLoading] = React.useState(false)
+    const [error, setError] = React.useState(null)
+
+    React.useEffect(() => {
+        if (!runId) return
+        const controller = new AbortController()
+        setIsLoading(true)
+        setError(null)
+
+        fetch(`/api/workflow/report?runId=${runId}`, { signal: controller.signal })
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to fetch report')
+                return r.json()
+            })
+            .then(data => {
+                setReport(data.data?.report || null)
+            })
+            .catch(err => {
+                if (err.name !== 'AbortError') {
+                    setError(err.message)
+                }
+            })
+            .finally(() => setIsLoading(false))
+
+        return () => controller.abort()
+    }, [runId])
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center p-12">
+                <IconLoader className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading report...</span>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center gap-2">
+                <ShieldAlert className="h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+        )
+    }
+
+    if (!report) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center gap-2">
+                <FileText className="h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">No report available yet. The report is generated after all agents complete.</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4 p-4">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+                <MarkdownRenderer content={report} />
+            </div>
+        </div>
+    )
+}
+
+/**
+ * Simple Markdown renderer — converts basic Markdown to HTML for report display.
+ * Handles headings, bold, code blocks, lists, and separators.
+ */
+function MarkdownRenderer({ content }) {
+    const html = React.useMemo(() => {
+        if (!content) return ''
+        let result = content
+            // Code blocks
+            .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="bg-muted rounded-md p-3 text-xs overflow-x-auto my-2"><code>$2</code></pre>')
+            // Inline code
+            .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs">$1</code>')
+            // Headings
+            .replace(/^#### (.+)$/gm, '<h4 class="text-sm font-semibold mt-4 mb-1">$1</h4>')
+            .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-5 mb-2">$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-6 mb-2 border-b pb-1">$1</h2>')
+            .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-6 mb-3">$1</h1>')
+            // Bold
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            // Italic
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+            // Horizontal rules
+            .replace(/^---$/gm, '<hr class="my-4 border-border"/>')
+            // Unordered lists
+            .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
+            // Ordered lists
+            .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 list-decimal text-sm">$2</li>')
+            // Paragraphs (lines with content not already wrapped)
+            .replace(/^(?!<[hludipros])([\w\[\]].+)$/gm, '<p class="text-sm my-1">$1</p>')
+        return result
+    }, [content])
+
+    return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+/**
  * PentesterResultsView — shows pentester findings grouped by scanning tool
  */
 function PentesterResultsView({ vulnerabilities = [] }) {
@@ -1091,6 +1194,9 @@ export function DataTable({
                     <TabsTrigger value="files">
                         Files
                     </TabsTrigger>
+                    <TabsTrigger value="report">
+                        Report
+                    </TabsTrigger>
                 </TabsList>
 
                 <div className="flex items-center gap-2">
@@ -1187,11 +1293,15 @@ export function DataTable({
                     }}
                 />
             </TabsContent>
+
+            <TabsContent value="report" className="mt-0">
+                <ReportView runId={runId} />
+            </TabsContent>
         </Tabs>
     )
 }
 
-export function Results({ initialCode: _initialCode, problems: _problems = [], generatedCode: _generatedCode = "", vulnerabilities: initialVulnerabilities = [], runId: propRunId, userId: _userId, demoMode = false }) {
+export function Results({ initialCode: _initialCode, problems: _problems = [], generatedCode: _generatedCode = "", vulnerabilities: initialVulnerabilities = [], runId: propRunId, userId: _userId, demoMode = false, onWorkflowComplete }) {
     const [vulnerabilities, setVulnerabilities] = React.useState(initialVulnerabilities)
     const [progressValue, setProgressValue] = React.useState(demoMode ? 100 : 0)
     const [, setIsLoading] = React.useState(false)
@@ -1296,6 +1406,8 @@ export function Results({ initialCode: _initialCode, problems: _problems = [], g
                         });
                         setIsPolling(false);
                         setIsLoading(false);
+                        // Notify parent to re-fetch vulnerabilities for code annotations
+                        onWorkflowComplete?.();
                         return;
                     }
 
