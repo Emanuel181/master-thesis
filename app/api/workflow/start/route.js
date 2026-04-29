@@ -79,6 +79,7 @@ const startWorkflowSchema = z.object({
       repo: z.string(),
     }).nullable().optional(),
   }).optional(),
+  replaceRunId: z.string().optional(),
 });
 
 /**
@@ -90,6 +91,26 @@ const startWorkflowSchema = z.object({
  *
  * These constraints are enforced both here and in the Step Functions workflow
  */
+
+/**
+ * Extract tester output from Step Functions execution output.
+ */
+async function getTesterOutputFromSfn(executionArn) {
+  if (!executionArn) return null;
+  try {
+    const result = await sfnClient.send(new DescribeExecutionCommand({ executionArn }));
+    if (result.status === 'SUCCEEDED' && result.output) {
+      const output = JSON.parse(result.output);
+      const useCaseResults = output.useCaseResults || [];
+      for (const ucr of useCaseResults) {
+        if (ucr.testerOutput?.totalFindings > 0) {
+          return ucr.testerOutput;
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
 
 /**
  * POST /api/workflow/start
@@ -120,6 +141,36 @@ export async function POST(request) {
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Enforce max 3 scans per user
+    const MAX_SCANS = 3;
+    const existingRuns = await prisma.workflowRun.findMany({
+      where: { userId: user.id },
+      orderBy: { startedAt: 'asc' },
+      select: { id: true, status: true, startedAt: true, metadata: true },
+    });
+
+    if (existingRuns.length >= MAX_SCANS) {
+      if (validatedData.replaceRunId) {
+        const runToDelete = existingRuns.find(r => r.id === validatedData.replaceRunId);
+        if (!runToDelete) {
+          return NextResponse.json({ error: "Run to replace not found" }, { status: 404 });
+        }
+        await prisma.workflowRun.delete({ where: { id: validatedData.replaceRunId } });
+      } else {
+        return NextResponse.json({
+          error: "Scan limit reached",
+          code: "SCAN_LIMIT",
+          runs: existingRuns.map(r => ({
+            id: r.id,
+            status: r.status,
+            startedAt: r.startedAt,
+            codeType: r.metadata?.codeType,
+            projectName: r.metadata?.code?.projectName || r.metadata?.currentRepo?.repo,
+          })),
+        }, { status: 409 });
+      }
     }
 
     // Fetch use cases with their documents
@@ -195,6 +246,11 @@ export async function POST(request) {
         totalUseCases: useCases.length,
         completedUseCases: 0,
         metadata: validatedData.metadata || {}, // Store code and other metadata
+        // Persist the RAG allow-list: agents will be constrained to these docs only
+        selectedDocuments: {
+          documentIds: validatedData.selectedDocuments,
+          useCaseIds: validatedData.useCaseIds,
+        },
       },
     });
 
@@ -698,6 +754,46 @@ export async function GET(request) {
       };
     }
 
+    // Also fetch TestResult records (created by tester agent publish callback)
+    let testResults = await prisma.testResult.findMany({
+      where: { workflowRunId: runId },
+      orderBy: { executedAt: 'desc' },
+    });
+
+    // Fallback: if no TestResult records in DB, try to read pentest findings from S3
+    if (testResults.length === 0 && workflowRun.status === 'completed') {
+      try {
+        const testerOutput = await getTesterOutputFromSfn(executionArn);
+        if (testerOutput?.sessionId && testerOutput?.totalFindings > 0) {
+          const reportKey = `results/${testerOutput.sessionId}/final-report.json`;
+          const reportResp = await s3Client.send(new GetObjectCommand({
+            Bucket: process.env.PENTEST_RESULTS_BUCKET || 'vulniq-pentest-results-650080740856',
+            Key: reportKey,
+          }));
+          const reportData = JSON.parse(await reportResp.Body.transformToString());
+          testResults = (reportData.findings || []).map((f, i) => ({
+            id: `s3-${i}`,
+            workflowRunId: runId,
+            vulnerabilityId: null,
+            passed: false,
+            tool: 'pentester',
+            category: f.type || f.cweId || null,
+            evidence: f.proofOfConcept || f.attackVector || f.description || '',
+            artifactsS3Key: reportKey,
+            durationMs: null,
+            executedAt: reportData.timestamp || new Date().toISOString(),
+            title: f.title,
+            severity: f.severity,
+            filePath: f.filePath,
+            vulnerableCode: f.vulnerableCode,
+            remediation: f.remediation,
+          }));
+        }
+      } catch (e) {
+        // S3 fallback failed, continue with empty testResults
+      }
+    }
+
     // ════════════════════════════════════════════
     // Step 3: Compute severity counts
     // ════════════════════════════════════════════
@@ -785,6 +881,7 @@ export async function GET(request) {
         severityCounts,
         totalVulnerabilities: workflowRun.vulnerabilities.length,
         pentestResults,
+        testResults,
       },
     });
   } catch (error) {

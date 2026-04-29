@@ -8,12 +8,11 @@ import { usePrompts } from "@/contexts/promptsContext"
 import { DEMO_DOCUMENTS, DEMO_WORKFLOW_CONFIGS } from "@/contexts/demoContext"
 import { toast } from "sonner"
 
-// Available AWS Bedrock models with human-friendly names
+// Available AWS Bedrock models (inference profile IDs required for newer models)
 const DEMO_MODELS = [
-    { id: "anthropic.claude-3-5-sonnet-20241022-v2:0", name: "Claude 3.5 Sonnet v2", provider: "Anthropic", description: "State-of-the-art for software engineering and agentic tasks" },
-    { id: "anthropic.claude-3-5-haiku-20241022-v1:0", name: "Claude 3.5 Haiku", provider: "Anthropic", description: "Fastest and most cost-effective model" },
-    { id: "anthropic.claude-3-sonnet-20240229-v1:0", name: "Claude 3 Sonnet", provider: "Anthropic", description: "Balanced intelligence and speed for enterprise workloads" },
-    { id: "anthropic.claude-3-haiku-20240307-v1:0", name: "Claude 3 Haiku", provider: "Anthropic", description: "Fast, compact model for near-instant responses" },
+    { id: "us.anthropic.claude-haiku-4-5-20251001-v1:0", name: "Claude Haiku 4.5", provider: "Anthropic", description: "Fast and cost-effective, great for code review tasks" },
+    { id: "us.anthropic.claude-sonnet-4-5-20250929-v1:0", name: "Claude Sonnet 4.5", provider: "Anthropic", description: "Balanced intelligence and speed for complex analysis" },
+    { id: "us.anthropic.claude-sonnet-4-6", name: "Claude Sonnet 4.6", provider: "Anthropic", description: "Latest and most capable model" },
 ]
 
 const MODELS_PER_PAGE = 5
@@ -413,25 +412,25 @@ export function useModelsDialog({ codeType }) {
             const agentConfigurations = {
                 reviewer: {
                     enabled: true,
-                    modelId: reviewerModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    modelId: reviewerModel || 'us.anthropic.claude-sonnet-4-6',
                     customPrompt: getPromptTextById('reviewer', selectedSystemPrompts.reviewer),
                     promptId: selectedSystemPrompts.reviewer || '',
                 },
                 implementer: {
                     enabled: !!implementationModel,
-                    modelId: implementationModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    modelId: implementationModel || 'us.anthropic.claude-sonnet-4-6',
                     customPrompt: getPromptTextById('implementation', selectedSystemPrompts.implementation),
                     promptId: selectedSystemPrompts.implementation || '',
                 },
                 tester: {
                     enabled: !!testerModel,
-                    modelId: testerModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    modelId: testerModel || 'us.anthropic.claude-sonnet-4-6',
                     customPrompt: getPromptTextById('tester', selectedSystemPrompts.tester),
                     promptId: selectedSystemPrompts.tester || '',
                 },
                 reporter: {
                     enabled: true,
-                    modelId: reportModel || 'anthropic.claude-3-sonnet-20240229-v1:0',
+                    modelId: reportModel || 'us.anthropic.claude-sonnet-4-6',
                     customPrompt: getPromptTextById('report', selectedSystemPrompts.report),
                     promptId: selectedSystemPrompts.report || '',
                 },
